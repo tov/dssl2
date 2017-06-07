@@ -94,6 +94,9 @@
               '(begin (define (fact n)
                         (cond [(<= n 1) (return 1)]
                               [else     (return (* n (fact (- n 1))))]))))
-  )
-
-
+  (test-parse (string-append "for j in v:\n"
+                             "  println(j)")
+              '(begin (for [j v] (println j))))
+  (test-parse (string-append "for i, j in v:\n"
+                             "  println(i, j)")
+              '(begin (for [(i j) v] (println i j)))))

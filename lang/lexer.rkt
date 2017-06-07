@@ -26,6 +26,8 @@
    WHILE
    RETURN
    LAMBDA
+   TRUE
+   FALSE
    DEF
    DEFSTRUCT))
 
@@ -127,14 +129,16 @@
       ["return"                 (token-RETURN)]
       ["lambda"                 (token-LAMBDA)]
       [#\λ                      (token-LAMBDA)]
+      ["True"                   (token-TRUE)]
+      ["False"                  (token-FALSE)]
       ["def"                    (token-DEF)]
       ["defstruct"              (token-DEFSTRUCT)]
       [(:: alphabetic (:* (:or alphabetic numeric #\_)) (:? (:or #\! #\?)))
-       (token-IDENT lexeme)]
+                                (token-IDENT lexeme)]
       ["||"                     (token-OP0 lexeme)]
       ["&&"                     (token-OP1 lexeme)]
       [(:or "==" #\< #\> "<=" ">=" "!=" "===" "!==")
-       (token-OP2 lexeme)]
+                                (token-OP2 lexeme)]
       [#\|                      (token-OP3 lexeme)]
       [#\^                      (token-OP4 lexeme)]
       [#\&                      (token-OP5 lexeme)]
@@ -194,6 +198,7 @@
        [else            (the-lexer port)])))
 
 ; format-string position? any? ... -> !
+; Calls error with a nice syntax error message.
 (define (syntax-error pos msg . args)
   (error
     (apply format

@@ -198,9 +198,9 @@
        (return-without-pos (the-lexer port))]
       [(:+ (:: #\newline (:* #\space)))
        (let [(indent (last-spaces lexeme))]
-         (enq (token-NEWLINE) start-pos end-pos)
          (cond
            [(number? (first stack))
+            (enq (token-NEWLINE) start-pos end-pos)
             (cond
               [(> indent (first stack))
                (push indent)

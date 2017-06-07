@@ -160,7 +160,7 @@
               (unless (memq (field-name actual) formals)
                 (runtime-error
                   "Error: constructor for ~a does not expect field ~a"
-                  name (first actual))))
+                  name (field-name actual))))
             actuals)
   (make-struct name (map get-value formals)))
 

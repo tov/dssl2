@@ -51,6 +51,8 @@
               '(begin (+ a (- 6))))
   (test-parse "[5, lambda x: x + 1]"
               '(begin (vector 5 (lambda (x) (+ x 1)))))
+  (test-parse "a.b.c"
+              '(begin (struct-ref (struct-ref a b) c)))
   
   ; simple statements
 
@@ -64,6 +66,13 @@
               '(begin (define x #f)))
   (test-parse "defstruct posn(x, y)\n"
               '(begin (define-struct posn (x y))))
+  (test-parse "a.b.c = e[f]"
+              '(begin (setf! (struct-ref (struct-ref a b) c)
+                             (vector-ref e f))))
+  (test-parse "assert False"
+              '(begin (assert #f)))
+  (test-parse "assert_eq a + 1, 6"
+              '(begin (assert-eq (+ a 1) 6)))
 
   ; compound statements
   

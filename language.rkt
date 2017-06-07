@@ -90,7 +90,7 @@
     [(_ [(i j) v] expr ...)
      (let/ec break-f
        (for ([i (in-naturals)]
-             [j v])
+             [j (dssl-in-value v)])
          (let/ec continue-f
            (syntax-parameterize
              ([dssl-break (syntax-rules () [(_) (break-f)])]
@@ -99,6 +99,14 @@
     [(_ [i v] expr ...)
      (dssl-for [(_ i) v] expr ...)]))
 
+(define (dssl-in-value v)
+  (cond
+    [(vector? v)   (in-vector v)]
+    [(natural? v)  (in-range v)]
+    [(string? v)   (in-list
+                     (map (λ (c) (list->string (list c)))
+                          (string->list v)))]
+    [else          (runtime-error "Value ~a is not iterable" v)]))
 
 ; setf! is like Common Lisp setf, but it just recognizes three forms. We
 ; use this to translate assignments.

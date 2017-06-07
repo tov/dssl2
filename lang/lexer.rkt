@@ -102,17 +102,16 @@
     (lexer-src-pos
       [(eof)                    (token-EOF)]
       [#\(
-       (begin
-         (push #\))
-         (token-LPAREN))]
+                                (begin
+                                  (push #\))
+                                  (token-LPAREN))]
       [#\[
        (begin
          (push #\])
          (token-LBRACK))]
-      [#\{
-       (begin
-         (push #\})
-         (token-LBRACE))]
+      [#\{                      (begin
+                                  (push #\})
+                                  (token-LBRACE))]
       [#\)                      (closing #\) (token-RPAREN) start-pos)]
       [#\]                      (closing #\] (token-RBRACK) start-pos)]
       [#\}                      (closing #\} (token-RBRACE) start-pos)]
@@ -275,6 +274,6 @@
 
   (let loop ()
     (define token (a-lexer))
-    (unless (eq? token 'EOF)
+    (unless (eq? (position-token-token token) 'EOF)
       (displayln token)
       (loop))))

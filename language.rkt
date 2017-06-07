@@ -11,13 +11,13 @@
          begin
          cond
          else
+         or
          (rename-out
            [modulo              %]
            [expt                **]
            [equal?              ==]
            [eq?                 ===]
            [and                 &&]
-           [or                  ||]
            [not                 !]
            [void                pass]
            [bitwise-and         &]

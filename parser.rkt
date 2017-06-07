@@ -43,6 +43,8 @@
     (grammar
 
       (program
+        [(newlines)
+         eof]
         [(newlines statements newlines)
          (loc `(begin ,@$2))])
 
@@ -53,8 +55,8 @@
          #true])
 
       (statements
-        [()
-         `()]
+        [(statement)
+         $1]
         [(statement statements)
          (append $1 $2)])
 
@@ -192,6 +194,8 @@
       (expr0
         [(expr0 OP0 atom)
          (loc `(,$2 ,$1 ,$3))]
+        [(expr0 PIPEPIPE atom)
+         (loc `(or ,$1 ,$3))]
         [(expr1)
          $1])
 

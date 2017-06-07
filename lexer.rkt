@@ -22,6 +22,7 @@
    SEMICOLON
    EQUALS
    PIPE
+   PIPEPIPE
    PLUS         ; two different precedences
    MINUS        ; two different precedences
    LAMBDA
@@ -161,7 +162,7 @@
       ["defstruct"              (token-DEFSTRUCT)]
       [(:: alphabetic (:* (:or alphabetic numeric #\_)) (:? (:or #\! #\?)))
                                 (token-IDENT (string->symbol lexeme))]
-      ["||"                     (token-OP0 (string->symbol lexeme))]
+      ["||"                     (token-PIPEPIPE)]
       ["&&"                     (token-OP1 (string->symbol lexeme))]
       [(:or "==" #\< #\> "<=" ">=" "!=" "===" "!==")
                                 (token-OP2 (string->symbol lexeme))]
@@ -229,13 +230,20 @@
 
   (port-count-lines! port)
 
+  (define last-token #false)
+
   (λ ()
-     (define result
-       (cond
-         [(cons? queue)   (deq)]
-         [else            (the-lexer port)]))
-     ; (displayln (format "Token: ~a" result))
-     result))
+     (cond
+       [(and (position-token? last-token)
+             (eq? (position-token-token last-token) 'EOF))
+        last-token]
+       [else
+         (set! last-token
+           (cond
+             [(cons? queue)   (deq)]
+             [else            (the-lexer port)]))
+         ; (displayln (format "Token: ~a" last-token))
+         last-token])))
 
 ; format-string position? any? ... -> !
 ; Calls error with a nice syntax error message.

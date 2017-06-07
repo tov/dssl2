@@ -78,7 +78,7 @@
     (set! queue (rest queue))
     result)
 
-  (define (closing closer token)
+  (define (closing closer token pos)
     (cond
       [(number? (first stack))
        (pop)
@@ -89,9 +89,11 @@
        (enq token)
        (deq)]
       [else
-        (error "Lexical error"
-               "Expected" (first stack)
-               "got" closer)]))
+        (error "Syntax error:"
+               (format "Expected ~a but got ~a at ~a"
+               (first stack)
+               closer
+               (format-pos pos)))]))
 
   (define the-lexer
     (lexer-src-pos
@@ -108,9 +110,9 @@
        (begin
          (push #\})
          (token-LBRACE))]
-      [#\)                      (closing #\) (token-RPAREN))]
-      [#\]                      (closing #\] (token-RBRACK))]
-      [#\}                      (closing #\} (token-RBRACE))]
+      [#\)                      (closing #\) (token-RPAREN) start-pos)]
+      [#\]                      (closing #\] (token-RBRACK) start-pos)]
+      [#\}                      (closing #\} (token-RBRACE) start-pos)]
       [#\,                      (token-COMMA)]
       [#\.                      (token-PERIOD)]
       [#\:                      (token-COLON)]
@@ -164,7 +166,7 @@
       ["+inf.0"                 (token-LITERAL +inf.0)]
       ["-nan.0"                 (token-LITERAL -nan.0)]
       ["+nan.0"                 (token-LITERAL +nan.0)]
-      [(:or #\space #\tab)
+      [(:or #\space)
        (return-without-pos (the-lexer port))]
       [(:: #\# (:* (:- any-char #\newline)))
        (return-without-pos (the-lexer port))]
@@ -184,7 +186,14 @@
                   (pop)
                   (loop)]))
             (deq)]
-           [else (return-without-pos (the-lexer port))]))]))
+           [else (return-without-pos (the-lexer port))]))]
+      [#\tab    (error "Syntax error:"
+                       (format "Tabs are not allowed in DSSL2 code at ~a"
+                               (format-pos start-pos)))]
+      [any-char (error "Syntax error:"
+                       (format "Unexpected character ‘~a’ at ~a"
+                               lexeme
+                               (format-pos start-pos)))]))
 
   (port-count-lines! port)
 
@@ -192,6 +201,13 @@
      (cond
        [(cons? queue)   (deq)]
        [else            (the-lexer port)])))
+
+; position? -> string?
+; Formats a position for user to read.
+(define (format-pos pos)
+  (format "line ~a column ~a"
+          (position-line pos)
+          (add1 (position-col pos))))
 
 ; string? -> string?
 ; Removes the first and last characters of a string.
@@ -256,3 +272,11 @@
 (define (read-string str)
   (read (open-input-string str)))
 
+(module+ test
+  (define a-lexer (new-dssl2-lexer (current-input-port)))
+
+  (let loop ()
+    (define token (a-lexer))
+    (unless (eq? token 'EOF)
+      (displayln token)
+      (loop))))

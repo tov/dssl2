@@ -1,5 +1,7 @@
 #lang racket
 
+(provide dssl2-empty-tokens dssl2-tokens new-dssl2-lexer
+         syntax-error)
 (require parser-tools/lex
          (prefix-in : parser-tools/lex-sre))
 
@@ -21,13 +23,16 @@
    EQUALS
    PLUS         ; two different precedences
    MINUS        ; two different precedences
+   LET
    IF
+   ELIF
    ELSE
    WHILE
+   FOR
+   IN
    RETURN
+   PASS
    LAMBDA
-   TRUE
-   FALSE
    DEF
    DEFSTRUCT))
 
@@ -76,8 +81,8 @@
     (set! stack (rest stack))
     result)
 
-  (define (enq . items)
-    (set! queue (append queue items)))
+  (define (enq item start end)
+    (set! queue (append queue (list (position-token item start end)))))
 
   (define (deq)
     (define result (first queue))
@@ -88,11 +93,11 @@
     (cond
       [(number? (first stack))
        (pop)
-       (enq (token-DEDENT))
+       (enq (token-DEDENT) pos pos)
        (closing closer token)]
       [(eq? (first stack) closer)
        (pop)
-       (enq token)
+       (enq token pos pos)
        (deq)]
       [else
         (syntax-error pos "Expected ~a but got ~a"
@@ -100,7 +105,15 @@
 
   (define the-lexer
     (lexer-src-pos
-      [(eof)                    (token-EOF)]
+      [(eof)                    (begin
+                                  (let loop []
+                                    (when (not (eqv? 0 (first stack)))
+                                      (enq (token-NEWLINE) start-pos end-pos)
+                                      (enq (token-DEDENT) start-pos end-pos)
+                                      (pop)
+                                      (loop)))
+                                  (enq (token-EOF) start-pos end-pos)
+                                  (return-without-pos (deq)))]
       [#\(
                                 (begin
                                   (push #\))
@@ -112,9 +125,12 @@
       [#\{                      (begin
                                   (push #\})
                                   (token-LBRACE))]
-      [#\)                      (closing #\) (token-RPAREN) start-pos)]
-      [#\]                      (closing #\] (token-RBRACK) start-pos)]
-      [#\}                      (closing #\} (token-RBRACE) start-pos)]
+      [#\)                      (return-without-pos
+                                  (closing #\) (token-RPAREN) start-pos))]
+      [#\]                      (return-without-pos
+                                  (closing #\] (token-RBRACK) start-pos))]
+      [#\}                      (return-without-pos
+                                  (closing #\} (token-RBRACE) start-pos))]
       [#\,                      (token-COMMA)]
       [#\.                      (token-PERIOD)]
       [#\:                      (token-COLON)]
@@ -122,29 +138,34 @@
       [#\=                      (token-EQUALS)]
       [#\+                      (token-PLUS)]
       [#\-                      (token-MINUS)]
+      ["let"                    (token-LET)]
       ["if"                     (token-IF)]
+      ["elif"                   (token-ELIF)]
       ["else"                   (token-ELSE)]
       ["while"                  (token-WHILE)]
+      ["for"                    (token-FOR)]
+      ["in"                     (token-IN)]
       ["return"                 (token-RETURN)]
+      ["pass"                   (token-PASS)]
       ["lambda"                 (token-LAMBDA)]
       [#\λ                      (token-LAMBDA)]
-      ["True"                   (token-TRUE)]
-      ["False"                  (token-FALSE)]
+      ["True"                   (token-LITERAL #t)]
+      ["False"                  (token-LITERAL #f)]
       ["def"                    (token-DEF)]
       ["defstruct"              (token-DEFSTRUCT)]
       [(:: alphabetic (:* (:or alphabetic numeric #\_)) (:? (:or #\! #\?)))
-                                (token-IDENT lexeme)]
-      ["||"                     (token-OP0 lexeme)]
-      ["&&"                     (token-OP1 lexeme)]
+                                (token-IDENT (string->symbol lexeme))]
+      ["||"                     (token-OP0 (string->symbol lexeme))]
+      ["&&"                     (token-OP1 (string->symbol lexeme))]
       [(:or "==" #\< #\> "<=" ">=" "!=" "===" "!==")
-                                (token-OP2 lexeme)]
-      [#\|                      (token-OP3 lexeme)]
-      [#\^                      (token-OP4 lexeme)]
-      [#\&                      (token-OP5 lexeme)]
-      [(:or "<<" ">>")          (token-OP6 lexeme)]
-      [(:or #\* #\/ #\%)        (token-OP8 lexeme)]
-      [(:or #\! #\~)            (token-OP9 lexeme)]
-      ["**"                     (token-OP10 lexeme)]
+                                (token-OP2 (string->symbol lexeme))]
+      [#\|                      (token-OP3 (string->symbol lexeme))]
+      [#\^                      (token-OP4 (string->symbol lexeme))]
+      [#\&                      (token-OP5 (string->symbol lexeme))]
+      [(:or "<<" ">>")          (token-OP6 (string->symbol lexeme))]
+      [(:or #\* #\/ #\%)        (token-OP8 (string->symbol lexeme))]
+      [(:or #\! #\~)            (token-OP9 (string->symbol lexeme))]
+      ["**"                     (token-OP10 (string->symbol lexeme))]
       [(:: #\" (:* dq-str-char) #\")
        (token-LITERAL
          (interpret-string (remove-first-and-last lexeme)))]
@@ -170,31 +191,45 @@
        (return-without-pos (the-lexer port))]
       [(:+ (:: #\newline (:* #\space)))
        (let [(indent (last-spaces lexeme))]
+         (enq (token-NEWLINE) start-pos end-pos)
          (cond
            [(number? (first stack))
-            (let loop []
-              (cond
-                [(> indent (first stack))
-                 (push indent)
-                 (enq (token-INDENT))]
-                [(= indent (first stack))
-                 (enq (token-NEWLINE))]
-                [else
-                  (enq (token-DEDENT))
-                  (pop)
-                  (loop)]))
-            (deq)]
+            (cond
+              [(> indent (first stack))
+               (push indent)
+               (enq (token-INDENT) start-pos end-pos)]
+              [(= indent (first stack))
+               (void)]
+              [else
+                (let loop []
+                  (cond
+                    [(< indent (first stack))
+                     (enq (token-DEDENT) start-pos end-pos)
+                     (pop)
+                     (loop)]
+                    [(= indent (first stack))
+                     (void)]
+                    [else
+                      (syntax-error start-pos
+                                    "Inconsistent dedent")]))])
+            (return-without-pos (deq))]
            [else (return-without-pos (the-lexer port))]))]
-      [#\tab    (syntax-error start-pos "Tabs are not allowed in DSSL2")]
-      [any-char (syntax-error start-pos
-                              "Unexpected character ‘~a’" lexeme)]))
+      [(:: #\\ #\newline)
+       (return-without-pos (the-lexer port))]
+      [#\tab
+       (syntax-error start-pos "Tabs are not allowed in DSSL2")]
+      [any-char
+        (syntax-error start-pos "Unexpected character ‘~a’" lexeme)]))
 
   (port-count-lines! port)
 
   (λ ()
-     (cond
-       [(cons? queue)   (deq)]
-       [else            (the-lexer port)])))
+     (define result
+       (cond
+         [(cons? queue)   (deq)]
+         [else            (the-lexer port)]))
+     ; (displayln (format "Token: ~a" result))
+     result))
 
 ; format-string position? any? ... -> !
 ; Calls error with a nice syntax error message.

@@ -63,9 +63,9 @@
   (test-parse "a = b\nc = d\n"
               '(begin (setf! a b) (setf! c d)))
   (test-parse "let x\n"
-              '(begin (define x #f)))
+              '(begin (let x #f)))
   (test-parse "defstruct posn(x, y)\n"
-              '(begin (define-struct posn (x y))))
+              '(begin (defstruct posn (x y))))
   (test-parse "a.b.c = e[f]"
               '(begin (setf! (struct-ref (struct-ref a b) c)
                              (vector-ref e f))))
@@ -100,7 +100,7 @@
   (test-parse (string-append "def fact(n):\n"
                              "  if n <= 1: return 1\n"
                              "  else: return n * fact(n - 1)")
-              '(begin (define (fact n)
+              '(begin (def (fact n)
                         (cond [(<= n 1) (return 1)]
                               [else     (return (* n (fact (- n 1))))]))))
   (test-parse (string-append "for j in v:\n"

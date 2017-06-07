@@ -70,7 +70,7 @@
         [(FOR IDENT COMMA IDENT IN expr COLON suite)
          (loc `(for [(,$2 ,$4) ,$6] ,@$8))]
         [(DEF IDENT LPAREN formals RPAREN COLON suite)
-         (loc `(define (,$2 ,@$4) ,@$7))])
+         (loc `(def (,$2 ,@$4) ,@$7))])
 
       (elifs
         [()
@@ -108,11 +108,11 @@
         [(expr)
          $1]
         [(LET IDENT)
-         (loc `(define ,$2 #f))]
+         (loc `(let ,$2 #f))]
         [(LET IDENT EQUALS expr)
-         (loc `(define ,$2 ,$4))]
+         (loc `(let ,$2 ,$4))]
         [(DEFSTRUCT IDENT LPAREN formals RPAREN)
-         (loc `(define-struct ,$2 ,$4))]
+         (loc `(defstruct ,$2 ,$4))]
         [(RETURN expr)
          (loc `(return ,$2))]
         [(lvalue EQUALS expr)

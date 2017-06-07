@@ -16,17 +16,25 @@
            [expt                **]
            [equal?              ==]
            [eq?                 ===]
+           [and                 &&]
+           [or                  ||]
+           [not                 !]
            [dssl-!=             !=]
            [dssl-!==            !==]
            [dssl-<              <]
            [dssl->              >]
            [dssl-<=             <=]
            [dssl->=             >=]
+           [dssl-print          print]
+           [dssl-println        println]
+           [dssl-printf         printf]
            [dssl-break          break]
            [dssl-continue       continue]
-           [dssl-define         define]
+           [dssl-def            def]
            [dssl-defstruct      defstruct]
+           [dssl-for            for]
            [dssl-lambda         lambda]
+           [dssl-let            let]
            [dssl-return         return]
            [dssl-setf!          setf!]
            [dssl-struct-ref     struct-ref]
@@ -34,17 +42,12 @@
            [dssl-while          while]))
 (require racket/stxparam)
 
+; We define return (for lambda) as a syntax parameter, and then
+; syntax-parameterize it inside dssl-lambda.
 (define-syntax-parameter
   dssl-return
   (lambda (stx)
     (raise-syntax-error #f "use of return keyword not in a function" stx)))
-
-(define-syntax dssl-define
-  (syntax-rules ()
-    [(_ (f formals ...) expr ...)
-     (define f (dssl-lambda (formals ...) expr ...))]
-    [(_ name expr)
-     (define name expr)]))
 
 (define-syntax-rule (dssl-lambda (param ...) expr ...)
   (lambda (param ...)
@@ -54,6 +57,13 @@
                          [(_ ?result) (return-f ?result)])])
          (begin expr ...)))))
 
+(define-syntax-rule (dssl-def (f formals ...) expr ...)
+  (define f (dssl-lambda (formals ...) expr ...)))
+
+(define-syntax-rule (dssl-let name expr)
+  (define name expr))
+
+; while uses two syntax parameters, break and continue (shared by for)
 (define-syntax-parameter
   dssl-break
   (lambda (stx)
@@ -75,6 +85,23 @@
           expr ...
           (loop))))))
 
+(define-syntax dssl-for
+  (syntax-rules ()
+    [(_ [(i j) v] expr ...)
+     (let/ec break-f
+       (for ([i (in-naturals)]
+             [j v])
+         (let/ec continue-f
+           (syntax-parameterize
+             ([dssl-break (syntax-rules () [(_) (break-f)])]
+              [dssl-continue (syntax-rules () [(_) (continue-f)])])
+             expr ...))))]
+    [(_ [i v] expr ...)
+     (dssl-for [(_ i) v] expr ...)]))
+
+
+; setf! is like Common Lisp setf, but it just recognizes three forms. We
+; use this to translate assignments.
 (define-syntax dssl-setf!
   (syntax-rules (dssl-vector-ref dssl-struct-ref)
     [(_ (dssl-vector-ref v i) rhs)
@@ -105,7 +132,6 @@
          (dssl-make-struct 'name
                            '(formal-field ...)
                            (list (make-field 'field expr) (... ...))))]))
-
 
 (define (dssl-make-struct name formals actuals)
   (define (get-value field)
@@ -169,3 +195,12 @@
 (define (runtime-error fmt . args)
   (error (apply format (string-append "Runtime error: " fmt) args)))
 
+(define (dssl-print . values)
+  (map display values))
+
+(define (dssl-println . values)
+  (map display values)
+  (newline))
+
+(define (dssl-printf fmt . values)
+  (display (apply format fmt values)))

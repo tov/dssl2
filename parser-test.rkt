@@ -1,0 +1,62 @@
+#lang racket
+
+(require dssl2/parser)
+
+(module+ test
+  (require rackunit)
+  (define (test-parse str result)
+    (check-equal? (syntax->datum
+                   (parse-dssl2
+                    (open-input-string (string-append str "\n"))))
+                  result))
+
+  ; simple statements
+  (test-parse "a\n"
+              '(begin a))
+  (test-parse "a = b\n"
+              '(begin (setf! a b)))
+  (test-parse "a = b; c = d.e\n"
+              '(begin (setf! a b) (setf! c (struct-ref d e))))
+  (test-parse "a = b\nc = d\n"
+              '(begin (setf! a b) (setf! c d)))
+  (test-parse "let x\n"
+              '(begin (define x #f)))
+  (test-parse "defstruct posn(x, y)\n"
+              '(begin (define-struct posn (x y))))
+
+  ; operator precedence
+  (test-parse "a + b * c + d"
+              '(begin (+ (+ a (* b c)) d)))
+  (test-parse "a ** b ** c"
+              '(begin (** a (** b c))))
+  (test-parse "a ** b ** c == 5"
+              '(begin (== (** a (** b c)) 5)))
+  (test-parse "a + -6"
+              '(begin (+ a (- 6))))
+  (test-parse "-5E-2"
+              '(begin (- 5E-2)))
+  
+  ; compound statements
+  (test-parse "if a: c = d\n"
+              '(begin (cond [a (setf! c d)] [else (pass)])))
+  (test-parse "if a: c = d\nelse: e = f\n"
+              '(begin (cond [a (setf! c d)] [else (setf! e f)])))
+  (test-parse "if a: c = d\nelif b: e = 3\nelse: f = 4\n"
+              '(begin (cond [a (setf! c d)]
+                            [b (setf! e 3)]
+                            [else (setf! f 4)])))
+  (test-parse "if a:\n  c = d\n"
+              '(begin (cond [a (setf! c d)]
+                            [else (pass)])))
+  (test-parse "if a:\n  c = d\n  e[0] = 9\n"
+              '(begin (cond [a (setf! c d)
+                               (setf! (vector-ref e 0) 9)]
+                            [else (pass)])))
+  (test-parse "if a:\n  if b:\n    5\n"
+              '(begin (cond [a (cond [b 5]
+                                     [else (pass)])]
+                            [else (pass)])))
+
+  )
+
+

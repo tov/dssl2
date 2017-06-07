@@ -97,15 +97,15 @@
          (cons $2 $3)])
 
       (small-statement
-        [(expr0)
+        [(expr)
          $1]
         [(LET IDENT)
          (loc `(define ,$2 #f))]
-        [(LET IDENT EQUALS expr0)
+        [(LET IDENT EQUALS expr)
          (loc `(define ,$2 ,$4))]
         [(DEFSTRUCT IDENT LPAREN params RPAREN)
          (loc `(define-struct ,$2 ,$4))]
-        [(lvalue EQUALS expr0)
+        [(lvalue EQUALS expr)
          (loc `(setf! ,$1 ,$3))]
         [(PASS)
          (loc `(pass))])
@@ -123,7 +123,7 @@
          $1]
         [(atom PERIOD IDENT)
          (loc `(struct-ref ,$1 ,$3))]
-        [(atom LBRACK expr0 RBRACK)
+        [(atom LBRACK expr RBRACK)
          (loc `(vector-ref ,$1 ,$3))])
 
       (atom
@@ -131,12 +131,84 @@
          $1]
         [(LITERAL)
          (loc $1)]
-        [(LPAREN expr0 RPAREN)
+        [(LPAREN expr RPAREN)
          (loc $2)])
 
+      (expr
+        [(LAMBDA params COLON expr)
+         (loc `(lambda ,$2 ,$4))]
+        [(expr0)
+         $1])
+
       (expr0
-        [(expr0 PLUS atom)
+        [(expr0 OP0 atom)
+         (loc `(,$2 ,$1 ,$3))]
+        [(expr1)
+         $1])
+
+      (expr1
+        [(expr1 OP1 expr2)
+         (loc `(,$2 ,$1 ,$3))]
+        [(expr2)
+         $1])
+
+      (expr2
+        [(expr3 OP2 expr3)
+         (loc `(,$2 ,$1 ,$3))]
+        [(expr3)
+         $1])
+
+      (expr3
+        [(expr3 OP3 expr4)
+         (loc `(,$2 ,$1 ,$3))]
+        [(expr4)
+         $1])
+
+      (expr4
+        [(expr4 OP4 expr5)
+         (loc `(,$2 ,$1 ,$3))]
+        [(expr5)
+         $1])
+
+      (expr5
+        [(expr5 OP5 expr6)
+         (loc `(,$2 ,$1 ,$3))]
+        [(expr6)
+         $1])
+
+      (expr6
+        [(expr6 OP6 expr7)
+         (loc `(,$2 ,$1 ,$3))]
+        [(expr7)
+         $1])
+
+      (expr7
+        [(expr7 PLUS expr8)
          (loc `(+ ,$1 ,$3))]
+        [(expr7 MINUS expr8)
+         (loc `(- ,$1 ,$3))]
+        [(expr8)
+         $1])
+
+      (expr8
+        [(expr8 OP8 expr9)
+         (loc `(,$2 ,$1 ,$3))]
+        [(expr9)
+         $1])
+
+      (expr9
+        [(OP9 expr10)
+         (loc `(,$1 ,$2))]
+        [(PLUS expr10)
+         (loc `(+ ,$2))]
+        [(MINUS expr10)
+         (loc `(- ,$2))]
+        [(expr10)
+         $1])
+
+      (expr10
+        [(atom OP10 expr10)
+         (loc `(,$2 ,$1 ,$3))]
         [(atom)
          $1]))))
 

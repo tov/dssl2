@@ -233,8 +233,7 @@
 ; Converts two hex digits to the represented character.
 (define (hex->char digit1 digit2)
   (integer->char
-    (read (open-input-string
-            (list->string (list #\# #\x digit1 digit2))))))
+    (read-string (list->string (list #\# #\x digit1 digit2)))))
 
 ; char? char? char? -> char?
 ; Converts three octal digits to the represented character.

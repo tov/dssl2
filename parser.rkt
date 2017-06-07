@@ -65,9 +65,12 @@
                  ,$6))]
         [(WHILE expr0 COLON suite)
          (loc `(while ,$2 ,@$4))]
+        [(FOR IDENT IN expr COLON suite)
+         (loc `(for [,$2 ,$4] ,@$6))]
+        [(FOR IDENT COMMA IDENT IN expr COLON suite)
+         (loc `(for [(,$2 ,$4) ,$6] ,@$8))]
         [(DEF IDENT LPAREN formals RPAREN COLON suite)
-         (loc `(define (,$2 ,@$4) ,@$7))]
-        )
+         (loc `(define (,$2 ,@$4) ,@$7))])
 
       (elifs
         [()
@@ -114,6 +117,10 @@
          (loc `(return ,$2))]
         [(lvalue EQUALS expr)
          (loc `(setf! ,$1 ,$3))]
+        [(ASSERT expr)
+         (loc `(assert ,$2))]
+        [(ASSERT-EQ expr COMMA expr)
+         (loc `(assert-eq ,$2 ,$4))]
         [(PASS)
          (loc `(pass))])
 
@@ -140,6 +147,10 @@
          (loc $1)]
         [(atom LPAREN actuals RPAREN)
          (loc `(,$1 ,@$3))]
+        [(LBRACK actuals RBRACK)
+         (loc `(vector ,@$2))]
+        [(LBRACK expr SEMICOLON expr RBRACK)
+         (loc `(make-vector ,$4 ,$2))]
         [(LPAREN expr RPAREN)
          (loc $2)])
 

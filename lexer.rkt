@@ -23,6 +23,9 @@
    EQUALS
    PLUS         ; two different precedences
    MINUS        ; two different precedences
+   LAMBDA
+   ASSERT
+   ASSERT-EQ
    LET
    IF
    ELIF
@@ -32,7 +35,6 @@
    IN
    RETURN
    PASS
-   LAMBDA
    DEF
    DEFSTRUCT))
 
@@ -139,6 +141,8 @@
       [#\+                      (token-PLUS)]
       [#\-                      (token-MINUS)]
       ["let"                    (token-LET)]
+      ["assert"                 (token-ASSERT)]
+      ["assert_eq"              (token-ASSERT-EQ)]
       ["if"                     (token-IF)]
       ["elif"                   (token-ELIF)]
       ["else"                   (token-ELSE)]

@@ -10,9 +10,18 @@
                     (open-input-string (string-append str "\n"))))
                   result))
 
-  ; simple statements
-  (test-parse "a\n"
+  ; expressions
+  (test-parse "a"
               '(begin a))
+  (test-parse "[0, 1, 2]"
+              '(begin (vector 0 1 2)))
+  (test-parse "[0, 1, 2,]"
+              '(begin (vector 0 1 2)))
+  (test-parse "[0; 10]"
+              '(begin (make-vector 10 0)))
+  
+  ; simple statements
+
   (test-parse "a = b\n"
               '(begin (setf! a b)))
   (test-parse "a = b; c = d.e\n"

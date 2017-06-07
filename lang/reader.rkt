@@ -6,7 +6,7 @@ dssl2/language
 (require dssl2/parser)
 
 (define (my-read in)
-      (syntax->datum (my-read-syntax #f in)))
+  (syntax->datum (my-read-syntax #f in)))
 
 (define (my-read-syntax src in)
-      (parse-dssl2 src in))
+  (parse-dssl2 src in))

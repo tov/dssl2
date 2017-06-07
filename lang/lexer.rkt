@@ -55,7 +55,11 @@
   [hexadecimal (:: (:? #\-) (:or "0x" "0X") (:+ hexdigit))]
   [octdigit    (char-range #\0 #\7)]
   [octal       (:: (:? #\-) (:or "0o" "0O") (:+ octdigit))]
-  [binary      (:: (:? #\-) (:or "0b" "0B") (:+ (:or #\0 #\1)))])
+  [binary      (:: (:? #\-) (:or "0b" "0B") (:+ (:or #\0 #\1)))]
+  [sq-str-char (:or (:- any-char (:or #\\ #\' #\newline))
+                    (:: #\\ any-char))]
+  [dq-str-char (:or (:- any-char (:or #\\ #\" #\newline))
+                    (:: #\\ any-char))])
 
 ; new-dssl2-lexer : input-port? -> [ -> Token]
 (define (new-dssl2-lexer port)
@@ -89,11 +93,8 @@
        (enq token)
        (deq)]
       [else
-        (error "Syntax error:"
-               (format "Expected ~a but got ~a at ~a"
-               (first stack)
-               closer
-               (format-pos pos)))]))
+        (syntax-error pos "Expected ~a but got ~a"
+                      (first stack) closer)]))
 
   (define the-lexer
     (lexer-src-pos
@@ -141,22 +142,16 @@
       [(:or #\* #\/ #\%)        (token-OP8 lexeme)]
       [(:or #\! #\~)            (token-OP9 lexeme)]
       ["**"                     (token-OP10 lexeme)]
-      [(:: #\"
-           (:*
-             (:or
-               (:- any-char (:or #\\ #\" #\newline))
-               (:: #\\ any-char)))
-           #\")
+      [(:: #\" (:* dq-str-char) #\")
        (token-LITERAL
          (interpret-string (remove-first-and-last lexeme)))]
-      [(:: #\'
-           (:*
-             (:or
-               (:- any-char (:or #\\ #\' #\newline))
-               (:: #\\ any-char)))
-           #\')
+      [(:: #\' (:* sq-str-char) #\')
        (token-LITERAL
          (interpret-string (remove-first-and-last lexeme)))]
+      [(:: #\" (:* dq-str-char))
+       (syntax-error end-pos "Unterminated string")]
+      [(:: #\' (:* sq-str-char))
+       (syntax-error end-pos "Unterminated string")]
       [natural                  (token-LITERAL (read-string lexeme))]
       [float                    (token-LITERAL (read-string lexeme))]
       [hexadecimal              (token-LITERAL (interpret-non-dec lexeme))]
@@ -187,13 +182,9 @@
                   (loop)]))
             (deq)]
            [else (return-without-pos (the-lexer port))]))]
-      [#\tab    (error "Syntax error:"
-                       (format "Tabs are not allowed in DSSL2 code at ~a"
-                               (format-pos start-pos)))]
-      [any-char (error "Syntax error:"
-                       (format "Unexpected character ‘~a’ at ~a"
-                               lexeme
-                               (format-pos start-pos)))]))
+      [#\tab    (syntax-error start-pos "Tabs are not allowed in DSSL2")]
+      [any-char (syntax-error start-pos
+                              "Unexpected character ‘~a’" lexeme)]))
 
   (port-count-lines! port)
 
@@ -202,12 +193,14 @@
        [(cons? queue)   (deq)]
        [else            (the-lexer port)])))
 
-; position? -> string?
-; Formats a position for user to read.
-(define (format-pos pos)
-  (format "line ~a column ~a"
-          (position-line pos)
-          (add1 (position-col pos))))
+; format-string position? any? ... -> !
+(define (syntax-error pos msg . args)
+  (error
+    (apply format
+           (string-append "Syntax error (line ~a column ~a): " msg)
+           (position-line pos)
+           (add1 (position-col pos))
+           args)))
 
 ; string? -> string?
 ; Removes the first and last characters of a string.

@@ -145,10 +145,17 @@
 (define-syntax (dssl-defstruct stx)
   (syntax-case stx ()
     [(_ name (formal-field ...))
-     #'(define-syntax-rule (name [field expr] (... ...))
-         (dssl-make-struct 'name
-                           '(formal-field ...)
-                           (list (make-field 'field expr) (... ...))))]))
+     (let ([predicate (datum->syntax #'name
+                        (string->symbol
+                          (format "~a?" (syntax->datum #'name))))])
+     #`(begin
+         (define-syntax-rule (name [field expr] (... ...))
+           (dssl-make-struct 'name
+                             '(formal-field ...)
+                             (list (make-field 'field expr) (... ...))))
+         (define (#,predicate value)
+           (and (struct? value)
+                (eq? 'name (struct-name value))))))]))
 
 (define (dssl-make-struct name formals actuals)
   (define (get-value field)

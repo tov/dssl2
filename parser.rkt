@@ -203,6 +203,8 @@
       (expr3
         [(expr3 OP3 expr4)
          (loc `(,$2 ,$1 ,$3))]
+        [(expr3 PIPE expr4)
+         (loc `(bitwise-or ,$1 ,$3))]
         [(expr4)
          $1])
 
@@ -229,6 +231,8 @@
          (loc `(+ ,$1 ,$3))]
         [(expr7 MINUS expr8)
          (loc `(- ,$1 ,$3))]
+        [(expr7 OP7 expr8)
+         (loc `(,$2 ,$1 ,$3))]
         [(expr8)
          $1])
 

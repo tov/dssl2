@@ -19,15 +19,24 @@
            [and                 &&]
            [or                  ||]
            [not                 !]
+           [void                pass]
+           [bitwise-and         &]
+           [bitwise-ior         bitwise-or]
+           [bitwise-xor         ^]
+           [bitwise-not         ~]
            [dssl-!=             !=]
            [dssl-!==            !==]
            [dssl-<              <]
            [dssl->              >]
            [dssl-<=             <=]
            [dssl->=             >=]
+           [dssl->>             >>]
+           [dssl-<<             <<]
            [dssl-print          print]
            [dssl-println        println]
            [dssl-printf         printf]
+           [dssl-assert         assert]
+           [dssl-assert-eq      assert-eq]
            [dssl-break          break]
            [dssl-continue       continue]
            [dssl-def            def]
@@ -200,9 +209,6 @@
 (make-comparison dssl-<= string<=? <=)
 (make-comparison dssl->= string>=? >=)
 
-(define (runtime-error fmt . args)
-  (error (apply format (string-append "Runtime error: " fmt) args)))
-
 (define (dssl-print . values)
   (map display values))
 
@@ -212,3 +218,26 @@
 
 (define (dssl-printf fmt . values)
   (display (apply format fmt values)))
+
+(define-syntax-rule (dssl-assert expr)
+  (unless expr
+    (assertion-error "~a did not evaluate to true" 'expr)))
+
+(define-syntax-rule (dssl-assert-eq e1 e2)
+  (begin
+    (define v1 e1)
+    (define v2 e2)
+    (unless (equal? v1 v2)
+      (assertion-error "~a != ~a" v1 v2))))
+
+(define (dssl-<< n m)
+  (arithmetic-shift n m))
+
+(define (dssl->> n m)
+  (arithmetic-shift n (- m)))
+
+(define (runtime-error fmt . args)
+  (error (apply format (string-append "Runtime error: " fmt) args)))
+
+(define (assertion-error fmt . args)
+  (error (apply format (string-append "Assertion failed: " fmt) args)))

@@ -21,6 +21,7 @@
    COLON
    SEMICOLON
    EQUALS
+   PIPE
    PLUS         ; two different precedences
    MINUS        ; two different precedences
    LAMBDA
@@ -43,7 +44,7 @@
    OP0  ; ||
    OP1  ; &&
    OP2  ; == <= >= != < > === !==
-   OP3  ; |
+   OP3  ; (|)
    OP4  ; ^
    OP5  ; &
    OP6  ; << >>
@@ -163,7 +164,7 @@
       ["&&"                     (token-OP1 (string->symbol lexeme))]
       [(:or "==" #\< #\> "<=" ">=" "!=" "===" "!==")
                                 (token-OP2 (string->symbol lexeme))]
-      [#\|                      (token-OP3 (string->symbol lexeme))]
+      [#\|                      (token-PIPE)]
       [#\^                      (token-OP4 (string->symbol lexeme))]
       [#\&                      (token-OP5 (string->symbol lexeme))]
       [(:or "<<" ">>")          (token-OP6 (string->symbol lexeme))]

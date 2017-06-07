@@ -56,7 +56,14 @@
               '(begin (cond [a (cond [b 5]
                                      [else (pass)])]
                             [else (pass)])))
-
+  (test-parse "while True:\n  a = 6\n  b = 7"
+              '(begin (while #t (setf! a 6) (setf! b 7))))
+  (test-parse (string-append "def fact(n):\n"
+                             "  if n <= 1: return 1\n"
+                             "  else: return n * fact(n - 1)")
+              '(begin (define (fact n)
+                        (cond [(<= n 1) (return 1)]
+                              [else     (return (* n (fact (- n 1))))]))))
   )
 
 

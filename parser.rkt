@@ -62,7 +62,12 @@
          (loc `(cond
                  [,$2 ,@$4]
                  ,@$5
-                 ,$6))])
+                 ,$6))]
+        [(WHILE expr0 COLON suite)
+         (loc `(while ,$2 ,@$4))]
+        [(DEF IDENT LPAREN formals RPAREN COLON suite)
+         (loc `(define (,$2 ,@$4) ,@$7))]
+        )
 
       (elifs
         [()
@@ -103,19 +108,21 @@
          (loc `(define ,$2 #f))]
         [(LET IDENT EQUALS expr)
          (loc `(define ,$2 ,$4))]
-        [(DEFSTRUCT IDENT LPAREN params RPAREN)
+        [(DEFSTRUCT IDENT LPAREN formals RPAREN)
          (loc `(define-struct ,$2 ,$4))]
+        [(RETURN expr)
+         (loc `(return ,$2))]
         [(lvalue EQUALS expr)
          (loc `(setf! ,$1 ,$3))]
         [(PASS)
          (loc `(pass))])
 
-      (params
+      (formals
         [()
          `()]
         [(IDENT)
          (loc (list $1))]
-        [(IDENT COMMA params)
+        [(IDENT COMMA formals)
          (loc (cons $1 $3))])
 
       (lvalue
@@ -131,11 +138,21 @@
          $1]
         [(LITERAL)
          (loc $1)]
+        [(atom LPAREN actuals RPAREN)
+         (loc `(,$1 ,@$3))]
         [(LPAREN expr RPAREN)
          (loc $2)])
 
+      (actuals
+        [()
+         `()]
+        [(expr)
+         (list $1)]
+        [(expr COMMA actuals)
+         (cons $1 $3)])
+
       (expr
-        [(LAMBDA params COLON expr)
+        [(LAMBDA formals COLON expr)
          (loc `(lambda ,$2 ,$4))]
         [(expr0)
          $1])

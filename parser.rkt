@@ -151,6 +151,8 @@
          (loc `(vector ,@$2))]
         [(LBRACK expr SEMICOLON expr RBRACK)
          (loc `(make-vector ,$4 ,$2))]
+        [(IDENT LBRACE fields RBRACE)
+         (loc `(,$1 ,@$3))]
         [(LPAREN expr RPAREN)
          (loc $2)])
 
@@ -161,6 +163,18 @@
          (list $1)]
         [(expr COMMA actuals)
          (cons $1 $3)])
+
+      (fields
+        [()
+         `()]
+        [(field)
+         (list $1)]
+        [(field COMMA fields)
+         (cons $1 $3)])
+
+      (field
+        [(IDENT COLON expr)
+         (loc `[,$1 ,$3])])
 
       (expr
         [(LAMBDA formals COLON expr)

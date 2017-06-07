@@ -10,15 +10,47 @@
                     (open-input-string (string-append str "\n"))))
                   result))
 
-  ; expressions
+  ; simple expressions
+  
   (test-parse "a"
               '(begin a))
+  (test-parse "5"
+              '(begin 5))
+  (test-parse "-5E-2"
+              '(begin (- 5E-2)))
+  (test-parse "v[i]"
+              '(begin (vector-ref v i)))
+  (test-parse "s.f"
+              '(begin (struct-ref s f)))
   (test-parse "[0, 1, 2]"
               '(begin (vector 0 1 2)))
   (test-parse "[0, 1, 2,]"
               '(begin (vector 0 1 2)))
   (test-parse "[0; 10]"
               '(begin (make-vector 10 0)))
+  (test-parse "posn { x: 3, y: 4 }"
+              '(begin (posn [x 3] [y 4])))
+  (test-parse "a == 4"
+              '(begin (== a 4)))
+  (test-parse "lambda x, y: x == y"
+              '(begin (lambda (x y) (== x y))))
+  (test-parse "λ x, y: x == y"
+              '(begin (lambda (x y) (== x y))))
+  (test-parse "f(3, x)"
+              '(begin (f 3 x)))
+
+  ; compound expressions
+
+  (test-parse "a + b * c + d"
+              '(begin (+ (+ a (* b c)) d)))
+  (test-parse "a ** b ** c"
+              '(begin (** a (** b c))))
+  (test-parse "a ** b ** c == 5"
+              '(begin (== (** a (** b c)) 5)))
+  (test-parse "a + -6"
+              '(begin (+ a (- 6))))
+  (test-parse "[5, lambda x: x + 1]"
+              '(begin (vector 5 (lambda (x) (+ x 1)))))
   
   ; simple statements
 
@@ -33,19 +65,8 @@
   (test-parse "defstruct posn(x, y)\n"
               '(begin (define-struct posn (x y))))
 
-  ; operator precedence
-  (test-parse "a + b * c + d"
-              '(begin (+ (+ a (* b c)) d)))
-  (test-parse "a ** b ** c"
-              '(begin (** a (** b c))))
-  (test-parse "a ** b ** c == 5"
-              '(begin (== (** a (** b c)) 5)))
-  (test-parse "a + -6"
-              '(begin (+ a (- 6))))
-  (test-parse "-5E-2"
-              '(begin (- 5E-2)))
-  
   ; compound statements
+  
   (test-parse "if a: c = d\n"
               '(begin (cond [a (setf! c d)] [else (pass)])))
   (test-parse "if a: c = d\nelse: e = f\n"

@@ -8,8 +8,8 @@
                   position-offset)
          parser-tools/yacc)
 
-(define (parse-dssl2 port)
-  ((dssl2-parser port) (new-dssl2-lexer port)))
+(define (parse-dssl2 src port)
+  ((dssl2-parser src) (new-dssl2-lexer port)))
 
 (define (parser-error tok-ok? tok-name tok-value start-pos end-pos)
   (syntax-error start-pos "Unexpected token ‘~a’"
@@ -36,14 +36,21 @@
   (parser
     (tokens dssl2-empty-tokens dssl2-tokens)
     (src-pos)
+    (suppress)
     (error parser-error)
     (start program)
     (end EOF)
     (grammar
 
       (program
-        [(statements)
-         (loc `(begin ,@$1))])
+        [(newlines statements newlines)
+         (loc `(begin ,@$2))])
+
+      (newlines
+        [()
+         #true]
+        [(NEWLINE newlines)
+         #true])
 
       (statements
         [()

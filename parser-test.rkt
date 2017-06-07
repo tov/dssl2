@@ -6,8 +6,8 @@
   (require rackunit)
   (define (test-parse str result)
     (check-equal? (syntax->datum
-                   (parse-dssl2
-                    (open-input-string (string-append str "\n"))))
+                   (parse-dssl2 #false
+                    (open-input-string str)))
                   result))
 
   ; simple expressions
@@ -38,6 +38,8 @@
               '(begin (lambda (x y) (== x y))))
   (test-parse "f(3, x)"
               '(begin (f 3 x)))
+  (test-parse "\na\n\n"
+              '(begin a))
 
   ; compound expressions
 

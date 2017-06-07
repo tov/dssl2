@@ -115,6 +115,7 @@
                                       (enq (token-DEDENT) start-pos end-pos)
                                       (pop)
                                       (loop)))
+                                  (enq (token-NEWLINE) start-pos end-pos)
                                   (enq (token-EOF) start-pos end-pos)
                                   (return-without-pos (deq)))]
       [#\(

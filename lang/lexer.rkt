@@ -46,12 +46,11 @@
 
 (define-lex-abbrevs
   [natural     (:+ numeric)]
-  [integer     (:: (:? #\-) natural)]
-  [exponent    (:: (:or #\e #\E) integer)]
-  [pointfloat  (:or (:: integer #\. (:* numeric))
-                    (:: (:? #\-) (:* numeric) #\. natural))]
+  [exponent    (:: (:or #\e #\E) (:? #\-) natural)]
+  [pointfloat  (:or (:: natural #\. (:* numeric))
+                    (:: (:* numeric) #\. natural))]
   [float       (:or (:: pointfloat (:? exponent))
-                    (:: integer exponent))]
+                    (:: natural exponent))]
   [hexdigit    (:or numeric (char-range #\a #\f) (char-range #\A #\F))]
   [hexadecimal (:: (:? #\-) (:or "0x" "0X") (:+ hexdigit))]
   [octdigit    (char-range #\0 #\7)]
@@ -94,31 +93,8 @@
                "Expected" (first stack)
                "got" closer)]))
 
-  (define (top-number)
-    (let loop [(stack stack)]
-      (if (number? (first stack))
-        (first stack)
-        (loop (rest stack)))))
-
-  (define (handle-indent indent)
-    (cond
-      [(number? (first stack))
-       (let loop []
-         (cond
-           [(> indent (first stack))
-            (push indent)
-            (enq (token-INDENT))]
-           [(= indent (first stack))
-            (enq (token-NEWLINE))]
-           [else
-             (enq (token-DEDENT))
-             (pop)
-             (loop)]))
-       (deq)]
-      [else (the-lexer port)]))
-
   (define the-lexer
-    (lexer
+    (lexer-src-pos
       [(eof)                    (token-EOF)]
       [#\(
        (begin
@@ -179,7 +155,7 @@
            #\')
        (token-LITERAL
          (interpret-string (remove-first-and-last lexeme)))]
-      [integer                  (token-LITERAL (read-string lexeme))]
+      [natural                  (token-LITERAL (read-string lexeme))]
       [float                    (token-LITERAL (read-string lexeme))]
       [hexadecimal              (token-LITERAL (interpret-non-dec lexeme))]
       [octal                    (token-LITERAL (interpret-non-dec lexeme))]
@@ -189,11 +165,29 @@
       ["-nan.0"                 (token-LITERAL -nan.0)]
       ["+nan.0"                 (token-LITERAL +nan.0)]
       [(:or #\space #\tab)
-       (the-lexer port)]
+       (return-without-pos (the-lexer port))]
       [(:: #\# (:* (:- any-char #\newline)))
-       (the-lexer port)]
+       (return-without-pos (the-lexer port))]
       [(:+ (:: #\newline (:* #\space)))
-       (handle-indent (last-spaces lexeme))]))
+       (let [(indent (last-spaces lexeme))]
+         (cond
+           [(number? (first stack))
+            (let loop []
+              (cond
+                [(> indent (first stack))
+                 (push indent)
+                 (enq (token-INDENT))]
+                [(= indent (first stack))
+                 (enq (token-NEWLINE))]
+                [else
+                  (enq (token-DEDENT))
+                  (pop)
+                  (loop)]))
+            (deq)]
+           [else (return-without-pos (the-lexer port))]))]))
+
+  (port-count-lines! port)
+
   (λ ()
      (cond
        [(cons? queue)   (deq)]
@@ -263,10 +257,3 @@
 (define (read-string str)
   (read (open-input-string str)))
 
-(define a-lexer (new-dssl2-lexer (current-input-port)))
-
-(let loop ()
-  (define token (a-lexer))
-  (unless (eq? token 'EOF)
-    (displayln token)
-    (loop)))

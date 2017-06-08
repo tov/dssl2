@@ -1,9 +1,9 @@
 #lang racket
 
-(provide dssl2-empty-tokens dssl2-tokens new-dssl2-lexer
-         syntax-error)
+(provide dssl2-empty-tokens dssl2-tokens new-dssl2-lexer)
 (require parser-tools/lex
-         (prefix-in : parser-tools/lex-sre))
+         (prefix-in : parser-tools/lex-sre)
+         syntax/readerr)
 
 (define-empty-tokens dssl2-empty-tokens
   (EOF
@@ -93,19 +93,27 @@
     (set! queue (rest queue))
     result)
 
+  (define (lexical-error pos msg . args)
+    (define offset (position-offset pos))
+    (raise-read-error (apply format msg args)
+                      port
+                      (position-line pos)
+                      (position-col pos)
+                      offset
+                      (and offset (- (file-position port) offset))))
+
   (define (closing closer token pos)
     (cond
       [(number? (first stack))
-       (pop)
-       (enq (token-DEDENT) pos pos)
-       (closing closer token)]
+       (lexical-error pos "Unexpected closing delimeter ‘~a’"
+                      closer)]
       [(eq? (first stack) closer)
        (pop)
        (enq token pos pos)
        (deq)]
       [else
-        (syntax-error pos "Expected ~a but got ~a"
-                      (first stack) closer)]))
+        (lexical-error pos "Expected ‘~a’ but got ‘~a’"
+                       (first stack) closer)]))
 
   (define the-lexer
     (lexer-src-pos
@@ -180,9 +188,9 @@
        (token-LITERAL
          (interpret-string (remove-first-and-last lexeme)))]
       [(:: #\" (:* dq-str-char))
-       (syntax-error end-pos "Unterminated string")]
+       (lexical-error start-pos "Unterminated string")]
       [(:: #\' (:* sq-str-char))
-       (syntax-error end-pos "Unterminated string")]
+       (lexical-error start-pos "Unterminated string")]
       [natural                  (token-LITERAL (read-string lexeme))]
       [float                    (token-LITERAL (read-string lexeme))]
       [hexadecimal              (token-LITERAL (interpret-non-dec lexeme))]
@@ -217,16 +225,16 @@
                     [(= indent (first stack))
                      (void)]
                     [else
-                      (syntax-error start-pos
-                                    "Inconsistent dedent")]))])
+                      (lexical-error start-pos
+                                     "Inconsistent dedent")]))])
             (return-without-pos (deq))]
            [else (return-without-pos (the-lexer port))]))]
       [(:: #\\ #\newline)
        (return-without-pos (the-lexer port))]
       [#\tab
-       (syntax-error start-pos "Tabs are not allowed in DSSL2")]
+       (lexical-error start-pos "Tabs are not allowed in DSSL2")]
       [any-char
-        (syntax-error start-pos "Unexpected character ‘~a’" lexeme)]))
+        (lexical-error start-pos "Unexpected character ‘~a’" lexeme)]))
 
   (port-count-lines! port)
 
@@ -244,16 +252,6 @@
              [else            (the-lexer port)]))
          ; (displayln (format "Token: ~a" last-token))
          last-token])))
-
-; format-string position? any? ... -> !
-; Calls error with a nice syntax error message.
-(define (syntax-error pos msg . args)
-  (error
-    (apply format
-           (string-append "Syntax error (line ~a column ~a): " msg)
-           (position-line pos)
-           (add1 (position-col pos))
-           args)))
 
 ; string? -> string?
 ; Removes the first and last characters of a string.

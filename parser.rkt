@@ -6,16 +6,23 @@
                   position-line
                   position-col
                   position-offset)
-         parser-tools/yacc)
+         parser-tools/yacc
+         syntax/readerr)
 
 (define (parse-dssl2 src port)
   ((dssl2-parser src) (new-dssl2-lexer port)))
 
-(define (parser-error tok-ok? tok-name tok-value start-pos end-pos)
-  (syntax-error start-pos "Unexpected token ‘~a’"
-                (or tok-value tok-name)))
-
 (define (dssl2-parser port)
+  (define (parser-error tok-ok? tok-name tok-value start-pos end-pos)
+    (raise-read-error (format "Syntax error: unexpected token ‘~a’"
+                              (or tok-value tok-name))
+                      port
+                      (position-line start-pos)
+                      (position-col start-pos)
+                      (position-offset start-pos)
+                      (- (position-offset end-pos)
+                         (position-offset start-pos))))
+
   (define (locate start end sexp)
     (datum->syntax #false
                    sexp

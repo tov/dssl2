@@ -9,6 +9,7 @@
          make-vector vector
          procedure? string? number? vector?
          integer? zero? positive? negative? even? odd?
+         format
          begin
          cond
          else
@@ -334,9 +335,7 @@
 (define-syntax-rule (dssl-error msg arg ...)
   (let ([fmt  msg]
         [args (list arg ...)])
-    (cond
-      [(string? fmt) (error (apply format fmt args))]
-      [else          (apply error fmt args)])))
+    (error (apply format fmt args))))
 
 (define (runtime-error fmt . args)
   (error (apply format (string-append "Runtime error: " fmt) args)))

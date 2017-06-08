@@ -2,7 +2,6 @@
 
 (provide #%app
          #%datum
-         #%module-begin
          #%top
          #%top-interaction)
 (provide + - * /
@@ -15,6 +14,8 @@
          else
          or
          (rename-out
+           ; special
+           [dssl-module-begin   #%module-begin]
            ; values
            [modulo              %]
            [expt                **]
@@ -64,6 +65,22 @@
 (require racket/stxparam
          syntax/parse/define)
 (require (for-syntax syntax/parse))
+
+(define-syntax-rule (dssl-module-begin expr ...)
+  (#%module-begin
+   (module* configure-runtime racket/base
+     (require dssl2/parser)
+     (current-read-interaction
+       (λ (src in)
+          (let loop ([line (read-line in)])
+            (cond
+              [(eof-object? line)
+               line]
+              [(regexp-match #rx"^ *$" line)
+               (loop (read-line in))]
+              [else
+                (parse-dssl2 src (open-input-string line) #t)])))))
+   expr ...))
 
 ; We define return (for lambda) as a syntax parameter, and then
 ; syntax-parameterize it inside dssl-lambda.

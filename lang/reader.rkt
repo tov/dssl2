@@ -9,4 +9,4 @@ dssl2/language
   (syntax->datum (my-read-syntax #f in)))
 
 (define (my-read-syntax src in)
-  (parse-dssl2 src in))
+  (parse-dssl2 src in #f))

@@ -6,8 +6,7 @@
   (require rackunit)
   (define (test-parse str result)
     (check-equal? (syntax->datum
-                   (parse-dssl2 #false
-                    (open-input-string str)))
+                   (parse-dssl2 #false (open-input-string str) #false))
                   result))
 
   ; simple expressions
@@ -38,7 +37,7 @@
               '(begin (lambda (x y) (== x y))))
   (test-parse "f(3, x)"
               '(begin (f 3 x)))
-  (test-parse "\na\n\n"
+  (test-parse "\na"
               '(begin a))
 
   ; compound expressions
@@ -58,15 +57,15 @@
   
   ; simple statements
 
-  (test-parse "a = b\n"
+  (test-parse "a = b"
               '(begin (setf! a b)))
-  (test-parse "a = b; c = d.e\n"
+  (test-parse "a = b; c = d.e"
               '(begin (setf! a b) (setf! c (struct-ref d e))))
-  (test-parse "a = b\nc = d\n"
-              '(begin (setf! a b) (setf! c d)))
-  (test-parse "let x\n"
+;  (test-parse "a = b\nc = d\n"
+;              '(begin (setf! a b) (setf! c d)))
+  (test-parse "let x"
               '(begin (let x)))
-  (test-parse "defstruct posn(x, y)\n"
+  (test-parse "defstruct posn(x, y)"
               '(begin (defstruct posn (x y))))
   (test-parse "a.b.c = e[f]"
               '(begin (setf! (struct-ref (struct-ref a b) c)
@@ -78,22 +77,22 @@
 
   ; compound statements
   
-  (test-parse "if a: c = d\n"
+  (test-parse "if a: c = d"
               '(begin (cond [a (setf! c d)] [else (pass)])))
-  (test-parse "if a: c = d\nelse: e = f\n"
+  (test-parse "if a: c = d\nelse: e = f"
               '(begin (cond [a (setf! c d)] [else (setf! e f)])))
-  (test-parse "if a: c = d\nelif b: e = 3\nelse: f = 4\n"
+  (test-parse "if a: c = d\nelif b: e = 3\nelse: f = 4"
               '(begin (cond [a (setf! c d)]
                             [b (setf! e 3)]
                             [else (setf! f 4)])))
-  (test-parse "if a:\n  c = d\n"
+  (test-parse "if a:\n  c = d"
               '(begin (cond [a (setf! c d)]
                             [else (pass)])))
-  (test-parse "if a:\n  c = d\n  e[0] = 9\n"
+  (test-parse "if a:\n  c = d\n  e[0] = 9"
               '(begin (cond [a (setf! c d)
                                (setf! (vector-ref e 0) 9)]
                             [else (pass)])))
-  (test-parse "if a:\n  if b:\n    5\n"
+  (test-parse "if a:\n  if b:\n    5"
               '(begin (cond [a (cond [b 5]
                                      [else (pass)])]
                             [else (pass)])))

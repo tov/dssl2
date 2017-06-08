@@ -9,8 +9,9 @@
          parser-tools/yacc
          syntax/readerr)
 
-(define (parse-dssl2 src port)
-  ((dssl2-parser src) (new-dssl2-lexer src port)))
+(define (parse-dssl2 src port interactive?)
+  ((dssl2-parser src)
+   (new-dssl2-lexer src port interactive?)))
 
 (define (dssl2-parser src)
   (define (parser-error tok-ok? tok-name tok-value start-pos end-pos)
@@ -57,8 +58,8 @@
          (loc `(begin ,@$2))])
 
       (statements
-        [()
-         '()]
+        [(statement newlines)
+         $1]
         [(statement newlines statements)
          (append $1 $3)])
 

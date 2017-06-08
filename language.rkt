@@ -55,7 +55,8 @@
            [dssl-struct-ref     struct-ref]
            [dssl-vector-ref     vector-ref]
            [dssl-while          while]))
-(require racket/stxparam)
+(require racket/stxparam
+         syntax/parse/define)
 (require (for-syntax syntax/parse))
 
 ; We define return (for lambda) as a syntax parameter, and then
@@ -163,16 +164,14 @@
                         (string->symbol
                           (format "~a?" (syntax->datum #'name))))])
      #`(begin
-         (define-syntax (name stx)
-           (syntax-parse stx
-             [(_ [field:id expr:expr] (... ...))
-              #:fail-when (check-duplicate-identifier
-                            (syntax->list #'(field (... ...))))
-                          "duplicate field name"
-              #'(dssl-make-struct 'name
-                                  '(formal-field ...)
-                                  (list (make-field 'field expr)
-                                        (... ...)))]))
+         (define-simple-macro (name [field:id expr:expr] (... ...))
+           #:fail-when (check-duplicate-identifier
+                         (syntax->list #'(field (... ...))))
+                       "duplicate field name"
+           (dssl-make-struct 'name
+                             '(formal-field ...)
+                             (list (make-field 'field expr)
+                                   (... ...))))
          (define (#,predicate value)
            (and (struct? value)
                 (eq? 'name (struct-name value))))))]))

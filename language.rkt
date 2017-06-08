@@ -32,9 +32,10 @@
            [dssl->=             >=]
            [dssl->>             >>]
            [dssl-<<             <<]
+           [dssl-explode        explode]
+           [dssl-implode        implode]
            [dssl-print          print]
            [dssl-println        println]
-           [dssl-printf         printf]
            [dssl-assert         assert]
            [dssl-assert-eq      assert-eq]
            [dssl-break          break]
@@ -112,9 +113,7 @@
   (cond
     [(vector? v)   (in-vector v)]
     [(natural? v)  (in-range v)]
-    [(string? v)   (in-list
-                     (map (λ (c) (list->string (list c)))
-                          (string->list v)))]
+    [(string? v)   (in-list (dssl-explode v))]
     [else          (runtime-error "Value ‘~a’ is not iterable" v)]))
 
 ; setf! is like Common Lisp setf, but it just recognizes three forms. We
@@ -227,21 +226,27 @@
 (make-comparison dssl-<= string<=? <=)
 (make-comparison dssl->= string>=? >=)
 
-(define (dssl-print . values)
-  (map display values))
+(define (dssl-print fmt . values)
+  (cond
+    [(string? fmt) (display (apply format fmt values))]
+    [else          (for-each display (cons fmt values))]))
 
-(define (dssl-println . values)
-  (map display values)
+(define (dssl-println fmt . values)
+  (apply dssl-print fmt values)
   (newline))
-
-(define (dssl-printf fmt . values)
-  (display (apply format fmt values)))
 
 (define (dssl-<< n m)
   (arithmetic-shift n m))
 
 (define (dssl->> n m)
   (arithmetic-shift n (- m)))
+
+(define (dssl-explode s)
+  (map (λ (c) (list->string (list c)))
+       (string->list s)))
+
+(define (dssl-implode lst)
+  (apply string-append lst))
 
 (define (runtime-error fmt . args)
   (error (apply format (string-append "Runtime error: " fmt) args)))

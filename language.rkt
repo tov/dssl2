@@ -7,7 +7,7 @@
          #%top-interaction)
 (provide + - * /
          make-vector vector
-         procedure? string? number?
+         procedure? string? number? vector?
          integer? zero? positive? negative? even? odd?
          begin
          cond
@@ -27,6 +27,7 @@
            [bitwise-not         ~]
            [identity            identity]
            [build-vector        build_vector]
+           [vector-length       len]
            [dssl-!=             !=]
            [dssl-!==            !==]
            [dssl-<              <]
@@ -39,6 +40,8 @@
            [dssl-implode        implode]
            [dssl-print          print]
            [dssl-println        println]
+           [dssl-map            map]
+           [dssl-filter         filter]
            ; syntax
            [and                 &&]
            [dssl-assert         assert]
@@ -48,6 +51,7 @@
            [dssl-def            def]
            [dssl-defstruct      defstruct]
            [dssl-for            for]
+           [dssl-for/vector     for/vector]
            [dssl-lambda         lambda]
            [dssl-let            let]
            [dssl-return         return]
@@ -126,6 +130,26 @@
                expr ...))))]
     [(_ [i:id v:expr] expr:expr ...+)
      #'(dssl-for [(_ i) v] expr ...)]))
+
+(define-syntax (dssl-for/vector stx)
+  (syntax-parse stx
+    [(_ [(i:id j:id) v:expr] expr:expr)
+     #:fail-when (and (bound-identifier=? #'i #'j) #'j)
+                 "duplicate variable name"
+     #'(for/vector ([i (in-naturals)]
+                    [j (dssl-in-value v)])
+         expr)]
+    [(_ [j:id v:expr] expr:expr)
+     #'(dssl-for/vector [(_ j) v] expr)]
+    [(_ [(i:id j:id) v:expr] #:when when expr:expr)
+     #:fail-when (and (bound-identifier=? #'i #'j) #'j)
+                 "duplicate variable name"
+     #'(for/vector ([i (in-naturals)]
+                    [j (dssl-in-value v)]
+                    #:when when)
+         expr)]
+    [(_ [j:id v:expr] #:when when:expr expr:expr)
+     #'(dssl-for/vector [(_ j) v] #:when when expr)]))
 
 (define (dssl-in-value v)
   (cond
@@ -275,6 +299,13 @@
 
 (define (dssl-implode vec)
   (apply string-append (vector->list vec)))
+
+(define (dssl-map f vec)
+  (build-vector (vector-length vec)
+                (λ (i) (f (vector-ref vec i)))))
+
+(define (dssl-filter f vec)
+  (list->vector (filter f (vector->list vec))))
 
 (define (runtime-error fmt . args)
   (error (apply format (string-append "Runtime error: " fmt) args)))

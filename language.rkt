@@ -6,24 +6,27 @@
          #%top
          #%top-interaction)
 (provide + - * /
-         make-vector
-         vector
+         make-vector vector
+         procedure? string? number?
+         integer? zero? positive? negative? even? odd?
          begin
          cond
          else
          or
          (rename-out
+           ; values
            [modulo              %]
            [expt                **]
            [equal?              ==]
            [eq?                 ===]
-           [and                 &&]
            [not                 !]
            [void                pass]
            [bitwise-and         &]
            [bitwise-ior         bitwise-or]
            [bitwise-xor         ^]
            [bitwise-not         ~]
+           [identity            identity]
+           [build-vector        build_vector]
            [dssl-!=             !=]
            [dssl-!==            !==]
            [dssl-<              <]
@@ -36,6 +39,8 @@
            [dssl-implode        implode]
            [dssl-print          print]
            [dssl-println        println]
+           ; syntax
+           [and                 &&]
            [dssl-assert         assert]
            [dssl-assert-eq      assert-eq]
            [dssl-break          break]
@@ -219,7 +224,9 @@
          [(and (number? a) (number? b))
           (number-cmp a b)]
          [else
-           (error "Comparators only apply to pairs of strings or numbers")]))]))
+           (runtime-error
+             "Comparator ‘~a’ only applies to 2 strings or 2 numbers"
+             'number-cmp)]))]))
 
 (make-comparison dssl-< string<? <)
 (make-comparison dssl-> string>? >)

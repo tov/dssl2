@@ -261,11 +261,11 @@
          $1])
 
       (expr9
-        [(OP9 expr10)
+        [(OP9 expr9)
          (loc `(,$1 ,$2))]
-        [(PLUS expr10)
+        [(PLUS expr9)
          (loc `(+ ,$2))]
-        [(MINUS expr10)
+        [(MINUS expr9)
          (loc `(- ,$2))]
         [(expr10)
          $1])

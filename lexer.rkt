@@ -252,7 +252,7 @@
            (cond
              [(cons? queue)   (deq)]
              [else            (the-lexer port)]))
-         (displayln (format "Token: ~a" last-token))
+         ; (displayln (format "Token: ~a" last-token))
          last-token])))
 
 ; string? -> string?

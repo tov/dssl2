@@ -131,7 +131,7 @@
   (cond
     [(vector? v)   (in-vector v)]
     [(natural? v)  (in-range v)]
-    [(string? v)   (in-list (dssl-explode v))]
+    [(string? v)   (in-vector (dssl-explode v))]
     [else          (runtime-error "Value ‘~a’ is not iterable" v)]))
 
 ; setf! is like Common Lisp setf, but it just recognizes three forms. We
@@ -269,11 +269,12 @@
   (arithmetic-shift n (- m)))
 
 (define (dssl-explode s)
-  (map (λ (c) (list->string (list c)))
-       (string->list s)))
+  (list->vector
+    (map (λ (c) (list->string (list c)))
+         (string->list s))))
 
-(define (dssl-implode lst)
-  (apply string-append lst))
+(define (dssl-implode vec)
+  (apply string-append (vector->list vec)))
 
 (define (runtime-error fmt . args)
   (error (apply format (string-append "Runtime error: " fmt) args)))

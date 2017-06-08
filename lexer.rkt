@@ -73,8 +73,8 @@
   [dq-str-char (:or (:- any-char (:or #\\ #\" #\newline))
                     (:: #\\ any-char))])
 
-; new-dssl2-lexer : input-port? -> [ -> Token]
-(define (new-dssl2-lexer port)
+; new-dssl2-lexer : string? input-port? -> [ -> Token]
+(define (new-dssl2-lexer src port)
   (define stack '(0))
   (define queue '())
 
@@ -97,11 +97,11 @@
   (define (lexical-error pos msg . args)
     (define offset (position-offset pos))
     (raise-read-error (apply format msg args)
-                      port
+                      src
                       (position-line pos)
                       (position-col pos)
                       offset
-                      (and offset (- (file-position port) offset))))
+                      (and offset (max 1 (- (file-position port) offset)))))
 
   (define (closing closer token pos)
     (cond

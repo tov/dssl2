@@ -10,23 +10,24 @@
          syntax/readerr)
 
 (define (parse-dssl2 src port)
-  ((dssl2-parser src) (new-dssl2-lexer port)))
+  ((dssl2-parser src) (new-dssl2-lexer src port)))
 
-(define (dssl2-parser port)
+(define (dssl2-parser src)
   (define (parser-error tok-ok? tok-name tok-value start-pos end-pos)
     (raise-read-error (format "Syntax error: unexpected token ‘~a’"
                               (or tok-value tok-name))
-                      port
+                      src
                       (position-line start-pos)
                       (position-col start-pos)
                       (position-offset start-pos)
-                      (- (position-offset end-pos)
-                         (position-offset start-pos))))
+                      (max 1
+                           (- (position-offset end-pos)
+                              (position-offset start-pos)))))
 
   (define (locate start end sexp)
     (datum->syntax #false
                    sexp
-                   (list port
+                   (list src
                          (position-line start)
                          (position-col start)
                          (position-offset start)

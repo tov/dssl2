@@ -115,7 +115,7 @@
     [(string? v)   (in-list
                      (map (λ (c) (list->string (list c)))
                           (string->list v)))]
-    [else          (runtime-error "Value ~a is not iterable" v)]))
+    [else          (runtime-error "Value ‘~a’ is not iterable" v)]))
 
 ; setf! is like Common Lisp setf, but it just recognizes three forms. We
 ; use this to translate assignments.
@@ -161,12 +161,12 @@
   (define (get-value field)
     (or (struct-assq field actuals)
         (runtime-error
-          "Error: constructor for ~a expects field ~a"
+          "Constructor for ‘~a’ expects field ‘~a’"
           name field)))
   (for-each (λ (actual)
               (unless (memq (field-name actual) formals)
                 (runtime-error
-                  "Error: constructor for ~a does not expect field ~a"
+                  "Constructor for ‘~a’ does not expect field ‘~a’"
                   name (field-name actual))))
             actuals)
   (make-struct name (map get-value formals)))
@@ -174,24 +174,35 @@
 (define-syntax-rule (dssl-struct-ref value field)
   (begin
     (when (not (struct? value))
-      (runtime-error "Error: value ~a is not a struct" value))
+      (runtime-error "Value ‘~a’ is not a struct" value))
     (cond
       [(struct-assq 'field (struct-fields value)) => field-value]
       [else
-        (runtime-error "Error: struct ~a does not have field ~a"
+        (runtime-error "Struct ‘~a’ does not have field ‘~a’"
                        value 'field)])))
 
 (define-syntax-rule (dssl-struct-set! value field rhs)
   (begin
     (when (not (struct? value))
-      (runtime-error "Error: value ~a is not a struct" value))
+      (runtime-error "Value ‘~a’ is not a struct" value))
     (cond
       [(struct-assq 'field (struct-fields value))
        =>
        (λ (field) (set-field-value! field rhs))]
       [else
-        (runtime-error "Error: struct ~a does not have field ~a"
+        (runtime-error "Struct ‘~a’ does not have field ‘~a’"
                        value 'field)])))
+
+(define-syntax-rule (dssl-assert expr)
+  (unless expr
+    (assertion-error "‘~a’ did not evaluate to true" 'expr)))
+
+(define-syntax-rule (dssl-assert-eq e1 e2)
+  (begin
+    (define v1 e1)
+    (define v2 e2)
+    (unless (equal? v1 v2)
+      (assertion-error "‘~a’ != ‘~a’" v1 v2))))
 
 (define (dssl-!= a b)
   (not (equal? a b)))
@@ -225,17 +236,6 @@
 
 (define (dssl-printf fmt . values)
   (display (apply format fmt values)))
-
-(define-syntax-rule (dssl-assert expr)
-  (unless expr
-    (assertion-error "~a did not evaluate to true" 'expr)))
-
-(define-syntax-rule (dssl-assert-eq e1 e2)
-  (begin
-    (define v1 e1)
-    (define v2 e2)
-    (unless (equal? v1 v2)
-      (assertion-error "~a != ~a" v1 v2))))
 
 (define (dssl-<< n m)
   (arithmetic-shift n m))

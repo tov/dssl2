@@ -1,0 +1,17 @@
+making identifier macros:
+    https://docs.racket-lang.org/reference/stxtrans.html?q=set!-transformer#%28def._%28%28quote._~23~25kernel%29._make-set%21-transformer%29%29
+
+pop-pl for interactions:
+    https://github.com/florence/pop-pl/blob/master/main.rkt#L285
+
+indentation docs:
+    http://docs.racket-lang.org/tools/lang-languages-customization.html?q=indent#%28idx._%28gentag._9._%28lib._scribblings%2Ftools%2Ftools..scrbl%29%29%29
+
+example:
+    https://github.com/racket/racket/blob/a5118f752586ab8cd90fd00d5ff61f6dfd1c83f4/pkgs/at-exp-lib/scribble/base/reader.rkt#L33
+
+CHIP-8 assembly:
+    https://en.wikipedia.org/wiki/CHIP-8
+
+Little man assembly:
+    https://en.wikipedia.org/wiki/Little_man_computer

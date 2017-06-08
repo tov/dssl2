@@ -52,20 +52,20 @@
       (program
         [(newlines)
          eof]
-        [(newlines statements newlines)
+        [(newlines statements)
          (loc `(begin ,@$2))])
+
+      (statements
+        [()
+         '()]
+        [(statement newlines statements)
+         (append $1 $3)])
 
       (newlines
         [()
          #true]
         [(NEWLINE newlines)
          #true])
-
-      (statements
-        [(statement)
-         $1]
-        [(statement statements)
-         (append $1 $2)])
 
       (statement
         [(simple-statement)

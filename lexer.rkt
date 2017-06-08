@@ -243,8 +243,7 @@
 
   (λ ()
      (cond
-       [(and (position-token? last-token)
-             (eq? (position-token-token last-token) 'EOF))
+       [(and last-token (eq? (position-token-token last-token) 'EOF))
         last-token]
        [else
          (set! last-token

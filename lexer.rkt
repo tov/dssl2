@@ -169,8 +169,6 @@
       ["False"                  (token-LITERAL #f)]
       ["def"                    (token-DEF)]
       ["defstruct"              (token-DEFSTRUCT)]
-      [(:: alphabetic (:* (:or alphabetic numeric #\_)) (:? (:or #\! #\?)))
-                                (token-IDENT (string->symbol lexeme))]
       ["||"                     (token-PIPEPIPE)]
       ["&&"                     (token-OP1 (string->symbol lexeme))]
       [(:or "==" #\< #\> "<=" ">=" "!=" "===" "!==")
@@ -201,6 +199,8 @@
       ["+inf.0"                 (token-LITERAL +inf.0)]
       ["-nan.0"                 (token-LITERAL -nan.0)]
       ["+nan.0"                 (token-LITERAL +nan.0)]
+      [(:: alphabetic (:* (:or alphabetic numeric #\_)) (:? (:or #\! #\?)))
+                                (token-IDENT (string->symbol lexeme))]
       [(:or #\space)
        (return-without-pos (the-lexer port))]
       [(:: #\# (:* (:- any-char #\newline)))

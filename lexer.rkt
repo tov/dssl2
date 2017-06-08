@@ -67,6 +67,7 @@
   [octdigit    (char-range #\0 #\7)]
   [octal       (:: (:? #\-) (:or "0o" "0O") (:+ octdigit))]
   [binary      (:: (:? #\-) (:or "0b" "0B") (:+ (:or #\0 #\1)))]
+  [comment     (:: #\# (:* (:- any-char #\newline)))]
   [sq-str-char (:or (:- any-char (:or #\\ #\' #\newline))
                     (:: #\\ any-char))]
   [dq-str-char (:or (:- any-char (:or #\\ #\" #\newline))
@@ -201,11 +202,12 @@
       ["+nan.0"                 (token-LITERAL +nan.0)]
       [(:: alphabetic (:* (:or alphabetic numeric #\_)) (:? (:or #\! #\?)))
                                 (token-IDENT (string->symbol lexeme))]
-      [(:or #\space)
+      [#\space
        (return-without-pos (the-lexer port))]
-      [(:: #\# (:* (:- any-char #\newline)))
+      [comment
        (return-without-pos (the-lexer port))]
-      [(:+ (:: #\newline (:* #\space)))
+      [(:: (:* (:: #\newline (:* #\space) (:? comment)))
+           #\newline (:* #\space))
        (let [(indent (last-spaces lexeme))]
          (cond
            [(number? (first stack))
@@ -250,7 +252,7 @@
            (cond
              [(cons? queue)   (deq)]
              [else            (the-lexer port)]))
-         ; (displayln (format "Token: ~a" last-token))
+         (displayln (format "Token: ~a" last-token))
          last-token])))
 
 ; string? -> string?

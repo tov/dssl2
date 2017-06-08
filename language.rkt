@@ -194,19 +194,42 @@
                         (string->symbol
                           (format "~a?" (syntax->datum #'name))))])
      #`(begin
-         (define-simple-macro (name [field:id expr:expr] (... ...))
-           #:fail-when (check-duplicate-identifier
-                         (syntax->list #'(field (... ...))))
-                       "duplicate field name"
-           (dssl-make-struct 'name
-                             '(formal-field ...)
-                             (list (make-field 'field expr)
-                                   (... ...))))
+         (define-syntax (name stx)
+           (syntax-parse stx
+             [(_ [field:id expr:expr] (... ...+))
+              #:fail-when (check-duplicate-identifier
+                            (syntax->list #'(field (... ...))))
+                          "duplicate field name"
+              #'(dssl-make-struct/fields
+                  'name
+                  '(formal-field ...)
+                  (list (make-field 'field expr) (... ...)))]
+             [(_:id expr:expr (... ...))
+              #'(dssl-make-struct
+                  'name
+                  '(formal-field ...)
+                  (list expr (... ...)))]
+             [_:id
+               #'(let ()
+                   ; Using define here picks up the name
+                   (define (name formal-field ...)
+                     (dssl-make-struct
+                       'name
+                       '(formal-field ...)
+                       (list formal-field ...)))
+                   name)]))
          (define (#,predicate value)
            (and (struct? value)
                 (eq? 'name (struct-name value))))))]))
 
 (define (dssl-make-struct name formals actuals)
+  (unless (= (length formals) (length actuals))
+    (runtime-error
+      "Constructor ‘~a’ expects ~a arguments, got ~a"
+      name (length formals) (length actuals)))
+  (make-struct name (map make-field formals actuals)))
+
+(define (dssl-make-struct/fields name formals actuals)
   (define (get-value field)
     (or (struct-assq field actuals)
         (runtime-error

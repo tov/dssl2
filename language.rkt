@@ -74,8 +74,11 @@
                          [(_ ?result) (return-f ?result)])])
          (begin expr ...)))))
 
-(define-syntax-rule (dssl-def (f formals ...) expr ...)
-  (define f (dssl-lambda (formals ...) expr ...)))
+(define-simple-macro (dssl-def (f:id formal:id ...) expr:expr ...)
+   #:fail-when (check-duplicate-identifier
+                 (syntax->list #'(formal ...)))
+               "duplicate argument name"
+  (define f (dssl-lambda (formal ...) expr ...)))
 
 (define-syntax dssl-let
   (syntax-rules ()
@@ -108,19 +111,21 @@
           expr ...
           (loop))))))
 
-(define-syntax dssl-for
-  (syntax-rules ()
-    [(_ [(i j) v] expr ...)
-     (let/ec break-f
-       (for ([i (in-naturals)]
-             [j (dssl-in-value v)])
-         (let/ec continue-f
-           (syntax-parameterize
-             ([dssl-break (syntax-rules () [(_) (break-f)])]
-              [dssl-continue (syntax-rules () [(_) (continue-f)])])
-             expr ...))))]
-    [(_ [i v] expr ...)
-     (dssl-for [(_ i) v] expr ...)]))
+(define-syntax (dssl-for stx)
+  (syntax-parse stx
+    [(_ [(i:id j:id) v:expr] expr:expr ...+)
+     #:fail-when (and (bound-identifier=? #'i #'j) #'j)
+                 "duplicate variable name"
+     #'(let/ec break-f
+         (for ([i (in-naturals)]
+               [j (dssl-in-value v)])
+           (let/ec continue-f
+             (syntax-parameterize
+               ([dssl-break    (syntax-rules () [(_) (break-f)])]
+                [dssl-continue (syntax-rules () [(_) (continue-f)])])
+               expr ...))))]
+    [(_ [i:id v:expr] expr:expr ...+)
+     #'(dssl-for [(_ i) v] expr ...)]))
 
 (define (dssl-in-value v)
   (cond

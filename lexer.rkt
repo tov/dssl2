@@ -118,9 +118,10 @@
   (define the-lexer
     (lexer-src-pos
       [(eof)                    (begin
+                                  (when (not (eqv? 0 (first stack)))
+                                    (enq (token-NEWLINE) start-pos end-pos))
                                   (let loop []
                                     (when (not (eqv? 0 (first stack)))
-                                      (enq (token-NEWLINE) start-pos end-pos)
                                       (enq (token-DEDENT) start-pos end-pos)
                                       (pop)
                                       (loop)))

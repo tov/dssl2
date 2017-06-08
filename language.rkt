@@ -50,6 +50,7 @@
            [dssl-continue       continue]
            [dssl-def            def]
            [dssl-defstruct      defstruct]
+           [dssl-error          error]
            [dssl-for            for]
            [dssl-for/vector     for/vector]
            [dssl-lambda         lambda]
@@ -306,6 +307,13 @@
 
 (define (dssl-filter f vec)
   (list->vector (filter f (vector->list vec))))
+
+(define-syntax-rule (dssl-error msg arg ...)
+  (let ([fmt  msg]
+        [args (list arg ...)])
+    (cond
+      [(string? fmt) (error (apply format fmt args))]
+      [else          (apply error fmt args)])))
 
 (define (runtime-error fmt . args)
   (error (apply format (string-append "Runtime error: " fmt) args)))

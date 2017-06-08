@@ -75,8 +75,14 @@
 (define-syntax-rule (dssl-def (f formals ...) expr ...)
   (define f (dssl-lambda (formals ...) expr ...)))
 
-(define-syntax-rule (dssl-let name expr)
-  (define name expr))
+(define-syntax dssl-let
+  (syntax-rules ()
+    [(_ name)
+     (define name (void))]
+    [(_ name expr)
+     (begin
+       (define name (void))
+       (set! name expr))]))
 
 ; while uses two syntax parameters, break and continue (shared by for)
 (define-syntax-parameter

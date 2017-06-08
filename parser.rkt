@@ -124,7 +124,7 @@
         [(expr)
          $1]
         [(LET IDENT)
-         (loc `(let ,$2 #f))]
+         (loc `(let ,$2))]
         [(LET IDENT EQUALS expr)
          (loc `(let ,$2 ,$4))]
         [(DEFSTRUCT IDENT LPAREN formals RPAREN)

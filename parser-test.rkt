@@ -65,7 +65,7 @@
   (test-parse "a = b\nc = d\n"
               '(begin (setf! a b) (setf! c d)))
   (test-parse "let x\n"
-              '(begin (let x #f)))
+              '(begin (let x)))
   (test-parse "defstruct posn(x, y)\n"
               '(begin (defstruct posn (x y))))
   (test-parse "a.b.c = e[f]"

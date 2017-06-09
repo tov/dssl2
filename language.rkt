@@ -4,7 +4,7 @@
          #%datum
          #%top
          #%top-interaction)
-(provide + - * /
+(provide - * /
          make-vector vector
          procedure? string? number? vector?
          integer? zero? positive? negative? even? odd?
@@ -31,6 +31,7 @@
            [identity            identity]
            [build-vector        build_vector]
            [vector-length       len]
+           [dssl-+              +]
            [dssl-!=             !=]
            [dssl-!==            !==]
            [dssl-<              <]
@@ -294,6 +295,17 @@
     (define v2 e2)
     (unless (equal? v1 v2)
       (assertion-error "‘~a’ != ‘~a’" v1 v2))))
+
+(define (dssl-+ a b)
+  (cond
+    [(and (number? a) (number? b))
+     (+ a b)]
+    [(or (string? a) (string? b))
+     (format "~a~a" a b)]
+    [else
+      (runtime-error
+        "+ expects 2 numbers or at least 1 string, but given ‘~a’ and ‘~a’"
+        a b)]))
 
 (define (dssl-!= a b)
   (not (equal? a b)))

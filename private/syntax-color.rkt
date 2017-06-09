@@ -28,7 +28,7 @@
           "while" "for" "in" "return" "pass" "def" "defstruct")
                                 (token keyword)]
     [comment                    (token comment)]
-    [(:or float hexadecimal octal binary natural fp-special)
+    [(:or float hexadecimal octal binary natural "inf" "nan")
                                 (token constant)]
     [(:: #\' (:* sq-str-char) #\')      (token string)]
     [(:: #\' (:* sq-str-char))          (token error)]

@@ -1,7 +1,7 @@
 #lang racket
 
 (provide dssl2-empty-tokens dssl2-tokens new-dssl2-lexer
-         natural float hexadecimal octal binary fp-special
+         natural float hexadecimal octal binary
          comment sq-str-char dq-str-char identifier)
 (require parser-tools/lex
          (prefix-in : parser-tools/lex-sre)
@@ -76,8 +76,7 @@
                     (:: #\\ any-char))]
   [identifier  (:: alphabetic
                    (:* (:or alphabetic numeric #\_))
-                   (:? (:or #\! #\?)))]
-  [fp-special (:or "+nan.0" "-nan.0" "+inf.0" "-inf.0")])
+                   (:? (:or #\! #\?)))])
 
 ; new-dssl2-lexer : string? input-port? boolean? -> [ -> Token]
 (define (new-dssl2-lexer src port interactive?)
@@ -229,10 +228,8 @@
       [hexadecimal              (token-LITERAL (interpret-non-dec lexeme))]
       [octal                    (token-LITERAL (interpret-non-dec lexeme))]
       [binary                   (token-LITERAL (interpret-non-dec lexeme))]
-      ["-inf.0"                 (token-LITERAL -inf.0)]
-      ["+inf.0"                 (token-LITERAL +inf.0)]
-      ["-nan.0"                 (token-LITERAL -nan.0)]
-      ["+nan.0"                 (token-LITERAL +nan.0)]
+      ["inf"                    (token-LITERAL +inf.0)]
+      ["nan"                    (token-LITERAL +nan.0)]
       [identifier               (token-IDENT (string->symbol lexeme))]
       [#\space
        (return-without-pos (the-lexer port))]

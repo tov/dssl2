@@ -11,6 +11,7 @@
          format
          begin
          cond
+         if
          else
          or
          (rename-out

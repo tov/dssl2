@@ -169,13 +169,13 @@
          (loc `(vector ,@$2))]
         [(LBRACK expr SEMICOLON expr RBRACK)
          (loc `(make-vector ,$4 ,$2))]
-        [(LBRACK expr FOR IDENT IN expr RBRACK)
+        [(LBRACK expr FOR IDENT IN expr0 RBRACK)
          (loc `(for/vector [,$4 ,$6] ,$2))]
-        [(LBRACK expr FOR IDENT COMMA IDENT IN expr RBRACK)
+        [(LBRACK expr FOR IDENT COMMA IDENT IN expr0 RBRACK)
          (loc `(for/vector [(,$4 ,$6) ,$8] ,$2))]
-        [(LBRACK expr FOR IDENT IN expr IF expr RBRACK)
+        [(LBRACK expr FOR IDENT IN expr0 IF expr RBRACK)
          (loc `(for/vector [,$4 ,$6] #:when ,$8 ,$2))]
-        [(LBRACK expr FOR IDENT COMMA IDENT IN expr IF expr RBRACK)
+        [(LBRACK expr FOR IDENT COMMA IDENT IN expr0 IF expr RBRACK)
          (loc `(for/vector [(,$4 ,$6) ,$8] #:when ,$10 ,$2))]
         [(IDENT LBRACE fields RBRACE)
          (loc `(,$1 ,@$3))]
@@ -205,6 +205,8 @@
       (expr
         [(LAMBDA formals COLON expr)
          (loc `(lambda ,$2 ,$4))]
+        [(expr0 IF expr0 ELSE expr)
+         (loc `(if ,$3 ,$1 ,$5))]
         [(expr0)
          $1])
 

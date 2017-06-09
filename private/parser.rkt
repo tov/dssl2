@@ -214,7 +214,7 @@
         [(expr0 OP0 atom)
          (loc `(,$2 ,$1 ,$3))]
         [(expr0 PIPEPIPE atom)
-         (loc `(or ,$1 ,$3))]
+         (loc `(\|\| ,$1 ,$3))]
         [(expr1)
          $1])
 
@@ -234,7 +234,7 @@
         [(expr3 OP3 expr4)
          (loc `(,$2 ,$1 ,$3))]
         [(expr3 PIPE expr4)
-         (loc `(bitwise-or ,$1 ,$3))]
+         (loc `(\| ,$1 ,$3))]
         [(expr4)
          $1])
 

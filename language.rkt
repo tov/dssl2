@@ -13,8 +13,13 @@
          cond
          if
          else
-         or
          (rename-out
+           ; for printer
+           [struct?             dssl-struct?]
+           [struct-name         dssl-struct-name]
+           [struct-fields       dssl-struct-fields]
+           [field-name          dssl-field-name]
+           [field-value         dssl-field-value]
            ; special
            [dssl-module-begin   #%module-begin]
            ; values
@@ -25,7 +30,7 @@
            [not                 !]
            [void                pass]
            [bitwise-and         &]
-           [bitwise-ior         bitwise-or]
+           [bitwise-ior         \|]
            [bitwise-xor         ^]
            [bitwise-not         ~]
            [identity            identity]
@@ -48,6 +53,7 @@
            [dssl-filter         filter]
            ; syntax
            [and                 &&]
+           [or                  \|\|]
            [dssl-assert         assert]
            [dssl-assert-eq      assert-eq]
            [dssl-break          break]
@@ -71,7 +77,8 @@
 (define-syntax-rule (dssl-module-begin expr ...)
   (#%module-begin
    (module* configure-runtime racket/base
-     (require dssl2/private/parser)
+     (require dssl2/private/parser dssl2/private/printer)
+     (current-print dssl-print)
      (current-read-interaction
        (λ (src in)
           (let loop ([line (read-line in)])

@@ -1,6 +1,8 @@
 #lang racket
 
-(provide dssl2-empty-tokens dssl2-tokens new-dssl2-lexer)
+(provide dssl2-empty-tokens dssl2-tokens new-dssl2-lexer
+         natural float hexadecimal octal binary fp-special
+         comment sq-str-char dq-str-char identifier)
 (require parser-tools/lex
          (prefix-in : parser-tools/lex-sre)
          syntax/readerr)
@@ -71,7 +73,11 @@
   [sq-str-char (:or (:- any-char (:or #\\ #\' #\newline))
                     (:: #\\ any-char))]
   [dq-str-char (:or (:- any-char (:or #\\ #\" #\newline))
-                    (:: #\\ any-char))])
+                    (:: #\\ any-char))]
+  [identifier  (:: alphabetic
+                   (:* (:or alphabetic numeric #\_))
+                   (:? (:or #\! #\?)))]
+  [fp-special (:or "+nan.0" "-nan.0" "+inf.0" "-inf.0")])
 
 ; new-dssl2-lexer : string? input-port? boolean? -> [ -> Token]
 (define (new-dssl2-lexer src port interactive?)
@@ -227,11 +233,12 @@
       ["+inf.0"                 (token-LITERAL +inf.0)]
       ["-nan.0"                 (token-LITERAL -nan.0)]
       ["+nan.0"                 (token-LITERAL +nan.0)]
-      [(:: alphabetic (:* (:or alphabetic numeric #\_)) (:? (:or #\! #\?)))
-                                (token-IDENT (string->symbol lexeme))]
+      [identifier               (token-IDENT (string->symbol lexeme))]
       [#\space
        (return-without-pos (the-lexer port))]
       [comment
+       (return-without-pos (the-lexer port))]
+      [(:: #\\ #\newline)
        (return-without-pos (the-lexer port))]
       [(:: (:* (:: #\newline (:* #\space) (:? comment)))
            #\newline (:* #\space))

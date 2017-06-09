@@ -1,3 +1,4 @@
-(module main racket
-  (require "language.rkt")
-  (provide (all-from-out "language.rkt")))
+#lang racket
+
+(provide (all-from-out "language.rkt"))
+(require "language.rkt")

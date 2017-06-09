@@ -16,7 +16,10 @@ dssl2/language
   (case key
     [(color-lexer)
      (dynamic-require 'dssl2/private/syntax-color 'get-syntax-token)]
-    [(drracket:default-extension) "ds2"]
+    [(drracket:opt-out-toolbar-buttons)
+     '(debug-tool macro-stepper drracket:syncheck)]
+    [(drracket:submit-predicate)
+     (lambda (port space) #t)]
     [else
       (default key defval)]))
 

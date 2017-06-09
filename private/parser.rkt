@@ -1,7 +1,7 @@
 #lang racket
 
 (provide parse-dssl2)
-(require dssl2/lexer
+(require dssl2/private/lexer
          (only-in parser-tools/lex
                   position-line
                   position-col

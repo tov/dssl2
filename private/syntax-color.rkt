@@ -2,7 +2,7 @@
 
 (provide get-syntax-token)
 
-(require dssl2/lexer
+(require dssl2/private/lexer
          parser-tools/lex
          (prefix-in : parser-tools/lex-sre))
 

@@ -1,6 +1,6 @@
 #lang racket
 
-(require dssl2/parser)
+(require dssl2/private/parser)
 
 (module+ test
   (require rackunit)

@@ -4,7 +4,7 @@ dssl2/language
 #:read-syntax my-read-syntax
 #:info info
 
-(require dssl2/parser)
+(require dssl2/private/parser)
 
 (define (my-read in)
   (syntax->datum (my-read-syntax #f in)))
@@ -15,7 +15,7 @@ dssl2/language
 (define (info key defval default)
   (case key
     [(color-lexer)
-     (dynamic-require 'dssl2/syntax-color 'get-syntax-token)]
+     (dynamic-require 'dssl2/private/syntax-color 'get-syntax-token)]
     [(drracket:default-extension) "ds2"]
     [else
       (default key defval)]))

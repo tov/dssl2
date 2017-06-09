@@ -70,7 +70,7 @@
 (define-syntax-rule (dssl-module-begin expr ...)
   (#%module-begin
    (module* configure-runtime racket/base
-     (require dssl2/parser)
+     (require dssl2/private/parser)
      (current-read-interaction
        (λ (src in)
           (let loop ([line (read-line in)])

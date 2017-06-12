@@ -5,6 +5,7 @@ dssl2/language
 #:info info
 
 (require dssl2/private/parser)
+(require (only-in racket send))
 
 (define (my-read in)
   (syntax->datum (my-read-syntax #f in)))
@@ -18,6 +19,9 @@ dssl2/language
      (dynamic-require 'dssl2/private/syntax-color 'get-syntax-token)]
     [(drracket:opt-out-toolbar-buttons)
      '(debug-tool macro-stepper drracket:syncheck)]
+    [(drracket:keystrokes)
+     (list (list "[" (lambda (text event)
+                       (send text insert #\[))))]
     [(drracket:submit-predicate)
      (lambda (port space) #t)]
     [else

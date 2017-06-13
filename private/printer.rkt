@@ -9,31 +9,42 @@
 
 (define (dssl-print v)
   (unless (void? v)
-    (print-value v (seen (make-hasheq) 0))
+    (define seen (make-seen (make-hasheq) 0))
+    (scan v (seen-table seen))
+    (print-value v seen)
     (newline)))
+
+(define (scan v hash)
+  (cond
+    [(hash-has-key? hash v)     (hash-set! hash v #t)]
+    [(vector? v)                (hash-set! hash v #f)
+                                (for ([elt v]) (scan elt hash))]
+    [(dssl-struct? v)           (hash-set! hash v #f)
+                                (for ([f (dssl-struct-fields v)])
+                                  (scan (dssl-field-value f) hash))]
+    [else                       (void)]))
 
 (define (print-value v seen)
   (cond
-    [(hash-has-key? (seen-table seen) v)
-     (print-cycle (hash-ref (seen-table seen) v) v seen)]
+    [(and (hash-has-key? (seen-table seen) v)
+          (number? (hash-ref (seen-table seen) v)))
+                           (printf "#~a#" (hash-ref (seen-table seen) v))]
     [(number? v)           (print-number v)]
     [(string? v)           (write v)]
-    [(vector? v)           (hash-set! (seen-table seen) v #false)
+    [(vector? v)           (print-ref v seen)
                            (print-vector v seen)]
-    [(dssl-struct? v)      (hash-set! (seen-table seen) v #false)
+    [(dssl-struct? v)      (print-ref v seen)
                            (print-struct v seen)]
     [(procedure? v)        (write v)]
     [else                  (print v)]))
 
-(define (print-cycle ref v seen)
-  (cond
-    [ref        (display "#")
-                (display ref)
-                (display "#")]
-    [else       (define ref (seen-count seen))
-                (hash-set! (seen-table seen) v ref)
-                (set-seen-count! seen (add1 ref))
-                (print-cycle ref v seen)]))
+(define (print-ref v seen)
+  (when (and (hash-has-key? (seen-table seen) v)
+             (hash-ref (seen-table seen) v))
+    (define count (seen-count seen))
+    (set-seen-count! seen (add1 count))
+    (hash-set! (seen-table seen) v count)
+    (printf "#~a=" count)))
 
 (define (print-number number)
   (cond

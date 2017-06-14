@@ -59,13 +59,12 @@
 ; text% natural? -> natural?
 ; Finds the position where the current line begins
 (define (find-beginning-of-line text position)
-  (if (zero? position)
-    position
-    (let ([c (send text get-character (sub1 position))])
-      (if (char=? c #\newline)
-        position
-        (find-beginning-of-line text (sub1 position))))))
-
+  (cond
+    [(zero? position) 0]
+    [(char=? #\newline (send text get-character (sub1 position)))
+     position]
+    [else
+      (find-beginning-of-line text (sub1 position))]))
 
 ; text% ->
 ; Updates the current line to the previous indentation level.

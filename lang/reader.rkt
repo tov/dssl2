@@ -23,12 +23,16 @@ dssl2/language
     [(drracket:indentation)
      find-indent]
     [(drracket:keystrokes)
-     (list [list "[" (λ (text event)
-                       (send text insert #\[))]
-           [list "s:tab" (λ (text event)
-                          (go-to-previous-indent text))])]
+     `(["["             ,handle-keystroke]
+       ["s:tab"         ,handle-keystroke]
+       ["enter"         ,handle-keystroke])]
     [(drracket:submit-predicate)
-     (lambda (port space) #t)]
+     (λ (port space) #t)]
     [else
       (default key defval)]))
 
+(define (handle-keystroke text event)
+  (case (send event get-key-code)
+    [(#\[)      (send text insert #\[)]
+    [(#\tab)    (go-to-previous-indent text)]
+    [(#\return) (enter-and-indent text)]))

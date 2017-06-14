@@ -1,6 +1,8 @@
 #lang racket
 
-(provide find-indent go-to-previous-indent)
+(provide enter-and-indent
+         find-indent
+         go-to-previous-indent)
 
 ; text% natural? [boolean?] -> natural?
 ; Returns the next indent, or if reverse is #t, the previous, for the
@@ -76,3 +78,23 @@
   (if (positive? change)
     (send text insert change (make-string change #\space) start)
     (send text delete start (- start change))))
+
+; text% ->
+; Inserts a newline and indents.
+(define (enter-and-indent text)
+  (let* ([position (send text get-start-position)]
+         [indent (find-current-indent text position)]
+         [blank? (current-line-is-blank? text position)])
+    (send text insert #\newline)
+    (unless blank?
+      (send text insert (make-string indent #\space)))))
+
+; text% natural? -> boolean?
+; Is the current line only spaces?
+(define (current-line-is-blank? text position)
+  (let loop [(position (find-beginning-of-line text position))]
+    (case (send text get-character position)
+      [(#\newline) #t]
+      [(#\space)   (loop (add1 position))]
+      [else        #f])))
+

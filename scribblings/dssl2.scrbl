@@ -1,110 +1,82 @@
 #lang scribble/manual
-@require["common.rkt" "std-grammar.rkt" "prim-ops.rkt"
-         @for-label[dssl]]
 
-@title{DSSL: Data Structures Student Language}
+@title{DSSL2: Data Structures Student Language}
 @author{Jesse A. Tov <jesse@"@"eecs.northwestern.edu>}
 
-@defmodulelang[dssl]
+@defmodulelang[dssl2]
 
-The DSSL language is substantially similar to
-@hyperlink["https://docs.racket-lang.org/htdp-langs/advanced.html"]{Advanced
-Student Language}. In particular, it provides the same functions and
-values (except for hash tables).
-
-In addition to the special forms documented below, DSSL includes
-@hyperlink["https://docs.racket-lang.org/reference/for.html"]{@racket[for]}
-(and friends).
+The DSSL2 language has the following statement and expression forms:
 
 @racketgrammar*[
-#:literals (define define-struct define-datatype lambda λ cond else if and or
-            local let let* recur shared letrec time begin begin0 set!
-            delay when case match unless while until
-            _ cons list list* struct vector box
-            check-expect check-random check-satisfied check-within
-            check-member-of check-range check-error)
-[program (code:line def-or-expr ...)]
-[def-or-expr definition
-             expr
-             test-case]
-[definition (define (name variable ...) expr)
-            (define name expr)
-            (define-struct name (name ...))]
-[expr (code:line (expr expr ...))
-      (begin expr expr ...)
-      (begin0 expr expr ...)
-      (lambda (variable ...) expr ...)
-      (λ (variable ...) expr ...)
-      (local [definition ...] expr ...)
-      (let ([name expr] ...) expr ...)
-      (let* ([name expr] ...) expr ...)
-      (recur name ([name expr] ...) expr ...)
-      (letrec ([name expr] ...) expr ...)
-      (shared ([name expr] ...) expr ...)
-      (set! name expr)
-      (cond [expr expr ...] ... [expr expr ...])
-      (cond [expr expr ...] ... [else expr ...])
-      (case expr [(choice choice ...) expr ...] ...
-                 [(choice choice ...) expr ...])
-      (case expr [(choice choice ...) expr ...] ...
-                 [else expr ...])
-      (match expr [pattern expr ...] ...)
-      (if expr expr expr)
-      (when expr expr ...)
-      (unless expr expr ...)
-      (and expr expr expr ...)
-      (or expr expr expr ...)
-      (while expr expr ...)
-      (until expr expr ...)
-      for-loop
-      (time expr ...)
-      (delay expr)
-      (code:line name)
-      (code:line @#,elem{@racketvalfont{'}@racket[_quoted]})
-      (code:line @#,elem{@racketvalfont{`}@racket[_quasiquoted]})
-      (code:line @#,elem{@racketvalfont{'}@racket[()]})
+#:literals (def defstruct let lambda λ else if elif while for in
+            break continue : True False =
+            assert assert_eq pass return NEWLINE INDENT DEDENT)
+[program (code:line statement ...)]
+[statement   (code:line simple-statement NEWLINE)
+             compound-statement]
+[simple-statement
+            (code:line defstruct name ( field @#,elem{@racketvalfont{,}} ... ))
+            (code:line let var)
+            (code:line let var = expr)
+            (code:line lvalue = expr)
+            (code:line return expr)
+            break
+            continue
+            (code:line assert expr)
+            (code:line assert_eq expr @#,elem{@racketvalfont{,}} expr)
+            expr
+            (code:line pass)
+            (code:line simple-statement @#,elem{@racketvalfont{;}} simple-statement)]
+[lvalue var
+        (code:line expr @#,elem{@racketvalfont{.}} field)
+        (code:line expr @#,elem{@racketvalfont{[}} expr @#,elem{@racketvalfont{]}})]
+[compound-statement
+            (code:line def name ( var @#,elem{@racketvalfont{,}} ... ) : block)
+            (code:line if expr : block {elif expr : block}* [else expr : block])
+            (code:line while expr : block)
+            (code:line for var in expr : block)
+            (code:line for var @#,elem{@racketvalfont{,}} var in expr : block)
+            ]
+[block
+        (code:line simple-statement NEWLINE)
+        (code:line NEWLINE INDENT statement ... DEDENT)]
+[expr lvalue
       number
-      boolean
       string
-      character]
-[choice (code:line name)
-        number]
-[pattern _
-         name
-         number
-         true
-         false
-         string
-         character
-         @#,elem{@racketvalfont{'}@racket[_quoted]}
-         @#,elem{@racketvalfont{`}@racket[_quasiquoted-pattern]}
-         (cons pattern pattern)
-         (list pattern ...)
-         (list* pattern ...)
-         (struct id (pattern ...))
-         (vector pattern ...)
-         (box pattern)]
-[quasiquoted-pattern name
-                     number
-                     string
-                     character
-                     (quasiquoted-pattern ...)
-                     @#,elem{@racketvalfont{'}@racket[_quasiquoted-pattern]}
-                     @#,elem{@racketvalfont{`}@racket[_quasiquoted-pattern]}
-                     @#,elem{@racketfont[","]@racket[_pattern]}
-                     @#,elem{@racketfont[",@"]@racket[_pattern]}]
-[test-case (check-expect expr expr)
-           (check-error expr expr ...)
-           (check-within expr expr expr)
-           (check-random expr expr)
-           (check-satisfied expr expr)
-           (check-member-of expr expr ...)
-           (check-range expr expr expr)]
+      True
+      False
+      (code:line expr(expr @#,elem{@racketvalfont{,}} ...))
+      (code:line lambda var @#,elem{@racketvalfont{,}} ... : expr)
+      (code:line λ var @#,elem{@racketvalfont{,}} ... : expr)
+      (code:line expr if expr else expr)
+      (code:line expr BINOP expr)
+      (code:line UNOP expr)
+      (code:line structname { fieldname : expr @#,elem{@racketvalfont{,}} ...  })
+      (code:line @#,elem{@racketvalfont{[}} expr @#,elem{@racketvalfont{,}} ... @#,elem{@racketvalfont{]}})
+      (code:line @#,elem{@racketvalfont{[}} expr @#,elem{@racketvalfont{;}} expr @#,elem{@racketvalfont{]}})
+      (code:line @#,elem{@racketvalfont{[}} expr for var in expr @#,elem{@racketvalfont{]}})
+      (code:line @#,elem{@racketvalfont{[}} expr for var @#,elem{@racketvalfont{,}} var in expr @#,elem{@racketvalfont{]}})
+      (code:line @#,elem{@racketvalfont{[}} expr for var in expr if expr @#,elem{@racketvalfont{]}})
+      (code:line @#,elem{@racketvalfont{[}} expr for var @#,elem{@racketvalfont{,}} var in expr if expr @#,elem{@racketvalfont{]}})
+      ]
 ]
 
-@prim-nonterms[("dssl") define define-struct]
+@italic{BINOP}s are, from tightest to loosest precedence:
 
-@prim-variables[("dssl") empty true false]
+@itemlist[
+ @item{**}
+ @item{* / %}
+ @item{+ -}
+ @item{>> <<}
+ @item{&}
+ @item{^}
+ @item{|}
+ @item{== < > <= >= != === !==}
+ @item{&&}
+ @item{||}
+]
+
+@italic{UNOP}s are ! + -
 
 @section[#:tag "dssl-syntax"]{Syntax for DSSL}
 
@@ -231,15 +203,6 @@ Produces a “promise” to evaluate @racket[expression]. The
 that any further @racket[force] of the promise immediately produces the
 remembered value.}
 
-@(intermediate-forms lambda
-                     local
-                     letrec
-                     let*
-                     let
-                     time
-                     define
-                     define-struct)
-
 @defform[(shared ([name expr-for-shared] ...) expression)]{
 
 Like @racket[letrec], but when an @racket[expression] next to an @racket[id]
@@ -284,32 +247,6 @@ evaluating the @racket[test-expression] is neither @racket[true] nor
 
 Like @racket[while], except the loop continutes so long as
 @racket[test-expression] evalutes to false.}
-
-@(prim-forms ("dssl")
-             define
-             lambda
-             define-struct
-             @{In DSSL, @racket[define-struct] introduces one additional function:
-              @itemize[
-               @item{@racketidfont{set-}@racket[_structure-name]@racketidfont{-}@racket[_field-name]@racketidfont{!}
-                : takes an instance of the structure and a value, and
-                mutates the instance's field to the given value.}]}
-             define-wish
-             cond
-             else
-             if
-             and 
-             or
-             check-expect
-             check-random
-	     check-satisfied
-             check-within
-             check-error
-             check-member-of
-             check-range
-             require
-             true false
-             #:with-beginner-function-call #f)
 
 @section[#:tag "dssl-pre-defined"]{Pre-Defined Functions}
 

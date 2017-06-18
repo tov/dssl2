@@ -37,6 +37,8 @@
    WHILE
    FOR
    IN
+   BREAK
+   CONTINUE
    RETURN
    PASS
    DEF
@@ -194,6 +196,8 @@
       ["while"                  (token-WHILE)]
       ["for"                    (token-FOR)]
       ["in"                     (token-IN)]
+      ["break"                  (token-BREAK)]
+      ["continue"               (token-CONTINUE)]
       ["return"                 (token-RETURN)]
       ["pass"                   (token-PASS)]
       ["lambda"                 (token-LAMBDA)]

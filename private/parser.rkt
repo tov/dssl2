@@ -131,6 +131,10 @@
          (loc `(let ,$2 ,$4))]
         [(DEFSTRUCT IDENT LPAREN formals RPAREN)
          (loc `(defstruct ,$2 ,$4))]
+        [(BREAK)
+         (loc `(break))]
+        [(CONTINUE)
+         (loc `(continue))]
         [(RETURN expr)
          (loc `(return ,$2))]
         [(lvalue EQUALS expr)

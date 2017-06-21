@@ -16,12 +16,12 @@ The DSSL2 language has the following statement and expression forms:
             break continue : True False =
             assert assert_eq pass return NEWLINE INDENT DEDENT)
 [program (code:line statement ...)]
-[statement   (code:line simple-statement NEWLINE)
-             compound-statement]
-[simple-statement
+[statement   (code:line simple NEWLINE)
+             compound]
+[simple
             (code:line defstruct name ( field @#,q{,} ... @#,q{ }))
             (code:line let var)
-            (code:line let var = expr)
+            (code:line let var @#,q{=} expr)
             (code:line lvalue = expr)
             (code:line return expr)
             break
@@ -30,11 +30,11 @@ The DSSL2 language has the following statement and expression forms:
             (code:line assert_eq expr @#,q{,} expr)
             expr
             (code:line pass)
-            (code:line simple-statement @#,q{;} simple-statement)]
+            (code:line simple @#,q{;} simple)]
 [lvalue var
         (code:line expr @#,q{.} field)
         (code:line expr @#,q["["] expr @#,q["]"])]
-[compound-statement
+[compound
             (code:line def name ( var @#,q{,} ... @#,q{ }) : block)
             (code:line if expr : block @#,m["{"] elif expr : block @#,m["}*"] @#,m["["] else expr : block @#,m["]"])
             (code:line while expr : block)
@@ -42,7 +42,7 @@ The DSSL2 language has the following statement and expression forms:
             (code:line for var @#,q{,} var in expr : block)
             ]
 [block
-        (code:line simple-statement NEWLINE)
+        (code:line simple NEWLINE)
         (code:line NEWLINE INDENT statement ... DEDENT)]
 [expr lvalue
       number
@@ -84,186 +84,257 @@ The DSSL2 language has the following statement and expression forms:
 
 @section[#:tag "dssl-syntax"]{Syntax for DSSL}
 
-@subsection[#:tag "def-forms"]{Definition Forms}
+@subsection{Compound statements and blocks}
 
-@defdsslform["def"]
+DSSL2 uses alignment and indentation to delimit blocks. In particular,
+compound statements such as @racket[if]-@racket[elif]-@racket[else] take
+@syn[block]s for each condition, where a @syn[block] can be either one
+simple statement followed by a newline, or a sequence of statements on
+subsequent lines that are all indented by four additional spaces. Here
+is an example of a decision tree written using indentation:
 
-@racketfont{name(param, ...): block}
-
-Hello.
-
-@defform[(def (name var ...) body)
-#:grammar ([foo bar] [baz qux quux])]{
-
-Defines a function named @racket[name]. The @racket[expression]s are the
-body of the function. When the function is called, the values of the
-arguments are inserted into the body in place of the @racket[variable]s. The
-function returns the value of the last expression in the sequence.
-
-The function name’s cannot be the same as that of another function or
-variable.}
-
-@defform[#:link-target? #f (define name expression)]{
-
-Defines a variable called @racket[name] with the the value of
-@racket[expression]. The variable’s name cannot be the same as that of
-another function or variable, and @racket[name] itself must not appear in
-@racket[expression].}
-
-@subsection[#:tag "expr-forms"]{Expression Forms}
-
-@defform/none[(expression expression ...)]{
-
-Calls the function that results from evaluating the first
-@racket[expression]. The value of the call is the value of function's body when
-every instance of @racket[name]'s variables are replaced by the values of the
-corresponding @racket[expression]s.
-
-The function being called must come from either a definition appearing
-before th○e function call, or from a @racket[lambda] expression. The
-number of argument @racket[expression]s must be the same as the number
-of arguments expected by the function.}
-
-@defform[(begin expression expression ...)]{
-
-Evaluates the @racket[expression]s in order from left to right. The value of
-the @racket[begin] expression is the value of the last @racket[expression].}
-
-
-@defform[(begin0 expression expression ...)]{
-
-Evaluates the @racket[expression]s in order from left to right. The value of
-the @racket[begin] expression is the value of the first @racket[expression].}
-
-
-@defform[(set! variable expression)]{
-
-Evaluates @racket[expression], and then mutates the @racket[variable]
-to have @racket[expression]'s value. The @racket[variable] must be defined 
-by @racket[define], @racket[letrec], @racket[let*], or @racket[let].}
-
-
-@defform[(lambda (variable ...) expression ...)]{
-
-Creates a function that takes as many arguments as given @racket[variable]s,
-and whose body is a sequence of @racket[expression]s. The result of the function is the result of the last @racket[expression].}
-
-@defform[(λ (variable ...) expression ...)]{
-
-The Greek letter @racket[λ] is a synonym for @racket[lambda].}
-
-@defform[(case expression [(choice ...) expression ...]
-                          ...
-                          [(choice ...) expression ...])]{
-
-A @racket[case] form contains one or more clauses. Each clause contains a
-choices (in parentheses)---either numbers or names---and an answer
-@racket[expression]. The initial @racket[expression] is evaluated, and its
-value is compared to the choices in each clause, where the lines are considered
-in order. The first line that contains a matching choice provides an answer
-@racket[expression] whose value is the result of the whole @racket[case]
-expression. Numbers match with the numbers in the choices, and symbols match
-with the names. If none of the lines contains a matching choice, it is an
-error.}
-
-@defform/none[#:literals (case else)
-              (case expression [(choice ...) expression ...]
-                               ...
-                               [else expression ...])]{
-
-This form of @racket[case] is similar to the prior one, except that the final
-@racket[else] clause is taken if no clause contains a choice matching the value
-of the initial @racket[expression].}
-
-@; ----------------------------------------------------------------------
-
-
-@defform[(match expression [pattern expression ...] ...)]{
-
-A @racket[match] form contains one or more clauses that are surrounded by
-square brackets. Each clause contains a pattern---a description of a value---and
-an answer @racket[expression].  The initial @racket[expression] is evaluated,
-and its value is matched against the pattern in each clause, where the clauses are
-considered in order. The first clause that contains a matching pattern provides
-an answer @racket[expression] whose value is the result of the whole
-@racket[match] expression. This @racket[expression] may reference identifiers
-defined in the matching pattern. If none of the clauses contains a matching
-pattern, it is an error.}
-
-@; ----------------------------------------------------------------------
-
-@defform[(when test-expression body-expression ...)]{
-
-If @racket[test-expression] evaluates to @racket[true], the
-@racket[body-expression]s are evaluated in order, an the result is the result
-of the last @racket[body-expression]. Otherwise the result is @racket[(void)]
-and the @racket[body-expression] is not evaluated. If the result of evaluating
-the @racket[test-expression] is neither @racket[true] nor @racket[false], it is
-an error.}
-
-@defform[(unless test-expression body-expression ...)]{
-
-Like @racket[when], but the @racket[body-expression]s are evaluated when the
-@racket[test-expression] produces @racket[false] instead of @racket[true].}
-
-@defform[(delay expression)]{
-
-Produces a “promise” to evaluate @racket[expression]. The
-@racket[expression] is not evaluated until the promise is forced with
-@racket[force]; when the promise is forced, the result is recorded, so
-that any further @racket[force] of the promise immediately produces the
-remembered value.}
-
-@defform[(shared ([name expr-for-shared] ...) expression)]{
-
-Like @racket[letrec], but when an @racket[expression] next to an @racket[id]
-is a @racket[cons], @racket[list], @racket[vector], quasiquoted
-expression, or @racketidfont{make-}@racket[_struct-name] from a
-@racket[define-struct], the @racket[expression] can refer directly to any
-@racket[name], not just @racket[name]s defined earlier. Thus,
-@racket[shared] can be used to create cyclic data structures.}
-
-@defform[(recur loop-name ([name expr-for-recur] ...) expression)]{
-
-A short-hand syntax for recursive loops. The first @racket[name] corresponds to
-the name of the recursive function. The @racket[name]s in the parenthesis are
-the function's arguments, and each corresponding @racket[expression] is a
-value supplied for that argument in an initial starting call of the
-function. The last @racket[expression] is the body of the function.
-
-More precisely, the following @racket[recur]:·
-
-@racketblock[
-(recur func-name ([arg-name arg-expression] (unsyntax @racketidfont{...}))
-  body-expression)
+@verbatim[#:indent 4 #<<END
+def organization_discount(otype, osize):
+    if otype === BOOKSTORE:
+        if osize >= 50:
+            return 0.25
+        else:
+            return 0
+    else if otype === LIBRARY:
+        if osize >= 50:
+            return 0.15
+        elif osize >= 20:
+            return 0.1
+        elif osize >= 5:
+            return 0.05
+        else:
+            return 0
+    else:
+        return 0
+END
 ]
 
-is equivalent to:
+Each block follows a colon and newline, and is indented 4 spaces more
+than the previous line. (Extranous space is an error.)
 
-@racketblock[
-(local [(define (func-name arg-name (unsyntax @racketidfont{...})) body-expressi○on)]
-  (func-name arg-expression (unsyntax @racketidfont{...})))
-]}
+@subsection[#:tag "stm-forms"]{Statement Forms}
 
-@defform[(while test-expression body-expression ...)]{
+@defdsslform{@defidform/inline[assert] @syn[expr]}
 
-If @racket[test-expression] evaluates to @racket[true], the
-@racket[body-expression]s are evaluated in order, and then the loop starts over
-by testing @racket[test-expression] again. When @racket[test-expression] is
-false, the loop terminates and returns @racket[(void)]. If the result of
-evaluating the @racket[test-expression] is neither @racket[true] nor
-@racket[false], it is an error.}
+Asserts that the given @syn[expr] evaluates to non-false. If the
+expression evaluates false, signals an error.
 
-@defform[(until test-expression body-expression ...)]{
+@defdsslform{@defidform/inline[assert_eq] @syn[expr], @syn[expr]}
 
-Like @racket[while], except the loop continutes so long as
-@racket[test-expression] evalutes to false.}
+Asserts that the given @syn[expr]s evaluates to physically equal values.
+If they are not equal, signals an error.
 
-@section[#:tag "dssl-pre-defined"]{Pre-Defined Functions}
+@defdsslform{@defidform/inline[break]}
 
-The remaining subsections list those functions that are built into the
-programming language. All other functions must be defined in the program.
+When in a @racket[for] or @racket[while] loop, ends the (inner-most)
+loop immediately.
 
-@(require (submod lang/htdp-advanced procedures))
-@(render-sections (docs) #'here "htdp-advanced")
+@defdsslform{@defidform/inline[continue]}
+
+When in a @racket[for] or @racket[while] loop, ends the current
+iteration of the (inner-most) loop and begins the next iteration.
+
+@defdsslform{@defidform/inline[def] @syn[name](@syn[var], ...): @syn[block]}
+
+Defines @syn[name] to be a function with formal parameters @syn[var],
+@code{...}, and with body @syn[block].
+
+For example,
+
+@verbatim[#:indent 4 #<<END
+def fact(n):
+    if n < 2:
+        return 1
+    else:
+        return n * fact(n - 1)
+END
+]
+
+A function may have zero arguments, as in @racket[greet]:
+
+@verbatim[#:indent 4 #<<END
+def greet(): println("Hello, world!")
+END
+]
+
+The body of a function is defined to be a block, which means it can be
+an indented sequence of statements, or a single simple statement on the
+same line as the @racket[def].
+
+@defdsslform{@defidform/inline[defstruct] @syn[structname](@syn[fieldname], ...)}
+
+Defines a new structure type @syn[structname] with fields given by
+@syn[fieldname], @code{...}. For example, to define a struct
+@racket[posn] with fields @racket[x] and @racket[y], we write:
+
+@verbatim[#:indent 4 #<<END
+defstruct posn(x, y)
+END
+]
+
+Then we can create a @racket[posn] using struct construction syntax and
+select out the fields using dotted selection syntax:
+
+@verbatim[#:indent 4 #<<END
+let p = posn { x: 3, y: 4 }
+
+def magnitude(q):
+    sqrt(q.x * q.x + q.y * q.y)
+END
+]
+
+It also possible to construct the struct by giving the fields in order
+using function syntax:
+
+@verbatim[#:indent 4 #<<END
+assert_eq magnitude(posn(3, 4)), 5
+END
+]
+
+@defdsslform{@syn[lvalue] @defidform/inline[=] @syn[expr]}
+
+Assignment. The assigned @syn[lvalue] can be in one of three forms:
+
+@itemlist[
+ @item{@syn[var] assigns to a variable, which can be a @syn[let]-bound
+ local or a function parameter.}
+ @item{@syn[expr].@syn[fieldname] assigns to a structure field, where
+ the expression must evaluate to a structure that has the given field
+ nane.}
+ @item{@code{@syn[expr][@syn[expr]]} assigns to a vector, where the first
+ @syn[expr] evaluates to the vector and the second @syn[expr] evaluates
+ to the index.}
+]
+
+@defdsslform{@syn[expr]}
+
+An expression, evaluated for both side effect and, if at the tail end
+of a function, its value.
+
+@defdsslform{@defidform/inline[if] @syn[expr]: @syn[block]
+             @defidform/inline[elif] @syn[expr]: @syn[block]
+             @defidform/inline[else]: @syn[block]}
+
+The DSSL2 conditional statement contains an @racket[if], 0 or more
+@racket[elif]s, and optionally an @racket[else] for if none of the
+conditions holds.
+
+For example, we can have an @racket[if] with no @racket[elif] or
+@racket[else] parts:
+
+@verbatim[#:indent 4 #<<END
+if should_greet:
+    greet()
+END
+]
+
+Or we can have several:
+
+@verbatim[#:indent 4 #<<END
+def fib(n):
+    if n == 0:
+        0
+    elif n == 1:
+        1
+    elif n == 2:
+        1
+    elif n == 3:
+        2
+    else:
+        fib(n - 1) + fib(n - 2)
+END
+]
+
+@defdsslform{@defidform/inline[let] @syn[var] = @syn[expr]}
+
+Declares and defines a local variable. Local variables may be declared in any
+scope and last for that scope. A local variable may be re-assigned with the
+assignment form, as in th third line here:
+
+@verbatim[#:indent 4 #<<END
+def sum(vec):
+    let result = 0
+    for v in vec: result = result + v
+    return result
+END
+]
+
+@defdsslform{@defidform/inline[let] @syn[var]}
+
+Declares a local variable, which will be undefined until it is assigned:
+
+@verbatim[#:indent 4 #<<END
+let x
+if y:
+    x = f()
+else:
+    x = g()
+println(x)
+END
+]
+
+@defdsslform{@defidform/inline[for] @syn[var] in @syn[expr]: @syn[block]}
+
+Loops over the values of the given @syn[expr], evaluating the
+@syn[block] for each. The @syn[expr] can evaluate to a vector, a string,
+or a natural number. If a vector, then this form iterates over the
+values (not the indices) of the vector; if a string, this iterates over
+the characters as 1-character strings; if a natural number @racket[n]
+then it counts from @racket[0] to @racket[n - 1].
+
+@verbatim[#:indent 4 #<<END
+for person in people_to_greet:
+    println("Hello, ~a!", person)
+END
+]
+
+@defdsslform{@defidform/inline[for] @syn[var], @syn[var] in @syn[expr]: @syn[block]}
+
+Loops over the indices and values of the given @syn[expr], evaluating
+the @syn[block] for each. The @syn[expr] can evaluate to a vector, a
+string, or a natural number. If a vector, then the first variable takes
+on the indices of the vector while the second takes on the values; if a
+string, then the first variable takes on the indices of the characters
+while the second takes on the characters; if a natural number then both
+variables count together.
+
+@verbatim[#:indent 4 #<<END
+for ix, person in people_to_greet:
+    println("~a: Hello, ~a!", ix, person)
+END
+]
+
+@defdsslform{@defidform/inline[pass]}
+
+Does nothing.
+
+@defdsslform{@defidform/inline[return] @syn[expr]}
+
+Returns the value of the given @syn[expr] from the inner-most function.
+Note that this is often optional, since the last expression in a
+function will be used as its return value.
+
+That is, these are equivalent:
+
+@verbatim[#:indent 4 #<<END
+def inc(x): x + 1
+
+def inc(x): return x + 1
+END
+]
+
+@defdsslform{@defidform/inline[while] @syn[expr]: @syn[block]}
+
+Iterates the @syn[block] while the @syn[expr] evaluates to true. For example:
+
+@verbatim[#:indent 4 #<<END
+while !is_empty(queue):
+    explore(dequeue(queue))
+END
+]
 

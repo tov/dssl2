@@ -55,11 +55,12 @@
            [and                 &&]
            [or                  \|\|]
            [dssl-assert         assert]
-           [dssl-assert-eq      assert-eq]
+           [dssl-assert-eq      assert_eq]
            [dssl-break          break]
            [dssl-continue       continue]
            [dssl-def            def]
            [dssl-defstruct      defstruct]
+           [dssl-elif           elif]
            [dssl-error          error]
            [dssl-for            for]
            [dssl-for/vector     for/vector]
@@ -67,6 +68,7 @@
            [dssl-let            let]
            [dssl-return         return]
            [dssl-setf!          setf!]
+           [dssl-setf!          =]
            [dssl-struct-ref     struct-ref]
            [dssl-vector-ref     vector-ref]
            [dssl-while          while]))
@@ -90,6 +92,12 @@
               [else
                 (parse-dssl2 src (open-input-string line) #t)])))))
    expr ...))
+
+; This is so that the documentation will consider elif a keyword.
+(define-syntax-parameter
+  dssl-elif
+  (lambda (stx)
+    (raise-syntax-error #f "use of elif keyword" stx)))
 
 ; We define return (for lambda) as a syntax parameter, and then
 ; syntax-parameterize it inside dssl-lambda.

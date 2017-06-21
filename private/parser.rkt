@@ -142,7 +142,7 @@
         [(ASSERT expr)
          (loc `(assert ,$2))]
         [(ASSERT-EQ expr COMMA expr)
-         (loc `(assert-eq ,$2 ,$4))]
+         (loc `(assert_eq ,$2 ,$4))]
         [(PASS)
          (loc `(pass))])
 

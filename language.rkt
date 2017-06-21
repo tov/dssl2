@@ -54,6 +54,8 @@
            ; syntax
            [and                 &&]
            [or                  \|\|]
+           [dssl-True           True]
+           [dssl-False          False]
            [dssl-assert         assert]
            [dssl-assert-eq      assert_eq]
            [dssl-break          break]
@@ -75,6 +77,9 @@
 (require racket/stxparam
          syntax/parse/define)
 (require (for-syntax syntax/parse))
+
+(define dssl-True #t)
+(define dssl-False #f)
 
 (define-syntax-rule (dssl-module-begin expr ...)
   (#%module-begin

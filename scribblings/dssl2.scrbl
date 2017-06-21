@@ -19,17 +19,17 @@ The DSSL2 language has the following statement and expression forms:
 [statement   (code:line simple NEWLINE)
              compound]
 [simple
-            (code:line defstruct name ( field @#,q{,} ... @#,q{ }))
-            (code:line let var)
-            (code:line let var @#,q{=} expr)
-            (code:line lvalue = expr)
-            (code:line return expr)
-            break
-            continue
             (code:line assert expr)
             (code:line assert_eq expr @#,q{,} expr)
+            break
+            continue
+            (code:line defstruct name ( field @#,q{,} ... @#,q{ }))
+            (code:line lvalue = expr)
             expr
+            (code:line let var @#,q{=} expr)
+            (code:line let var)
             (code:line pass)
+            (code:line return expr)
             (code:line simple @#,q{;} simple)]
 [lvalue var
         (code:line expr @#,q{.} field)
@@ -37,9 +37,9 @@ The DSSL2 language has the following statement and expression forms:
 [compound
             (code:line def name ( var @#,q{,} ... @#,q{ }) : block)
             (code:line if expr : block @#,m["{"] elif expr : block @#,m["}*"] @#,m["["] else expr : block @#,m["]"])
-            (code:line while expr : block)
             (code:line for var in expr : block)
             (code:line for var @#,q{,} var in expr : block)
+            (code:line while expr : block)
             ]
 [block
         (code:line simple NEWLINE)
@@ -68,19 +68,20 @@ The DSSL2 language has the following statement and expression forms:
 @italic{BINOP}s are, from tightest to loosest precedence:
 
 @itemlist[
- @item{**}
- @item{* / %}
- @item{+ -}
- @item{>> <<}
- @item{&}
- @item{^}
- @item{|}
- @item{== < > <= >= != === !==}
- @item{&&}
- @item{||}
+ @item{@racket[**]}
+ @item{@racket[*], @racket[/], and @racket[%]}
+ @item{@racket[+] and @racket[-]}
+ @item{@racket[>>] and @racket[<<]}
+ @item{@racket[&]}
+ @item{@racket[^]}
+ @item{@racket[\|] (not written with the backslash)}
+ @item{@racket[==], @racket[<], @racket[>], @racket[<=], @racket[>=],
+ @racket[!=], @racket[===], and @racket[!==]}
+ @item{@racket[&&]}
+ @item{@racket[\|\|] (not written with the backslashes)}
 ]
 
-@italic{UNOP}s are ! + -
+@italic{UNOP}s are @racket[!], @racket[+], @racket[-].
 
 @section[#:tag "dssl-syntax"]{Syntax for DSSL}
 

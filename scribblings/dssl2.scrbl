@@ -4,12 +4,50 @@
         "util.rkt"
         (for-label dssl2))
 
-@title{DSSL2: Data Structures Student Language 2}
+@title{DSSL2: Data Structures Student Language}
 @author{Jesse A. Tov <jesse@"@"eecs.northwestern.edu>}
 
 @defmodulelang[dssl2]
 
-The DSSL2 language has the following statement and expression forms:
+@section[#:tag "dssl-syntax"]{Syntax of DSSL2}
+
+@subsection{Compound statements and blocks}
+
+DSSL2 uses alignment and indentation to delimit blocks. In particular,
+compound statements such as @racket[if]-@racket[elif]-@racket[else] take
+@syn[block]s for each condition, where a @syn[block] can be either one
+simple statement followed by a newline, or a sequence of statements on
+subsequent lines that are all indented by four additional spaces. Here
+is an example of a decision tree function written using indentation:
+
+@verbatim[#:indent 4 #<<END
+def organization_discount(otype, osize):
+    if otype === BOOKSTORE:
+        if osize >= 50:
+            return 0.25
+        else:
+            return 0
+    else if otype === LIBRARY:
+        if osize >= 50:
+            return 0.15
+        elif osize >= 20:
+            return 0.1
+        elif osize >= 5:
+            return 0.05
+        else:
+            return 0
+    else:
+        return 0
+END
+]
+
+Each block follows a colon and newline, and is indented 4 spaces more
+than the previous line. (Extranous space is an error.)
+
+@subsection{DSSL2 Formal Grammar}
+
+The DSSL2 language has the following statement and expression forms,
+which are described in more depth below.
 
 @racketgrammar*[
 #:literals (def defstruct let lambda λ else if elif while for in
@@ -83,64 +121,29 @@ The DSSL2 language has the following statement and expression forms:
 
 @italic{UNOP}s are @racket[!], @racket[+], @racket[-].
 
-@section[#:tag "dssl-syntax"]{Syntax for DSSL}
-
-@subsection{Compound statements and blocks}
-
-DSSL2 uses alignment and indentation to delimit blocks. In particular,
-compound statements such as @racket[if]-@racket[elif]-@racket[else] take
-@syn[block]s for each condition, where a @syn[block] can be either one
-simple statement followed by a newline, or a sequence of statements on
-subsequent lines that are all indented by four additional spaces. Here
-is an example of a decision tree written using indentation:
-
-@verbatim[#:indent 4 #<<END
-def organization_discount(otype, osize):
-    if otype === BOOKSTORE:
-        if osize >= 50:
-            return 0.25
-        else:
-            return 0
-    else if otype === LIBRARY:
-        if osize >= 50:
-            return 0.15
-        elif osize >= 20:
-            return 0.1
-        elif osize >= 5:
-            return 0.05
-        else:
-            return 0
-    else:
-        return 0
-END
-]
-
-Each block follows a colon and newline, and is indented 4 spaces more
-than the previous line. (Extranous space is an error.)
-
 @subsection[#:tag "stm-forms"]{Statement Forms}
 
-@defdsslform{@defidform/inline[assert] @syn[expr]}
+@defsmplform{@defidform/inline[assert] @syn[expr]}
 
 Asserts that the given @syn[expr] evaluates to non-false. If the
 expression evaluates false, signals an error.
 
-@defdsslform{@defidform/inline[assert_eq] @syn[expr], @syn[expr]}
+@defsmplform{@defidform/inline[assert_eq] @syn[expr], @syn[expr]}
 
 Asserts that the given @syn[expr]s evaluates to physically equal values.
 If they are not equal, signals an error.
 
-@defdsslform{@defidform/inline[break]}
+@defsmplform{@defidform/inline[break]}
 
 When in a @racket[for] or @racket[while] loop, ends the (inner-most)
 loop immediately.
 
-@defdsslform{@defidform/inline[continue]}
+@defsmplform{@defidform/inline[continue]}
 
 When in a @racket[for] or @racket[while] loop, ends the current
 iteration of the (inner-most) loop and begins the next iteration.
 
-@defdsslform{@defidform/inline[def] @syn[name](@syn[var], ...): @syn[block]}
+@defcmpdform{@defidform/inline[def] @syn[name](@syn[var], ...): @syn[block]}
 
 Defines @syn[name] to be a function with formal parameters @syn[var],
 @code{...}, and with body @syn[block].
@@ -167,7 +170,7 @@ The body of a function is defined to be a block, which means it can be
 an indented sequence of statements, or a single simple statement on the
 same line as the @racket[def].
 
-@defdsslform{@defidform/inline[defstruct] @syn[structname](@syn[fieldname], ...)}
+@defsmplform{@defidform/inline[defstruct] @syn[structname](@syn[fieldname], ...)}
 
 Defines a new structure type @syn[structname] with fields given by
 @syn[fieldname], @code{...}. For example, to define a struct
@@ -197,7 +200,7 @@ assert_eq magnitude(posn(3, 4)), 5
 END
 ]
 
-@defdsslform{@syn[lvalue] @defidform/inline[=] @syn[expr]}
+@defsmplform{@syn[lvalue] @defidform/inline[=] @syn[expr]}
 
 Assignment. The assigned @syn[lvalue] can be in one of three forms:
 
@@ -212,12 +215,12 @@ Assignment. The assigned @syn[lvalue] can be in one of three forms:
  to the index.}
 ]
 
-@defdsslform{@syn[expr]}
+@defsmplform{@syn[expr]}
 
 An expression, evaluated for both side effect and, if at the tail end
 of a function, its value.
 
-@defdsslform{@defidform/inline[if] @syn[expr]: @syn[block]
+@defcmpdform{@defidform/inline[if] @syn[expr]: @syn[block]
              @defidform/inline[elif] @syn[expr]: @syn[block]
              @defidform/inline[else]: @syn[block]}
 
@@ -251,7 +254,7 @@ def fib(n):
 END
 ]
 
-@defdsslform{@defidform/inline[let] @syn[var] = @syn[expr]}
+@defsmplform{@defidform/inline[let] @syn[var] = @syn[expr]}
 
 Declares and defines a local variable. Local variables may be declared in any
 scope and last for that scope. A local variable may be re-assigned with the
@@ -265,7 +268,7 @@ def sum(vec):
 END
 ]
 
-@defdsslform{@defidform/inline[let] @syn[var]}
+@defsmplform{@defidform/inline[let] @syn[var]}
 
 Declares a local variable, which will be undefined until it is assigned:
 
@@ -279,7 +282,7 @@ println(x)
 END
 ]
 
-@defdsslform{@defidform/inline[for] @syn[var] in @syn[expr]: @syn[block]}
+@defcmpdform{@defidform/inline[for] @syn[var] in @syn[expr]: @syn[block]}
 
 Loops over the values of the given @syn[expr], evaluating the
 @syn[block] for each. The @syn[expr] can evaluate to a vector, a string,
@@ -294,7 +297,7 @@ for person in people_to_greet:
 END
 ]
 
-@defdsslform{@defidform/inline[for] @syn[var], @syn[var] in @syn[expr]: @syn[block]}
+@defcmpdform{@defidform/inline[for] @syn[var], @syn[var] in @syn[expr]: @syn[block]}
 
 Loops over the indices and values of the given @syn[expr], evaluating
 the @syn[block] for each. The @syn[expr] can evaluate to a vector, a
@@ -310,11 +313,11 @@ for ix, person in people_to_greet:
 END
 ]
 
-@defdsslform{@defidform/inline[pass]}
+@defsmplform{@defidform/inline[pass]}
 
 Does nothing.
 
-@defdsslform{@defidform/inline[return] @syn[expr]}
+@defsmplform{@defidform/inline[return] @syn[expr]}
 
 Returns the value of the given @syn[expr] from the inner-most function.
 Note that this is often optional, since the last expression in a
@@ -329,7 +332,7 @@ def inc(x): return x + 1
 END
 ]
 
-@defdsslform{@defidform/inline[while] @syn[expr]: @syn[block]}
+@defcmpdform{@defidform/inline[while] @syn[expr]: @syn[block]}
 
 Iterates the @syn[block] while the @syn[expr] evaluates to true. For example:
 
@@ -339,3 +342,14 @@ while !is_empty(queue):
 END
 ]
 
+@subsection[#:tag "exp-forms"]{Expression Forms}
+
+@defexpform{@syn{lvalue}}
+
+These left-hand sides of assignments (\syn[=]) can also appear for their
+values. That is, @code{v[i]} gets the @code{i}th element of vector
+@code{v}.
+
+@defexpform{@syn{number}}
+
+Numeric literals include 

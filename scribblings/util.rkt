@@ -1,6 +1,6 @@
 #lang racket
 
-(provide defdsslform
+(provide defexpform defsmplform defcmpdform
          code syn
          q m)
 (require scribble/manual
@@ -19,8 +19,14 @@
 (define-syntax-rule (syn var)
   (code (italic (~a 'var))))
 
-(define-syntax-rule (defdsslform form ...)
-  (*defforms #f (list form ...)))
+(define-syntax-rule (defexpform form ...)
+  (*defforms "expr" (list form ...)))
+
+(define-syntax-rule (defsmplform form ...)
+  (*defforms "simple" (list form ...)))
+
+(define-syntax-rule (defcmpdform form ...)
+  (*defforms "compound" (list form ...)))
 
 (define (*defforms kind forms)
   (define labeller (add-background-label (or kind "syntax")))

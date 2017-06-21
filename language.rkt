@@ -219,32 +219,26 @@
                  "duplicate field name"
      (let ([predicate (datum->syntax #'name
                         (string->symbol
-                          (format "~a?" (syntax->datum #'name))))])
+                          (format "~a?" (syntax->datum #'name))))]
+           [constructor (datum->syntax #'name
+                          (string->symbol
+                            (format "make-~a" (syntax->datum #'name))))])
      #`(begin
-         (define-syntax (name stx)
+         (define-syntax (#,constructor stx)
            (syntax-parse stx
-             [(_ [field:id expr:expr] (... ...+))
+             [(_ [field:id expr:expr] (... ...))
               #:fail-when (check-duplicate-identifier
                             (syntax->list #'(field (... ...))))
                           "duplicate field name"
               #'(dssl-make-struct/fields
                   'name
                   '(formal-field ...)
-                  (list (make-field 'field expr) (... ...)))]
-             [(_:id expr:expr (... ...))
-              #'(dssl-make-struct
-                  'name
-                  '(formal-field ...)
-                  (list expr (... ...)))]
-             [_:id
-               #'(let ()
-                   ; Using define here picks up the name
-                   (define (name formal-field ...)
-                     (dssl-make-struct
-                       'name
-                       '(formal-field ...)
-                       (list formal-field ...)))
-                   name)]))
+                  (list (make-field 'field expr) (... ...)))]))
+         (define (name formal-field ...)
+           (dssl-make-struct
+             'name
+             '(formal-field ...)
+             (list formal-field ...)))
          (define (#,predicate value)
            (and (struct? value)
                 (eq? 'name (struct-name value))))))]))

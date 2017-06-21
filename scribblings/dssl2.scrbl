@@ -1,6 +1,10 @@
 #lang scribble/manual
 
-@title{DSSL2: Data Structures Student Language}
+@(require
+        "util.rkt"
+        (for-label dssl2))
+
+@title{DSSL2: Data Structures Student Language 2}
 @author{Jesse A. Tov <jesse@"@"eecs.northwestern.edu>}
 
 @defmodulelang[dssl2]
@@ -15,7 +19,7 @@ The DSSL2 language has the following statement and expression forms:
 [statement   (code:line simple-statement NEWLINE)
              compound-statement]
 [simple-statement
-            (code:line defstruct name ( field @#,elem{@racketvalfont{,}} ... ))
+            (code:line defstruct name ( field @#,q{,} ... @#,q{ }))
             (code:line let var)
             (code:line let var = expr)
             (code:line lvalue = expr)
@@ -23,19 +27,19 @@ The DSSL2 language has the following statement and expression forms:
             break
             continue
             (code:line assert expr)
-            (code:line assert_eq expr @#,elem{@racketvalfont{,}} expr)
+            (code:line assert_eq expr @#,q{,} expr)
             expr
             (code:line pass)
-            (code:line simple-statement @#,elem{@racketvalfont{;}} simple-statement)]
+            (code:line simple-statement @#,q{;} simple-statement)]
 [lvalue var
-        (code:line expr @#,elem{@racketvalfont{.}} field)
-        (code:line expr @#,elem{@racketvalfont{[}} expr @#,elem{@racketvalfont{]}})]
+        (code:line expr @#,q{.} field)
+        (code:line expr @#,q["["] expr @#,q["]"])]
 [compound-statement
-            (code:line def name ( var @#,elem{@racketvalfont{,}} ... ) : block)
-            (code:line if expr : block {elif expr : block}* [else expr : block])
+            (code:line def name ( var @#,q{,} ... @#,q{ }) : block)
+            (code:line if expr : block @#,m["{"] elif expr : block @#,m["}*"] @#,m["["] else expr : block @#,m["]"])
             (code:line while expr : block)
             (code:line for var in expr : block)
-            (code:line for var @#,elem{@racketvalfont{,}} var in expr : block)
+            (code:line for var @#,q{,} var in expr : block)
             ]
 [block
         (code:line simple-statement NEWLINE)
@@ -45,19 +49,19 @@ The DSSL2 language has the following statement and expression forms:
       string
       True
       False
-      (code:line expr(expr @#,elem{@racketvalfont{,}} ...))
-      (code:line lambda var @#,elem{@racketvalfont{,}} ... : expr)
-      (code:line λ var @#,elem{@racketvalfont{,}} ... : expr)
+      (code:line expr ( expr @#,q{,} ... @#,q{ }))
+      (code:line lambda var @#,q{,} ... : expr)
+      (code:line λ var @#,q{,} ... : expr)
       (code:line expr if expr else expr)
       (code:line expr BINOP expr)
       (code:line UNOP expr)
-      (code:line structname { fieldname : expr @#,elem{@racketvalfont{,}} ...  })
-      (code:line @#,elem{@racketvalfont{[}} expr @#,elem{@racketvalfont{,}} ... @#,elem{@racketvalfont{]}})
-      (code:line @#,elem{@racketvalfont{[}} expr @#,elem{@racketvalfont{;}} expr @#,elem{@racketvalfont{]}})
-      (code:line @#,elem{@racketvalfont{[}} expr for var in expr @#,elem{@racketvalfont{]}})
-      (code:line @#,elem{@racketvalfont{[}} expr for var @#,elem{@racketvalfont{,}} var in expr @#,elem{@racketvalfont{]}})
-      (code:line @#,elem{@racketvalfont{[}} expr for var in expr if expr @#,elem{@racketvalfont{]}})
-      (code:line @#,elem{@racketvalfont{[}} expr for var @#,elem{@racketvalfont{,}} var in expr if expr @#,elem{@racketvalfont{]}})
+      (code:line structname @#,q["{"] fieldname : expr @#,q{,} ... @#,q[" }"])
+      (code:line @#,q{[} expr @#,q{,} ... @#,q{]})
+      (code:line @#,q{[} expr @#,q{;} expr @#,q{]})
+      (code:line @#,q{[} expr for var in expr @#,q{]})
+      (code:line @#,q{[} expr for var @#,q{,} var in expr @#,q{]})
+      (code:line @#,q{[} expr for var in expr if expr @#,q{]})
+      (code:line @#,q{[} expr for var @#,q{,} var in expr if expr @#,q{]})
       ]
 ]
 
@@ -82,7 +86,14 @@ The DSSL2 language has the following statement and expression forms:
 
 @subsection[#:tag "def-forms"]{Definition Forms}
 
-@defform[(define (name variable ...) expression ...)]{
+@defdsslform["def"]
+
+@racketfont{name(param, ...): block}
+
+Hello.
+
+@defform[(def (name var ...) body)
+#:grammar ([foo bar] [baz qux quux])]{
 
 Defines a function named @racket[name]. The @racket[expression]s are the
 body of the function. When the function is called, the values of the

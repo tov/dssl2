@@ -346,10 +346,88 @@ END
 
 @defexpform{@syn{lvalue}}
 
-These left-hand sides of assignments (\syn[=]) can also appear for their
+These left-hand sides of assignments (@syn[=]) can also appear for their
 values. That is, @code{v[i]} gets the @code{i}th element of vector
 @code{v}.
 
 @defexpform{@syn{number}}
 
-Numeric literals include 
+Numeric literals include:
+
+@itemlist[
+  @item{Integers: @racket[0], @racket[3], @racket[18446744073709551617]}
+  @item{Hexadedecimal, octal, and binary integers: @q{0xFFFF00},
+      @q{0o0177}, @q{0b011010010}}
+  @item{Floating point: @racket[3.5], @q{6.02E23}, @racket[1e-12]}
+]
+
+@defexpform{@syn{string}}
+
+String literals are delimited by either single or double quotes:
+
+@verbatim[#:indent 4 #<<END
+def does_not_matter(double)
+    if double:
+        return "This is the same string."
+    else:
+        return 'This is the same string.'
+END
+]
+
+The contents of each kind of string is treated the same, except that
+each kind of quotation mark can contain the other kind unescaped:
+
+@verbatim[#:indent 4 #<<END
+def does_matter(double)
+    if double:
+        return "This isn't the same string."
+    else:
+        return '"This is not the same string" isn\'t the same string.'
+END
+]
+
+Strings cannot contain newlines directly, but can contain newline
+characters via the escape code @code{\n}. Other escape codes include:
+
+@itemlist[
+  @item{@code{\a} for ASCII alert (also @code{\x07})}
+  @item{@code{\b} for ASCII backspace (also @code{\x08})}
+  @item{@code{\f} for ASCII formfeed (also @code{\x0C})}
+  @item{@code{\n} for ASCII newline (also @code{\x0A})}
+  @item{@code{\r} for ASCII carriage return (also @code{\x0D})}
+  @item{@code{\t} for ASCII tab (also @\code{\x09})}
+  @item{@code{\v} for ASCII vertical tab (also @\code{\x0B})}
+  @item{@code{\x@syn{hh}} in hex, for example @code{\x0A} is newline}
+  @item{@code{\@syn{ooo}} in octal, for example @code{\010} is tab}
+]
+
+A backslash immediately followed by a newline causes both characters to
+be ignored, which provides a way to wrap long strings across lines.
+
+@defexpform{@defidform/inline[True]}
+
+The true Boolean value.
+
+@defexpform{@defidform/inline[False]}
+
+The false Boolean value, the only value that is not considered true.
+
+@defexpform{@syn[expr](@syn[expr], ...)}
+
+Applies the result of evaluating the first expression to the rest as
+arguments. For example,
+
+@verbatim[#:indent 4 #<<END
+fact(5)
+END
+]
+
+calls the function @racket[fact] with argument @racket[5], and
+
+@verbatim[#:indent 4 #<<END
+ack(5 + 1, 5 + 2)
+END
+]
+
+calls the function @racket[ack] with arguments @racket[6] and
+@racket[7].

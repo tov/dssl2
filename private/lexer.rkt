@@ -276,9 +276,9 @@
       [(eq? #\\ (first chars))
        (define (the-rest) (loop (rest (rest chars))))
        (case (second chars)
-         [(#\a)         (cons #\001 (the-rest))]
+         [(#\a)         (cons #\007 (the-rest))]
          [(#\b)         (cons #\backspace (the-rest))]
-         [(#\f)         (cons #\006 (the-rest))]
+         [(#\f)         (cons #\page (the-rest))]
          [(#\n)         (cons #\newline (the-rest))]
          [(#\r)         (cons #\return (the-rest))]
          [(#\t)         (cons #\tab (the-rest))]

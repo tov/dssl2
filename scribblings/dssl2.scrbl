@@ -143,7 +143,7 @@ expression evaluates false, signals an error.
 
 @defsmplform{@defidform/inline[assert_eq] @syn[expr], @syn[expr]}
 
-Asserts that the given @syn[expr]s evaluates to physically equal values.
+Asserts that the given @syn[expr]s evaluates to structurally equal values.
 If they are not equal, signals an error.
 
 @defsmplform{@defidform/inline[break]}

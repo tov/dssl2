@@ -84,8 +84,9 @@
 (define-syntax-rule (dssl-module-begin expr ...)
   (#%module-begin
    (module* configure-runtime racket/base
-     (require dssl2/private/parser dssl2/private/printer)
-     (current-print dssl-print)
+     (require dssl2/private/parser)
+     ; (require dssl2/private/printer)
+     ; (current-print dssl-print)
      (current-read-interaction
        (λ (src in)
           (let loop ([line (read-line in)])
@@ -214,9 +215,8 @@
 
 (define-struct struct [name fields]
                #:transparent)
-(define-struct field [name value]
-               #:transparent
-               #:mutable)
+(define-struct field [name (value #:mutable)]
+               #:transparent)
 
 (define (struct-assq name fields)
   (cond

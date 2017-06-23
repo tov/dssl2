@@ -5,8 +5,7 @@
          #%top
          #%top-interaction)
 (provide - * /
-         make-vector vector
-         procedure? string? number? vector?
+         procedure? string? number?
          integer? zero? positive? negative? even? odd?
          format
          begin
@@ -23,6 +22,11 @@
            ; special
            [dssl-module-begin   #%module-begin]
            ; values
+           [dssl-make-vector    make-vector]
+           [dssl-vector         vector]
+           [dssl-vector?        vector?]
+           [dssl-build-vector   build_vector]
+           [dssl-vector-length  len]
            [modulo              %]
            [expt                **]
            [equal?              ==]
@@ -34,8 +38,6 @@
            [bitwise-xor         ^]
            [bitwise-not         ~]
            [identity            identity]
-           [build-vector        build_vector]
-           [vector-length       len]
            [dssl-+              +]
            [dssl-!=             !=]
            [dssl-!==            !==]
@@ -74,6 +76,7 @@
            [dssl-struct-ref     struct-ref]
            [dssl-vector-ref     vector-ref]
            [dssl-while          while]))
+(require dssl2/private/values)
 (require racket/stxparam
          syntax/parse/define)
 (require (for-syntax syntax/parse))
@@ -178,24 +181,26 @@
     [(_ [(i:id j:id) v:expr] expr:expr)
      #:fail-when (and (bound-identifier=? #'i #'j) #'j)
                  "duplicate variable name"
-     #'(for/vector ([i (in-naturals)]
-                    [j (dssl-in-value v)])
-         expr)]
+     #'(make-vec
+         (for/vector ([i (in-naturals)]
+                      [j (dssl-in-value v)])
+           expr))]
     [(_ [j:id v:expr] expr:expr)
      #'(dssl-for/vector [(_ j) v] expr)]
     [(_ [(i:id j:id) v:expr] #:when when expr:expr)
      #:fail-when (and (bound-identifier=? #'i #'j) #'j)
                  "duplicate variable name"
-     #'(for/vector ([i (in-naturals)]
-                    [j (dssl-in-value v)]
-                    #:when when)
-         expr)]
+     #'(make-vec
+         (for/vector ([i (in-naturals)]
+                      [j (dssl-in-value v)]
+                      #:when when)
+           expr))]
     [(_ [j:id v:expr] #:when when:expr expr:expr)
      #'(dssl-for/vector [(_ j) v] #:when when expr)]))
 
 (define (dssl-in-value v)
   (cond
-    [(vector? v)   (in-vector v)]
+    [(vec? v)      (in-vector (unvec v))]
     [(natural? v)  (in-range v)]
     [(string? v)   (in-vector (dssl-explode v))]
     [else          (runtime-error "Value ‘~a’ is not iterable" v)]))
@@ -205,52 +210,14 @@
 (define-syntax dssl-setf!
   (syntax-rules (dssl-vector-ref dssl-struct-ref)
     [(_ (dssl-vector-ref v i) rhs)
-     (vector-set! v i rhs)]
+     (vector-set! (unvec v) i rhs)]
     [(_ (dssl-struct-ref s f) rhs)
      (dssl-struct-set! s f rhs)]
     [(_ i rhs)
      (set! i rhs)]))
 
-(define dssl-vector-ref vector-ref)
-
-(define (write-field field port mode)
-  (let ([recur (case mode
-                 [(#t) write]
-                 [(#f) display]
-                 [else (λ (p port) (print p port mode))])])
-    (display (field-name field) port)
-    (display ": " port)
-    (recur (field-value field) port)))
-
-(define (write-struct struct port mode)
-  (let ([recur (case mode
-                 [(#t) write]
-                 [(#f) display]
-                 [else (λ (p port) (print p port mode))])])
-    (display (struct-name struct) port)
-    (display "{" port)
-    (define first #t)
-    (for ([field (struct-fields struct)])
-      (if first
-        (set! first #f)
-        (display ", " port))
-      (recur field port))
-    (display "}" port)))
-
-(define-struct struct [name fields]
-               #:transparent
-               #:methods gen:custom-write
-               [(define write-proc write-struct)])
-(define-struct field [name (value #:mutable)]
-               #:transparent
-               #:methods gen:custom-write
-               [(define write-proc write-field)])
-
-(define (struct-assq name fields)
-  (cond
-    [(memf (λ (field) (eq? (field-name field) name)) fields)
-     => first]
-    [else #false]))
+(define (dssl-vector-ref v i)
+  (vector-ref (unvec v) i))
 
 (define-syntax (dssl-defstruct stx)
   (syntax-parse stx
@@ -326,6 +293,21 @@
       [else
         (runtime-error "Struct ‘~a’ does not have field ‘~a’"
                        value 'field)])))
+
+(define (dssl-make-vector a b)
+  (make-vec (make-vector a b)))
+
+(define (dssl-vector . args)
+  (make-vec (list->vector args)))
+
+(define (dssl-vector? v)
+  (vec? v))
+
+(define (dssl-build-vector n f)
+  (make-vec (build-vector n f)))
+
+(define (dssl-vector-length v)
+  (vector-length (unvec v)))
 
 (define-syntax-rule (dssl-assert expr)
   (unless expr

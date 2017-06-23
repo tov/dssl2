@@ -46,22 +46,39 @@ than the previous line. (Extranous space is an error.)
 
 @subsection{DSSL2 Formal Grammar}
 
-The DSSL2 language has the following statement and expression forms,
-which are described in more depth below.
+The DSSL2 language has a number of statement and expression forms, which
+are described in more depth below. Here they are summarized in
+@hyperlink["https://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_form"]{
+    Extended Backus-Naur Form}.
+
+Non-terminal symbols are written in @syn{italic typewriter}, whereas
+terminal symbols are in @q{colored typewriter}. Conventions include:
+
+@itemlist[
+ @item{@m["{"] @syn[x] @m["}*"] for repetition 0 or more times}
+ @item{@m["{"] @syn[x] @m["}⁺"] for repetition 1 or more times}
+ @item{@m["{"] @syn[x] @m["},*"] for repetition 0 or more times with commas in
+ between}
+ @item{@m["["] @syn[x] @m["]"] for optional}
+]
+
+The grammar begins by saying that a program is a sequence of zero or
+more statements, where a statement is either a simple statement followed
+by a newline, or a compound statement.
 
 @racketgrammar*[
 #:literals (def defstruct let lambda λ else if elif while for in
             break continue : True False =
             assert assert_eq pass return NEWLINE INDENT DEDENT)
-[program (code:line statement ...)]
-[statement   (code:line simple NEWLINE)
+[program (code:line @#,m["{"] statement @#,m["}*"])]
+[statement   (code:line simple @#,q{NEWLINE})
              compound]
 [simple
             (code:line assert expr)
             (code:line assert_eq expr @#,q{,} expr)
             break
             continue
-            (code:line defstruct name ( field @#,q{,} ... @#,q{ }))
+            (code:line defstruct name @#,q{(} @#,m["{"] field @#,m["},*"] @#,q{)})
             (code:line lvalue = expr)
             expr
             (code:line let var @#,q{=} expr)
@@ -73,33 +90,29 @@ which are described in more depth below.
         (code:line expr @#,q{.} field)
         (code:line expr @#,q["["] expr @#,q["]"])]
 [compound
-            (code:line def name ( var @#,q{,} ... @#,q{ }) : block)
-            (code:line if expr : block @#,m["{"] elif expr : block @#,m["}*"] @#,m["["] else expr : block @#,m["]"])
-            (code:line for var in expr : block)
-            (code:line for var @#,q{,} var in expr : block)
-            (code:line while expr : block)
+            (code:line def name @#,q{(} var @#,q{,} @#,m{...} @#,q{)} @#,q{:} block)
+            (code:line if expr @#,q{:} block @#,m["{"] elif expr @#,q{:} block @#,m["}*"] @#,m["["] else expr @#,q{:} block @#,m["]"])
+            (code:line for var @#,m{[} @#,q{,} var @#,m{]} @#,q{in} expr @#,q{:} block)
+            (code:line while expr @#,q{:} block)
             ]
 [block
-        (code:line simple NEWLINE)
-        (code:line NEWLINE INDENT statement ... DEDENT)]
+        (code:line simple @#,q{NEWLINE})
+        (code:line @#,q{NEWLINE} @#,q{INDENT} @#,m["{"] statement @#,m["}⁺"] @#,q{DEDENT})]
 [expr lvalue
       number
       string
       True
       False
-      (code:line expr ( expr @#,q{,} ... @#,q{ }))
-      (code:line lambda var @#,q{,} ... : expr)
-      (code:line λ var @#,q{,} ... : expr)
-      (code:line expr if expr else expr)
+      (code:line expr @#,q{(} @#,m["{"] expr @#,m["},*"] @#,q{)})
+      (code:line lambda @#,m["{"] var @#,m["},*"] @#,q{:} expr)
+      (code:line @#,q{λ} @#,m["{"] var @#,m["},*"] @#,q{:} expr)
+      (code:line expr @#,q{if} expr @#,q{else} expr)
+      (code:line structname @#,q["{"] @#,m["{"] fieldname : expr @#,m["},*"] @#,q[" }"])
+      (code:line @#,q{[} @#,m["{"] expr @#,m["},*"] @#,q{]})
+      (code:line @#,q{[} expr @#,q{;} expr @#,q{]})
+      (code:line @#,q{[} expr @#,q{for} var @#,m{[} @#,q{,} var @#,m{]} @#,q{in} expr @#,m{[} @#,q{if} expr @#,m{]} @#,q{]})
       (code:line expr BINOP expr)
       (code:line UNOP expr)
-      (code:line structname @#,q["{"] fieldname : expr @#,q{,} ... @#,q[" }"])
-      (code:line @#,q{[} expr @#,q{,} ... @#,q{]})
-      (code:line @#,q{[} expr @#,q{;} expr @#,q{]})
-      (code:line @#,q{[} expr for var in expr @#,q{]})
-      (code:line @#,q{[} expr for var @#,q{,} var in expr @#,q{]})
-      (code:line @#,q{[} expr for var in expr if expr @#,q{]})
-      (code:line @#,q{[} expr for var @#,q{,} var in expr if expr @#,q{]})
       ]
 ]
 
@@ -297,15 +310,15 @@ for person in people_to_greet:
 END
 ]
 
-@defcmpdform{@defidform/inline[for] @syn[var], @syn[var] in @syn[expr]: @syn[block]}
+@defcmpdform{@defidform/inline[for] @syn[var]@subscript{1}, @syn[var]@subscript{2} in @syn[expr]: @syn[block]}
 
 Loops over the indices and values of the given @syn[expr], evaluating
 the @syn[block] for each. The @syn[expr] can evaluate to a vector, a
-string, or a natural number. If a vector, then the first variable takes
-on the indices of the vector while the second takes on the values; if a
-string, then the first variable takes on the indices of the characters
-while the second takes on the characters; if a natural number then both
-variables count together.
+string, or a natural number. If a vector, then @syn[var]@subscript{1}
+takes on the indices of the vector while @syn[var]@subscript{2} takes on
+the values; if a string, then @syn[var]@subscript{1} takes on the
+indices of the characters while @syn[var]@subscript{2} takes on the
+characters; if a natural number then both variables count together.
 
 @verbatim[#:indent 4 #<<END
 for ix, person in people_to_greet:
@@ -412,10 +425,13 @@ The true Boolean value.
 
 The false Boolean value, the only value that is not considered true.
 
-@defexpform{@syn[expr](@syn[expr], ...)}
+@defexpform{@syn[expr]@subscript{0}(@syn[expr]@subscript{1}, ..., @syn[expr]@subscript{k})}
 
-Applies the result of evaluating the first expression to the rest as
-arguments. For example,
+Evaluates all the expressions; then applies the result of
+@syn[expr]@subscript{0} with the results of the other expressions as
+arguments.
+
+For example,
 
 @verbatim[#:indent 4 #<<END
 fact(5)
@@ -431,3 +447,80 @@ END
 
 calls the function @racket[ack] with arguments @racket[6] and
 @racket[7].
+
+@defexpform{@defidform/inline[lambda] @syn[var]@subscript{1}, ..., @syn[var]@subscript{k}: @syn[expr]}
+
+Creates an anonymous function with parameters @syn[var], @code{...} and
+body @syn[expr]. For example, the function to add twice its first
+argument to its second argument can be written
+
+@verbatim[#:indent 4 #<<END
+lambda x, y: 2 * x + y
+END
+]
+
+@defexpform{@defidform/inline[λ] @syn[var], ...: @syn[expr]}
+
+The same as @code{lambda @syn[var], ...: @syn[expr]}.
+
+@defexpform{@syn[expr]@subscript{1} if @syn[expr]@subscript{2} else @syn[expr]@subscript{3}}
+
+The ternary expression first evaluates the condition
+@syn[expr]@subscript{2}. If true (any value but @racket[False]),
+evaluates @syn[expr]@subscript{1} for its value; otherwise, if
+@syn[expr]@subscript{2} was false, evaluates @syn[expr]@subscript{3}
+for its value.
+
+@defexpform{@syn[structname] { @syn[field]@subscript{1}: @syn[expr]@subscript{1}, ..., @syn[field]@subscript{k}: @syn[expr]@subscript{k} }}
+
+Constructs a struct with the given name and the values of the given
+expressions for its fields. The struct must have been declared with
+those fields using @racket[defstruct].
+
+@defexpform{[ @syn[expr]@subscript{0}, ..., @syn[expr]@subscript{k - 1} ]}
+
+Creates a new vector of length @code{k} whose values are the values
+of the expressions.
+
+For example:
+
+@verbatim[#:indent 4 #<<END
+let vec = [ 1, 2, 3, 4, 5 ]
+END
+]
+
+@defexpform{[ @syn[expr]@subscript{1}; @syn[expr]@subscript{2} ]}
+
+Constructs a new vector whose length is the value of
+@syn[expr]₂, filled with the value of @syn[expr]₁. That is,
+
+@verbatim[#:indent 4 #<<END
+[ 0; 5 ]
+END
+]
+
+means the same thing as
+
+@verbatim[#:indent 4 #<<END
+[ 0, 0, 0, 0, 0 ]
+END
+]
+
+@defexpform{[ @syn[expr]₁ for @syn[var] in @syn[expr]₂ ]}
+
+@defexpform{[ @syn[expr]₁ for @syn[var]₁, @syn[var]₂ in @syn[expr]₂ ]}
+
+@defexpform{[ @syn[expr]₁ for @syn[var] in @syn[expr]₂ if @syn[expr]₃ ]}
+
+@defexpform{[ @syn[expr]₁ for @syn[var]₁, @syn[var]₂ in @syn[expr]₂ if @syn[expr]₃ ]}
+
+@subsubsection{Operators}
+
+@defexpform{@syn[expr]@subscript{1} @defidform/inline[**] @syn[expr]@subscript{2}}
+
+Raises the value of @syn[expr]@subscript{1} to the power of the value of
+@syn[expr]@subscript{2}, both of which must be numbers.
+
+@defexpform{@syn[expr]@subscript{1} @defidform/inline[*] @syn[expr]@subscript{2}}
+
+Multiplies the values of the expressions, which must be numbers.

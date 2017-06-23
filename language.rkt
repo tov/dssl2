@@ -213,10 +213,38 @@
 
 (define dssl-vector-ref vector-ref)
 
+(define (write-field field port mode)
+  (let ([recur (case mode
+                 [(#t) write]
+                 [(#f) display]
+                 [else (λ (p port) (print p port mode))])])
+    (display (field-name field) port)
+    (display ": " port)
+    (recur (field-value field) port)))
+
+(define (write-struct struct port mode)
+  (let ([recur (case mode
+                 [(#t) write]
+                 [(#f) display]
+                 [else (λ (p port) (print p port mode))])])
+    (display (struct-name struct) port)
+    (display "{" port)
+    (define first #t)
+    (for ([field (struct-fields struct)])
+      (if first
+        (set! first #f)
+        (display ", " port))
+      (recur field port))
+    (display "}" port)))
+
 (define-struct struct [name fields]
-               #:transparent)
+               #:transparent
+               #:methods gen:custom-write
+               [(define write-proc write-struct)])
 (define-struct field [name (value #:mutable)]
-               #:transparent)
+               #:transparent
+               #:methods gen:custom-write
+               [(define write-proc write-field)])
 
 (define (struct-assq name fields)
   (cond

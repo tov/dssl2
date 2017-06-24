@@ -1,6 +1,6 @@
 #lang racket
 
-(provide defexpform defsmplform defcmpdform
+(provide defexpform defexpforms defsmplform defcmpdform
          code syn
          q m)
 (require scribble/manual
@@ -19,21 +19,26 @@
 (define-syntax-rule (syn var)
   (code (italic (~a 'var))))
 
-(define-syntax-rule (defexpform form ...)
+(define-syntax-rule (defexpform chunk ...)
+  (*defforms "expr" (list (list chunk ...))))
+
+(define-syntax-rule (defexpforms form ...)
   (*defforms "expr" (list form ...)))
 
-(define-syntax-rule (defsmplform form ...)
-  (*defforms "simple" (list form ...)))
+(define-syntax-rule (defsmplform chunk ...)
+  (*defforms "simple" (list (list chunk ...))))
 
-(define-syntax-rule (defcmpdform form ...)
-  (*defforms "compound" (list form ...)))
+(define-syntax-rule (defcmpdform chunk ...)
+  (*defforms "compound" (list (list chunk ...))))
 
 (define (*defforms kind forms)
   (define labeller (add-background-label (or kind "syntax")))
-  (define labelled (labeller
-                     (list (make-paragraph
-                             (list (to-element (code forms)))))))
-  (define table-content (list (list labelled)))
+  (define (make-cell form)
+    (list (make-paragraph (list (to-element (code form))))))
+  (define table-content
+    (cons
+      (list (labeller (make-cell (first forms))))
+      (map list (map make-cell (rest forms)))))
   (define table (make-table boxed-style table-content))
   (make-blockquote
     vertical-inset-style

@@ -141,7 +141,7 @@ by a newline, or a compound statement.
 Asserts that the given @syn[expr] evaluates to non-false. If the
 expression evaluates false, signals an error.
 
-@defsmplform{@defidform/inline[assert_eq] @syn[expr], @syn[expr]}
+@defsmplform{@defidform/inline[assert_eq] @syn[expr]₁, @syn[expr]₂}
 
 Asserts that the given @syn[expr]s evaluates to structurally equal values.
 If they are not equal, signals an error.
@@ -156,10 +156,10 @@ loop immediately.
 When in a @racket[for] or @racket[while] loop, ends the current
 iteration of the (inner-most) loop and begins the next iteration.
 
-@defcmpdform{@defidform/inline[def] @syn[name](@syn[var], ...): @syn[block]}
+@defcmpdform{@defidform/inline[def] @syn[name](@syn[var]₁, ... @syn[var]@subscript{k}): @syn[block]}
 
-Defines @syn[name] to be a function with formal parameters @syn[var],
-@code{...}, and with body @syn[block].
+Defines @syn[name] to be a function with formal parameters @syn[var]₁,
+@code{...}, @syn[var]@subscript{k} and with body @syn[block].
 
 For example,
 
@@ -183,11 +183,12 @@ The body of a function is defined to be a block, which means it can be
 an indented sequence of statements, or a single simple statement on the
 same line as the @racket[def].
 
-@defsmplform{@defidform/inline[defstruct] @syn[structname](@syn[fieldname], ...)}
+@defsmplform{@defidform/inline[defstruct] @syn[structname](@syn[fieldname]₁, ..., @syn[fieldname]@subscript{k})}
 
 Defines a new structure type @syn[structname] with fields given by
-@syn[fieldname], @code{...}. For example, to define a struct
-@racket[posn] with fields @racket[x] and @racket[y], we write:
+@syn[fieldname]₁, @code{...}, @syn[fieldname]@subscript{k}. For example,
+to define a struct @racket[posn] with fields @racket[x] and @racket[y],
+we write:
 
 @verbatim[#:indent 4 #<<END
 defstruct posn(x, y)
@@ -233,13 +234,22 @@ Assignment. The assigned @syn[lvalue] can be in one of three forms:
 An expression, evaluated for both side effect and, if at the tail end
 of a function, its value.
 
-@defcmpdform{@defidform/inline[if] @syn[expr]: @syn[block]
-             @defidform/inline[elif] @syn[expr]: @syn[block]
-             @defidform/inline[else]: @syn[block]}
+@defcmpdform{@defidform/inline[if] @syn[expr]@subscript{if}: @syn[block]@subscript{if}
+             @defidform/inline[elif] @syn[expr]@subscript{i}: @syn[block]@subscript{i}
+             @defidform/inline[else]: @syn[block]@subscript{else}}
 
 The DSSL2 conditional statement contains an @racket[if], 0 or more
 @racket[elif]s, and optionally an @racket[else] for if none of the
 conditions holds.
+
+First it evaluates the @racket[if] condition @syn[expr]@subscript{if}.
+If non-false, it then evaluates @syn[block]@subscript{if} and finishes.
+Otherwise, it evaluates each @racket[elif] condition
+@syn[expr]@subscript{i} in turn; if each is false, it goes on to the
+next, but when one is non-false then it finishes with the corresponding
+@syn[block]@subscript{i}. Otherwise, if all of the conditions were false
+and the optional @syn[block]@subscript{else} is included, evaluates
+that.
 
 For example, we can have an @racket[if] with no @racket[elif] or
 @racket[else] parts:
@@ -250,7 +260,10 @@ if should_greet:
 END
 ]
 
-Or we can have several:
+The function @code{greet()} will be called if variable
+@code{should_greet} is strue, and otherwise it will not.
+
+Or we can have several @racket[elif] parts:
 
 @verbatim[#:indent 4 #<<END
 def fib(n):
@@ -267,11 +280,14 @@ def fib(n):
 END
 ]
 
+In this example, the recursive @racket[else] case happens when all four
+conditions evaluate to false.
+
 @defsmplform{@defidform/inline[let] @syn[var] = @syn[expr]}
 
 Declares and defines a local variable. Local variables may be declared in any
 scope and last for that scope. A local variable may be re-assigned with the
-assignment form, as in th third line here:
+assignment form (@racket[=]), as in the third line here:
 
 @verbatim[#:indent 4 #<<END
 def sum(vec):
@@ -295,7 +311,7 @@ println(x)
 END
 ]
 
-@defcmpdform{@defidform/inline[for] @syn[var] in @syn[expr]: @syn[block]}
+@defcmpdform{@defidform/inline[for] @syn[var] @q{in} @syn[expr]: @syn[block]}
 
 Loops over the values of the given @syn[expr], evaluating the
 @syn[block] for each. The @syn[expr] can evaluate to a vector, a string,
@@ -310,14 +326,14 @@ for person in people_to_greet:
 END
 ]
 
-@defcmpdform{@defidform/inline[for] @syn[var]@subscript{1}, @syn[var]@subscript{2} in @syn[expr]: @syn[block]}
+@defcmpdform{@defidform/inline[for] @syn[var]₁, @syn[var]₂ @q{in} @syn[expr]: @syn[block]}
 
 Loops over the indices and values of the given @syn[expr], evaluating
 the @syn[block] for each. The @syn[expr] can evaluate to a vector, a
-string, or a natural number. If a vector, then @syn[var]@subscript{1}
-takes on the indices of the vector while @syn[var]@subscript{2} takes on
-the values; if a string, then @syn[var]@subscript{1} takes on the
-indices of the characters while @syn[var]@subscript{2} takes on the
+string, or a natural number. If a vector, then @syn[var]₁
+takes on the indices of the vector while @syn[var]₂ takes on
+the values; if a string, then @syn[var]₁ takes on the
+indices of the characters while @syn[var]₂ takes on the
 characters; if a natural number then both variables count together.
 
 @verbatim[#:indent 4 #<<END
@@ -347,7 +363,7 @@ END
 
 @defcmpdform{@defidform/inline[while] @syn[expr]: @syn[block]}
 
-Iterates the @syn[block] while the @syn[expr] evaluates to true. For example:
+Iterates the @syn[block] while the @syn[expr] evaluates to non-false. For example:
 
 @verbatim[#:indent 4 #<<END
 while !is_empty(queue):
@@ -357,18 +373,41 @@ END
 
 @subsection[#:tag "exp-forms"]{Expression Forms}
 
-@defexpform{@syn{lvalue}}
+@defexpform{@syn[var]}
 
-These left-hand sides of assignments (@syn[=]) can also appear for their
-values. That is, @code{v[i]} gets the @code{i}th element of vector
-@code{v}.
+The value of a variable, which must be a function parameter, bound with
+@racket[let], or defined with @racket[def]. For example,
+
+@verbatim[#:indent 4 #<<END
+let x = 5
+println(x)
+END
+]
+
+prints “@code{5}”.
+
+Lexically, a variable is a letter or underscore, followed by zero or
+more letters, underscores, or digits, optionally ending in a question
+mark or exclamation point.
+
+@defexpform{@syn[expr].@syn[fieldname]}
+
+Expression @syn[expr] must evaluate to struct value that has field
+@syn[fieldname]; then this expression evaluates to the value of that
+field of the struct.
+
+@defexpform{@syn[expr]₁[@syn[expr]₂]}
+
+Expression @syn[expr]₁ must evaluate to a vector @code{v}; @syn[expr]₂
+must evaluate to an integer @code{n} between 0 and @code{len(v) - 1}.
+Then this returns the @code{n}th element of vector @code{v}.
 
 @defexpform{@syn{number}}
 
 Numeric literals include:
 
 @itemlist[
-  @item{Integers: @racket[0], @racket[3], @racket[18446744073709551617]}
+  @item{Decimal integers: @racket[0], @racket[3], @racket[18446744073709551617]}
   @item{Hexadedecimal, octal, and binary integers: @q{0xFFFF00},
       @q{0o0177}, @q{0b011010010}}
   @item{Floating point: @racket[3.5], @q{6.02E23}, @racket[1e-12]}
@@ -412,10 +451,11 @@ characters via the escape code @code{\n}. Other escape codes include:
   @item{@code{\v} for ASCII vertical tab (also @\code{\x0B})}
   @item{@code{\x@syn{hh}} in hex, for example @code{\x0A} is newline}
   @item{@code{\@syn{ooo}} in octal, for example @code{\010} is tab}
+  @item{A backslash immediately followed by a newline causes both characters to
+      be ignored, which provides a way to wrap long strings across lines.}
 ]
 
-A backslash immediately followed by a newline causes both characters to
-be ignored, which provides a way to wrap long strings across lines.
+Any other character following a backslash stands for itself.
 
 @defexpform{@defidform/inline[True]}
 
@@ -425,7 +465,7 @@ The true Boolean value.
 
 The false Boolean value, the only value that is not considered true.
 
-@defexpform{@syn[expr]@subscript{0}(@syn[expr]@subscript{1}, ..., @syn[expr]@subscript{k})}
+@defexpform{@syn[expr]@subscript{0}(@syn[expr]₁, ..., @syn[expr]@subscript{k})}
 
 Evaluates all the expressions; then applies the result of
 @syn[expr]@subscript{0} with the results of the other expressions as
@@ -448,30 +488,28 @@ END
 calls the function @racket[ack] with arguments @racket[6] and
 @racket[7].
 
-@defexpform{@defidform/inline[lambda] @syn[var]@subscript{1}, ..., @syn[var]@subscript{k}: @syn[expr]}
+@defexpforms[
+  @list{@defidform/inline[lambda] @syn[var]₁, ..., @syn[var]@subscript{k}: @syn[expr]}
+  @list{@q{λ} @syn[var]₁, ..., @syn[var]@subscript{k}: @syn[expr]}
+]
 
-Creates an anonymous function with parameters @syn[var], @code{...} and
-body @syn[expr]. For example, the function to add twice its first
-argument to its second argument can be written
+Creates an anonymous function with parameters @syn[var]₁, @code{...},
+@syn[var]@subscript{k} and body @syn[expr]. For example, the function to
+add twice its first argument to its second argument can be written
 
 @verbatim[#:indent 4 #<<END
 lambda x, y: 2 * x + y
 END
 ]
 
-@defexpform{@defidform/inline[λ] @syn[var], ...: @syn[expr]}
-
-The same as @code{lambda @syn[var], ...: @syn[expr]}.
-
-@defexpform{@syn[expr]@subscript{1} if @syn[expr]@subscript{2} else @syn[expr]@subscript{3}}
+@defexpform{@syn[expr]₁ @q{if} @syn[expr]₂ @q{else} @syn[expr]₃}
 
 The ternary expression first evaluates the condition
-@syn[expr]@subscript{2}. If true (any value but @racket[False]),
-evaluates @syn[expr]@subscript{1} for its value; otherwise, if
-@syn[expr]@subscript{2} was false, evaluates @syn[expr]@subscript{3}
-for its value.
+@syn[expr]₂. If non-false,
+evaluates @syn[expr]₁ for its value; otherwise,
+evaluates @syn[expr]₃ for its value.
 
-@defexpform{@syn[structname] { @syn[field]@subscript{1}: @syn[expr]@subscript{1}, ..., @syn[field]@subscript{k}: @syn[expr]@subscript{k} }}
+@defexpform{@syn[structname] { @syn[field]₁: @syn[expr]₁, ..., @syn[field]@subscript{k}: @syn[expr]@subscript{k} }}
 
 Constructs a struct with the given name and the values of the given
 expressions for its fields. The struct must have been declared with
@@ -489,7 +527,7 @@ let vec = [ 1, 2, 3, 4, 5 ]
 END
 ]
 
-@defexpform{[ @syn[expr]@subscript{1}; @syn[expr]@subscript{2} ]}
+@defexpform{[ @syn[expr]₁; @syn[expr]₂ ]}
 
 Constructs a new vector whose length is the value of
 @syn[expr]₂, filled with the value of @syn[expr]₁. That is,
@@ -506,21 +544,161 @@ means the same thing as
 END
 ]
 
-@defexpform{[ @syn[expr]₁ for @syn[var] in @syn[expr]₂ ]}
+@defexpforms[
+  @list{[ @syn[expr]₁ @q{for} @syn[var] @q{in} @syn[expr]₂ ]}
+  @list{[ @syn[expr]₁ @q{for} @syn[var]₁, @syn[var]₂ @q{in} @syn[expr]₂ ]}
+]
 
-@defexpform{[ @syn[expr]₁ for @syn[var]₁, @syn[var]₂ in @syn[expr]₂ ]}
+Vector comprehensions: produces a vector of the values of @syn[expr]₁
+while iterating the variable(s) over @syn[expr]₂. In particular,
+@syn[expr]₂ must be a vector @code{v}, a string @code{s}, or a
+natural number @code{n}; in which case the iterated-over values are
+the elements of @code{v}, the 1-character strings comprising
+@code{s}, or counting from 0 to @code{n - 1}, respectively. If one
+variable @syn[var] is provided, it takes on those values. If two are
+provided, then @syn[var]₂ takes on those values, while @syn[var]₁
+takes on the indices counting from 0 upward.
 
-@defexpform{[ @syn[expr]₁ for @syn[var] in @syn[expr]₂ if @syn[expr]₃ ]}
+For example,
 
-@defexpform{[ @syn[expr]₁ for @syn[var]₁, @syn[var]₂ in @syn[expr]₂ if @syn[expr]₃ ]}
+@verbatim[#:indent 4 #<<END
+[ 10 * n for n in [ 5, 4, 3, 2, 1 ] ]
+END
+]
+
+evaluates to
+
+@verbatim[#:indent 4 #<<END
+[ 50, 40, 30, 20, 10 ]
+END
+]
+
+And
+
+@verbatim[#:indent 4 #<<END
+[ 10 * n + i for i, n in [ 5, 4, 3, 2, 1 ] ]
+END
+]
+
+evaluates to
+
+@verbatim[#:indent 4 #<<END
+[ 50, 41, 32, 23, 14 ]
+END
+]
+
+@defexpforms[
+  @list{[ @syn[expr]₁ @q{for} @syn[var] @q{in} @syn[expr]₂ @q{if} @syn[expr]₃ ]}
+  @list{[ @syn[expr]₁ @q{for} @syn[var]₁, @syn[var]₂ @q{in} @syn[expr]₂ @q{if} @syn[expr]₃ ]}
+]
+
+If the optional @syn[expr]₃ is provided, only elements for which
+@syn[expr]₃ is non-false are included. That is, the variable(s) take on
+each of their values, then @syn[expr]₃ is evaluated in the scope of the
+variable(s). If it's non-false then @syn[expr]₁ is evaluated and
+included in the resulting vector.
+
+For example,
+
+@verbatim[#:indent 4 #<<END
+[ 10 * n for n in [ 5, 4, 3, 2, 1 ] if odd?(n) ]
+END
+]
+
+evaluates to
+
+@verbatim[#:indent 4 #<<END
+[ 50, 30, 10 ]
+END
+]
 
 @subsubsection{Operators}
 
-@defexpform{@syn[expr]@subscript{1} @defidform/inline[**] @syn[expr]@subscript{2}}
+Operators are described in order from tighest to loosest precedence.
 
-Raises the value of @syn[expr]@subscript{1} to the power of the value of
-@syn[expr]@subscript{2}, both of which must be numbers.
+@defexpform{@syn[expr]₁ @defidform/inline[**] @syn[expr]₂}
 
-@defexpform{@syn[expr]@subscript{1} @defidform/inline[*] @syn[expr]@subscript{2}}
+Raises the value of @syn[expr]₁ to the power of the value of
+@syn[expr]₂, both of which must be numbers.
 
-Multiplies the values of the expressions, which must be numbers.
+The @racket[**] operator is right-associative.
+
+@defexpforms[
+  @list{@defidform/inline[!]@syn[expr]}
+  @list{-@syn[expr]}
+  @list{+@syn[expr]}
+]
+
+Logical negation, numerical negation, and numerical identity.
+
+@code{!}@syn[expr] evaluates @syn[expr], then returns @racket[True] if
+the result was @racket[False], and @racket[False] for any other result.
+
+@code{-}@syn[expr] and @code{+}@syn[expr] require that @syn[expr]
+evaluate to a number; then @code{-} negates it and @code{+} returns it
+unchanged.
+
+@defexpforms[
+  @list{@syn[expr]₁ @defidform/inline[*] @syn[expr]₂}
+  @list{@syn[expr]₁ @defidform/inline[/] @syn[expr]₂}
+  @list{@syn[expr]₁ @defidform/inline[%] @syn[expr]₂}
+]
+
+Multiplies, divides, or modulos the values of the expressions, respectively.
+
+@defexpforms[
+  @list{@syn[expr]₁ @defidform/inline[+] @syn[expr]₂}
+  @list{@syn[expr]₁ @defidform/inline[-] @syn[expr]₂}
+]
+
+Addition and subtraction.
+
+@defexpforms[
+  @list{@syn[expr]₁ @defidform/inline[<<] @syn[expr]₂}
+  @list{@syn[expr]₁ @defidform/inline[>>] @syn[expr]₂}
+]
+
+Left and right bitwise shift.
+
+@defexpform{@syn[expr]₁ @defidform/inline[&] @syn[expr]₂}
+
+Bitwise and.
+
+@defexpform{@syn[expr]₁ @defidform/inline[\|] @syn[expr]₂}
+
+Bitwise or. (Not written with the backslash.)
+
+@defexpforms[
+  @list{@syn[expr]₁ @defidform/inline[==] @syn[expr]₂}
+  @list{@syn[expr]₁ @defidform/inline[!=] @syn[expr]₂}
+  @list{@syn[expr]₁ @defidform/inline[===] @syn[expr]₂}
+  @list{@syn[expr]₁ @defidform/inline[!==] @syn[expr]₂}
+  @list{@syn[expr]₁ @defidform/inline[<] @syn[expr]₂}
+  @list{@syn[expr]₁ @defidform/inline[<=] @syn[expr]₂}
+  @list{@syn[expr]₁ @defidform/inline[>] @syn[expr]₂}
+  @list{@syn[expr]₁ @defidform/inline[>=] @syn[expr]₂}
+]
+
+Operator @racket[==] is structural equality, and @racket[!=] is its
+negation. Operator @racket[===] is physical equality, and @racket[!==]
+is its negation. To understand the difference, suppose that we create
+two different vectors with the same contents. Those vectors are
+structurally equal but not physically equal.
+
+Operators @racket[<], @racket[<=], @racket[>], and @racket[>=] are the
+standard inequalities for numbers, and compare pairs of strings in
+lexicographic order.
+
+@defexpform{@syn[expr]₁ @defidform/inline[&&] @syn[expr]₂}
+
+Short-circuiting logical and. First evaluates @syn[expr]₁; if the result
+is @racket[False] then the whole conjunction is @racket[False];
+otherwise, the result of the conjunction is the result of @syn[expr]₂.
+
+@defexpform{@syn[expr]₁ @defidform/inline[\|\|] @syn[expr]₂}
+
+Short-circuiting logical or. First evaluates @syn[expr]₁; if the result
+is non-false then the whole disjunction has that result; otherwise the
+result of the conjunction is the result of @syn[expr]₂.
+
+Not written with the backslashes.

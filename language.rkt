@@ -13,31 +13,18 @@
          if
          else
          (rename-out
-           ; for printer
-           [struct?             dssl-struct?]
-           [struct-name         dssl-struct-name]
-           [struct-fields       dssl-struct-fields]
-           [field-name          dssl-field-name]
-           [field-value         dssl-field-value]
-           ; special
+           ; special syntax
            [dssl-module-begin   #%module-begin]
-           ; values
-           [dssl-make-vector    make-vector]
-           [dssl-vector         vector]
-           [dssl-vector?        vector?]
-           [dssl-build-vector   build_vector]
-           [dssl-vector-length  len]
+           ; operators
            [modulo              %]
            [expt                **]
            [equal?              ==]
            [eq?                 ===]
            [not                 !]
-           [void                pass]
            [bitwise-and         &]
            [bitwise-ior         \|]
            [bitwise-xor         ^]
            [bitwise-not         ~]
-           [identity            identity]
            [dssl-+              +]
            [dssl-!=             !=]
            [dssl-!==            !==]
@@ -47,15 +34,23 @@
            [dssl->=             >=]
            [dssl->>             >>]
            [dssl-<<             <<]
+           ; values
+           [dssl-make-vector    make-vector]
+           [dssl-vector         vector]
+           [dssl-vector?        vector?]
+           [dssl-build-vector   build_vector]
+           [dssl-vector-length  len]
            [dssl-explode        explode]
            [dssl-implode        implode]
            [dssl-print          print]
            [dssl-println        println]
            [dssl-map            map]
            [dssl-filter         filter]
+           [identity            identity]
            ; syntax
            [and                 &&]
            [or                  \|\|]
+           [void                pass]
            [dssl-True           True]
            [dssl-False          False]
            [dssl-assert         assert]
@@ -88,8 +83,6 @@
   (#%module-begin
    (module* configure-runtime racket/base
      (require dssl2/private/parser)
-     ; (require dssl2/private/printer)
-     ; (current-print dssl-print)
      (current-read-interaction
        (λ (src in)
           (let loop ([line (read-line in)])
@@ -202,7 +195,7 @@
   (cond
     [(vec? v)      (in-vector (unvec v))]
     [(natural? v)  (in-range v)]
-    [(string? v)   (in-vector (dssl-explode v))]
+    [(string? v)   (in-vector (unvec (dssl-explode v)))]
     [else          (runtime-error "Value ‘~a’ is not iterable" v)]))
 
 ; setf! is like Common Lisp setf, but it just recognizes three forms. We
@@ -320,16 +313,26 @@
     (unless (equal? v1 v2)
       (assertion-error "‘~a’ != ‘~a’" v1 v2))))
 
-(define (dssl-+ a b)
-  (cond
-    [(and (number? a) (number? b))
-     (+ a b)]
-    [(or (string? a) (string? b))
-     (format "~a~a" a b)]
-    [else
-      (runtime-error
-        "+ expects 2 numbers or at least 1 string, but given ‘~a’ and ‘~a’"
-        a b)]))
+(define dssl-+
+  (case-lambda
+    [(a)
+     (cond
+       [(number? a)
+        a]
+       [else
+         (runtime-error
+           "unary + expects a number, but given ‘~s’"
+           a)])]
+    [(a b)
+     (cond
+       [(and (number? a) (number? b))
+        (+ a b)]
+       [(or (string? a) (string? b))
+        (format "~a~a" a b)]
+       [else
+         (runtime-error
+           "+ expects 2 numbers or at least 1 string, but given ‘~s’ and ‘~s’"
+           a b)])]))
 
 (define (dssl-!= a b)
   (not (equal? a b)))
@@ -372,19 +375,21 @@
   (arithmetic-shift n (- m)))
 
 (define (dssl-explode s)
-  (list->vector
-    (map (λ (c) (list->string (list c)))
-         (string->list s))))
+  (make-vec
+    (list->vector
+      (map (λ (c) (list->string (list c)))
+           (string->list s)))))
 
 (define (dssl-implode vec)
-  (apply string-append (vector->list vec)))
+  (apply string-append (vector->list (unvec vec))))
 
 (define (dssl-map f vec)
-  (build-vector (vector-length vec)
-                (λ (i) (f (vector-ref vec i)))))
+  (make-vec
+    (build-vector (vector-length (unvec vec))
+                  (λ (i) (f (vector-ref (unvec vec) i))))))
 
 (define (dssl-filter f vec)
-  (list->vector (filter f (vector->list vec))))
+  (make-vec (list->vector (filter f (vector->list (unvec vec))))))
 
 (define-syntax-rule (dssl-error msg arg ...)
   (let ([fmt  msg]

@@ -69,6 +69,8 @@
          ; * numeric operations
          floor
          ceiling
+         int
+         float
          ; ** predicates
          zero?
          positive?
@@ -217,7 +219,7 @@
     [(vec? v)      (in-vector (unvec v))]
     [(natural? v)  (in-range v)]
     [(string? v)   (in-vector (unvec (explode v)))]
-    [else          (runtime-error "Value ‘~a’ is not iterable" v)]))
+    [else          (type-error 'for v "something iterable")]))
 
 ; setf! is like Common Lisp setf, but it just recognizes three forms. We
 ; use this to translate assignments.
@@ -416,10 +418,35 @@
 (define (ceiling n)
   (inexact->exact (racket:ceiling n)))
 
+(define (int x)
+  (cond
+    [(number? x) (inexact->exact (truncate x))]
+    [(string? x)
+     (cond
+       [(string->number x) => int]
+       [else (runtime-error "int: could not convert to integer: ~s" x)])]
+    [(eq? #t x)  1]
+    [(eq? #f x)  0]
+    [else (type-error 'int x "number, string, or Boolean")]))
+
+(define (float x)
+  (cond
+    [(number? x) (exact->inexact x)]
+    [(string? x)
+     (cond
+       [(string->number x) => float]
+       [else (runtime-error "float: could not convert to float: ~s" x)])]
+    [(eq? #t x)  1.0]
+    [(eq? #f x)  0.0]
+    [else (type-error 'int x "number, string, or Boolean")]))
+
 (define-syntax-rule (dssl-error msg arg ...)
   (let ([fmt  msg]
         [args (list arg ...)])
     (error (apply format fmt args))))
+
+(define (type-error who got expected)
+  (runtime-error "~a: got ~s where ~a expected" who got expected))
 
 (define (runtime-error fmt . args)
   (error (apply format (string-append "Runtime error: " fmt) args)))

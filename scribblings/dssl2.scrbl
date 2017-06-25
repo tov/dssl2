@@ -635,7 +635,7 @@ Logical negation, bitwise negation, numerical negation, and numerical identity.
 @code{!}@syn[expr] evaluates @syn[expr], then returns @racket[True] if
 the result was @racket[False], and @racket[False] for any other result.
 
-@code{~}@syn[expr] @code{-}@syn[expr], and @code{+}@syn[expr] require
+@code{~}@syn[expr], @code{-}@syn[expr], and @code{+}@syn[expr] require
 that @syn[expr] evaluate to a number. Then @code{~} flips every bit,
 @code{-} negates it, and @code{+} returns it unchanged.
 
@@ -741,6 +741,30 @@ Rounds a number down to the largest integer that is no greater.
 @defprocform[ceiling]{(Number) -> Integer}
 
 Rounds a number up to the smallest integer that is no less.
+
+@defprocforms[
+    [int @list{(Number) -> Integer}]
+    [int @list{(String) -> Integer}]
+    [int @list{(Boolean) -> Integer}]
+]
+
+Returns the integer part of a number, by truncation. That is, the
+decimal point and everything after it is removed. If given a string,
+attempt to convert to a number before truncating, throwing an error if
+the conversion fails. Booleans @racket[True] and @racket[False] conver
+to @racket[1] and @racket[0], respectively.
+
+@defprocforms[
+  [float @list{(Number) -> Floating}]
+  [float @list{(String) -> Floating}]
+  [float @list{(Boolean) -> Floating}]
+]
+
+Converts an exact (integral or rational) number to the nearest
+double-precision floating point value. If given a string, attempt to
+convert to a number, throwing an error if the conversion fails. Booleans
+@racket[True] and @racket[False] conver to @racket[1.0] and @racket[0.0],
+respectively.
 
 @subsubsection{Predicates}
 

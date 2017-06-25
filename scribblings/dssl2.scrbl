@@ -731,7 +731,9 @@ Determines whether its argument is an integer.
 
 Determines whether its argument is a vector.
 
-@subsection{Numeric predicates}
+@subsection{Numeric operations}
+
+@subsubsection{Predicates}
 
 @defprocform[zero?]{(Number) -> Boolean}
 
@@ -755,6 +757,10 @@ Determines whether its argument is an odd integer.
 
 @subsection{String operations}
 
+@defprocform[explode]{(String) -> Vector<String>}
+
+Breaks a string into a vector of 1-character strings.
+
 @defprocform[format]{(String, Any, ...) -> String}
 
 Using its first argument as a template, interpolates the remaining
@@ -766,11 +772,11 @@ the difference being that @code{~s} quotes and escapes strings, whereas
 Additionally, @code{~n} can be used to insert a newline, and @code{~~}
 inserts a literal @code{~}.
 
+@defprocform[implode]{(Vector<String>) -> String}
+
+Concatenates a vector of strings into a single string.
+
 @subsection{Vector operations}
-
-@defprocform[len]{(Vector<X>) -> Natural}
-
-Returns the length of a vector.
 
 @defprocform[build_vector]{(n: Natural, f: (Natural) -> X) -> Vector<X>}
 
@@ -782,3 +788,43 @@ Creates a vector of size @code{n} whose elements are @code{f(0)},
 END
 ]
 
+@defprocform[filter]{(pred: (X) -> Boolean, vec: Vector<X>) -> Vector<X>}
+
+Returns a vector containing the elements of @code{vec} for which
+@code{pred} returns non-false. Equivalent to
+
+@verbatim[#:indent 4 #<<END
+[ x in vec if pred(x) ]
+END
+]
+
+@defprocform[len]{(Vector<X>) -> Natural}
+
+Returns the length of a vector.
+
+@defprocform[map]{(f: (X) -> Y, vec: Vector<X>) -> Vector<Y>}
+
+Returns a vector consisting of @code{f} applied to each element of
+@code{vec}. Equivalent to
+
+@verbatim[#:indent 4 #<<END
+[ f(x) for x in vec ]
+END
+]
+
+@subsection{I/O Functions}
+
+@defprocforms[
+  [print @list{(String, Any, ...) -> Void}]
+  [println @list{(String, Any, ...) -> Void}]
+]
+
+The first argument is treated as a format string into which the
+remaining arguments are interpolated, à la @racket[format]. Then the
+result is printed. Function @racket[println] adds a newline at the end.
+
+@subsection{Other functions}
+
+@defprocform[identity]{(X) -> X}
+
+The identity function, which just returns its argument.

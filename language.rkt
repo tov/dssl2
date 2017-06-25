@@ -359,19 +359,17 @@
 (define (dssl-!== a b)
   (not (eq? a b)))
 
-(define-syntax make-comparison
-  (syntax-rules ()
-    [(_ name string-cmp number-cmp)
-     (define (name a b)
-       (cond
-         [(and (string? a) (string? b))
-          (string-cmp a b)]
-         [(and (number? a) (number? b))
-          (number-cmp a b)]
-         [else
-           (runtime-error
-             "Comparator ‘~a’ only applies to 2 strings or 2 numbers"
-             'number-cmp)]))]))
+(define-syntax-rule (make-comparison name string-cmp number-cmp)
+  (define (name a b)
+    (cond
+      [(and (string? a) (string? b))
+       (string-cmp a b)]
+      [(and (number? a) (number? b))
+       (number-cmp a b)]
+      [else
+        (runtime-error
+          "Comparator ‘~a’ only applies to 2 strings or 2 numbers"
+          'number-cmp)])))
 
 (make-comparison dssl-< string<? <)
 (make-comparison dssl-> string>? >)

@@ -4,18 +4,10 @@
          #%datum
          #%top
          #%top-interaction)
-(provide - * /
-         procedure? string? number?
-         integer? zero? positive? negative? even? odd?
-         format
-         begin
-         cond
-         if
-         else
-         (rename-out
+(provide (rename-out
            ; special syntax
            [dssl-module-begin   #%module-begin]
-           ; operators
+           ; built-in operators
            [modulo              %]
            [expt                **]
            [equal?              ==]
@@ -25,6 +17,9 @@
            [bitwise-ior         \|]
            [bitwise-xor         ^]
            [bitwise-not         ~]
+           [-                   -]
+           [*                   *]
+           [/                   /]
            [dssl-+              +]
            [dssl-!=             !=]
            [dssl-!==            !==]
@@ -34,23 +29,15 @@
            [dssl->=             >=]
            [dssl->>             >>]
            [dssl-<<             <<]
-           ; values
-           [dssl-make-vector    make-vector]
-           [dssl-vector         vector]
-           [dssl-vector?        vector?]
-           [dssl-build-vector   build_vector]
-           [dssl-vector-length  len]
-           [dssl-explode        explode]
-           [dssl-implode        implode]
-           [dssl-print          print]
-           [dssl-println        println]
-           [dssl-map            map]
-           [dssl-filter         filter]
-           [identity            identity]
            ; syntax
            [and                 &&]
            [or                  \|\|]
+           [begin               begin]
+           [cond                cond]
+           [if                  if]
+           [else                else]
            [void                pass]
+           [vector              vector]
            [dssl-True           True]
            [dssl-False          False]
            [dssl-assert         assert]
@@ -65,15 +52,47 @@
            [dssl-for/vector     for/vector]
            [dssl-lambda         lambda]
            [dssl-let            let]
+           [dssl-make-vector    make-vector]
            [dssl-return         return]
            [dssl-setf!          setf!]
            [dssl-setf!          =]
            [dssl-struct-ref     struct-ref]
            [dssl-vector-ref     vector-ref]
-           [dssl-while          while]))
+           [dssl-while          while])
+         ; values
+         ; * type predicates
+         integer?
+         number?
+         procedure?
+         string?
+         vector?
+         ; * numeric operations
+         ; ** predicates
+         zero?
+         positive?
+         negative?
+         even?
+         odd?
+         ; * string operations
+         explode
+         format
+         implode
+         ; * vector operations
+         build_vector
+         len
+         map
+         filter
+         ; * I/O operations
+         print
+         println
+         ; * other functions
+         identity)
+
 (require dssl2/private/values)
 (require racket/stxparam
          syntax/parse/define)
+(require (prefix-in racket: racket))
+
 (require (for-syntax syntax/parse))
 
 (define dssl-True #t)
@@ -195,7 +214,7 @@
   (cond
     [(vec? v)      (in-vector (unvec v))]
     [(natural? v)  (in-range v)]
-    [(string? v)   (in-vector (unvec (dssl-explode v)))]
+    [(string? v)   (in-vector (unvec (explode v)))]
     [else          (runtime-error "Value ‘~a’ is not iterable" v)]))
 
 ; setf! is like Common Lisp setf, but it just recognizes three forms. We
@@ -249,7 +268,7 @@
     (runtime-error
       "Constructor ‘~a’ expects ~a arguments, got ~a"
       name (length formals) (length actuals)))
-  (make-struct name (map make-field formals actuals)))
+  (make-struct name (racket:map make-field formals actuals)))
 
 (define (dssl-make-struct/fields name formals actuals)
   (define (get-value field)
@@ -263,7 +282,7 @@
                   "Constructor for ‘~a’ does not expect field ‘~a’"
                   name (field-name actual))))
             actuals)
-  (make-struct name (map get-value formals)))
+  (make-struct name (racket:map get-value formals)))
 
 (define-syntax-rule (dssl-struct-ref value field)
   (begin
@@ -290,16 +309,16 @@
 (define (dssl-make-vector a b)
   (make-vec (make-vector a b)))
 
-(define (dssl-vector . args)
+(define (vector . args)
   (make-vec (list->vector args)))
 
-(define (dssl-vector? v)
+(define (vector? v)
   (vec? v))
 
-(define (dssl-build-vector n f)
-  (make-vec (build-vector n f)))
+(define (build_vector n f)
+  (make-vec (racket:build-vector n f)))
 
-(define (dssl-vector-length v)
+(define (len v)
   (vector-length (unvec v)))
 
 (define-syntax-rule (dssl-assert expr)
@@ -359,13 +378,13 @@
 (make-comparison dssl-<= string<=? <=)
 (make-comparison dssl->= string>=? >=)
 
-(define (dssl-print fmt . values)
+(define (print fmt . values)
   (cond
     [(string? fmt) (display (apply format fmt values))]
     [else          (for-each display (cons fmt values))]))
 
-(define (dssl-println fmt . values)
-  (apply dssl-print fmt values)
+(define (println fmt . values)
+  (apply print fmt values)
   (newline))
 
 (define (dssl-<< n m)
@@ -374,22 +393,22 @@
 (define (dssl->> n m)
   (arithmetic-shift n (- m)))
 
-(define (dssl-explode s)
+(define (explode s)
   (make-vec
     (list->vector
-      (map (λ (c) (list->string (list c)))
-           (string->list s)))))
+      (racket:map (λ (c) (list->string (list c)))
+                  (string->list s)))))
 
-(define (dssl-implode vec)
+(define (implode vec)
   (apply string-append (vector->list (unvec vec))))
 
-(define (dssl-map f vec)
+(define (map f vec)
   (make-vec
     (build-vector (vector-length (unvec vec))
                   (λ (i) (f (vector-ref (unvec vec) i))))))
 
-(define (dssl-filter f vec)
-  (make-vec (list->vector (filter f (vector->list (unvec vec))))))
+(define (filter f vec)
+  (make-vec (list->vector (racket:filter f (vector->list (unvec vec))))))
 
 (define-syntax-rule (dssl-error msg arg ...)
   (let ([fmt  msg]

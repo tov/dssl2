@@ -23,8 +23,6 @@
    COLON
    SEMICOLON
    EQUALS
-   PIPE
-   PIPEPIPE
    PLUS         ; two different precedences
    MINUS        ; two different precedences
    LAMBDA
@@ -206,11 +204,11 @@
       ["False"                  (token-LITERAL #f)]
       ["def"                    (token-DEF)]
       ["defstruct"              (token-DEFSTRUCT)]
-      ["||"                     (token-PIPEPIPE)]
+      ["||"                     (token-OP0 (string->symbol lexeme))]
       ["&&"                     (token-OP1 (string->symbol lexeme))]
       [(:or "==" #\< #\> "<=" ">=" "!=" "===" "!==")
                                 (token-OP2 (string->symbol lexeme))]
-      [#\|                      (token-PIPE)]
+      [#\|                      (token-OP3 (string->symbol lexeme))]
       [#\^                      (token-OP4 (string->symbol lexeme))]
       [#\&                      (token-OP5 (string->symbol lexeme))]
       [(:or "<<" ">>")          (token-OP6 (string->symbol lexeme))]

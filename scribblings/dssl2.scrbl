@@ -734,6 +734,14 @@ Determines whether its argument is a vector.
 
 @subsection{Numeric operations}
 
+@defprocform[floor]{(Number) -> Integer}
+
+Rounds a number down to the largest integer that is no greater.
+
+@defprocform[ceiling]{(Number) -> Integer}
+
+Rounds a number up to the smallest integer that is no less.
+
 @subsubsection{Predicates}
 
 @defprocform[zero?]{(Number) -> Boolean}

@@ -67,6 +67,8 @@
          string?
          vector?
          ; * numeric operations
+         floor
+         ceiling
          ; ** predicates
          zero?
          positive?
@@ -407,6 +409,12 @@
 
 (define (filter f vec)
   (make-vec (list->vector (racket:filter f (vector->list (unvec vec))))))
+
+(define (floor n)
+  (inexact->exact (racket:floor n)))
+
+(define (ceiling n)
+  (inexact->exact (racket:ceiling n)))
 
 (define-syntax-rule (dssl-error msg arg ...)
   (let ([fmt  msg]

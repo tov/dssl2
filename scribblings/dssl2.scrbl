@@ -664,6 +664,10 @@ Left and right bitwise shift.
 
 Bitwise and.
 
+@defexpform{@syn[expr]₁ @defidform/inline[^] @syn[expr]₂}
+
+Bitwise xor.
+
 @defexpform{@syn[expr]₁ @defidform/inline[\|] @syn[expr]₂}
 
 Bitwise or. (Not written with the backslash.)
@@ -702,3 +706,79 @@ is non-false then the whole disjunction has that result; otherwise the
 result of the conjunction is the result of @syn[expr]₂.
 
 Not written with the backslashes.
+
+@section{Built-in functions and values}
+
+@subsection{Type predicates}
+
+@defprocform[procedure?]{(Any) -> Boolean}
+
+Determines whether its argument is a procedure (function).
+
+@defprocform[string?]{(Any) -> Boolean}
+
+Determines whether its argument is a string.
+
+@defprocform[number?]{(Any) -> Boolean}
+
+Determines whether its argument is a number.
+
+@defprocform[integer?]{(Any) -> Boolean}
+
+Determines whether its argument is an integer.
+
+@defprocform[vector?]{(Any) -> Boolean}
+
+Determines whether its argument is a vector.
+
+@subsection{Numeric predicates}
+
+@defprocform[zero?]{(Number) -> Boolean}
+
+Determines whether its argument is zero.
+
+@defprocform[positive?]{(Number) -> Boolean}
+
+Determines whether its argument is greater than zero.
+
+@defprocform[negative?]{(Number) -> Boolean}
+
+Determines whether its argument is less than zero.
+
+@defprocform[even?]{(Integer) -> Boolean}
+
+Determines whether its argument is an even integer.
+
+@defprocform[odd?]{(Integer) -> Boolean}
+
+Determines whether its argument is an odd integer.
+
+@subsection{String operations}
+
+@defprocform[format]{(String, Any, ...) -> String}
+
+Using its first argument as a template, interpolates the remaining
+arguments, producing a string. The main recognized escape codes are
+@code{~a} and @code{~s}. Both can be used to include any kind of data,
+the difference being that @code{~s} quotes and escapes strings, whereas
+@code{~a} includes them literally.
+
+Additionally, @code{~n} can be used to insert a newline, and @code{~~}
+inserts a literal @code{~}.
+
+@subsection{Vector operations}
+
+@defprocform[len]{(Vector<X>) -> Natural}
+
+Returns the length of a vector.
+
+@defprocform[build_vector]{(n: Natural, f: (Natural) -> X) -> Vector<X>}
+
+Creates a vector of size @code{n} whose elements are @code{f(0)},
+@code{f(1)}, ..., @code{f(n - 1)}. Equivalent to
+
+@verbatim[#:indent 4 #<<END
+[ f(x) for x in n ]
+END
+]
+

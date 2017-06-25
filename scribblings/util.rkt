@@ -1,6 +1,7 @@
 #lang racket
 
 (provide defexpform defexpforms defsmplform defcmpdform
+         defprocform defprocforms
          code syn
          q m)
 (require scribble/manual
@@ -30,6 +31,13 @@
 
 (define-syntax-rule (defcmpdform chunk ...)
   (*defforms "compound" (list (list chunk ...))))
+
+(define-syntax-rule (defprocform name chunk ...)
+  (*defforms "procedure" (list (list (defidform/inline name) chunk ...))))
+
+(define-syntax-rule (defprocforms [name chunk ...] ...)
+  (*defforms "procedure"
+             (list (list (defidform/inline name) chunk ...) ...)))
 
 (define (*defforms kind forms)
   (define labeller (add-background-label (or kind "syntax")))

@@ -3,7 +3,9 @@ PACKAGE = dssl2
 default: doc
 
 test:
-	racket -e '(load "test/run-dssl2-tests.rkt")'
+	racket test/run-dssl2-tests.rkt
+
+.PHONY: test
 
 doc: scribblings/$(PACKAGE).scrbl
 	raco scribble --dest $@ $^

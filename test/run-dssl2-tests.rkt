@@ -6,4 +6,4 @@
 (define-runtime-path TESTS (build-path 'same))
 
 (for ([test-file (glob (build-path TESTS "dssl2" "*.rkt"))])
-     (load test-file))
+     (dynamic-require test-file #f))

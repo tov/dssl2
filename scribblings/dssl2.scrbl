@@ -132,7 +132,7 @@ by a newline, or a compound statement.
  @item{@racket[\|\|] (not written with the backslashes)}
 ]
 
-@italic{UNOP}s are @racket[!], @racket[+], @racket[-].
+@italic{UNOP}s are @racket[!], @racket[~], @racket[+], @racket[-].
 
 @subsection[#:tag "stm-forms"]{Statement Forms}
 
@@ -625,18 +625,19 @@ The @racket[**] operator is right-associative.
 
 @defexpforms[
   @list{@defidform/inline[!]@syn[expr]}
+  @list{@defidform/inline[~]@syn[expr]}
   @list{-@syn[expr]}
   @list{+@syn[expr]}
 ]
 
-Logical negation, numerical negation, and numerical identity.
+Logical negation, bitwise negation, numerical negation, and numerical identity.
 
 @code{!}@syn[expr] evaluates @syn[expr], then returns @racket[True] if
 the result was @racket[False], and @racket[False] for any other result.
 
-@code{-}@syn[expr] and @code{+}@syn[expr] require that @syn[expr]
-evaluate to a number; then @code{-} negates it and @code{+} returns it
-unchanged.
+@code{~}@syn[expr] @code{-}@syn[expr], and @code{+}@syn[expr] require
+that @syn[expr] evaluate to a number. Then @code{~} flips every bit,
+@code{-} negates it, and @code{+} returns it unchanged.
 
 @defexpforms[
   @list{@syn[expr]₁ @defidform/inline[*] @syn[expr]₂}

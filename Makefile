@@ -17,4 +17,4 @@ setup:
 upload-doc:
 	$(MAKE) doc
 	ghp-import -n doc
-	git push -f git@github.com:tov/dssl.git gh-pages
+	git push -f git@github.com:tov/dssl2.git gh-pages

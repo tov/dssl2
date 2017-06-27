@@ -1,8 +1,8 @@
 #lang racket
 
 (provide enter-and-indent
-         find-indent
-         go-to-previous-indent)
+         find-current-indent
+         go-to-indent)
 
 ; text% natural? [boolean?] -> natural?
 ; Returns the next indent, or if reverse is #t, the previous, for the
@@ -67,10 +67,10 @@
       (find-beginning-of-line text (sub1 position))]))
 
 ; text% ->
-; Updates the current line to the previous indentation level.
-(define (go-to-previous-indent text)
+; Updates the current line to the next (or previous) indentation level.
+(define (go-to-indent text [previous #f])
   (define position (send text get-start-position))
-  (define indent   (find-indent text position #t))
+  (define indent   (find-indent text position previous))
   (define current  (find-current-indent text position))
   (define start    (find-beginning-of-line text position))
   (define change   (- indent current))

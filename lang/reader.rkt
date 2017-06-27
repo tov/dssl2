@@ -21,9 +21,10 @@ dssl2/language
     [(drracket:opt-out-toolbar-buttons)
      '(debug-tool macro-stepper drracket:syncheck)]
     [(drracket:indentation)
-     find-indent]
+     find-current-indent]
     [(drracket:keystrokes)
      `(["["             ,handle-keystroke]
+       ["tab"           ,handle-keystroke]
        ["s:tab"         ,handle-keystroke]
        ["enter"         ,handle-keystroke])]
     [(drracket:submit-predicate)
@@ -34,5 +35,5 @@ dssl2/language
 (define (handle-keystroke text event)
   (case (send event get-key-code)
     [(#\[)      (send text insert #\[)]
-    [(#\tab)    (go-to-previous-indent text)]
+    [(#\tab)    (go-to-indent text (send event get-shift-down))]
     [(#\return) (enter-and-indent text)]))

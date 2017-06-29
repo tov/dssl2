@@ -4,49 +4,6 @@
          find-current-indent
          go-to-indent)
 
-; text% natural? [boolean?] -> natural?
-; Returns the next indent, or if reverse is #t, the previous, for the
-; line given by `position`.
-(define (find-indent text position [reverse? #f])
-  (let ([indents (find-indents text position)]
-        [current (find-current-indent text position)])
-    (cond
-      [reverse?
-        (let loop ([remaining (reverse indents)])
-          (cond
-            [(< (first remaining) current)  (first remaining)]
-            [(empty? (rest remaining))      (last indents)]
-            [else                           (loop (rest remaining))]))]
-      [else
-        (let loop ([remaining indents])
-          (cond
-            [(> (first remaining) current)  (first remaining)]
-            [(empty? (rest remaining))      (first indents)]
-            [else                           (loop (rest remaining))]))])))
-
-; text% natural? -> [ne-listof natural?]
-; Returns all indents suggested for the line given by `position`.
-(define (find-indents text position)
-  (let* ([previous (find-previous-indent text position)]
-         [farthest (+ 4 (- previous (modulo previous 4)))])
-    (let loop ([acc  (list farthest)]
-               [last farthest])
-      (if (zero? last)
-        acc
-        (loop (cons (- last 4) acc)
-              (- last 4))))))
-
-; text% natural? -> natural?
-; Returns the indent of the previous non-blank line.
-(define (find-previous-indent text position)
-  (let loop ([position (find-beginning-of-line text position)])
-    (if (zero? position)
-      (find-current-indent text position)
-      (let ([c (send text get-character (sub1 position))])
-        (if (or (char=? c #\space) (char=? c #\newline))
-          (loop (sub1 position))
-          (find-current-indent text position))))))
-
 ; text% natural? -> natural?
 ; Returns the current indent of the line.
 (define (find-current-indent text position)
@@ -66,17 +23,55 @@
     [else
       (find-beginning-of-line text (sub1 position))]))
 
-; text% ->
-; Updates the current line to the next (or previous) indentation level.
+; text% [char? -> boolean?] natural? natural? -> natural?
+(define (find-forward text pred i limit)
+  (cond
+    [(>= i limit)
+     limit]
+    [(pred (send text get-character i))
+     i]
+    [else
+     (find-forward text pred (add1 i) limit)]))
+
+; text% natural? natural? -> [listof [list natural? natural?]]
+; Gets the positions of the starts of all lines between the two positions.
+; ASSUMPTION: `start` is the beginning of a line.
+(define (find-starts-and-indents text start end)
+  (cond
+    [(< start end)
+     (define first-non-space
+       (find-forward text
+                     (λ (c) (not (or (char=? c #\newline)
+                                     (char=? c #\space))))
+                     start
+                     (send text last-position)))
+     (define beginning-of-line
+       (find-beginning-of-line text first-non-space))
+     (define next-newline
+       (find-forward text
+                     (λ (c) (char=? c #\newline))
+                     first-non-space
+                     (send text last-position)))
+     (cons (list beginning-of-line (- first-non-space beginning-of-line))
+           (find-starts-and-indents text next-newline end))]
+    [else
+      '()]))
+
+; text% [boolean?] ->
+; Updates the indentation of the lines of code in the selection.
 (define (go-to-indent text [previous #f])
-  (define position (send text get-start-position))
-  (define indent   (find-indent text position previous))
-  (define current  (find-current-indent text position))
-  (define start    (find-beginning-of-line text position))
-  (define change   (- indent current))
+  (define start (find-beginning-of-line text (send text get-start-position)))
+  (define end   (send text get-end-position))
+  (for ([start-indent (reverse (find-starts-and-indents text start end))])
+    (adjust-indent text (first start-indent) (second start-indent)
+                   (if previous -4 4))))
+
+; text% natural? natural? integer? ->
+; Adjusts the indentation 
+(define (adjust-indent text position old change)
   (if (positive? change)
-    (send text insert change (make-string change #\space) start)
-    (send text delete start (- start change))))
+    (send text insert change (make-string change #\space) position)
+    (send text delete position (+ position (min old (- change))))))
 
 ; text% ->
 ; Inserts a newline and indents.

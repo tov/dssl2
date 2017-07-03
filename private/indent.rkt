@@ -60,11 +60,13 @@
 ; text% [boolean?] ->
 ; Updates the indentation of the lines of code in the selection.
 (define (go-to-indent text [previous #f])
+  (send text begin-edit-sequence)
   (define start (find-beginning-of-line text (send text get-start-position)))
   (define end   (send text get-end-position))
   (for ([start-indent (reverse (find-starts-and-indents text start end))])
     (adjust-indent text (first start-indent) (second start-indent)
-                   (if previous -4 4))))
+                   (if previous -4 4)))
+  (send text end-edit-sequence))
 
 ; text% natural? natural? integer? ->
 ; Adjusts the indentation 
@@ -79,9 +81,11 @@
   (let* ([position (send text get-start-position)]
          [indent (find-current-indent text position)]
          [blank? (current-line-is-blank? text position)])
+    (send text begin-edit-sequence)
     (send text insert #\newline)
     (unless blank?
-      (send text insert (make-string indent #\space)))))
+      (send text insert (make-string indent #\space)))
+    (send text end-edit-sequence)))
 
 ; text% natural? -> boolean?
 ; Is the current line only spaces?

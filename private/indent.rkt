@@ -44,7 +44,7 @@
                      (λ (c) (not (or (char=? c #\newline)
                                      (char=? c #\space))))
                      start
-                     (send text last-position)))
+                     end))
      (define beginning-of-line
        (find-beginning-of-line text first-non-space))
      (define next-newline
@@ -61,11 +61,23 @@
 ; Updates the indentation of the lines of code in the selection.
 (define (go-to-indent text [previous #f])
   (send text begin-edit-sequence)
-  (define start (find-beginning-of-line text (send text get-start-position)))
-  (define end   (send text get-end-position))
-  (for ([start-indent (reverse (find-starts-and-indents text start end))])
-    (adjust-indent text (first start-indent) (second start-indent)
-                   (if previous -4 4)))
+  (define selection-start (send text get-start-position))
+  (define selection-end   (send text get-end-position))
+  (define line-start      (find-beginning-of-line text selection-start))
+  (cond
+    [(= selection-start selection-end)
+     (define indent (find-forward text
+                                  (λ (c) (not (char=? c #\space)))
+                                  line-start
+                                  selection-end))
+     (adjust-indent text line-start (- indent line-start)
+                    (if previous -4 4))]
+    [else
+      (for ([start-indent
+              (reverse
+                (find-starts-and-indents text selection-start selection-end))])
+        (adjust-indent text (first start-indent) (second start-indent)
+                       (if previous -4 4)))])
   (send text end-edit-sequence))
 
 ; text% natural? natural? integer? ->

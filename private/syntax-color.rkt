@@ -40,7 +40,7 @@
     [#\]                        (token parenthesis |]|)]
     [#\{                        (token parenthesis |{|)]
     [#\}                        (token parenthesis |}|)]
-    [(:or "||" "&&")            (token keyword)]
+    [(:or "or" "and")           (token keyword)]
     [(:or "==" #\< #\> "<=" ">=" "!=" "===" "!--" #\| #\^ #\&
           "<<" ">>" #\* #\/ #\% #\! #\~ "**" #\+ #\-)
                                 (token hash-colon-keyword)]

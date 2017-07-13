@@ -108,14 +108,21 @@
      (require dssl2/private/parser)
      (current-read-interaction
        (λ (src in)
-          (let loop ([line (read-line in)])
+          (let loop ()
+            (define-values (line column position) (port-next-location in))
+            (define the-line (read-line in))
             (cond
-              [(eof-object? line)
-               line]
-              [(regexp-match #rx"^ *$" line)
-               (loop (read-line in))]
+              [(eof-object? the-line)
+               the-line]
+              [(regexp-match #rx"^ *$" the-line)
+               (loop)]
               [else
-                (parse-dssl2 src (open-input-string line) #t)])))))
+                (define line-port (open-input-string the-line))
+                (port-count-lines! line-port)
+                (define relocated
+                  (relocate-input-port line-port line column position
+                                       #true #:name src))
+                (parse-dssl2 src relocated #t)])))))
    (provide (all-defined-out))
    expr ...))
 

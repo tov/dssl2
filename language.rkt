@@ -116,6 +116,7 @@
                (loop (read-line in))]
               [else
                 (parse-dssl2 src (open-input-string line) #t)])))))
+   (provide (all-defined-out))
    expr ...))
 
 ; This is so that the documentation will consider elif a keyword.

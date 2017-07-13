@@ -449,9 +449,7 @@
     [else (type-error 'int x "number, string, or Boolean")]))
 
 (define-syntax-rule (dssl-error msg arg ...)
-  (let ([fmt  msg]
-        [args (list arg ...)])
-    (error (apply format fmt args))))
+  (error (format msg arg ...)))
 
 (define (type-error who got expected)
   (runtime-error "~a: got ~s where ~a expected" who got expected))

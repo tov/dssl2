@@ -30,8 +30,8 @@
            [dssl->>             >>]
            [dssl-<<             <<]
            ; syntax
-           [and                 &&]
-           [or                  \|\|]
+           [and                 and]
+           [or                  or]
            [begin               begin]
            [cond                cond]
            [if                  if]

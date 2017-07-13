@@ -44,8 +44,8 @@
 
 (define-tokens dssl2-tokens
   (IDENT
-   OP0  ; ||
-   OP1  ; &&
+   OP0  ; or
+   OP1  ; and
    OP2  ; == <= >= != < > === !==
    OP3  ; (|)
    OP4  ; ^
@@ -53,7 +53,7 @@
    OP6  ; << >>
    OP7  ; (+ -)
    OP8  ; * / %
-   OP9  ; unary ~ ! (+ -)
+   OP9  ; (unary) ~ ! (+ -)
    OP10 ; **
    LITERAL))
 
@@ -204,8 +204,8 @@
       ["False"                  (token-LITERAL #f)]
       ["def"                    (token-DEF)]
       ["defstruct"              (token-DEFSTRUCT)]
-      ["||"                     (token-OP0 (string->symbol lexeme))]
-      ["&&"                     (token-OP1 (string->symbol lexeme))]
+      ["or"                     (token-OP0 (string->symbol lexeme))]
+      ["and"                    (token-OP1 (string->symbol lexeme))]
       [(:or "==" #\< #\> "<=" ">=" "!=" "===" "!==")
                                 (token-OP2 (string->symbol lexeme))]
       [#\|                      (token-OP3 (string->symbol lexeme))]

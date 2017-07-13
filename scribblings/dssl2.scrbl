@@ -128,8 +128,8 @@ by a newline, or a compound statement.
  @item{@racket[\|] (not written with the backslash)}
  @item{@racket[==], @racket[<], @racket[>], @racket[<=], @racket[>=],
  @racket[!=], @racket[===], and @racket[!==]}
- @item{@racket[&&]}
- @item{@racket[\|\|] (not written with the backslashes)}
+ @item{@racket[and]}
+ @item{@racket[or] (not written with the backslashes)}
 ]
 
 @italic{UNOP}s are @racket[!], @racket[~], @racket[+], @racket[-].
@@ -694,19 +694,17 @@ Operators @racket[<], @racket[<=], @racket[>], and @racket[>=] are the
 standard inequalities for numbers, and compare pairs of strings in
 lexicographic order.
 
-@defexpform{@syn[expr]₁ @defidform/inline[&&] @syn[expr]₂}
+@defexpform{@syn[expr]₁ @defidform/inline[and] @syn[expr]₂}
 
 Short-circuiting logical and. First evaluates @syn[expr]₁; if the result
 is @racket[False] then the whole conjunction is @racket[False];
 otherwise, the result of the conjunction is the result of @syn[expr]₂.
 
-@defexpform{@syn[expr]₁ @defidform/inline[\|\|] @syn[expr]₂}
+@defexpform{@syn[expr]₁ @defidform/inline[or] @syn[expr]₂}
 
 Short-circuiting logical or. First evaluates @syn[expr]₁; if the result
 is non-false then the whole disjunction has that result; otherwise the
 result of the conjunction is the result of @syn[expr]₂.
-
-Not written with the backslashes.
 
 @section{Built-in functions and values}
 

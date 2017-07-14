@@ -105,7 +105,12 @@
 (define-syntax-rule (dssl-module-begin expr ...)
   (#%module-begin
    (module* configure-runtime racket/base
-     (require dssl2/private/parser)
+     (require dssl2/private/parser
+              dssl2/private/printer
+              racket/pretty)
+     (pretty-print-size-hook dssl-print-size-hook)
+     (pretty-print-print-hook dssl-print-print-hook)
+     (current-print dssl-print)
      (current-read-interaction
        (λ (src in)
           (let loop ()

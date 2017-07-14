@@ -20,14 +20,14 @@ simple statement followed by a newline, or a sequence of statements on
 subsequent lines that are all indented by four additional spaces. Here
 is an example of a decision tree function written using indentation:
 
-@verbatim[#:indent 4 #<<END
+@dssl2block|{
 def organization_discount(otype, osize):
     if otype === BOOKSTORE:
         if osize >= 50:
             return 0.25
         else:
             return 0
-    else if otype === LIBRARY:
+    elif otype === LIBRARY:
         if osize >= 50:
             return 0.15
         elif osize >= 20:
@@ -38,8 +38,7 @@ def organization_discount(otype, osize):
             return 0
     else:
         return 0
-END
-]
+}|
 
 Each block follows a colon and newline, and is indented 4 spaces more
 than the previous line. (Extranous space is an error.)
@@ -163,21 +162,19 @@ Defines @syn[name] to be a function with formal parameters @syn[var]₁,
 
 For example,
 
-@verbatim[#:indent 4 #<<END
+@dssl2block|{
 def fact(n):
     if n < 2:
         return 1
     else:
         return n * fact(n - 1)
-END
-]
+}|
 
 A function may have zero arguments, as in @racket[greet]:
 
-@verbatim[#:indent 4 #<<END
+@dssl2block|{
 def greet(): println("Hello, world!")
-END
-]
+}|
 
 The body of a function is defined to be a block, which means it can be
 an indented sequence of statements, or a single simple statement on the
@@ -190,29 +187,28 @@ Defines a new structure type @syn[structname] with fields given by
 to define a struct @racket[posn] with fields @racket[x] and @racket[y],
 we write:
 
-@verbatim[#:indent 4 #<<END
+@dssl2block|{
 defstruct posn(x, y)
-END
-]
+}|
 
 Then we can create a @racket[posn] using struct construction syntax and
 select out the fields using dotted selection syntax:
 
-@verbatim[#:indent 4 #<<END
+@dssl2block|{
 let p = posn { x: 3, y: 4 }
+}|
 
+@dssl2block|{
 def magnitude(q):
     sqrt(q.x * q.x + q.y * q.y)
-END
-]
+}|
 
 It also possible to construct the struct by giving the fields in order
 using function syntax:
 
-@verbatim[#:indent 4 #<<END
+@dssl2block|{
 assert_eq magnitude(posn(3, 4)), 5
-END
-]
+}|
 
 @defsmplform{@syn[lvalue] @defidform/inline[=] @syn[expr]}
 
@@ -254,18 +250,17 @@ that.
 For example, we can have an @racket[if] with no @racket[elif] or
 @racket[else] parts:
 
-@verbatim[#:indent 4 #<<END
+@dssl2block|{
 if should_greet:
     greet()
-END
-]
+}|
 
 The function @code{greet()} will be called if variable
 @code{should_greet} is strue, and otherwise it will not.
 
 Or we can have several @racket[elif] parts:
 
-@verbatim[#:indent 4 #<<END
+@dssl2block|{
 def fib(n):
     if n == 0:
         0
@@ -277,8 +272,7 @@ def fib(n):
         2
     else:
         fib(n - 1) + fib(n - 2)
-END
-]
+}|
 
 In this example, the recursive @racket[else] case happens when all four
 conditions evaluate to false.
@@ -289,27 +283,25 @@ Declares and defines a local variable. Local variables may be declared in any
 scope and last for that scope. A local variable may be re-assigned with the
 assignment form (@racket[=]), as in the third line here:
 
-@verbatim[#:indent 4 #<<END
+@dssl2block|{
 def sum(vec):
     let result = 0
     for v in vec: result = result + v
     return result
-END
-]
+}|
 
 @defsmplform{@defidform/inline[let] @syn[var]}
 
 Declares a local variable, which will be undefined until it is assigned:
 
-@verbatim[#:indent 4 #<<END
+@dssl2block|{
 let x
 if y:
     x = f()
 else:
     x = g()
 println(x)
-END
-]
+}|
 
 @defcmpdform{@defidform/inline[for] @syn[var] @q{in} @syn[expr]: @syn[block]}
 
@@ -320,11 +312,10 @@ values (not the indices) of the vector; if a string, this iterates over
 the characters as 1-character strings; if a natural number @racket[n]
 then it counts from @racket[0] to @racket[n - 1].
 
-@verbatim[#:indent 4 #<<END
+@dssl2block|{
 for person in people_to_greet:
     println("Hello, ~a!", person)
-END
-]
+}|
 
 @defcmpdform{@defidform/inline[for] @syn[var]₁, @syn[var]₂ @q{in} @syn[expr]: @syn[block]}
 
@@ -336,11 +327,10 @@ the values; if a string, then @syn[var]₁ takes on the
 indices of the characters while @syn[var]₂ takes on the
 characters; if a natural number then both variables count together.
 
-@verbatim[#:indent 4 #<<END
+@dssl2block|{
 for ix, person in people_to_greet:
     println("~a: Hello, ~a!", ix, person)
-END
-]
+}|
 
 @defsmplform{@defidform/inline[pass]}
 
@@ -354,22 +344,22 @@ function will be used as its return value.
 
 That is, these are equivalent:
 
-@verbatim[#:indent 4 #<<END
+@dssl2block|{
 def inc(x): x + 1
+}|
 
+@dssl2block|{
 def inc(x): return x + 1
-END
-]
+}|
 
 @defcmpdform{@defidform/inline[while] @syn[expr]: @syn[block]}
 
 Iterates the @syn[block] while the @syn[expr] evaluates to non-false. For example:
 
-@verbatim[#:indent 4 #<<END
+@dssl2block|{
 while !is_empty(queue):
     explore(dequeue(queue))
-END
-]
+}|
 
 @subsection[#:tag "exp-forms"]{Expression Forms}
 
@@ -378,11 +368,10 @@ END
 The value of a variable, which must be a function parameter, bound with
 @racket[let], or defined with @racket[def]. For example,
 
-@verbatim[#:indent 4 #<<END
+@dssl2block|{
 let x = 5
 println(x)
-END
-]
+}|
 
 prints “@code{5}”.
 
@@ -417,8 +406,8 @@ Numeric literals include:
 
 String literals are delimited by either single or double quotes:
 
-@verbatim[#:indent 4 #<<END
-def does_not_matter(double)
+@verbatim[#:indent 2 #<<END
+def does_not_matter(double):
     if double:
         return "This is the same string."
     else:
@@ -429,8 +418,8 @@ END
 The contents of each kind of string is treated the same, except that
 each kind of quotation mark can contain the other kind unescaped:
 
-@verbatim[#:indent 4 #<<END
-def does_matter(double)
+@verbatim[#:indent 2 #<<END
+def does_matter(double):
     if double:
         return "This isn't the same string."
     else:
@@ -473,17 +462,15 @@ arguments.
 
 For example,
 
-@verbatim[#:indent 4 #<<END
+@dssl2block|{
 fact(5)
-END
-]
+}|
 
 calls the function @racket[fact] with argument @racket[5], and
 
-@verbatim[#:indent 4 #<<END
+@dssl2block|{
 ack(5 + 1, 5 + 2)
-END
-]
+}|
 
 calls the function @racket[ack] with arguments @racket[6] and
 @racket[7].
@@ -497,10 +484,9 @@ Creates an anonymous function with parameters @syn[var]₁, @code{...},
 @syn[var]@subscript{k} and body @syn[expr]. For example, the function to
 add twice its first argument to its second argument can be written
 
-@verbatim[#:indent 4 #<<END
+@dssl2block|{
 lambda x, y: 2 * x + y
-END
-]
+}|
 
 @defexpform{@syn[expr]₁ @q{if} @syn[expr]₂ @q{else} @syn[expr]₃}
 
@@ -522,27 +508,25 @@ of the expressions.
 
 For example:
 
-@verbatim[#:indent 4 #<<END
+@dssl2block|{
 let vec = [ 1, 2, 3, 4, 5 ]
-END
-]
+}|
 
 @defexpform{[ @syn[expr]₁; @syn[expr]₂ ]}
 
 Constructs a new vector whose length is the value of
 @syn[expr]₂, filled with the value of @syn[expr]₁. That is,
 
-@verbatim[#:indent 4 #<<END
+@verbatim[#:indent 2 #<<END
 [ 0; 5 ]
 END
 ]
 
 means the same thing as
 
-@verbatim[#:indent 4 #<<END
+@dssl2block|{
 [ 0, 0, 0, 0, 0 ]
-END
-]
+}|
 
 @defexpforms[
   @list{[ @syn[expr]₁ @q{for} @syn[var] @q{in} @syn[expr]₂ ]}
@@ -561,31 +545,27 @@ takes on the indices counting from 0 upward.
 
 For example,
 
-@verbatim[#:indent 4 #<<END
+@dssl2block|{
 [ 10 * n for n in [ 5, 4, 3, 2, 1 ] ]
-END
-]
+}|
 
 evaluates to
 
-@verbatim[#:indent 4 #<<END
+@dssl2block|{
 [ 50, 40, 30, 20, 10 ]
-END
-]
+}|
 
 And
 
-@verbatim[#:indent 4 #<<END
+@dssl2block|{
 [ 10 * n + i for i, n in [ 5, 4, 3, 2, 1 ] ]
-END
-]
+}|
 
 evaluates to
 
-@verbatim[#:indent 4 #<<END
+@dssl2block|{
 [ 50, 41, 32, 23, 14 ]
-END
-]
+}|
 
 @defexpforms[
   @list{[ @syn[expr]₁ @q{for} @syn[var] @q{in} @syn[expr]₂ @q{if} @syn[expr]₃ ]}
@@ -600,17 +580,15 @@ included in the resulting vector.
 
 For example,
 
-@verbatim[#:indent 4 #<<END
+@dssl2block|{
 [ 10 * n for n in [ 5, 4, 3, 2, 1 ] if odd?(n) ]
-END
-]
+}|
 
 evaluates to
 
-@verbatim[#:indent 4 #<<END
+@dssl2block|{
 [ 50, 30, 10 ]
-END
-]
+}|
 
 @subsubsection{Operators}
 
@@ -818,20 +796,18 @@ Concatenates a vector of strings into a single string.
 Creates a vector of size @code{n} whose elements are @code{f(0)},
 @code{f(1)}, ..., @code{f(n - 1)}. Equivalent to
 
-@verbatim[#:indent 4 #<<END
+@dssl2block|{
 [ f(x) for x in n ]
-END
-]
+}|
 
 @defprocform[filter]{(pred: (X) -> Boolean, vec: Vector<X>) -> Vector<X>}
 
 Returns a vector containing the elements of @code{vec} for which
 @code{pred} returns non-false. Equivalent to
 
-@verbatim[#:indent 4 #<<END
+@dssl2block|{
 [ x in vec if pred(x) ]
-END
-]
+}|
 
 @defprocform[len]{(Vector<X>) -> Natural}
 
@@ -842,10 +818,9 @@ Returns the length of a vector.
 Returns a vector consisting of @code{f} applied to each element of
 @code{vec}. Equivalent to
 
-@verbatim[#:indent 4 #<<END
+@dssl2block|{
 [ f(x) for x in vec ]
-END
-]
+}|
 
 @subsection{I/O Functions}
 

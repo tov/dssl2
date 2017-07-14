@@ -3,7 +3,8 @@
 (provide defexpform defexpforms defsmplform defcmpdform
          defprocform defprocforms
          code syn
-         q m)
+         q m
+         dssl2block)
 (require scribble/manual
          scribble/racket
          scribble/struct)
@@ -51,3 +52,6 @@
   (make-blockquote
     vertical-inset-style
     (list table)))
+
+(define-syntax-rule (dssl2block str-expr ...)
+  (codeblock #:keep-lang-line? #f "#lang dssl\n" str-expr ...))

@@ -217,12 +217,12 @@ Assignment. The assigned @syn[lvalue] can be in one of three forms:
 @itemlist[
  @item{@syn[var] assigns to a variable, which can be a @syn[let]-bound
  local or a function parameter.}
- @item{@syn[expr].@syn[fieldname] assigns to a structure field, where
+ @item{@code{@syn[expr].@syn[fieldname]} assigns to a structure field, where
  the expression must evaluate to a structure that has the given field
  nane.}
- @item{@code{@syn[expr][@syn[expr]]} assigns to a vector, where the first
- @syn[expr] evaluates to the vector and the second @syn[expr] evaluates
- to the index.}
+ @item{@code{@syn[expr]₁[@syn[expr]₂]} assigns to a vector element, where
+ @code{@syn[expr]₁} evaluates to the vector and @code{@syn[expr]₂}
+ evaluates to the index of the element.}
 ]
 
 @defsmplform{@syn[expr]}

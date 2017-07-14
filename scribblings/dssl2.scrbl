@@ -406,26 +406,24 @@ Numeric literals include:
 
 String literals are delimited by either single or double quotes:
 
-@verbatim[#:indent 2 #<<END
+@dssl2block|{
 def does_not_matter(double):
     if double:
         return "This is the same string."
     else:
         return 'This is the same string.'
-END
-]
+}|
 
 The contents of each kind of string is treated the same, except that
 each kind of quotation mark can contain the other kind unescaped:
 
-@verbatim[#:indent 2 #<<END
+@dssl2block|{
 def does_matter(double):
     if double:
         return "This isn't the same string."
     else:
         return '"This is not the same string" isn\'t the same string.'
-END
-]
+}|
 
 Strings cannot contain newlines directly, but can contain newline
 characters via the escape code @code{\n}. Other escape codes include:
@@ -517,10 +515,9 @@ let vec = [ 1, 2, 3, 4, 5 ]
 Constructs a new vector whose length is the value of
 @syn[expr]₂, filled with the value of @syn[expr]₁. That is,
 
-@verbatim[#:indent 2 #<<END
+@dssl2block|{
 [ 0; 5 ]
-END
-]
+}|
 
 means the same thing as
 
@@ -806,7 +803,7 @@ Returns a vector containing the elements of @code{vec} for which
 @code{pred} returns non-false. Equivalent to
 
 @dssl2block|{
-[ x in vec if pred(x) ]
+[ x for x in vec if pred(x) ]
 }|
 
 @defprocform[len]{(Vector<X>) -> Natural}

@@ -54,4 +54,6 @@
     (list table)))
 
 (define-syntax-rule (dssl2block str-expr ...)
-  (codeblock #:keep-lang-line? #f "#lang dssl\n" str-expr ...))
+  (codeblock
+    #:keep-lang-line? #f
+    "#lang dssl2\n" str-expr ...))

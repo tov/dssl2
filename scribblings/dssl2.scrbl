@@ -764,6 +764,10 @@ convert to a number, throwing an error if the conversion fails. Booleans
 @racket[True] and @racket[False] conver to @racket[1.0] and @racket[0.0],
 respectively.
 
+@defprocform[sqrt]{(Number) -> Floating}
+
+Computes the square root of a number.
+
 @subsubsection{Predicates}
 
 @defprocform[zero?]{(Number) -> Boolean}

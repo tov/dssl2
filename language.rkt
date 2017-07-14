@@ -71,6 +71,7 @@
          ceiling
          int
          float
+         sqrt
          ; ** predicates
          zero?
          positive?

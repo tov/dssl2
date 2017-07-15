@@ -712,13 +712,21 @@ Determines whether its argument is a string.
 
 Determines whether its argument is a number.
 
-@defprocform[integer?]{(Any) -> Boolean}
+@defprocform[int?]{(Any) -> Boolean}
 
 Determines whether its argument is an integer.
+
+@defprocform[float?]{(Any) -> Boolean}
+
+Determines whether its argument is a floating-point number.
 
 @defprocform[vector?]{(Any) -> Boolean}
 
 Determines whether its argument is a vector.
+
+@defprocform[boolean?]{(Any) -> Boolean}
+
+Determines whether its argument is a Boolean.
 
 @subsection{Numeric operations}
 

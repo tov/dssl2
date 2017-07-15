@@ -57,6 +57,7 @@
            [dssl-setf!          setf!]
            [dssl-setf!          =]
            [dssl-struct-ref     struct-ref]
+           [dssl-test           test]
            [dssl-vector-ref     vector-ref]
            [dssl-while          while])
          ; values
@@ -95,7 +96,8 @@
 
 (require dssl2/private/values)
 (require racket/stxparam
-         syntax/parse/define)
+         syntax/parse/define
+         rackunit)
 (require (prefix-in racket: racket))
 
 (require (for-syntax syntax/parse))
@@ -323,6 +325,11 @@
       [else
         (runtime-error "Struct ‘~a’ does not have field ‘~a’"
                        value 'field)])))
+
+(define-syntax (dssl-test stx)
+  (syntax-parse stx
+    [(_ name:expr body:expr ...+)
+     #'(test-case (~a name) body ...)]))
 
 (define (dssl-make-vector a b)
   (make-vec (make-vector a b)))

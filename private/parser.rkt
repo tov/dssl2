@@ -88,7 +88,9 @@
         [(FOR IDENT COMMA IDENT IN expr COLON suite)
          (loc `(for [(,$2 ,$4) ,$6] ,@$8))]
         [(DEF IDENT LPAREN formals RPAREN COLON suite)
-         (loc `(def (,$2 ,@$4) ,@$7))])
+         (loc `(def (,$2 ,@$4) ,@$7))]
+        [(TEST atom COLON suite)
+         (loc `(test ,$2 ,@$4))])
 
       (elifs
         [()

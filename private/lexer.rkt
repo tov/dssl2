@@ -39,6 +39,7 @@
    CONTINUE
    RETURN
    PASS
+   TEST
    DEF
    DEFSTRUCT))
 
@@ -204,6 +205,7 @@
       ["False"                  (token-LITERAL #f)]
       ["def"                    (token-DEF)]
       ["defstruct"              (token-DEFSTRUCT)]
+      ["test"                   (token-TEST)]
       ["or"                     (token-OP0 (string->symbol lexeme))]
       ["and"                    (token-OP1 (string->symbol lexeme))]
       [(:or "==" #\< #\> "<=" ">=" "!=" "===" "!==")

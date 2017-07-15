@@ -25,7 +25,7 @@
     [(:+ whitespace)            (token white-space)]
     [(:: #\\ #\newline)         (token comment)]
     [(:or "λ" "lambda" "let" "assert" "assert_eq" "if" "elif" "else"
-          "while" "for" "in" "return" "pass" "def" "defstruct")
+          "while" "for" "in" "return" "pass" "def" "defstruct" "test")
                                 (token keyword)]
     [comment                    (token comment)]
     [(:or float hexadecimal octal binary natural "inf" "nan")

@@ -700,15 +700,15 @@ result of the conjunction is the result of @syn[expr]₂.
 
 @subsection{Type predicates}
 
-@defprocform[procedure?]{(Any) -> Boolean}
+@defprocform[proc?]{(Any) -> Boolean}
 
 Determines whether its argument is a procedure (function).
 
-@defprocform[string?]{(Any) -> Boolean}
+@defprocform[str?]{(Any) -> Boolean}
 
 Determines whether its argument is a string.
 
-@defprocform[number?]{(Any) -> Boolean}
+@defprocform[num?]{(Any) -> Boolean}
 
 Determines whether its argument is a number.
 
@@ -720,11 +720,11 @@ Determines whether its argument is an integer.
 
 Determines whether its argument is a floating-point number.
 
-@defprocform[vector?]{(Any) -> Boolean}
+@defprocform[vec?]{(Any) -> Boolean}
 
 Determines whether its argument is a vector.
 
-@defprocform[boolean?]{(Any) -> Boolean}
+@defprocform[bool?]{(Any) -> Boolean}
 
 Determines whether its argument is a Boolean.
 
@@ -844,14 +844,15 @@ Returns a vector consisting of @code{f} applied to each element of
 
 @subsection{I/O Functions}
 
-@defprocforms[
-  [print @list{(String, Any, ...) -> Void}]
-  [println @list{(String, Any, ...) -> Void}]
-]
+@defprocform[print]{(String, Any, ...) -> Void}
 
 The first argument is treated as a format string into which the
 remaining arguments are interpolated, à la @racket[format]. Then the
-result is printed. Function @racket[println] adds a newline at the end.
+result is printed.
+
+@defprocform[println]{(String, Any, ...) -> Void}
+
+Like @code{print}, but adds a newline at the end.
 
 @subsection{Other functions}
 

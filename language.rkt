@@ -62,14 +62,14 @@
            [dssl-while          while])
          ; values
          ; * type predicates
-         number?
          (rename-out
+           [number?             num?]
            [exact-integer?      int?]
-           [flonum?             float?])
-         boolean?
-         procedure?
-         string?
-         vector?
+           [flonum?             float?]
+           [string?             str?]
+           [boolean?            bool?]
+           [procedure?          proc?]
+           [vector?             vec?])
          ; * numeric operations
          floor
          ceiling

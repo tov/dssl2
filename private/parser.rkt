@@ -89,7 +89,7 @@
          (loc `(for [(,$2 ,$4) ,$6] ,@$8))]
         [(DEF IDENT LPAREN formals RPAREN COLON suite)
          (loc `(def (,$2 ,@$4) ,@$7))]
-        [(TEST atom COLON suite)
+        [(TEST expr COLON suite)
          (loc `(test ,$2 ,@$4))])
 
       (elifs

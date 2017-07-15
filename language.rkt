@@ -355,7 +355,7 @@
     (define v1 e1)
     (define v2 e2)
     (unless (equal? v1 v2)
-      (assertion-error "‘~a’ != ‘~a’" v1 v2))))
+      (assertion-error "‘~a’ ≠ ‘~a’" v1 v2))))
 
 (define dssl-+
   (case-lambda

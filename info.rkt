@@ -3,7 +3,7 @@
 (define categories '(devtools))
 (define can-be-loaded-with 'all)
 (define required-core-version "6.9")
-(define version "2.0")
+(define version "2.1")
 (define scribblings '(("scribblings/dssl2.scrbl" ())))
 (define blurb
     '("A language for data structures students, version 2"))

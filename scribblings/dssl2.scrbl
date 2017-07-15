@@ -66,7 +66,7 @@ more statements, where a statement is either a simple statement followed
 by a newline, or a compound statement.
 
 @racketgrammar*[
-#:literals (def defstruct let lambda λ else if elif while for in
+#:literals (def defstruct let lambda λ else if elif while for in test
             break continue : True False =
             assert assert_eq pass return NEWLINE INDENT DEDENT)
 [program (code:line @#,m["{"] statement @#,m["}*"])]
@@ -80,8 +80,7 @@ by a newline, or a compound statement.
             (code:line defstruct name @#,q{(} @#,m["{"] field @#,m["},*"] @#,q{)})
             (code:line lvalue = expr)
             expr
-            (code:line let var @#,q{=} expr)
-            (code:line let var)
+            (code:line let var @#,m["["] @#,q{=} expr @#,m["]"])
             (code:line pass)
             (code:line return expr)
             (code:line simple @#,q{;} simple)]
@@ -92,6 +91,7 @@ by a newline, or a compound statement.
             (code:line def name @#,q{(} var @#,q{,} @#,m{...} @#,q{)} @#,q{:} block)
             (code:line if expr @#,q{:} block @#,m["{"] elif expr @#,q{:} block @#,m["}*"] @#,m["["] else expr @#,q{:} block @#,m["]"])
             (code:line for var @#,m{[} @#,q{,} var @#,m{]} @#,q{in} expr @#,q{:} block)
+            (code:line test expr @#,q{:} block)
             (code:line while expr @#,q{:} block)
             ]
 [block
@@ -350,6 +350,21 @@ def inc(x): x + 1
 
 @dssl2block|{
 def inc(x): return x + 1
+}|
+
+@defcmpdform{@defidform/inline[test] @syn[expr]: @syn[block]}
+
+Runs the code in @syn[block] as a test case named @syn[expr]. If an
+assertion fails or an error occurs in @syn[block], the test case
+terminates, failure is reported, and the program continues after the
+block.
+
+For example:
+
+@dssl2block|{
+test "arithmetic":
+    assert_eq 1 + 1, 2
+    assert_eq 2 + 2, 4
 }|
 
 @defcmpdform{@defidform/inline[while] @syn[expr]: @syn[block]}

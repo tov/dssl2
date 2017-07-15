@@ -11,7 +11,7 @@
 (for ([test-file (glob (build-path TESTS "dssl2" "*.rkt"))])
   (define-values (_1 short-name _2) (split-path test-file))
   (printf "~a... " short-name)
-  (define should-fail (regexp-match #rx"fail[.]rkt$" test-file))
+  (define should-fail (regexp-match? #rx"fail[.]rkt$" test-file))
   (define result
     (with-handlers ([exn:fail?
                       (λ (e)

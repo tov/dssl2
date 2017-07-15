@@ -452,7 +452,7 @@ characters via the escape code @code{\n}. Other escape codes include:
   @item{@code{\t} for ASCII tab (also @\code{\x09})}
   @item{@code{\v} for ASCII vertical tab (also @\code{\x0B})}
   @item{@code{\x@syn{hh}} in hex, for example @code{\x0A} is newline}
-  @item{@code{\@syn{ooo}} in octal, for example @code{\010} is tab}
+  @item{@code{\@syn{ooo}} in octal, for example @code{\011} is tab}
   @item{A backslash immediately followed by a newline causes both characters to
       be ignored, which provides a way to wrap long strings across lines.}
 ]

@@ -1,6 +1,7 @@
 #lang racket
 
 (provide defexpform defexpforms defsmplform defcmpdform
+         defconstform
          defprocform defprocforms
          code syn
          q m
@@ -32,6 +33,9 @@
 
 (define-syntax-rule (defcmpdform chunk ...)
   (*defforms "compound" (list (list chunk ...))))
+
+(define-syntax-rule (defconstform name chunk ...)
+  (*defforms "constant" (list (list (defidform/inline name) ": " chunk ...))))
 
 (define-syntax-rule (defprocform name chunk ...)
   (*defforms "procedure" (list (list (defidform/inline name) chunk ...))))

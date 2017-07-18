@@ -762,6 +762,32 @@ convert to a number, throwing an error if the conversion fails. Booleans
 @racket[True] and @racket[False] conver to @racket[1.0] and @racket[0.0],
 respectively.
 
+@defprocforms[
+  [random @list{() -> Floating}]
+  [random @list{(IntegerIn<1, 4294967087>) -> Natural}]
+  [random @list{(Integer, IntegerIn<1, 4294967087>) -> Natural}]
+]
+
+When called with zero arguments, returns a random floating point number
+in the open interval (@racket[0.0], @racket[1.1]).
+
+When called with one argument @racket[limit], returns a random exact
+integer from the closed interval (@racket[0], @racket[limit - 1]).
+
+When called with two arguments @racket[min] and @racket[max], returns a
+random exact integer from the closed interval (@racket[min], @racket[max - 1]).
+The difference between the arguments can be no greater than
+@racket[4294967087].
+
+@defconstform[RAND_MAX]{Natural}
+
+Defined to be @racket[4294967087], the largest parameter (or span) that
+can be passed to @racket[random].
+
+@defprocform[random_bits]{(Natural) -> Natural}
+
+Returns a number consisting of the requested number of random bits.
+
 @defprocform[sqrt]{(Number) -> Floating}
 
 Computes the square root of a number.

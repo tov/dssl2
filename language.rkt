@@ -75,6 +75,9 @@
          ceiling
          int
          float
+         random
+         random_bits
+         RAND_MAX
          sqrt
          ; ** predicates
          zero?
@@ -463,6 +466,22 @@
     [(eq? #t x)  1.0]
     [(eq? #f x)  0.0]
     [else (type-error 'int x "number, string, or Boolean")]))
+
+(define random
+  (case-lambda
+    [() (racket:random)]
+    [(limit) (racket:random limit)]
+    [(low high) (racket:random low high)]))
+
+; This is the largest argument that `random` can take.
+(define RAND_MAX 4294967087)
+
+(define (random_bits n)
+  (define *RADIX* 16)
+  (cond
+    [(zero? n)      0]
+    [else           (+ (* 2 (random_bits (sub1 n)))
+                       (random 2))]))
 
 (define-syntax-rule (dssl-error msg arg ...)
   (error (format msg arg ...)))

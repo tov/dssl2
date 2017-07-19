@@ -88,9 +88,11 @@
          even?
          odd?
          ; * string operations
+         chr
          explode
          format
          implode
+         ord
          ; * vector operations
          build_vector
          len
@@ -424,6 +426,9 @@
 (define (dssl->> n m)
   (arithmetic-shift n (- m)))
 
+(define (chr i)
+  (~a (integer->char i)))
+
 (define (explode s)
   (make-vec
     (list->vector
@@ -432,6 +437,11 @@
 
 (define (implode vec)
   (apply string-append (vector->list (unvec vec))))
+
+(define (ord c)
+  (unless (= 1 (string-length c))
+    (error 'ord "expect character (string of length 1)"))
+  (char->integer (string-ref c 0)))
 
 (define (map f vec)
   (make-vec

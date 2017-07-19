@@ -861,6 +861,10 @@ code point. Inverse to @racket[chr].
 assert_eq ord('a'), 97
 }|
 
+@defprocform[string_length]{(String) -> Natural}
+
+Returns the length of a string in characters.
+
 @subsection{Vector operations}
 
 @defprocform[build_vector]{(n: Natural, f: (Natural) -> X) -> Vector<X>}

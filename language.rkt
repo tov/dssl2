@@ -93,6 +93,8 @@
          format
          implode
          ord
+         (rename-out
+           [string-length       string_length])
          ; * vector operations
          build_vector
          len

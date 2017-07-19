@@ -75,9 +75,11 @@
          ceiling
          int
          float
+         quotient
          random
          random_bits
          RAND_MAX
+         remainder
          sqrt
          ; ** predicates
          zero?

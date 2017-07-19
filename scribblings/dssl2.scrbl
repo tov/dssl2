@@ -779,6 +779,10 @@ random exact integer from the closed interval (@racket[min], @racket[max - 1]).
 The difference between the arguments can be no greater than
 @racket[4294967087].
 
+@defprocform[quotient]{(Natural, Natural) -> Natural}
+
+Returns the truncated quotient.
+
 @defconstform[RAND_MAX]{Natural}
 
 Defined to be @racket[4294967087], the largest parameter (or span) that
@@ -787,6 +791,10 @@ can be passed to @racket[random].
 @defprocform[random_bits]{(Natural) -> Natural}
 
 Returns a number consisting of the requested number of random bits.
+
+@defprocform[remainder]{(Natural, Natural) -> Natural}
+
+Returns the remainder of the truncated @racket[quotient].
 
 @defprocform[sqrt]{(Number) -> Floating}
 

@@ -5,7 +5,11 @@ default: doc
 test:
 	racket test/run-dssl2-tests.rkt
 
-.PHONY: test
+all:
+	find . -name '*.rkt' | xargs raco make
+
+.PHONY: test all
+
 
 doc: scribblings/$(PACKAGE).scrbl
 	raco scribble --dest $@ $^

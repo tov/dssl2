@@ -824,6 +824,15 @@ Determines whether its argument is an odd integer.
 
 @subsection{String operations}
 
+@defprocform[chr]{(Natural) -> String}
+
+Converts the code point of a character to the character that it
+represents, as a one-character string. Inverse to @racket[ord].
+
+@dssl2block|{
+assert_eq chr(97), 'a'
+}|
+
 @defprocform[explode]{(String) -> Vector<String>}
 
 Breaks a string into a vector of 1-character strings.
@@ -842,6 +851,15 @@ inserts a literal @code{~}.
 @defprocform[implode]{(Vector<String>) -> String}
 
 Concatenates a vector of strings into a single string.
+
+@defprocform[ord]{(String) -> Natural}
+
+Converts a character, represented as a one-character string, to its
+code point. Inverse to @racket[chr].
+
+@dssl2block|{
+assert_eq ord('a'), 97
+}|
 
 @subsection{Vector operations}
 

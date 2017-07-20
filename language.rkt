@@ -75,6 +75,8 @@
          ceiling
          int
          float
+         max
+         min
          quotient
          random
          random_bits

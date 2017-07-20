@@ -779,6 +779,14 @@ random exact integer from the closed interval (@racket[min], @racket[max - 1]).
 The difference between the arguments can be no greater than
 @racket[4294967087].
 
+@defprocform[max]{(Number, Number, ...) -> Number}
+
+Returns the largest of the given numbers.
+
+@defprocform[min]{(Number, Number, ...) -> Number}
+
+Returns the smallest of the given numbers.
+
 @defprocform[quotient]{(Natural, Natural) -> Natural}
 
 Returns the truncated quotient.

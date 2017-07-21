@@ -18,30 +18,31 @@ compound statements such as @racket[if]-@racket[elif]-@racket[else] take
 @syn[block]s for each condition, where a @syn[block] can be either one
 simple statement followed by a newline, or a sequence of statements on
 subsequent lines that are all indented by four additional spaces. Here
-is an example of a decision tree function written using indentation:
+is an example of a tree insertion function written using indentation:
 
 @dssl2block|{
-def organization_discount(otype, osize):
-    if otype === BOOKSTORE:
-        if osize >= 50:
-            return 0.25
-        else:
-            return 0
-    elif otype === LIBRARY:
-        if osize >= 50:
-            return 0.15
-        elif osize >= 20:
-            return 0.1
-        elif osize >= 5:
-            return 0.05
-        else:
-            return 0
-    else:
-        return 0
+def insert!(t, k):
+    if empty?(t): new_node(k)
+    elif random(size(t) + 1) == 0:
+        root_insert!(t, k)
+    elif k < t.key:
+        t.left = insert!(t.left, k)
+        fix_size!(t)
+        t
+    elif k > t.key:
+        t.right = insert!(t.right, k)
+        fix_size!(t)
+        t
+    else: t
 }|
 
 Each block follows a colon and newline, and is indented 4 spaces more
-than the previous line. (Extranous space is an error.)
+than the previous line. In particular, the block started by @racket[def]
+is indented by 4 spaces, and the @racket[if] and @racket[elif] blocks by
+8. When a block is a simple statement, it can be placed on the same
+line, as in the @racket[else] case.
+
+Extranous indentation is an error.
 
 @subsection{DSSL2 Formal Grammar}
 
@@ -140,10 +141,26 @@ by a newline, or a compound statement.
 Asserts that the given @syn[expr] evaluates to non-false. If the
 expression evaluates false, signals an error.
 
+@dssl2block|{
+test "sch_member? finds 'hello'":
+    let h = sch_new_sbox(10)
+    assert !sch_member?(h, 'hello')
+    sch_insert!(h, 'hello', 5)
+    assert sch_member?(h, 'hello')
+}|
+
 @defsmplform{@defidform/inline[assert_eq] @syn[expr]₁, @syn[expr]₂}
 
 Asserts that the given @syn[expr]s evaluates to structurally equal values.
 If they are not equal, signals an error.
+
+@dssl2block|{
+test 'first_char_hasher':
+    assert_eq first_char_hasher(''), 0
+    assert_eq first_char_hasher('A'), 65
+    assert_eq first_char_hasher('Apple'), 65
+    assert_eq first_char_hasher('apple'), 97
+}|
 
 @defsmplform{@defidform/inline[break]}
 
@@ -180,6 +197,34 @@ The body of a function is defined to be a block, which means it can be
 an indented sequence of statements, or a single simple statement on the
 same line as the @racket[def].
 
+Note that @racket[def]s can be nested:
+
+@dssl2block|{
+# rbt_insert! : X RbTree -> Void
+def rbt_insert!(key, tree):
+    # parent : RbLink<X> -> RbLink<X>Z
+    def parent(link):
+        link.parent if rbn?(link) else False
+    # grandparent : RbLink<X> -> RbLink<X>
+    def grandparent(link):
+        parent(parent(link))
+    # sibling : RbLink<X> -> RbLink<X>
+    def sibling(link):
+        let p = parent(link)
+        if rbn?(p):
+            if link === p.left: p.right
+            else: p.left
+        else: False
+    # aunt : RbLink<X> -> RbLink<X>
+    def aunt(link):
+        sibling(parent(link))
+    #
+    # . . .
+    #
+    def set_root!(new_node): tree.root = new_node
+    search!(tree.root, set_root!)
+}|
+
 @defsmplform{@defidform/inline[defstruct] @syn[structname](@syn[fieldname]₁, ..., @syn[fieldname]@subscript{k})}
 
 Defines a new structure type @syn[structname] with fields given by
@@ -210,6 +255,28 @@ using function syntax:
 assert_eq magnitude(posn(3, 4)), 5
 }|
 
+Another example:
+
+@dssl2block|{
+# A RndBst<X> is one of:
+# - False
+# - Node(X, Natural, RndBst<X>, RndBst<X>)
+defstruct Node(key, size, left, right)
+#
+# singleton : X -> RndBst<X>
+def singleton(key):
+    Node(key, 1, False, False)
+#
+# size : RndBst<X> -> Natural
+def size(tree):
+    if Node?(tree): tree.size
+    else: 0
+#
+# fix_size! : Node? -> Void
+def fix_size!(node):
+    node.size = 1 + size(node.left) + size(node.right)
+}|
+
 @defsmplform{@syn[lvalue] @defidform/inline[=] @syn[expr]}
 
 Assignment. The assigned @syn[lvalue] can be in one of three forms:
@@ -225,10 +292,34 @@ Assignment. The assigned @syn[lvalue] can be in one of three forms:
  evaluates to the index of the element.}
 ]
 
+This function assigns all three kinds of l-value:
+
+@dssl2block|{
+def sch_insert!(hash, key, value):
+    let index = sch_bucket_index_(hash, key)
+    let current = hash.buckets[index]
+    while cons?(current):
+        if key == current.first.key:
+            current.first.value = value
+            return
+        current = current.rest
+    hash.buckets[index] = cons(sc_entry(key, value), hash.buckets[index])
+}|
+
 @defsmplform{@syn[expr]}
 
 An expression, evaluated for both side effect and, if at the tail end
 of a function, its value.
+
+For example, this function returns the @racket[size] field of parameter
+@racket[tree] if @racket[tree] is a @racket[Node], and @racket[0] otherwise:
+
+@dssl2block|{
+# size : RndBst<X> -> Natural
+def size(tree):
+    if Node?(tree): tree.size
+    else: 0
+}|
 
 @defcmpdform{@defidform/inline[if] @syn[expr]@subscript{if}: @syn[block]@subscript{if}
              @defidform/inline[elif] @syn[expr]@subscript{i}: @syn[block]@subscript{i}
@@ -261,21 +352,31 @@ The function @code{greet()} will be called if variable
 Or we can have several @racket[elif] parts:
 
 @dssl2block|{
-def fib(n):
-    if n == 0:
-        0
-    elif n == 1:
-        1
-    elif n == 2:
-        1
-    elif n == 3:
-        2
-    else:
-        fib(n - 1) + fib(n - 2)
+def rebalance_left_(key, balance, left0, right):
+    let left = left0.node
+    if !left0.grew?:
+        insert_result(node(key, balance, left, right), False)
+    elif balance == 1:
+        insert_result(node(key, 0, left, right), False)
+    elif balance == 0:
+        insert_result(node(key, -1, left, right), True)
+    elif left.balance == -1:
+        insert_result(node(left.key, 0, left.left,
+                           node(key, 0, left,right, right)),
+                      False)
+    elif left.balance == 1:
+        insert_result(node(left.right.key, 0,
+                           node(left.key,
+                               -1 if left.right.balance == 1 else 0,
+                               left.left,
+                               left.right.left),
+                           node(key,
+                                1 if left.right.balance == -1 else 0,
+                                left.right.right,
+                                right)),
+                      False)
+    else: error('Cannot happen')
 }|
-
-In this example, the recursive @racket[else] case happens when all four
-conditions evaluate to false.
 
 @defsmplform{@defidform/inline[let] @syn[var] = @syn[expr]}
 
@@ -317,6 +418,24 @@ for person in people_to_greet:
     println("Hello, ~a!", person)
 }|
 
+In this example hash function producer, the @racket[for] loops over the
+characters in a string:
+
+@dssl2block|{
+# make_sbox_hash : -> [String -> Natural]
+# Returns a new n-bit string hash function.
+def make_sbox_hash(n):
+    let sbox = [ random_bits(n) for i in 256 ]
+    def hash(input_string):
+        let result = 0
+        for c in input_string:
+            let svalue = sbox[ord(c)]
+            result = result ^ svalue
+            result = (3 * result) % (2 ** n)
+        return result
+    hash
+}|
+
 @defcmpdform{@defidform/inline[for] @syn[var]₁, @syn[var]₂ @q{in} @syn[expr]: @syn[block]}
 
 Loops over the indices and values of the given @syn[expr], evaluating
@@ -336,6 +455,14 @@ for ix, person in people_to_greet:
 
 Does nothing.
 
+@dssl2block|{
+# account_credit! : Number Account -> Void
+# Adds the given amount to the given account’s balance.
+def account_credit!(amount, account):
+    pass
+#   ^ FILL IN YOUR CODE HERE
+}|
+
 @defsmplform{@defidform/inline[return] @syn[expr]}
 
 Returns the value of the given @syn[expr] from the inner-most function.
@@ -350,6 +477,19 @@ def inc(x): x + 1
 
 @dssl2block|{
 def inc(x): return x + 1
+}|
+
+In this function, the first @racket[return] is necessary because it breaks out
+of the loop and exits the function; the second @racket[return] is optional and
+could be omitted.
+
+@dssl2block|{
+# : BloomFilter String -> Boolean
+def bloom_check?(b, s):
+    for hash in b.hashes:
+        let index = hash(s) % b.bv.size
+        if !bv_ref(b.bv, index): return False
+    return True
 }|
 
 @defsmplform{@defidform/inline[return]}
@@ -371,6 +511,29 @@ test "arithmetic":
     assert_eq 2 + 2, 4
 }|
 
+A @racket[test] block can be used to perform just one check or a long sequence
+of preparation and checks:
+
+@dssl2block|{
+test 'single-chaining hash table':
+    let h = sch_new_1(10)
+    assert !sch_member?(h, 'hello')
+    sch_insert!(h, 'hello', 5)
+    assert sch_member?(h, 'hello')
+    assert_eq sch_lookup(h, 'hello'), 5
+    assert !sch_member?(h, 'goodbye')
+    assert !sch_member?(h, 'helo')
+    sch_insert!(h, 'helo', 4)
+    assert_eq sch_lookup(h, 'hello'), 5
+    assert_eq sch_lookup(h, 'helo'), 4
+    assert !sch_member?(h, 'hel')
+    sch_insert!(h, 'hello', 10)
+    assert_eq sch_lookup(h, 'hello'), 10
+    assert_eq sch_lookup(h, 'helo'), 4
+    assert !sch_member?(h, 'hel')
+    assert_eq sch_keys(h), cons('hello', cons('helo', nil()))
+}|
+
 @defcmpdform{@defidform/inline[while] @syn[expr]: @syn[block]}
 
 Iterates the @syn[block] while the @syn[expr] evaluates to non-false. For example:
@@ -378,6 +541,21 @@ Iterates the @syn[block] while the @syn[expr] evaluates to non-false. For exampl
 @dssl2block|{
 while !is_empty(queue):
     explore(dequeue(queue))
+}|
+
+Here's a hash table lookup function that uses @racket[while], which it breaks
+out of using @racket[break]:
+
+@dssl2block|{
+def sch_lookup(hash, key):
+    let bucket = sch_bucket_(hash, key)
+    let result = False
+    while cons?(bucket):
+        if key == bucket.first.key:
+            result = bucket.first.value
+            break
+        bucket = bucket.rest
+    return result
 }|
 
 @subsection[#:tag "exp-forms"]{Expression Forms}

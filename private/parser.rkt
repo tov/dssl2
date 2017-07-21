@@ -219,7 +219,7 @@
          $1])
 
       (expr0
-        [(expr0 OP0 atom)
+        [(expr0 OP0 expr1)
          (loc `(,$2 ,$1 ,$3))]
         [(expr1)
          $1])

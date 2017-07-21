@@ -166,6 +166,7 @@
     (let/ec return-f
        (syntax-parameterize
          ([dssl-return (syntax-rules ()
+                         [(_)         (return-f (void))]
                          [(_ ?result) (return-f ?result)])])
          (begin expr ...)))))
 

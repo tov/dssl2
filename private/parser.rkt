@@ -139,6 +139,8 @@
          (loc `(continue))]
         [(RETURN expr)
          (loc `(return ,$2))]
+        [(RETURN)
+         (loc `(return))]
         [(lvalue EQUALS expr)
          (loc `(setf! ,$1 ,$3))]
         [(ASSERT expr)

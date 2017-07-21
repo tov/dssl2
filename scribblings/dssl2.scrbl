@@ -82,7 +82,7 @@ by a newline, or a compound statement.
             expr
             (code:line let var @#,m["["] @#,q{=} expr @#,m["]"])
             (code:line pass)
-            (code:line return expr)
+            (code:line return @#,m["["] expr @#,m["]"])
             (code:line simple @#,q{;} simple)]
 [lvalue var
         (code:line expr @#,q{.} field)
@@ -351,6 +351,10 @@ def inc(x): x + 1
 @dssl2block|{
 def inc(x): return x + 1
 }|
+
+@defsmplform{@defidform/inline[return]}
+
+Returns void from the current function.
 
 @defcmpdform{@defidform/inline[test] @syn[expr]: @syn[block]}
 

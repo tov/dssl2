@@ -52,6 +52,7 @@
       [(#\return)                       (esc #\r)]
       [(#\tab)                          (esc #\t)]
       [(#\vtab)                         (esc #\v)]
+      [(#\space)                        (display #\space out)]
       [else
         (cond
           [(char=? c q)                 (esc c)]

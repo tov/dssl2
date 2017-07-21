@@ -336,7 +336,7 @@
     (cond
       [(struct-assq 'field (struct-fields value))
        =>
-       (λ (field) (set-field-value! field rhs))]
+       (λ (f) (set-field-value! f rhs))]
       [else
         (runtime-error "Struct ‘~a’ does not have field ‘~a’"
                        value 'field)])))

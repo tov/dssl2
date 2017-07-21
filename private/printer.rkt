@@ -8,8 +8,9 @@
   (unless (void? value)
     (pretty-print value)))
 
-(define (dssl-print-size-hook value _write _port)
+(define (dssl-print-size-hook value write _port)
   (cond
+    [write #false]
     [(dssl-value->string value) => string-length]
     [else #false]))
 

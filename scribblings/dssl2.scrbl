@@ -200,9 +200,9 @@ same line as the @racket[def].
 Note that @racket[def]s can be nested:
 
 @dssl2block|{
-# rbt_insert! : X RbTree -> Void
+# rbt_insert! : X RbTree<X> -> Void
 def rbt_insert!(key, tree):
-    # parent : RbLink<X> -> RbLink<X>Z
+    # parent : RbLink<X> -> RbLink<X>
     def parent(link):
         link.parent if rbn?(link) else False
     # grandparent : RbLink<X> -> RbLink<X>

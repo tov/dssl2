@@ -269,8 +269,7 @@ def singleton(key):
 #
 # size : RndBst<X> -> Natural
 def size(tree):
-    if Node?(tree): tree.size
-    else: 0
+    tree.size if Node?(tree) else 0
 #
 # fix_size! : Node? -> Void
 def fix_size!(node):
@@ -689,6 +688,13 @@ The ternary expression first evaluates the condition
 @syn[expr]₂. If non-false,
 evaluates @syn[expr]₁ for its value; otherwise,
 evaluates @syn[expr]₃ for its value.
+
+For example:
+
+@dssl2block|{
+def parent(link):
+    link.parent if rbn?(link) else False
+}|
 
 @defexpform{@syn[structname] { @syn[field]₁: @syn[expr]₁, ..., @syn[field]@subscript{k}: @syn[expr]@subscript{k} }}
 

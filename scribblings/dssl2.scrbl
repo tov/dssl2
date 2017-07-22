@@ -38,9 +38,9 @@ def insert!(t, k):
 
 Each block follows a colon and newline, and is indented 4 spaces more
 than the previous line. In particular, the block started by @racket[def]
-is indented by 4 spaces, and the @racket[if] and @racket[elif] blocks by
+is indented by 4 spaces, and the @racket[elif] blocks by
 8. When a block is a simple statement, it can be placed on the same
-line, as in the @racket[else] case.
+line, as in the @racket[if] and @racket[else] cases.
 
 Extranous indentation is an error.
 

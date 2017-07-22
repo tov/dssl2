@@ -347,7 +347,7 @@ if should_greet:
 }|
 
 The function @code{greet()} will be called if variable
-@code{should_greet} is strue, and otherwise it will not.
+@code{should_greet} is true, and otherwise it will not.
 
 Or we can have several @racket[elif] parts:
 

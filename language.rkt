@@ -124,6 +124,7 @@
 
 (define-syntax-rule (dssl-module-begin expr ...)
   (#%module-begin
+   (#%provide (all-defined))
    (module* configure-runtime racket/base
      (require dssl2/private/parser
               dssl2/private/printer
@@ -148,7 +149,6 @@
                   (relocate-input-port line-port line column position
                                        #true #:name src))
                 (parse-dssl2 src relocated #t)])))))
-   (provide (all-defined-out))
    expr ...))
 
 ; This is so that the documentation will consider elif a keyword.

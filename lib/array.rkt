@@ -58,10 +58,19 @@ def Array_from_parts(size_, data_):
     def shrink_to_fit():
         if len(data_) > size_:
             data_ = [ data_[i] for i in size_ ]
-            
+    
+    # : Self -> Self
+    def clone():
+        Array_from_parts(size_, [ v for v in data_ ])
+        
+    # : Self -> VectorOf<X>
+    def as_vector():
+        [ data_[i] for i in size_ ]
+        
     defstruct Array(empty?, size, capacity,
                     ensure_capacity, shrink_to_fit,
-                    get, set, push, pop)
+                    get, set, push, pop,
+                    clone, as_vector)
     
     Array {
         empty?: empty?,
@@ -73,6 +82,8 @@ def Array_from_parts(size_, data_):
         set: set,
         push: push,
         pop: pop,
+        clone: clone,
+        as_vector: as_vector,
     }
     
 # : Natural -> ArrayOf<X>

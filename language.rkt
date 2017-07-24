@@ -58,6 +58,7 @@
            [dssl-setf!          =]
            [dssl-struct-ref     struct-ref]
            [dssl-test           test]
+           [dssl-time           time]
            [dssl-vector-ref     vector-ref]
            [dssl-while          while])
          ; values
@@ -345,6 +346,13 @@
   (syntax-parse stx
     [(_ name:expr body:expr ...+)
      #'(test-case (~a name) body ...)]))
+
+(define-syntax (dssl-time stx)
+  (syntax-parse stx
+    [(_ name:expr body:expr ...)
+     #'(let ([lab name])
+         (define-values (_lst cpu real gc) (time-apply (λ () body ...) '()))
+         (printf "~a: cpu: ~a real: ~a gc: ~a\n" lab cpu real gc))]))
 
 (define (dssl-make-vector a b)
   (make-vec (make-vector a b)))

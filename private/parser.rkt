@@ -90,7 +90,9 @@
         [(DEF IDENT LPAREN formals RPAREN COLON suite)
          (loc `(def (,$2 ,@$4) ,@$7))]
         [(TEST expr COLON suite)
-         (loc `(test ,$2 ,@$4))])
+         (loc `(test ,$2 ,@$4))]
+        [(TIME expr COLON suite)
+         (loc `(time ,$2 ,@$4))])
 
       (elifs
         [()

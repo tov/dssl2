@@ -40,6 +40,7 @@
    RETURN
    PASS
    TEST
+   TIME
    DEF
    DEFSTRUCT))
 
@@ -206,6 +207,7 @@
       ["def"                    (token-DEF)]
       ["defstruct"              (token-DEFSTRUCT)]
       ["test"                   (token-TEST)]
+      ["time"                   (token-TIME)]
       ["or"                     (token-OP0 (string->symbol lexeme))]
       ["and"                    (token-OP1 (string->symbol lexeme))]
       [(:or "==" #\< #\> "<=" ">=" "!=" "===" "!==")

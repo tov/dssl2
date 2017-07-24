@@ -68,7 +68,7 @@ by a newline, or a compound statement.
 
 @racketgrammar*[
 #:literals (def defstruct let lambda λ else if elif while for in test
-            break continue : True False =
+            time break continue : True False =
             assert assert_eq pass return NEWLINE INDENT DEDENT)
 [program (code:line @#,m["{"] statement @#,m["}*"])]
 [statement   (code:line simple @#,q{NEWLINE})
@@ -93,6 +93,7 @@ by a newline, or a compound statement.
             (code:line if expr @#,q{:} block @#,m["{"] elif expr @#,q{:} block @#,m["}*"] @#,m["["] else expr @#,q{:} block @#,m["]"])
             (code:line for var @#,m{[} @#,q{,} var @#,m{]} @#,q{in} expr @#,q{:} block)
             (code:line test expr @#,q{:} block)
+            (code:line time expr @#,q{:} block)
             (code:line while expr @#,q{:} block)
             ]
 [block
@@ -532,6 +533,28 @@ test 'single-chaining hash table':
     assert !sch_member?(h, 'hel')
     assert_eq sch_keys(h), cons('hello', cons('helo', nil()))
 }|
+
+@defcmpdform{@defidform/inline[time] @syn[expr]: @syn[block]}
+
+Times the execution of the block, and then prints the results labeled
+with the result of @syn[expr] (which isn’t timed).
+
+For example, we can time how long it takes to create an array of
+10,000,000 @racket[0]s:
+
+@dssl2block|{
+time '10,000,000 zeroes':
+    [ 0; 10000000 ]
+}|
+
+The result is printed as follows:
+
+@verbatim|{
+1,000,000 zeroes: cpu: 45 real: 46 gc: 20
+}|
+
+This means it tooks 45 milliseconds of CPU time over 46 milliseconds of
+wall clock time, with 20 ms of CPU time spent on garbage collection.
 
 @defcmpdform{@defidform/inline[while] @syn[expr]: @syn[block]}
 

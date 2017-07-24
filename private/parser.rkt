@@ -139,6 +139,8 @@
          (loc `(break))]
         [(CONTINUE)
          (loc `(continue))]
+        [(REQUIRE IDENT)
+         (loc `(require ,$2))]
         [(RETURN expr)
          (loc `(return ,$2))]
         [(RETURN)

@@ -53,6 +53,7 @@
            [dssl-lambda         lambda]
            [dssl-let            let]
            [dssl-make-vector    make-vector]
+           [dssl-require        require]
            [dssl-return         return]
            [dssl-setf!          setf!]
            [dssl-setf!          =]
@@ -116,6 +117,7 @@
 (require (prefix-in racket: racket))
 
 (require (for-syntax syntax/parse))
+(require (for-syntax dssl2/private/find-lib))
 
 (define dssl-True #t)
 (define dssl-False #f)
@@ -252,6 +254,16 @@
     [(natural? v)  (in-range v)]
     [(string? v)   (in-vector (unvec (explode v)))]
     [else          (type-error 'for v "something iterable")]))
+
+(define-syntax (dssl-require stx)
+  (syntax-parse stx
+    [(_ lib:id)
+     (let ([filename (path->string
+                       (build-path
+                         lib-directory
+                         (format "~a.rkt" (syntax->datum #'lib))))])
+       #`(#%require
+          #,(datum->syntax stx `(file ,filename))))]))
 
 ; setf! is like Common Lisp setf, but it just recognizes three forms. We
 ; use this to translate assignments.

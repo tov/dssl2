@@ -37,6 +37,7 @@
    IN
    BREAK
    CONTINUE
+   REQUIRE
    RETURN
    PASS
    TEST
@@ -198,6 +199,7 @@
       ["in"                     (token-IN)]
       ["break"                  (token-BREAK)]
       ["continue"               (token-CONTINUE)]
+      ["require"                (token-REQUIRE)]
       ["return"                 (token-RETURN)]
       ["pass"                   (token-PASS)]
       ["lambda"                 (token-LAMBDA)]

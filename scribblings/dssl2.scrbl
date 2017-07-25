@@ -987,7 +987,7 @@ Rounds a number up to the smallest integer that is no less.
 Returns the integer part of a number, by truncation. That is, the
 decimal point and everything after it is removed. If given a string,
 attempt to convert to a number before truncating, throwing an error if
-the conversion fails. Booleans @racket[True] and @racket[False] conver
+the conversion fails. Booleans @racket[True] and @racket[False] convert
 to @racket[1] and @racket[0], respectively.
 
 @defprocforms[
@@ -999,7 +999,7 @@ to @racket[1] and @racket[0], respectively.
 Converts an exact (integral or rational) number to the nearest
 double-precision floating point value. If given a string, attempt to
 convert to a number, throwing an error if the conversion fails. Booleans
-@racket[True] and @racket[False] conver to @racket[1.0] and @racket[0.0],
+@racket[True] and @racket[False] convert to @racket[1.0] and @racket[0.0],
 respectively.
 
 @defprocforms[

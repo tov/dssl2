@@ -99,7 +99,7 @@
          implode
          ord
          (rename-out
-           [string-length       string_length])
+           [string-length       strlen])
          ; * vector operations
          build_vector
          len

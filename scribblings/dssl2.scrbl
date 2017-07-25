@@ -1109,7 +1109,7 @@ code point. Inverse to @racket[chr].
 assert_eq ord('a'), 97
 }|
 
-@defprocform[string_length]{(String) -> Natural}
+@defprocform[strlen]{(String) -> Natural}
 
 Returns the length of a string in characters.
 

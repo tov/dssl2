@@ -1012,10 +1012,10 @@ When called with zero arguments, returns a random floating point number
 in the open interval (@racket[0.0], @racket[1.0]).
 
 When called with one argument @racket[limit], returns a random exact
-integer from the closed interval (@racket[0], @racket[limit - 1]).
+integer from the closed interval [@racket[0], @racket[limit - 1]].
 
 When called with two arguments @racket[min] and @racket[max], returns a
-random exact integer from the closed interval (@racket[min], @racket[max - 1]).
+random exact integer from the closed interval [@racket[min], @racket[max - 1]].
 The difference between the arguments can be no greater than
 @racket[4294967087].
 

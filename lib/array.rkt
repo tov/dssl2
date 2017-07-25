@@ -1,6 +1,6 @@
 #lang dssl2
 
-# An Array is an object with the methods listed below.
+# An ArrayOf<X> is an object with the methods listed below.
 
 # : Natural VectorOf<X or False> -> ArrayOf<X>
 # Creates a new dynamic array with the given size and elements.
@@ -47,8 +47,9 @@ def Array_from_parts(size_, data_):
         data_[size_] = value
         size_ = size_ + 1
 
-    # : Self -> X
+    # : Self -> X or False
     def pop():
+        if size_ == 0: return False
         size_ = size_ - 1
         let result = data_[size_]
         data_[size_] = False

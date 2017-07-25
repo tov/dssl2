@@ -140,21 +140,21 @@ def Dll_from_sentinel_and_size(sentinel_, size_):
         v
 
     object Dll {
-        empty?: empty?,
-        size: size,
-        push_front: push_front,
-        push_back: push_back,
-        pop_front: pop_front,
-        pop_back: pop_back,
-        detach_front: detach_front,
-        detach_back: detach_back,
-        splice: splice,
-        foldl: foldl,
-        foldr: foldr,
-        each_with_index: each_with_index,
-        to_vector: to_vector,
-        get_sentinel!: get_sentinel!,
-        set_sentinel_and_size!: set_sentinel_and_size!,
+        empty?,
+        size,
+        push_front,
+        push_back,
+        pop_front,
+        pop_back,
+        detach_front,
+        detach_back,
+        splice,
+        foldl,
+        foldr,
+        each_with_index,
+        to_vector,
+        get_sentinel!,
+        set_sentinel_and_size!,
     }
 
 def Dll():

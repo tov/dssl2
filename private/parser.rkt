@@ -214,7 +214,9 @@
 
       (<field>
         [(IDENT COLON <expr>)
-         (loc `[,$1 ,$3])])
+         (loc `[,$1 ,$3])]
+        [(IDENT)
+         (loc `[,$1 ,$1])])
 
       (<expr>
         [(LAMBDA <formals> COLON <expr>)

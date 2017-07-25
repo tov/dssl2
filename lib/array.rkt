@@ -81,19 +81,19 @@ def Array_from_parts(size_, data_):
         equals_with?(other, lambda x, y: x == y)
 
     object Array {
-        empty?: empty?,
-        size: size,
-        capacity: capacity,
-        ensure_capacity: ensure_capacity,
-        shrink_to_fit: shrink_to_fit,
-        get: get,
-        set: set,
-        push: push,
-        pop: pop,
-        clone: clone,
-        as_vector: as_vector,
-        equals_with?: equals_with?,
-        equals?: equals?,
+        empty?,
+        size,
+        capacity,
+        ensure_capacity,
+        shrink_to_fit,
+        get,
+        set,
+        push,
+        pop,
+        clone,
+        as_vector,
+        equals_with?,
+        equals?,
     }
 
 # : Natural -> ArrayOf<X>

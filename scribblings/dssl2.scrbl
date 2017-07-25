@@ -68,7 +68,7 @@ by a newline, or a compound statement.
 
 @racketgrammar*[
 #:literals (def defstruct let lambda λ else if elif while for in test
-            time break continue : True False =
+            time object break continue : True False =
             assert assert_eq pass return NEWLINE INDENT DEDENT)
 [program (code:line @#,m["{"] statement @#,m["}*"])]
 [statement   (code:line simple @#,q{NEWLINE})
@@ -109,6 +109,7 @@ by a newline, or a compound statement.
       (code:line @#,q{λ} @#,m["{"] var @#,m["},*"] @#,q{:} expr)
       (code:line expr @#,q{if} expr @#,q{else} expr)
       (code:line structname @#,q["{"] @#,m["{"] fieldname : expr @#,m["},*"] @#,q[" }"])
+      (code:line object structname @#,q["{"] @#,m["{"] fieldname : expr @#,m["},*"] @#,q[" }"])
       (code:line @#,q{[} @#,m["{"] expr @#,m["},*"] @#,q{]})
       (code:line @#,q{[} expr @#,q{;} expr @#,q{]})
       (code:line @#,q{[} expr @#,q{for} var @#,m{[} @#,q{,} var @#,m{]} @#,q{in} expr @#,m{[} @#,q{if} expr @#,m{]} @#,q{]})
@@ -724,6 +725,34 @@ def parent(link):
 Constructs a struct with the given name and the values of the given
 expressions for its fields. The struct must have been declared with
 those fields using @racket[defstruct].
+
+If a variable with the same name as a field is in scope, omitting the
+field value will use that variable:
+
+@dssl2block|{
+defstruct Foo(bar, baz)
+let bar = 4
+let baz = 5
+assert_eq Foo { bar, baz: 9 }, Foo(4, 9)
+}|
+
+@defexpform{@defidform/inline[object] @syn[structname] { @syn[field]₁: @syn[expr]₁, ..., @syn[field]@subscript{k}: @syn[expr]@subscript{k} }}
+
+Creates a struct value without declaring the struct type with
+@racket[defstruct]. In particular, creates a struct with the given name
+@syn[structname] and the given fields and values, regardless of what
+structs might be declared. The field names cannot have any repeats.
+
+This is useful for one-off objects. For example, a simple 2-D point
+object might be defined as:
+
+@dssl2block|{
+def Posn(x_, y_):
+    def get_x(): x_
+    def get_y(): y_
+    def fmt(): format("(~a, ~a)", x_, y_)
+    object Posn { get_x: get_x, get_y: get_y, fmt: fmt, }
+}|
 
 @defexpform{[ @syn[expr]@subscript{0}, ..., @syn[expr]@subscript{k - 1} ]}
 

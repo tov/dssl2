@@ -37,6 +37,7 @@
    IN
    BREAK
    CONTINUE
+   OBJECT
    REQUIRE
    RETURN
    PASS
@@ -199,6 +200,7 @@
       ["in"                     (token-IN)]
       ["break"                  (token-BREAK)]
       ["continue"               (token-CONTINUE)]
+      ["object"                 (token-OBJECT)]
       ["require"                (token-REQUIRE)]
       ["return"                 (token-RETURN)]
       ["pass"                   (token-PASS)]

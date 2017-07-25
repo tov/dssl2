@@ -53,6 +53,7 @@
            [dssl-lambda         lambda]
            [dssl-let            let]
            [dssl-make-vector    make-vector]
+           [dssl-object         object]
            [dssl-require        require]
            [dssl-return         return]
            [dssl-setf!          setf!]
@@ -310,6 +311,14 @@
          (define (#,predicate value)
            (and (struct? value)
                 (eq? 'name (struct-name value))))))]))
+
+(define-syntax (dssl-object stx)
+  (syntax-parse stx
+    [(_ name:id [field:id expr:expr] ...)
+     #:fail-when (check-duplicate-identifier
+                   (syntax->list #'(field ...)))
+                 "duplicate field name"
+     #'(dssl-make-struct 'name '(field ...) (list expr ...))]))
 
 (define (dssl-make-struct name formals actuals)
   (unless (= (length formals) (length actuals))

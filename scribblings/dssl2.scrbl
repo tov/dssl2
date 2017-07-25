@@ -1009,7 +1009,7 @@ respectively.
 ]
 
 When called with zero arguments, returns a random floating point number
-in the open interval (@racket[0.0], @racket[1.1]).
+in the open interval (@racket[0.0], @racket[1.0]).
 
 When called with one argument @racket[limit], returns a random exact
 integer from the closed interval (@racket[0], @racket[limit - 1]).

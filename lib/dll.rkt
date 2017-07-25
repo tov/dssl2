@@ -139,25 +139,7 @@ def Dll_from_sentinel_and_size(sentinel_, size_):
         each_with_index(each)
         v
 
-    defstruct Dll (
-        empty?,
-        size,
-        push_front,
-        push_back,
-        pop_front,
-        pop_back,
-        detach_front,
-        detach_back,
-        splice,
-        foldl,
-        foldr,
-        each_with_index,
-        to_vector,
-        get_sentinel!,
-        set_sentinel_and_size!,
-    )
-
-    Dll {
+    object Dll {
         empty?: empty?,
         size: size,
         push_front: push_front,

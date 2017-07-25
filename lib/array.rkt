@@ -80,12 +80,7 @@ def Array_from_parts(size_, data_):
     def equals?(other):
         equals_with?(other, lambda x, y: x == y)
 
-    defstruct Array(empty?, size, capacity,
-                    ensure_capacity, shrink_to_fit,
-                    get, set, push, pop,
-                    clone, as_vector, equals_with?, equals?)
-
-    Array {
+    object Array {
         empty?: empty?,
         size: size,
         capacity: capacity,

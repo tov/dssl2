@@ -256,7 +256,11 @@
       [#\tab
        (lexical-error start-pos "Tabs are not allowed in DSSL2")]
       [any-char
-        (lexical-error start-pos "Unexpected character ‘~a’" lexeme)]))
+       (lexical-error start-pos "Unexpected character ‘~a’" lexeme)]
+      [(special)
+       (lexical-error start-pos "Unexpected special" lexeme)]
+      [(special-comment)
+       (lexical-error start-pos "Unexpected special comment" lexeme)]))
 
   (port-count-lines! port)
 

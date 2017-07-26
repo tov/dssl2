@@ -368,9 +368,9 @@ def rebalance_left_(key, balance, left0, right):
     elif left.balance == 1:
         insert_result(node(left.right.key, 0,
                            node(left.key,
-                               -1 if left.right.balance == 1 else 0,
-                               left.left,
-                               left.right.left),
+                                -1 if left.right.balance == 1 else 0,
+                                left.left,
+                                left.right.left),
                            node(key,
                                 1 if left.right.balance == -1 else 0,
                                 left.right.right,

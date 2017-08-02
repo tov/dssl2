@@ -2,8 +2,7 @@
 
 (provide dssl-write-struct
          make-field-info field-info?
-         field-info-name field-info-getter field-info-setter
-         make-vec vec? unvec)
+         field-info-name field-info-getter field-info-setter)
 
 (define-struct field-info (name getter setter))
 
@@ -21,28 +20,4 @@
       [(#f) (display field-value port)]
       [else (print field-value port mode)]))
   (display "}" port))
-
-(define (write-vec vec port mode)
-  (let ([recur (case mode
-                 [(#t) write]
-                 [(#f) display]
-                 [else (λ (p port) (print p port mode))])])
-    (display "[" port)
-    (define first #t)
-    (for ([element (in-vector (vec-contents vec))])
-      (if first
-        (set! first #f)
-        (display ", " port))
-      (recur element port))
-    (display "]" port)))
-
-(define-struct vec [contents]
-               #:transparent
-               #:methods gen:custom-write
-               [(define write-proc write-vec)])
-
-(define (unvec v)
-  (if (vec? v)
-    (vec-contents v)
-    (error (format "Runtime error: expected vector, got ~s instead." v))))
 

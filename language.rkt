@@ -234,28 +234,26 @@
     [(_ [(i:id j:id) v:expr] expr:expr)
      #:fail-when (and (bound-identifier=? #'i #'j) #'j)
                  "duplicate variable name"
-     #'(make-vec
-         (for/vector ([i (in-naturals)]
-                      [j (dssl-in-value v)])
-           expr))]
+     #'(for/vector ([i (in-naturals)]
+                    [j (dssl-in-value v)])
+         expr)]
     [(_ [j:id v:expr] expr:expr)
      #'(dssl-for/vector [(_ j) v] expr)]
     [(_ [(i:id j:id) v:expr] #:when when expr:expr)
      #:fail-when (and (bound-identifier=? #'i #'j) #'j)
                  "duplicate variable name"
-     #'(make-vec
-         (for/vector ([i (in-naturals)]
-                      [j (dssl-in-value v)]
-                      #:when when)
-           expr))]
+     #'(for/vector ([i (in-naturals)]
+                    [j (dssl-in-value v)]
+                    #:when when)
+         expr)]
     [(_ [j:id v:expr] #:when when:expr expr:expr)
      #'(dssl-for/vector [(_ j) v] #:when when expr)]))
 
 (define (dssl-in-value v)
   (cond
-    [(vec? v)      (in-vector (unvec v))]
+    [(vector? v)   (in-vector v)]
     [(natural? v)  (in-range v)]
-    [(string? v)   (in-vector (unvec (explode v)))]
+    [(string? v)   (in-vector (explode v))]
     [else          (type-error 'for v "something iterable")]))
 
 (define-syntax (dssl-require stx)
@@ -273,14 +271,14 @@
 (define-syntax dssl-setf!
   (syntax-rules (dssl-vector-ref dssl-struct-ref)
     [(_ (dssl-vector-ref v i) rhs)
-     (vector-set! (unvec v) i rhs)]
+     (vector-set! v i rhs)]
     [(_ (dssl-struct-ref s f) rhs)
      (dssl-struct-set! s f rhs)]
     [(_ i rhs)
      (set! i rhs)]))
 
 (define (dssl-vector-ref v i)
-  (vector-ref (unvec v) i))
+  (vector-ref v i))
 
 (define-for-syntax (format-stx fmt stx0 . stxs)
   (datum->syntax stx0
@@ -400,16 +398,16 @@
          (printf "~a: cpu: ~a real: ~a gc: ~a\n" lab cpu real gc))]))
 
 (define (dssl-make-vector a b)
-  (make-vec (make-vector a b)))
+  (make-vector a b))
 
 (define (vector . args)
-  (make-vec (list->vector args)))
+  (list->vector args))
 
 (define (build_vector n f)
-  (make-vec (racket:build-vector n f)))
+  (racket:build-vector n f))
 
 (define (len v)
-  (vector-length (unvec v)))
+  (vector-length v))
 
 (define-syntax-rule (dssl-assert expr)
   (unless expr
@@ -485,13 +483,12 @@
   (~a (integer->char i)))
 
 (define (explode s)
-  (make-vec
-    (list->vector
-      (racket:map (λ (c) (list->string (list c)))
-                  (string->list s)))))
+  (list->vector
+    (racket:map (λ (c) (list->string (list c)))
+                (string->list s))))
 
 (define (implode vec)
-  (apply string-append (vector->list (unvec vec))))
+  (apply string-append (vector->list vec)))
 
 (define (ord c)
   (unless (= 1 (string-length c))
@@ -499,12 +496,11 @@
   (char->integer (string-ref c 0)))
 
 (define (map f vec)
-  (make-vec
-    (build-vector (vector-length (unvec vec))
-                  (λ (i) (f (vector-ref (unvec vec) i))))))
+  (build-vector (vector-length vec)
+                (λ (i) (f (vector-ref vec i)))))
 
 (define (filter f vec)
-  (make-vec (list->vector (racket:filter f (vector->list (unvec vec))))))
+  (list->vector (racket:filter f (vector->list vec))))
 
 (define (num? x) (number? x))
 
@@ -517,6 +513,8 @@
 (define (bool? x) (boolean? x))
 
 (define (proc? x) (procedure? x))
+
+(define (vec? x) (vector? x))
 
 (define (floor n)
   (inexact->exact (racket:floor n)))

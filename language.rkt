@@ -166,6 +166,10 @@
   (lambda (stx)
     (raise-syntax-error #f "use of return keyword not in a function" stx)))
 
+(define-simple-macro (make-set!able f)
+  (unless (zero? (random 1))
+    (set! f (void))))
+
 (define-syntax-rule (dssl-lambda (param ...) expr ...)
   (lambda (param ...)
     (let/ec return-f
@@ -185,17 +189,18 @@
     (define/contract f
                      (-> contract ... result-contract)
                      (dssl-lambda (formal ...) expr ...))
-    (unless (zero? (random 1))
-      (set! f (void)))))
+    (make-set!able f)))
 
 (define-syntax dssl-let
   (syntax-rules ()
-    [(_ name)
-     (define name (void))]
-    [(_ name expr)
+    [(_ (name contract))
      (begin
-       (define name (void))
-       (set! name expr))]))
+       (define/contract name contract (void))
+       (make-set!able name))]
+    [(_ (name contract) expr)
+     (begin
+       (define/contract name contract expr)
+       (make-set!able name))]))
 
 ; while uses two syntax parameters, break and continue (shared by for)
 (define-syntax-parameter
@@ -305,7 +310,7 @@
 
 (define-syntax (dssl-defstruct stx)
   (syntax-parse stx
-    [(_ name:id (formal-field:id ...))
+    [(_ name:id ((formal-field:id contract:expr) ...))
      #:fail-when (check-duplicate-identifier
                    (syntax->list #'(formal-field ...)))
                  "duplicate field name"
@@ -323,9 +328,14 @@
                  (make-field-info
                    'formal-field
                    (struct-getter-name s:cons formal-field)
-                   (struct-setter-name s:cons formal-field))
+                   (let ()
+                     (define/contract setter
+                       (-> any/c (recursive-contract contract) any/c)
+                       (struct-setter-name s:cons formal-field))
+                     setter))
                  ...)))
-           (define (name formal-field ...)
+           (define/contract (name formal-field ...)
+             (-> (recursive-contract contract) ... any/c)
              (s:cons struct-info formal-field ...))
            (define (#,(format-stx "~a?" #'name) value)
              (#,(format-stx "~a?" #'s:cons) value))
@@ -370,7 +380,7 @@
                    (syntax->list #'(field ...)))
                  "duplicate field name"
      #'(let ()
-         (dssl-defstruct name (field ...))
+         (dssl-defstruct name ((field any/c) ...))
          (name expr ...))]))
 
 (define (get-field-info struct field)

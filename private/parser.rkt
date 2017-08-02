@@ -143,11 +143,11 @@
       (<small-statement>
         [(<expr>)
          $1]
-        [(LET IDENT)
+        [(LET <contract-formal>)
          (loc `(let ,$2))]
-        [(LET IDENT EQUALS <expr>)
+        [(LET <contract-formal> EQUALS <expr>)
          (loc `(let ,$2 ,$4))]
-        [(DEFSTRUCT IDENT LPAREN <formals> RPAREN)
+        [(DEFSTRUCT IDENT LPAREN <contract-formals> RPAREN)
          (loc `(defstruct ,$2 ,$4))]
         [(BREAK)
          (loc `(break))]

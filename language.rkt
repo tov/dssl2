@@ -177,7 +177,10 @@
    #:fail-when (check-duplicate-identifier
                  (syntax->list #'(formal ...)))
                "duplicate argument name"
-  (define f (dssl-lambda (formal ...) expr ...)))
+  (begin
+    (define f (dssl-lambda (formal ...) expr ...))
+    (unless (zero? (random 1))
+             (set! f (void)))))
 
 (define-syntax dssl-let
   (syntax-rules ()

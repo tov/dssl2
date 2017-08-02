@@ -118,7 +118,7 @@
         [(ARROW <expr>)
          $2]
         [()
-         `prim:AnyC])
+         `any/c])
 
       (<suite>
         [(<simple-statement>)

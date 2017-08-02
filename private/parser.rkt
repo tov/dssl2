@@ -87,8 +87,8 @@
          (loc `(for [,$2 ,$4] ,@$6))]
         [(FOR IDENT COMMA IDENT IN <expr> COLON <suite>)
          (loc `(for [(,$2 ,$4) ,$6] ,@$8))]
-        [(DEF IDENT LPAREN <formals> RPAREN COLON <suite>)
-         (loc `(def (,$2 ,@$4) ,@$7))]
+        [(DEF IDENT LPAREN <contract-formals> RPAREN <result> COLON <suite>)
+         (loc `(def (,$2 ,@$4) ,$6 ,@$8))]
         [(TEST <expr> COLON <suite>)
          (loc `(test ,$2 ,@$4))]
         [(TEST COLON <suite>)
@@ -113,6 +113,12 @@
          `[else (pass)]]
         [(ELSE COLON <suite>)
          (loc `[else ,@$3])])
+
+      (<result>
+        [(ARROW <expr>)
+         $2]
+        [()
+         `prim:AnyC])
 
       (<suite>
         [(<simple-statement>)
@@ -161,6 +167,20 @@
          (loc `(assert_eq ,$2 ,$4))]
         [(PASS)
          (loc `(pass))])
+
+      (<contract-formals>
+        [()
+         `()]
+        [(<contract-formal>)
+         (loc (list $1))]
+        [(<contract-formal> COMMA <contract-formals>)
+         (loc (cons $1 $3))])
+
+      (<contract-formal>
+        [(IDENT COLON <expr>)
+         (loc (list $1 $3))]
+        [(IDENT)
+         (loc (list $1 'prim:AnyC))])
 
       (<formals>
         [()

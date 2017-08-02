@@ -72,6 +72,10 @@
          bool?
          proc?
          vec?
+         ; * contracts
+         (rename-out
+           [any/c               AnyC]
+           [any/c               prim:AnyC])
          ; * numeric operations
          floor
          ceiling
@@ -173,12 +177,16 @@
                          [(_ ?result) (return-f ?result)])])
          (begin expr ...)))))
 
-(define-simple-macro (dssl-def (f:id formal:id ...) expr:expr ...)
+(define-simple-macro (dssl-def (f:id (formal:id contract:expr) ...)
+                               result-contract:expr
+                               expr:expr ...)
    #:fail-when (check-duplicate-identifier
                  (syntax->list #'(formal ...)))
                "duplicate argument name"
   (begin
-    (define f (dssl-lambda (formal ...) expr ...))
+    (define/contract f
+                     (-> contract ... result-contract)
+                     (dssl-lambda (formal ...) expr ...))
     (unless (zero? (random 1))
              (set! f (void)))))
 

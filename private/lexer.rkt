@@ -25,6 +25,7 @@
    EQUALS
    PLUS         ; two different precedences
    MINUS        ; two different precedences
+   ARROW
    LAMBDA
    ASSERT
    ASSERT-EQ
@@ -190,6 +191,7 @@
       [#\=                      (token-EQUALS)]
       [#\+                      (token-PLUS)]
       [#\-                      (token-MINUS)]
+      ["->"                     (token-ARROW)]
       ["let"                    (token-LET)]
       ["assert"                 (token-ASSERT)]
       ["assert_eq"              (token-ASSERT-EQ)]

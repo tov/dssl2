@@ -4,6 +4,8 @@
          dssl-print-size-hook
          dssl-print-print-hook)
 
+(require dssl2/private/values)
+
 (define (dssl-print value)
   (unless (void? value)
     (pretty-print value)))
@@ -35,6 +37,8 @@
      (if (and contains-sq (not contains-dq))
        (dssl-string->string #\" value)
        (dssl-string->string #\' value))]
+    [(vector? value)
+     (dssl-vector->string value)]
     [else #false]))
 
 (define (dssl-string->string q str)
@@ -66,3 +70,14 @@
   (display q out)
   (get-output-string out))
 
+(define (dssl-vector->string vec)
+  (define port (open-output-string))
+  (display "[" port)
+  (define first #t)
+  (for ([element (in-vector vec)])
+    (if first
+      (set! first #f)
+      (display ", " port))
+    (print element port))
+  (display "]" port)
+  (get-output-string port))

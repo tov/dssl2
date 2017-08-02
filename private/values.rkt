@@ -1,48 +1,26 @@
 #lang racket
 
-(provide make-struct struct? struct-name struct-fields struct-assq
-         make-field field-name field-value set-field-value!
+(provide dssl-write-struct
+         make-field-info field-info?
+         field-info-name field-info-getter field-info-setter
          make-vec vec? unvec)
 
-(define (write-field field port mode)
-  (let ([recur (case mode
-                 [(#t) write]
-                 [(#f) display]
-                 [else (λ (p port) (print p port mode))])])
-    (display (field-name field) port)
-    (display ": " port)
-    (recur (field-value field) port)))
+(define-struct field-info (name getter setter))
 
-(define (write-struct struct port mode)
-  (let ([recur (case mode
-                 [(#t) write]
-                 [(#f) display]
-                 [else (λ (p port) (print p port mode))])])
-    (display (struct-name struct) port)
-    (display "{" port)
-    (define first #t)
-    (for ([field (struct-fields struct)])
-      (if first
-        (set! first #f)
-        (display ", " port))
-      (recur field port))
-    (display "}" port)))
-
-(define-struct struct [name fields]
-               #:transparent
-               #:methods gen:custom-write
-               [(define write-proc write-struct)])
-
-(define-struct field [name (value #:mutable)]
-               #:transparent
-               #:methods gen:custom-write
-               [(define write-proc write-field)])
-
-(define (struct-assq name fields)
-  (cond
-    [(memf (λ (field) (eq? (field-name field) name)) fields)
-     => first]
-    [else #false]))
+(define (dssl-write-struct name info struct port mode)
+  (define first #t)
+  (fprintf port "~a {" name)
+  (for ([field-vec (in-vector info)])
+    (if first
+      (set! first #f)
+      (display ", " port))
+    (fprintf port "~a: " (field-info-name field-vec))
+    (define field-value ((field-info-getter field-vec) struct))
+    (case mode
+      [(#t) (write field-value port)]
+      [(#f) (display field-value port)]
+      [else (print field-value port mode)]))
+  (display "}" port))
 
 (define (write-vec vec port mode)
   (let ([recur (case mode

@@ -282,37 +282,72 @@
 (define (dssl-vector-ref v i)
   (vector-ref (unvec v) i))
 
+(define-for-syntax (format-stx fmt stx0 . stxs)
+  (datum->syntax stx0
+    (string->symbol
+      (apply format fmt
+             (syntax->datum stx0)
+             (map syntax->datum stxs)))))
+
 (define-syntax (dssl-defstruct stx)
   (syntax-parse stx
     [(_ name:id (formal-field:id ...))
      #:fail-when (check-duplicate-identifier
                    (syntax->list #'(formal-field ...)))
                  "duplicate field name"
-     (let ([predicate (datum->syntax #'name
-                        (string->symbol
-                          (format "~a?" (syntax->datum #'name))))]
-           [constructor (datum->syntax #'name
-                          (string->symbol
-                            (format "make-~a" (syntax->datum #'name))))])
+     (let* ([f-cons (format-stx "f:~a" #'name)]
+            [s-cons (format-stx "s:~a" #'name)]
+            [m-cons (format-stx "m:~a" #'name)]
+            [s-pred (format-stx "s:~a?" #'name)]
+            [pred   (format-stx "~a?" #'name)]
+            [info (for/list ([field (syntax->list #'(formal-field ...))])
+                    (define getter (format-stx "~a-~a" s-cons field))
+                    (define setter (format-stx "set-~a-~a!" s-cons field))
+                    #`(make-field-info '#,field #,getter #,setter))])
      #`(begin
-         (define-syntax (#,constructor stx)
+         (define (write-struct struct port mode)
+           (dssl-write-struct 'name struct-info struct port mode))
+         (define-struct #,s-cons (struct-info formal-field ...)
+                        #:mutable
+                        #:transparent
+                        #:methods gen:custom-write
+                          [(define write-proc write-struct)])
+         (define struct-info (racket:vector #,@info))
+         (define (name formal-field ...)
+           (#,s-cons struct-info formal-field ...))
+         (define (#,pred value)
+           (#,s-pred value))
+         (define-syntax (#,m-cons stx)
            (syntax-parse stx
              [(_ [field:id expr:expr] (... ...))
               #:fail-when (check-duplicate-identifier
                             (syntax->list #'(field (... ...))))
                           "duplicate field name"
-              #'(dssl-make-struct/fields
-                  'name
-                  '(formal-field ...)
-                  (list (make-field 'field expr) (... ...)))]))
-         (define (name formal-field ...)
-           (dssl-make-struct
-             'name
-             '(formal-field ...)
-             (list formal-field ...)))
-         (define (#,predicate value)
-           (and (struct? value)
-                (eq? 'name (struct-name value))))))]))
+              (begin
+                (define actual-fields
+                  (map syntax->datum (syntax->list #'(field (... ...)))))
+                (define actual-exprs
+                  (syntax->list #'(expr (... ...))))
+                (define field-exprs
+                  (map cons actual-fields actual-exprs))
+                (define formal-fields (syntax->list #'(formal-field ...)))
+                (define exprs
+                  (for/list ([field formal-fields])
+                    (cond
+                      [(assq (syntax->datum field) field-exprs) => cdr]
+                      [else
+                        (raise-syntax-error
+                          #f
+                          (format "Struct ~a requires field ~a"
+                                  'name (syntax->datum field))
+                          stx)])))
+                (for ([field actual-fields])
+                  (unless (memq field (map syntax->datum formal-fields))
+                    (raise-syntax-error
+                      #f
+                      (format "Struct ~a does not have field ~a" 'name field)
+                      field)))
+                #`(name #,@exprs))]))))]))
 
 (define-syntax (dssl-object stx)
   (syntax-parse stx
@@ -320,50 +355,37 @@
      #:fail-when (check-duplicate-identifier
                    (syntax->list #'(field ...)))
                  "duplicate field name"
-     #'(dssl-make-struct 'name '(field ...) (list expr ...))]))
+     #'(let ()
+         (dssl-defstruct name (field ...))
+         (name expr ...))]))
 
-(define (dssl-make-struct name formals actuals)
-  (unless (= (length formals) (length actuals))
-    (runtime-error
-      "Constructor ‘~a’ expects ~a arguments, got ~a"
-      name (length formals) (length actuals)))
-  (make-struct name (racket:map make-field formals actuals)))
+(define-syntax-rule (get-field-info struct field)
+  (let/ec return
+    (unless (struct? struct)
+      (runtime-error "Value ‘~a’ is not a struct" struct))
+    (define-values (struct-type _non-first?) (struct-info struct))
+    (define-values (_a size _c getter _e _f _g _h)
+      (struct-type-info struct-type))
+    (when (zero? size)
+      (runtime-error "Struct ‘~a’ is missing metadata" struct))
+    (define info-vector (getter struct 0))
+    (unless (vector? info-vector)
+      (runtime-error "Struct ‘~a’ has weird metadata" struct))
+    (for ([info (in-vector info-vector)])
+      (unless (field-info? info)
+        (runtime-error "Struct ‘~a’ has weird field metadata" struct))
+      (when (eq? 'field (field-info-name info))
+        (return info)))
+    (runtime-error "Struct ‘~a’ does not have field ‘~a’"
+                   struct 'field)))
 
-(define (dssl-make-struct/fields name formals actuals)
-  (define (get-value field)
-    (or (struct-assq field actuals)
-        (runtime-error
-          "Constructor for ‘~a’ expects field ‘~a’"
-          name field)))
-  (for-each (λ (actual)
-              (unless (memq (field-name actual) formals)
-                (runtime-error
-                  "Constructor for ‘~a’ does not expect field ‘~a’"
-                  name (field-name actual))))
-            actuals)
-  (make-struct name (racket:map get-value formals)))
+(define-syntax-rule (dssl-struct-ref expr field)
+  (let ([value expr])
+    ((field-info-getter (get-field-info value field)) value)))
 
-(define-syntax-rule (dssl-struct-ref value field)
-  (begin
-    (when (not (struct? value))
-      (runtime-error "Value ‘~a’ is not a struct" value))
-    (cond
-      [(struct-assq 'field (struct-fields value)) => field-value]
-      [else
-        (runtime-error "Struct ‘~a’ does not have field ‘~a’"
-                       value 'field)])))
-
-(define-syntax-rule (dssl-struct-set! value field rhs)
-  (begin
-    (when (not (struct? value))
-      (runtime-error "Value ‘~a’ is not a struct" value))
-    (cond
-      [(struct-assq 'field (struct-fields value))
-       =>
-       (λ (f) (set-field-value! f rhs))]
-      [else
-        (runtime-error "Struct ‘~a’ does not have field ‘~a’"
-                       value 'field)])))
+(define-syntax-rule (dssl-struct-set! expr field rhs)
+  (let ([value expr])
+    ((field-info-setter (get-field-info value field)) value rhs)))
 
 (define-syntax (dssl-test stx)
   (syntax-parse stx

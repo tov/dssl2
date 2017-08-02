@@ -110,7 +110,7 @@
          ; * other functions
          identity)
 
-(require dssl2/private/values)
+(require dssl2/private/struct)
 (require racket/stxparam
          syntax/parse/define
          rackunit)

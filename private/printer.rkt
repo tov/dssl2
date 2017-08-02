@@ -4,8 +4,6 @@
          dssl-print-size-hook
          dssl-print-print-hook)
 
-(require dssl2/private/values)
-
 (define (dssl-print value)
   (unless (void? value)
     (pretty-print value)))

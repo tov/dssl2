@@ -65,14 +65,13 @@
            [dssl-while          while])
          ; values
          ; * type predicates
-         (rename-out
-           [number?             num?]
-           [exact-integer?      int?]
-           [flonum?             float?]
-           [string?             str?]
-           [boolean?            bool?]
-           [procedure?          proc?]
-           [vector?             vec?])
+         num?
+         int?
+         float?
+         str?
+         bool?
+         proc?
+         vec?
          ; * numeric operations
          floor
          ceiling
@@ -381,9 +380,6 @@
 (define (vector . args)
   (make-vec (list->vector args)))
 
-(define (vector? v)
-  (vec? v))
-
 (define (build_vector n f)
   (make-vec (racket:build-vector n f)))
 
@@ -484,6 +480,18 @@
 
 (define (filter f vec)
   (make-vec (list->vector (racket:filter f (vector->list (unvec vec))))))
+
+(define (num? x) (number? x))
+
+(define (int? x) (exact-integer? x))
+
+(define (float? x) (flonum? x))
+
+(define (str? x) (string? x))
+
+(define (bool? x) (boolean? x))
+
+(define (proc? x) (procedure? x))
 
 (define (floor n)
   (inexact->exact (racket:floor n)))

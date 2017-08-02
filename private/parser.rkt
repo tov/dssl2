@@ -180,7 +180,7 @@
         [(IDENT COLON <expr>)
          (loc (list $1 $3))]
         [(IDENT)
-         (loc (list $1 'prim:AnyC))])
+         (loc (list $1 'any/c))])
 
       (<formals>
         [()

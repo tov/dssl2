@@ -359,7 +359,7 @@
          (dssl-defstruct name (field ...))
          (name expr ...))]))
 
-(define-syntax-rule (get-field-info struct field)
+(define (get-field-info struct field)
   (let/ec return
     (unless (struct? struct)
       (runtime-error "Value ‘~a’ is not a struct" struct))
@@ -374,18 +374,18 @@
     (for ([info (in-vector info-vector)])
       (unless (field-info? info)
         (runtime-error "Struct ‘~a’ has weird field metadata" struct))
-      (when (eq? 'field (field-info-name info))
+      (when (eq? field (field-info-name info))
         (return info)))
     (runtime-error "Struct ‘~a’ does not have field ‘~a’"
-                   struct 'field)))
+                   struct field)))
 
 (define-syntax-rule (dssl-struct-ref expr field)
   (let ([value expr])
-    ((field-info-getter (get-field-info value field)) value)))
+    ((field-info-getter (get-field-info value 'field)) value)))
 
 (define-syntax-rule (dssl-struct-set! expr field rhs)
   (let ([value expr])
-    ((field-info-setter (get-field-info value field)) value rhs)))
+    ((field-info-setter (get-field-info value 'field)) value rhs)))
 
 (define-syntax (dssl-test stx)
   (syntax-parse stx

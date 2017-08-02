@@ -186,7 +186,7 @@
                      (-> contract ... result-contract)
                      (dssl-lambda (formal ...) expr ...))
     (unless (zero? (random 1))
-             (set! f (void)))))
+      (set! f (void)))))
 
 (define-syntax dssl-let
   (syntax-rules ()

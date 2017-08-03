@@ -92,8 +92,8 @@ by a newline, or a compound statement.
             (code:line def name @#,q{(} var @#,q{,} @#,m{...} @#,q{)} @#,q{:} block)
             (code:line if expr @#,q{:} block @#,m["{"] elif expr @#,q{:} block @#,m["}*"] @#,m["["] else expr @#,q{:} block @#,m["]"])
             (code:line for var @#,m{[} @#,q{,} var @#,m{]} @#,q{in} expr @#,q{:} block)
-            (code:line test expr @#,q{:} block)
-            (code:line time expr @#,q{:} block)
+            (code:line test @#,m{[} expr @#,m{]} @#,q{:} block)
+            (code:line time @#,m{[} expr @#,m{]} @#,q{:} block)
             (code:line while expr @#,q{:} block)
             ]
 [block
@@ -499,7 +499,8 @@ Returns void from the current function.
 
 @defcmpdform{@defidform/inline[test] @syn[expr]: @syn[block]}
 
-Runs the code in @syn[block] as a test case named @syn[expr]. If an
+Runs the code in @syn[block] as a test case named @syn[expr]
+(which is optional). If an
 assertion fails or an error occurs in @syn[block], the test case
 terminates, failure is reported, and the program continues after the
 block.
@@ -538,7 +539,7 @@ test 'single-chaining hash table':
 @defcmpdform{@defidform/inline[time] @syn[expr]: @syn[block]}
 
 Times the execution of the block, and then prints the results labeled
-with the result of @syn[expr] (which isn’t timed).
+with the result of @syn[expr] (which isn’t timed, and which is optional).
 
 For example, we can time how long it takes to create an array of
 10,000,000 @racket[0]s:

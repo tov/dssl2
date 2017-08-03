@@ -91,8 +91,12 @@
          (loc `(def (,$2 ,@$4) ,@$7))]
         [(TEST <expr> COLON <suite>)
          (loc `(test ,$2 ,@$4))]
+        [(TEST COLON <suite>)
+         (loc `(test "<anonymous-test>" ,@$3))]
         [(TIME <expr> COLON <suite>)
-         (loc `(time ,$2 ,@$4))])
+         (loc `(time ,$2 ,@$4))]
+        [(TIME COLON <suite>)
+         (loc `(time "<anonymous-time>" ,@$3))])
 
       (<elifs>
         [()

@@ -558,10 +558,14 @@
   (dynamic->* #:mandatory-domain-contracts args
               #:range-contracts (list res)))
 
-(define (apply_contract contract value)
-  (with-contract apply_contract
-                 #:result contract
-                 value))
+(define apply_contract
+  (case-lambda
+    [(contract value pos neg)
+     (racket:contract contract value pos neg)]
+    [(contract value pos)
+     (apply_contract contract value pos "the context")]
+    [(contract value)
+     (apply_contract contract value "the contracted value")]))
 
 (define (floor n)
   (inexact->exact (racket:floor n)))

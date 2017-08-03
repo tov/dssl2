@@ -38,7 +38,7 @@
    BREAK
    CONTINUE
    OBJECT
-   REQUIRE
+   IMPORT
    RETURN
    PASS
    TEST
@@ -201,7 +201,7 @@
       ["break"                  (token-BREAK)]
       ["continue"               (token-CONTINUE)]
       ["object"                 (token-OBJECT)]
-      ["require"                (token-REQUIRE)]
+      ["import"                 (token-IMPORT)]
       ["return"                 (token-RETURN)]
       ["pass"                   (token-PASS)]
       ["lambda"                 (token-LAMBDA)]

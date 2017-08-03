@@ -1,6 +1,6 @@
 #lang dssl2
 
-require array
+import array
 
 let a = Array()
 

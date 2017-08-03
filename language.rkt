@@ -54,7 +54,7 @@
            [dssl-let            let]
            [dssl-make-vector    make-vector]
            [dssl-object         object]
-           [dssl-require        require]
+           [dssl-import         import]
            [dssl-return         return]
            [dssl-setf!          setf!]
            [dssl-setf!          =]
@@ -256,7 +256,7 @@
     [(string? v)   (in-vector (explode v))]
     [else          (type-error 'for v "something iterable")]))
 
-(define-syntax (dssl-require stx)
+(define-syntax (dssl-import stx)
   (syntax-parse stx
     [(_ lib:id)
      (let ([filename (path->string

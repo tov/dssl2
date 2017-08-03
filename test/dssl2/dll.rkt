@@ -16,6 +16,9 @@ assert_eq lst.size(), 2
 
 assert_eq lst.pop_front(), 3
 assert_eq lst.pop_front(), 4
+
+assert_eq lst.size(), 0
+
 assert_eq lst.pop_front(), False
 
 assert_eq lst.size(), 0

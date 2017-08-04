@@ -1,15 +1,22 @@
 #lang racket
 
 (provide dssl-write-struct
+         struct-base struct-base? struct-base-struct-info
+         make-struct-info struct-info-field-infos
          make-field-info field-info?
          field-info-name field-info-getter field-info-setter)
 
 (define-struct field-info (name getter setter))
+(define-struct struct-info (name field-infos))
 
-(define (dssl-write-struct name info struct port mode)
+(define-struct struct-base (struct-info)
+               #:transparent)
+
+(define (dssl-write-struct struct port mode)
+  (define info (struct-base-struct-info struct))
   (define first #t)
-  (fprintf port "~a {" name)
-  (for ([field-vec (in-vector info)])
+  (fprintf port "~a {" (struct-info-name info))
+  (for ([field-vec (in-vector (struct-info-field-infos info))])
     (if first
       (set! first #f)
       (display ", " port))

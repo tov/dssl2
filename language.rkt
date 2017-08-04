@@ -551,7 +551,7 @@
 
 (define AnyC (flat-named-contract 'AnyC any/c))
 
-(define (format-fun f x . xs)
+(define (format-fun f x xs)
   (define port (open-output-string))
   (fprintf port "~a(~a" f x)
   (for ([xi (in-list xs)])

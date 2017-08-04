@@ -551,8 +551,18 @@
 
 (define AnyC (flat-named-contract 'AnyC any/c))
 
+(define (format-fun f x . xs)
+  (define port (open-output-string))
+  (fprintf port "~a(~a" f x)
+  (for ([xi (in-list xs)])
+    (fprintf port ", ~a" xi))
+  (fprintf port ")")
+  (get-output-string port))
+
 (define (OrC c . cs)
-  (apply or/c c cs))
+  (rename-contract
+    (apply or/c c cs)
+    (format-fun "OrC" c cs)))
 
 (define (FunC c . cs)
   (define all (cons c cs))

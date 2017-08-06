@@ -1,32 +1,44 @@
 #lang dssl2
 
+# Given an element contract, returns a doubly-linked list factory object.
+# The returned object is a circular doubly-linked list that supports
+# adding and removing elements from both ends.
 def MakeDll(X: contract?):
+    # A MaybeC(X) is one of:
+    # - X
+    # - False
     def MaybeC(X): OrC(X, False)
+
+    # A Node? is Node(Node?, X, Node?), except for the sentinel node,
+    # which is Node(Node?, False, Node?)
     defstruct Node(
        prev: MaybeC(Node?), # Only includes False for initialization
        data: MaybeC(X),     # Only includes False for sentinel
        next: MaybeC(Node?)) # Only includes False for initialization
 
     defstruct Dll (
-        empty?,
-        size,
-        front,
-        back,
-        push_front,
-        push_back,
-        pop_front,
-        pop_back,
-        detach_front,
-        detach_back,
-        splice,
-        foldl,
-        foldr,
-        each_with_index,
-        to_vector,
-        get_sentinel!,
-        set_sentinel_and_size!,
+        empty?,                 # -> bool?
+        size,                   # -> int?
+        front,                  # -> MaybeC(X)
+        back,                   # -> MaybeC(X)
+        push_front,             # X -> void
+        push_back,              # X -> void
+        pop_front,              # -> MaybeC(X)
+        pop_back,               # -> MaybeC(X)
+        detach_front,           # -> Dll?
+        detach_back,            # -> Dll?
+        splice,                 # Dll? -> void
+        foldl,                  # FunC(Y, X, Y), Y -> Y
+        foldr,                  # FunC(X, Y, Y), Y -> Y
+        each_with_index,        # FunC(int?, X, void) -> void
+        to_vector,              # -> VecOf(X)
+        get_sentinel!,          ### internal
+        set_sentinel_and_size!, ### internal
     )
 
+    # Factory method used internally for creating Dll? objects. All the
+    # state and function definitions actually live here, and the main
+    # public factory calls this as a helper.
     def from_sentinel_and_size(sentinel_: MaybeC(Node?), size_: int?) -> Dll?:
         if sentinel_ === False:
             sentinel_ = Node(False, False, False)
@@ -176,11 +188,12 @@ def MakeDll(X: contract?):
             set_sentinel_and_size!,
         }
 
+    # Factory method for creating a new, empty doubly-linked list.
     def empty() -> Dll?:
         from_sentinel_and_size(False, 0)
 
     object DllFactory {
-        from_sentinel_and_size,
-        empty,
+        Dll?,                   # predicate
+        empty,                  # -> Dll?
     }
 

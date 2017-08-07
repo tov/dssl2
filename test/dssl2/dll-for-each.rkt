@@ -12,8 +12,7 @@ x.push_back(4)
 
 def to_vec(dll: IntDll.Dll?) -> vec?:
     let result = [False; dll.size()]
-    def each(i, x): result[i] = x
-    dll.each_with_index(each)
+    dll.each_with_index(lambda i, x: result[i] = x)
     result
-    
+
 assert_eq to_vec(x), [2, 3, 4]

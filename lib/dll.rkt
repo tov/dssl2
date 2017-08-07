@@ -21,16 +21,16 @@ def MakeDll(X: contract?):
         size,                   # -> int?
         front,                  # -> MaybeC(X)
         back,                   # -> MaybeC(X)
-        push_front,             # X -> void
-        push_back,              # X -> void
+        push_front,             # X -> VoidC
+        push_back,              # X -> VoidC
         pop_front,              # -> MaybeC(X)
         pop_back,               # -> MaybeC(X)
         detach_front,           # -> Dll?
         detach_back,            # -> Dll?
-        splice,                 # Dll? -> void
+        splice,                 # Dll? -> VoidC
         foldl,                  # FunC(Y, X, Y), Y -> Y
         foldr,                  # FunC(X, Y, Y), Y -> Y
-        each_with_index,        # FunC(int?, X, void) -> void
+        each_with_index,        # FunC(int?, X, VoidC) -> VoidC
         to_vector,              # -> VecOf(X)
         get_sentinel!,          ### internal
         set_sentinel_and_size!, ### internal
@@ -90,7 +90,7 @@ def MakeDll(X: contract?):
                 count = count + 1
             detach(start, sentinel_, count)
 
-        def splice(other: Dll?):
+        def splice(other: Dll?) -> VoidC:
             let other_sentinel = other.get_sentinel!()
             sentinel_.prev.next = other_sentinel.next
             other_sentinel.next.prev = sentinel_.prev
@@ -101,13 +101,13 @@ def MakeDll(X: contract?):
             other.sentinel.prev = other_sentinel
             other.set_sentinel_and_size!(other_sentinel, 0)
 
-        def push_front(value: X):
+        def push_front(value: X) -> VoidC:
             let new_node = Node(sentinel_, value, sentinel_.next)
             new_node.next.prev = new_node
             new_node.prev.next = new_node
             size_ = size_ + 1
 
-        def push_back(value: X):
+        def push_back(value: X) -> VoidC:
             let new_node = Node(sentinel_.prev, value, sentinel_)
             new_node.next.prev = new_node
             new_node.prev.next = new_node
@@ -154,7 +154,7 @@ def MakeDll(X: contract?):
             return z
 
         # : Self [Natural X -> Void] -> Void
-        def each_with_index(f: FunC(int?, X, AnyC)):
+        def each_with_index(f: FunC(int?, X, VoidC)) -> VoidC:
             def each(i, x):
                 f(i, x)
                 i + 1

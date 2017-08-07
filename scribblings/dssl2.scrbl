@@ -105,8 +105,8 @@ by a newline, or a compound statement.
       True
       False
       (code:line expr @#,q{(} @#,m["{"] expr @#,m["},*"] @#,q{)})
-      (code:line lambda @#,m["{"] var @#,m["},*"] @#,q{:} expr)
-      (code:line @#,q{λ} @#,m["{"] var @#,m["},*"] @#,q{:} expr)
+      (code:line lambda @#,m["{"] var @#,m["},*"] @#,q{:} simple)
+      (code:line @#,q{λ} @#,m["{"] var @#,m["},*"] @#,q{:} simple)
       (code:line expr @#,q{if} expr @#,q{else} expr)
       (code:line structname @#,q["{"] @#,m["{"] fieldname : expr @#,m["},*"] @#,q[" }"])
       (code:line object structname @#,q["{"] @#,m["{"] fieldname : expr @#,m["},*"] @#,q[" }"])
@@ -695,12 +695,12 @@ calls the function @racket[ack] with arguments @racket[6] and
 @racket[7].
 
 @defexpforms[
-  @list{@defidform/inline[lambda] @syn[var]₁, ..., @syn[var]@subscript{k}: @syn[expr]}
-  @list{@q{λ} @syn[var]₁, ..., @syn[var]@subscript{k}: @syn[expr]}
+  @list{@defidform/inline[lambda] @syn[var]₁, ..., @syn[var]@subscript{k}: @syn[simple-stmt]}
+  @list{@q{λ} @syn[var]₁, ..., @syn[var]@subscript{k}: @syn[simple-stmt]}
 ]
 
 Creates an anonymous function with parameters @syn[var]₁, @code{...},
-@syn[var]@subscript{k} and body @syn[expr]. For example, the function to
+@syn[var]@subscript{k} and body @syn[simple-stmt]. For example, the function to
 add twice its first argument to its second argument can be written
 
 @dssl2block|{

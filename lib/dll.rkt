@@ -45,24 +45,30 @@ def MakeDll(X: contract?):
             sentinel_.prev = sentinel_
             sentinel_.next = sentinel_
 
+        # Is this list empty?
         def empty?() -> bool?:
             sentinel_.next === sentinel_
 
+        # Returns the number of elements in this list.
         def size() -> int?:
             size_
 
+        # (internal)
         def get_sentinel_() -> Node?: sentinel_
 
+        # (internal)
         def set_sentinel_and_size_(sentinel: Node?, size: int?) -> VoidC:
             sentinel_ = sentinel
             size_ = size
 
+        # Swaps the elements of this list with another in constant time.
         def swap(other: Dll?) -> VoidC:
             let sentinel = other.get_sentinel_()
             let size = other.size()
             other.set_sentinel_and_size_(sentinel_, size_)
             set_sentinel_and_size_(sentinel, size)
 
+        # (internal)
         # Precondition: count is number of nodes in [start, limit)
         def detach_(start: Node?, limit: Node?, count: int?) -> Dll?:
             if start === limit: return empty()
@@ -74,6 +80,8 @@ def MakeDll(X: contract?):
             size_ = size_ - count
             from_sentinel_and_size(new_sentinel, count)
 
+        # Removes the first `n` elements of the list into a new list.
+        # (If there are fewer than `n` elements, removes all of them.)
         def detach_front(n: int?) -> Dll?:
             let count = 0
             let limit = sentinel_
@@ -82,6 +90,8 @@ def MakeDll(X: contract?):
                 count = count + 1
             detach_(sentinel_.next, limit.next, count)
 
+        # Removes the last `n` elements of the list into a new list.
+        # (If there are fewer than `n` elements, removes all of them.)
         def detach_back(n: int?) -> Dll?:
             let count = 0
             let start = sentinel_
@@ -90,6 +100,8 @@ def MakeDll(X: contract?):
                 count = count + 1
             detach_(start, sentinel_, count)
 
+        # Moves the elements from another list to the end of this list
+        # in constant time. The other list is left empty.
         def splice(other: Dll?) -> VoidC:
             let other_sentinel = other.get_sentinel_()
             sentinel_.prev.next = other_sentinel.next
@@ -101,18 +113,22 @@ def MakeDll(X: contract?):
             other.sentinel.prev = other_sentinel
             other.set_sentinel_and_size_(other_sentinel, 0)
 
+        # Adds an element to the front of this list.
         def push_front(value: X) -> VoidC:
             let new_node = Node(sentinel_, value, sentinel_.next)
             new_node.next.prev = new_node
             new_node.prev.next = new_node
             size_ = size_ + 1
 
+        # Adds an element to the back of this list.
         def push_back(value: X) -> VoidC:
             let new_node = Node(sentinel_.prev, value, sentinel_)
             new_node.next.prev = new_node
             new_node.prev.next = new_node
             size_ = size_ + 1
 
+        # Removes and returns the first element of this list; if this
+        # list is empty, returns False instead.
         def pop_front() -> MaybeC(X):
             if sentinel_.next === sentinel_: return False
             let result = sentinel_.next.data
@@ -121,6 +137,8 @@ def MakeDll(X: contract?):
             size_ = size_ - 1
             result
 
+        # Removes and returns the last element of this list; if this
+        # list is empty, returns False instead.
         def pop_back() -> MaybeC(X):
             if sentinel_.prev === sentinel_: return False
             let result = sentinel_.prev.data
@@ -129,14 +147,17 @@ def MakeDll(X: contract?):
             size_ = size_ - 1
             result
 
+        # Returns the first element of the list, or False if empty.
         def front() -> MaybeC(X):
             if sentinel_.next === sentinel_: False
             else: sentinel_.next.data
 
+        # Returns the last element of the list, or False if empty.
         def back() -> MaybeC(X):
             if sentinel_.prev === sentinel_: False
             else: sentinel_.prev.data
 
+        # Processes the list elements in order, accumulating a result.
         def foldl[Y](f: FunC(Y, X, Y), z: Y) -> Y:
             let current = sentinel_.next
             while current !== sentinel_:
@@ -144,6 +165,7 @@ def MakeDll(X: contract?):
                 current = current.next
             return z
 
+        # Processes the list elements in reverse order, accumulating a result.
         def foldr[Y](f: FunC(X, Y, Y), z: Y) -> Y:
             let current = sentinel_.prev
             while current !== sentinel_:
@@ -151,10 +173,13 @@ def MakeDll(X: contract?):
                 current = current.prev
             return z
 
+        # Applies the given function to each element along with its
+        # position in the list.
         def each_with_index(f: FunC(int?, X, VoidC)) -> VoidC:
             foldl(lambda i, x: f(i, x); i + 1, 0)
             pass
 
+        # Returns the elements of the list in a new vector.
         # : Self -> VectorOf<X>
         def to_vector() -> vec?:
             let v = [False; size()]

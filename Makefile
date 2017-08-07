@@ -8,7 +8,10 @@ test:
 all:
 	find . -name '*.rkt' | xargs raco make
 
-.PHONY: test all
+clean:
+	find . -name compiled -type d | xargs rm -R
+
+.PHONY: test all clean
 
 
 doc: scribblings/$(PACKAGE).scrbl

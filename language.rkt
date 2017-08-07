@@ -80,6 +80,8 @@
          OrC
          AndC
          FunC
+         NewForallC
+         NewExistsC
          apply_contract
          ; * numeric operations
          floor
@@ -187,15 +189,17 @@
                          [(_ ?result) (return-f ?result)])])
          (begin expr ...)))))
 
-(define-simple-macro (dssl-def (f:id (formal:id contract:expr) ...)
+(define-simple-macro (dssl-def (f:id [tv:id ...]
+                                     (formal:id contract:expr) ...)
                                result-contract:expr
                                expr:expr ...)
    #:fail-when (check-duplicate-identifier
-                 (syntax->list #'(formal ...)))
+                 (syntax->list #'(tv ... formal ...)))
                "duplicate argument name"
   (begin
     (define/contract f
-                     (-> contract ... result-contract)
+                     (let ([tv (new-∀/c 'tv)] ...)
+                       (-> contract ... result-contract))
                      (dssl-lambda (formal ...) expr ...))
     (make-set!able f)))
 
@@ -582,6 +586,14 @@
     (dynamic->* #:mandatory-domain-contracts args
                 #:range-contracts (list res))
     (format-fun 'FunC c cs)))
+
+(define/contract (NewForallC name)
+  (-> str? contract?)
+  (new-∀/c (string->symbol name)))
+
+(define/contract (NewExistsC name)
+  (-> str? contract?)
+  (new-∃/c (string->symbol name)))
 
 (define apply_contract
   (case-lambda

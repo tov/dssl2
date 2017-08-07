@@ -137,23 +137,20 @@ def MakeDll(X: contract?):
             if sentinel_.prev === sentinel_: False
             else: sentinel_.prev.data
 
-        # : Self [Y X -> Y] Y -> Y
-        def foldl(f: FunC(AnyC, X, AnyC), z):
+        def foldl[Y](f: FunC(Y, X, Y), z: Y) -> Y:
             let current = sentinel_.next
             while current !== sentinel_:
                 z = f(z, current.data)
                 current = current.next
             return z
 
-        # : Self [X Y -> Y] Y -> Y
-        def foldr(f: FunC(X, AnyC, AnyC), z):
+        def foldr[Y](f: FunC(X, Y, Y), z: Y) -> Y:
             let current = sentinel_.prev
             while current !== sentinel_:
                 z = f(current.data, z)
                 current = current.prev
             return z
 
-        # : Self [Natural X -> Void] -> Void
         def each_with_index(f: FunC(int?, X, VoidC)) -> VoidC:
             def each(i, x):
                 f(i, x)

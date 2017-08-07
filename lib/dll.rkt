@@ -53,11 +53,11 @@ def MakeDll(X: contract?):
 
         def get_sentinel!() -> Node?: sentinel_
 
-        def set_sentinel_and_size!(sentinel: Node?, size: int?):
+        def set_sentinel_and_size!(sentinel: Node?, size: int?) -> VoidC:
             sentinel_ = sentinel
             size_ = size
 
-        def swap(other: Dll?):
+        def swap(other: Dll?) -> VoidC:
             let sentinel = other.get_sentinel!()
             let size = other.size()
             other.set_sentinel_and_size!(sentinel_, size_)

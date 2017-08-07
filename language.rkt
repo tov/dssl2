@@ -578,8 +578,10 @@
   (define rev-all (reverse all))
   (define args (reverse (rest rev-all)))
   (define res (first rev-all))
-  (dynamic->* #:mandatory-domain-contracts args
-              #:range-contracts (list res)))
+  (rename-contract
+    (dynamic->* #:mandatory-domain-contracts args
+                #:range-contracts (list res))
+    (format-fun 'FunC c cs)))
 
 (define apply_contract
   (case-lambda

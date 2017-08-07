@@ -198,7 +198,7 @@
                "duplicate argument name"
   (begin
     (define/contract f
-                     (let ([tv (new-∀/c 'tv)] ...)
+                     (parametric->/c [tv ...]
                        (-> contract ... result-contract))
                      (dssl-lambda (formal ...) expr ...))
     (make-set!able f)))

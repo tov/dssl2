@@ -152,17 +152,13 @@ def MakeDll(X: contract?):
             return z
 
         def each_with_index(f: FunC(int?, X, VoidC)) -> VoidC:
-            def each(i, x):
-                f(i, x)
-                i + 1
-            foldl(each, 0)
+            foldl(lambda i, x: f(i, x); i + 1, 0)
             pass
 
         # : Self -> VectorOf<X>
         def to_vector() -> vec?:
             let v = [False; size()]
-            def each(i, x): v[i] = x
-            each_with_index(each)
+            each_with_index(lambda i, x: v[i] = x)
             v
 
         Dll {

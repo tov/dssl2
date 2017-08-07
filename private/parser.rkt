@@ -121,7 +121,11 @@
          $3])
 
       (<simple-statement>
-        [(<small-statement> <more-small-statements> NEWLINE)
+        [(<single-line-statement> NEWLINE)
+         $1])
+
+      (<single-line-statement>
+        [(<small-statement> <more-small-statements>)
          (cons $1 $2)])
 
       (<more-small-statements>
@@ -223,8 +227,8 @@
          (loc `[,$1 ,$1])])
 
       (<expr>
-        [(LAMBDA <formals> COLON <expr>)
-         (loc `(lambda ,$2 ,$4))]
+        [(LAMBDA <formals> COLON <single-line-statement>)
+         (loc `(lambda ,$2 ,@$4))]
         [(<expr0> IF <expr0> ELSE <expr>)
          (loc `(if ,$3 ,$1 ,$5))]
         [(<expr0>)

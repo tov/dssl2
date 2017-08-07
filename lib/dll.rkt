@@ -32,8 +32,8 @@ def MakeDll(X: contract?):
         foldr,                  # [Y] FunC(X, Y, Y), Y -> Y
         each_with_index,        # FunC(int?, X, VoidC) -> VoidC
         to_vector,              # -> vec?
-        get_sentinel!,          ### internal
-        set_sentinel_and_size!, ### internal
+        get_sentinel_,          ### internal
+        set_sentinel_and_size_, ### internal
     )
 
     # Factory method used internally for creating Dll? objects. All the
@@ -51,17 +51,17 @@ def MakeDll(X: contract?):
         def size() -> int?:
             size_
 
-        def get_sentinel!() -> Node?: sentinel_
+        def get_sentinel_() -> Node?: sentinel_
 
-        def set_sentinel_and_size!(sentinel: Node?, size: int?) -> VoidC:
+        def set_sentinel_and_size_(sentinel: Node?, size: int?) -> VoidC:
             sentinel_ = sentinel
             size_ = size
 
         def swap(other: Dll?) -> VoidC:
-            let sentinel = other.get_sentinel!()
+            let sentinel = other.get_sentinel_()
             let size = other.size()
-            other.set_sentinel_and_size!(sentinel_, size_)
-            set_sentinel_and_size!(sentinel, size)
+            other.set_sentinel_and_size_(sentinel_, size_)
+            set_sentinel_and_size_(sentinel, size)
 
         # Precondition: count is number of nodes in [start, limit)
         def detach_(start: Node?, limit: Node?, count: int?) -> Dll?:
@@ -91,7 +91,7 @@ def MakeDll(X: contract?):
             detach_(start, sentinel_, count)
 
         def splice(other: Dll?) -> VoidC:
-            let other_sentinel = other.get_sentinel!()
+            let other_sentinel = other.get_sentinel_()
             sentinel_.prev.next = other_sentinel.next
             other_sentinel.next.prev = sentinel_.prev
             sentinel_.prev = other_sentinel.prev
@@ -99,7 +99,7 @@ def MakeDll(X: contract?):
             size_ = size_ + other.size()
             other_sentinel.next = other_sentinel
             other.sentinel.prev = other_sentinel
-            other.set_sentinel_and_size!(other_sentinel, 0)
+            other.set_sentinel_and_size_(other_sentinel, 0)
 
         def push_front(value: X) -> VoidC:
             let new_node = Node(sentinel_, value, sentinel_.next)
@@ -177,8 +177,8 @@ def MakeDll(X: contract?):
             foldr,
             each_with_index,
             to_vector,
-            get_sentinel!,
-            set_sentinel_and_size!,
+            get_sentinel_,
+            set_sentinel_and_size_,
         }
 
     # Factory method for creating a new, empty doubly-linked list.

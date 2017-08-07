@@ -2,7 +2,8 @@
 
 @(require
         "util.rkt"
-        (for-label dssl2))
+        (for-label dssl2)
+        (for-label (prefix-in racket: racket)))
 
 @title{DSSL2: Data Structures Student Language}
 @author{Jesse A. Tov <jesse@"@"eecs.northwestern.edu>}
@@ -78,10 +79,10 @@ by a newline, or a compound statement.
             (code:line assert_eq expr @#,q{,} expr)
             break
             continue
-            (code:line defstruct name @#,q{(} @#,m["{"] field @#,m["},*"] @#,q{)})
+            (code:line defstruct name @#,q{(} @#,m["{"] field @#,m["["] @#,q{:} contract @#,m["]"] @#,m["},*"] @#,q{)})
             (code:line lvalue = expr)
             expr
-            (code:line let var @#,m["["] @#,q{=} expr @#,m["]"])
+            (code:line let var @#,m["["] @#,q{:} contract @#,m["]"] @#,m["["] @#,q{=} expr @#,m["]"])
             (code:line pass)
             (code:line return @#,m["["] expr @#,m["]"])
             (code:line simple @#,q{;} simple)]
@@ -89,7 +90,7 @@ by a newline, or a compound statement.
         (code:line expr @#,q{.} field)
         (code:line expr @#,q["["] expr @#,q["]"])]
 [compound
-            (code:line def name @#,q{(} var @#,q{,} @#,m{...} @#,q{)} @#,q{:} block)
+            (code:line def name @#,q{(} var @#,m["["] @#,q{:} contract @#,m["]"] @#,q{,} @#,m{...} @#,q{)} @#,m["["] @#,q{->} contract @#,m["]"] @#,q{:} block)
             (code:line if expr @#,q{:} block @#,m["{"] elif expr @#,q{:} block @#,m["}*"] @#,m["["] else expr @#,q{:} block @#,m["]"])
             (code:line for var @#,m{[} @#,q{,} var @#,m{]} @#,q{in} expr @#,q{:} block)
             (code:line test @#,m{[} expr @#,m{]} @#,q{:} block)
@@ -979,6 +980,13 @@ Determines whether its argument is a vector.
 
 Determines whether its argument is a Boolean.
 
+@defprocform[contract?]{(Any) -> Boolean}
+
+Determines whether its value is a contract. Contracts include many
+constants (numbers, strings, Booleans), single-argument functions
+(considered as predicates), and the results of contract combinators such
+as @racket[OrC] and @racket[FunC].
+
 @subsection{Numeric operations}
 
 @defprocform[floor]{(Number) -> Integer}
@@ -1174,3 +1182,33 @@ Like @code{print}, but adds a newline at the end.
 @defprocform[identity]{(X) -> X}
 
 The identity function, which just returns its argument.
+
+@section{Contracts}
+
+The contract system helps guard parts of a program against each other by
+enforcing properties of function parameters, structure fields, and
+variables.
+
+@subsection{Contract syntax}
+
+@subsection{Contract combinators}
+
+@defconstform[AnyC]{contract?}
+
+A flat contract that accepts any value.
+
+@defconstform[VoidC]{contract?}
+
+A flat contract that accepts the result of @racket[pass].
+
+@defprocform[OrC]{(contract?, contract, ...) -> contract?}
+
+Creates a contract that accepts a value if any of the arguments does.
+For the details of how this works for higher-order contracts, see
+@racket[racket:or/c].
+
+@defprocform[AndC]{(contract?, contract, ...) -> contract?}
+
+Creates a contract that accepts a value if all of the arguments do.
+For the details of how this works for higher-order contracts, see
+@racket[racket:and/c].

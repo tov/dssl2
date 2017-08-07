@@ -1187,9 +1187,45 @@ The identity function, which just returns its argument.
 
 The contract system helps guard parts of a program against each other by
 enforcing properties of function parameters, structure fields, and
-variables.
+variables. A number of DSSL2 values may be used as contracts, including:
+
+@itemlist[
+    @item{Numbers, which allow only themselves.}
+    @item{Booleans, which allow only themselves.}
+    @item{Strings, which allow only themselves.}
+    @item{Functions of one argument, which are treated as flat
+            contracts by applying as predicates.}
+    @item{Contracts created using the contract combinators such as
+            @racket[OrC] and @racket[FunC] described below.}
+]
 
 @subsection{Contract syntax}
+
+@defcmpdform{@defidform/inline[def] @syn[name](@syn[var]₁: @syn[contract]₁, ... @syn[var]@subscript{k}: @syn[contract]@subscript{k}) -> @syn[contract]@subscript{r}: @syn[block]}
+
+Defines a function while specifying contracts for the parameters and the
+result.
+
+Each of the contract positions is optional, and if omitted defaults to
+@racket[AnyC].
+
+@defcmpdform{@defidform/inline[let] @syn[name] : @syn[contract] = @syn[expr]}
+
+Binds a variable while applying a contracts. Subsequent assignments to
+the variable also must satisfy the contract.
+
+Note that while the @syn[expr] is optional, the contract will still be
+checked on the initial values, so in that case the contract should
+include @racket[VoidC].
+
+@defsmplform{@defidform/inline[defstruct] @syn[structname](@syn[field]₁: @syn[contract]₁, ..., @syn[field]@subscript{k}: @syn[contract]@subscript{k})}
+
+Defines a structure with the given contracts applied to the fields. This
+means that the contracts will be applied both when constructing the
+structure and when mutating it.
+
+It’s possible to include contracts on some fields without including them
+on all.
 
 @subsection{Contract combinators}
 
@@ -1212,3 +1248,27 @@ For the details of how this works for higher-order contracts, see
 Creates a contract that accepts a value if all of the arguments do.
 For the details of how this works for higher-order contracts, see
 @racket[racket:and/c].
+
+@defprocform[FunC]{(contract?, ..., contract?) -> contract?}
+
+Creates a function contract with the given arguments and result. The
+last argument is applied to the result, and all the other arguments are
+contracts applied to the parameters.
+
+@defprocform[NewForallC]{(str?) -> contract?}
+
+Creates a new, universal contract variable, useful in constructing
+parametric contracts.
+
+@defprocform[NewExistsC]{(str?) -> contract?}
+
+Creates a new, existential contract variable, useful in constructing
+parametric contracts.
+
+@defprocforms[
+    [apply_contract @list{(contract?, X) -> X}]
+    [apply_contract @list{(contract?, X, pos: str?) -> X}]
+    [apply_contract @list{(contract?, X, pos: str?, neg: str?) -> X}]
+]
+
+Applies a contract to a value, optionally specifying the parties.

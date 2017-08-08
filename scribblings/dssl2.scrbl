@@ -1288,10 +1288,11 @@ parametric contracts.
 Creates a new, existential contract variable, useful in constructing
 parametric contracts.
 
-@defprocform[IntInC]{(low: int?, high: int?) -> contract?}
+@defprocform[IntInC]{(low: OrC(int?, False), high: OrC(int?, False)) -> contract?}
 
 Constructs a contract that accepts integers in the closed interval
-[@c{low}, @c{high}].
+[@c{low}, @c{high}]. If either end of the interval is @code{False},
+that end of the interval is unchecked.
 
 @defprocforms[
     [apply_contract @list{[X](contract?, X) -> X}]

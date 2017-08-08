@@ -489,9 +489,9 @@
   (new-∃/c (string->symbol name)))
 
 (define/contract (IntInC low high)
-  (-> int? int? contract?)
+  (-> (OrC int? #f) (OrC int? #f) contract?)
   (rename-contract
-    (AndC int? (λ (x) (<= low x high)))
+    (integer-in low high)
     (format-fun 'IntInC low (list high))))
 
 (define/contract apply_contract

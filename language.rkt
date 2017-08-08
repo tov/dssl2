@@ -263,6 +263,18 @@
              (syntax->datum stx0)
              (map syntax->datum stxs)))))
 
+(define-syntax (dssl-defstruct/early stx)
+  (syntax-parse stx
+    [(_ (name:id internal-name:id) (field:id ...))
+     #`(begin
+         (define-struct (internal-name struct-base) (field ...)
+                        #:mutable
+                        #:transparent
+                        #:methods gen:custom-write
+                        [(define write-proc dssl-write-struct)])
+         (define (#,(format-stx "~a?" #'name) value)
+           (#,(format-stx "~a?" #'internal-name) value)))]))
+
 (define-syntax dssl-begin
   (syntax-rules ()
     [(_ defn ...) (dssl-begin/acc () () defn ...)]))
@@ -288,16 +300,10 @@
        #`(dssl-begin/acc
            (early-defns
              ...
-             (define-struct (s:cons struct-base) (field ...)
-                            #:mutable
-                            #:transparent
-                            #:methods gen:custom-write
-                            [(define write-proc dssl-write-struct)])
-             (define (#,(format-stx "~a?" #'name) value)
-               (#,(format-stx "~a?" #'s:cons) value)))
+             (dssl-defstruct/early (name s:cons) (field ...)))
            (late-defns
              ...
-             (dssl-defstruct/internal (name s:cons) ((field ctc) ...)))
+             (dssl-defstruct/late (name s:cons) ((field ctc) ...)))
            rest ...))]
     [(_ (early-defns ...) (late-defns ...)
         first rest ...)
@@ -319,10 +325,10 @@
   (raise-syntax-error
     #f
     (string-append "Saw dssl-defstruct, which should be changed to "
-                   "dssl-defstruct/internal by #%module-begin")
+                   "dssl-defstruct/late by #%module-begin")
     stx))
 
-(define-syntax (dssl-defstruct/internal stx)
+(define-syntax (dssl-defstruct/late stx)
   (syntax-parse stx
     [(_ (name:id internal-name:id) ((formal-field:id contract:expr) ...))
      (with-syntax ([s:cons #'internal-name]

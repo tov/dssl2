@@ -85,6 +85,7 @@
          NewExistsC
          IntInC
          apply_contract
+         make_contract
          ; * numeric operations
          floor
          ceiling
@@ -504,6 +505,24 @@
      (apply_contract contract value pos "the context")]
     [(contract value)
      (apply_contract contract value "the contracted value")]))
+
+(define/contract (make_contract name first-order? projection)
+  (-> str?
+      (OrC #f (-> AnyC AnyC))
+      (OrC #f (-> (-> str? VoidC) AnyC AnyC))
+      contract?)
+  (make-contract #:name name
+                 #:first-order first-order?
+                 #:late-neg-projection
+                 (λ (blame)
+                    (λ (value party)
+                       (projection
+                         (λ (message)
+                            (raise-blame-error blame
+                                               #:missing-party party
+                                               value
+                                               message))
+                         value)))))
 
 (define/contract (dssl-make-vector a b)
   (-> int? AnyC vec?)

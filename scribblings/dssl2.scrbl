@@ -178,7 +178,7 @@ iteration of the (inner-most) loop and begins the next iteration.
 @defcmpdform{@defidform/inline[def] @syn[name](@syn[var]₁, ... @syn[var]@subscript{k}): @syn[block]}
 
 Defines @syn[name] to be a function with formal parameters @syn[var]₁,
-@code{...}, @syn[var]@subscript{k} and with body @syn[block].
+@c{...}, @syn[var]@subscript{k} and with body @syn[block].
 
 For example,
 
@@ -234,7 +234,7 @@ def rbt_insert!(key, tree):
 @defsmplform{@defidform/inline[defstruct] @syn[structname](@syn[fieldname]₁, ..., @syn[fieldname]@subscript{k})}
 
 Defines a new structure type @syn[structname] with fields given by
-@syn[fieldname]₁, @code{...}, @syn[fieldname]@subscript{k}. For example,
+@syn[fieldname]₁, @c{...}, @syn[fieldname]@subscript{k}. For example,
 to define a struct @racket[posn] with fields @racket[x] and @racket[y],
 we write:
 
@@ -289,11 +289,11 @@ Assignment. The assigned @syn[lvalue] can be in one of three forms:
 @itemlist[
  @item{@syn[var] assigns to a variable, which can be a @syn[let]-bound
  local or a function parameter.}
- @item{@code{@syn[expr].@syn[fieldname]} assigns to a structure field, where
+ @item{@c{@syn[expr].@syn[fieldname]} assigns to a structure field, where
  the expression must evaluate to a structure that has the given field
  nane.}
- @item{@code{@syn[expr]₁[@syn[expr]₂]} assigns to a vector element, where
- @code{@syn[expr]₁} evaluates to the vector and @code{@syn[expr]₂}
+ @item{@c{@syn[expr]₁[@syn[expr]₂]} assigns to a vector element, where
+ @c{@syn[expr]₁} evaluates to the vector and @c{@syn[expr]₂}
  evaluates to the index of the element.}
 ]
 
@@ -617,9 +617,9 @@ field of the struct.
 
 @defexpform{@syn[expr]₁[@syn[expr]₂]}
 
-Expression @syn[expr]₁ must evaluate to a vector @code{v}; @syn[expr]₂
-must evaluate to an integer @code{n} between 0 and @code{len(v) - 1}.
-Then this returns the @code{n}th element of vector @code{v}.
+Expression @syn[expr]₁ must evaluate to a vector @c{v}; @syn[expr]₂
+must evaluate to an integer @c{n} between 0 and @code{len(v) - 1}.
+Then this returns the @c{n}th element of vector @c{v}.
 
 @defexpform{@syn{number}}
 
@@ -656,18 +656,18 @@ def does_matter(double):
 }|
 
 Strings cannot contain newlines directly, but can contain newline
-characters via the escape code @code{\n}. Other escape codes include:
+characters via the escape code @c{\n}. Other escape codes include:
 
 @itemlist[
-  @item{@code{\a} for ASCII alert (also @code{\x07})}
-  @item{@code{\b} for ASCII backspace (also @code{\x08})}
-  @item{@code{\f} for ASCII formfeed (also @code{\x0C})}
-  @item{@code{\n} for ASCII newline (also @code{\x0A})}
-  @item{@code{\r} for ASCII carriage return (also @code{\x0D})}
-  @item{@code{\t} for ASCII tab (also @\code{\x09})}
-  @item{@code{\v} for ASCII vertical tab (also @\code{\x0B})}
-  @item{@code{\x@syn{hh}} in hex, for example @code{\x0A} is newline}
-  @item{@code{\@syn{ooo}} in octal, for example @code{\011} is tab}
+  @item{@c{\a} for ASCII alert (also @c{\x07})}
+  @item{@c{\b} for ASCII backspace (also @c{\x08})}
+  @item{@c{\f} for ASCII formfeed (also @c{\x0C})}
+  @item{@c{\n} for ASCII newline (also @c{\x0A})}
+  @item{@c{\r} for ASCII carriage return (also @c{\x0D})}
+  @item{@c{\t} for ASCII tab (also @c{\x09})}
+  @item{@c{\v} for ASCII vertical tab (also @c{\x0B})}
+  @item{@c{\x@syn{hh}} in hex, for example @c{\x0A} is newline}
+  @item{@c{\@syn{ooo}} in octal, for example @c{\011} is tab}
   @item{A backslash immediately followed by a newline causes both characters to
       be ignored, which provides a way to wrap long strings across lines.}
 ]
@@ -708,7 +708,7 @@ calls the function @racket[ack] with arguments @racket[6] and
   @list{@q{λ} @syn[var]₁, ..., @syn[var]@subscript{k}: @syn[simple-stmt]}
 ]
 
-Creates an anonymous function with parameters @syn[var]₁, @code{...},
+Creates an anonymous function with parameters @syn[var]₁, @c{...},
 @syn[var]@subscript{k} and body @syn[simple-stmt]. For example, the function to
 add twice its first argument to its second argument can be written
 
@@ -768,7 +768,7 @@ def Posn(x_, y_):
 
 @defexpform{[ @syn[expr]@subscript{0}, ..., @syn[expr]@subscript{k - 1} ]}
 
-Creates a new vector of length @code{k} whose values are the values
+Creates a new vector of length @c{k} whose values are the values
 of the expressions.
 
 For example:
@@ -799,10 +799,10 @@ means the same thing as
 
 Vector comprehensions: produces a vector of the values of @syn[expr]₁
 while iterating the variable(s) over @syn[expr]₂. In particular,
-@syn[expr]₂ must be a vector @code{v}, a string @code{s}, or a
-natural number @code{n}; in which case the iterated-over values are
-the elements of @code{v}, the 1-character strings comprising
-@code{s}, or counting from 0 to @code{n - 1}, respectively. If one
+@syn[expr]₂ must be a vector @c{v}, a string @c{s}, or a
+natural number @c{n}; in which case the iterated-over values are
+the elements of @c{v}, the 1-character strings comprising
+@c{s}, or counting from 0 to @code{n - 1}, respectively. If one
 variable @syn[var] is provided, it takes on those values. If two are
 provided, then @syn[var]₂ takes on those values, while @syn[var]₁
 takes on the indices counting from 0 upward.
@@ -874,12 +874,12 @@ The @racket[**] operator is right-associative.
 
 Logical negation, bitwise negation, numerical negation, and numerical identity.
 
-@code{!}@syn[expr] evaluates @syn[expr], then returns @racket[True] if
+@c{!}@syn[expr] evaluates @syn[expr], then returns @racket[True] if
 the result was @racket[False], and @racket[False] for any other result.
 
-@code{~}@syn[expr], @code{-}@syn[expr], and @code{+}@syn[expr] require
-that @syn[expr] evaluate to a number. Then @code{~} flips every bit,
-@code{-} negates it, and @code{+} returns it unchanged.
+@c{~}@syn[expr], @c{-}@syn[expr], and @c{+}@syn[expr] require
+that @syn[expr] evaluate to a number. Then @c{~} flips every bit,
+@c{-} negates it, and @c{+} returns it unchanged.
 
 @defexpforms[
   @list{@syn[expr]₁ @defidform/inline[*] @syn[expr]₂}
@@ -1108,12 +1108,12 @@ Breaks a string into a vector of 1-character strings.
 
 Using its first argument as a template, interpolates the remaining
 arguments, producing a string. The main recognized escape codes are
-@code{~a} and @code{~s}. Both can be used to include any kind of data,
-the difference being that @code{~s} quotes and escapes strings, whereas
-@code{~a} includes them literally.
+@c{~a} and @c{~s}. Both can be used to include any kind of data,
+the difference being that @c{~s} quotes and escapes strings, whereas
+@c{~a} includes them literally.
 
-Additionally, @code{~n} can be used to insert a newline, and @code{~~}
-inserts a literal @code{~}.
+Additionally, @c{~n} can be used to insert a newline, and @c{~~}
+inserts a literal @c{~}.
 
 @defprocform[implode]{(Vector<String>) -> String}
 
@@ -1136,7 +1136,7 @@ Returns the length of a string in characters.
 
 @defprocform[build_vector]{(n: Natural, f: (Natural) -> X) -> Vector<X>}
 
-Creates a vector of size @code{n} whose elements are @code{f(0)},
+Creates a vector of size @c{n} whose elements are @code{f(0)},
 @code{f(1)}, ..., @code{f(n - 1)}. Equivalent to
 
 @dssl2block|{
@@ -1145,8 +1145,8 @@ Creates a vector of size @code{n} whose elements are @code{f(0)},
 
 @defprocform[filter]{(pred: (X) -> Boolean, vec: Vector<X>) -> Vector<X>}
 
-Returns a vector containing the elements of @code{vec} for which
-@code{pred} returns non-false. Equivalent to
+Returns a vector containing the elements of @c{vec} for which
+@c{pred} returns non-false. Equivalent to
 
 @dssl2block|{
 [ x for x in vec if pred(x) ]
@@ -1158,8 +1158,8 @@ Returns the length of a vector.
 
 @defprocform[map]{(f: (X) -> Y, vec: Vector<X>) -> Vector<Y>}
 
-Returns a vector consisting of @code{f} applied to each element of
-@code{vec}. Equivalent to
+Returns a vector consisting of @c{f} applied to each element of
+@c{vec}. Equivalent to
 
 @dssl2block|{
 [ f(x) for x in vec ]
@@ -1175,7 +1175,7 @@ result is printed.
 
 @defprocform[println]{(String, Any, ...) -> Void}
 
-Like @code{print}, but adds a newline at the end.
+Like @racket[print], but adds a newline at the end.
 
 @subsection{Other functions}
 

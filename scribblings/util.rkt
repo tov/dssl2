@@ -3,12 +3,13 @@
 (provide defexpform defexpforms defsmplform defcmpdform
          defconstform
          defprocform defprocforms
-         code syn
+         c syn
          q m
-         dssl2block)
+         dssl2block code)
 (require scribble/manual
          scribble/racket
-         scribble/struct)
+         scribble/struct
+         (prefix-in scribble: scribble/manual))
 
 (define (q x)
   (elem (racketvalfont x)))
@@ -16,11 +17,11 @@
 (define (m x)
   (elem (larger x)))
 
-(define (code . codes)
+(define (c . codes)
   (elem #:style 'tt codes))
 
 (define-syntax-rule (syn var)
-  (code (italic (~a 'var))))
+  (c (italic (~a 'var))))
 
 (define-syntax-rule (defexpform chunk ...)
   (*defforms "expr" (list (list chunk ...))))
@@ -47,7 +48,7 @@
 (define (*defforms kind forms)
   (define labeller (add-background-label (or kind "syntax")))
   (define (make-cell form)
-    (list (make-paragraph (list (to-element (code form))))))
+    (list (make-paragraph (list (to-element (c form))))))
   (define table-content
     (cons
       (list (labeller (make-cell (first forms))))
@@ -61,3 +62,6 @@
   (codeblock
     #:keep-lang-line? #f
     "#lang dssl2\n" str-expr ...))
+
+(define-syntax-rule (code str-expr ...)
+  (scribble:code #:lang "dssl2" str-expr ...))

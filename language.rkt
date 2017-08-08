@@ -329,7 +329,11 @@
      #:fail-when (check-duplicate-identifier
                    (syntax->list #'(formal-field ...)))
                  "duplicate field name"
-     (with-syntax ([s:cons (format-stx "s:~a" #'name)])
+     (with-syntax ([s:cons (format-stx "s:~a" #'name)]
+                   [(setter-name ...)
+                    (map (λ (field)
+                            (format-stx "field ‘~a’ assignment" field))
+                         (syntax->list #'(formal-field ...)))])
        #`(begin
            (define-struct (s:cons struct-base) (formal-field ...)
                           #:mutable
@@ -346,10 +350,12 @@
                    'formal-field
                    (struct-getter-name s:cons formal-field)
                    (let ()
-                     (define/contract setter
-                       (-> any/c (recursive-contract contract) any/c)
+                     (define/contract setter-name
+                       (rename-contract
+                         (-> any/c (recursive-contract contract) any/c)
+                         'assignment)
                        (struct-setter-name s:cons formal-field))
-                     setter))
+                     setter-name))
                  ...)))
            (define/contract (name formal-field ...)
              (-> (recursive-contract contract) ... any/c)

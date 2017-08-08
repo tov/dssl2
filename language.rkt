@@ -19,7 +19,7 @@
            [bitwise-not         ~]
            [-                   -]
            [*                   *]
-           [/                   /]
+           [dssl-/              /]
            [dssl-+              +]
            [dssl-!=             !=]
            [dssl-!==            !==]
@@ -421,6 +421,16 @@
     (define v2 e2)
     (unless (equal? v1 v2)
       (assertion-error "‘~a’ ≠ ‘~a’" v1 v2))))
+
+(define (dssl-/ a b)
+  (cond
+    [(and (int? a) (int? b))
+     (quotient a b)]
+    [(and (num? a) (num? b))
+     (/ a b)]
+    [else (runtime-error
+            "operator / expects numbers, but given ‘~a’ and ‘~a’"
+            a b)]))
 
 (define dssl-+
   (case-lambda

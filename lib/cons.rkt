@@ -8,6 +8,13 @@ defstruct cons(car: AnyC, cdr: OrC(cons?, nil?))
 # - cons(AnyC, list?)
 let list? = OrC(cons?, nil?)
 
+# Creates a contract that copies a list while applying the given contract
+# to each element.
+def ListOfC(element: contract?) -> contract?:
+    def projection(blame!, value):
+        map_cons(λ x: apply_contract(element, x, 'list element'), value)
+    make_contract(format('ListOfC(~a)', element), list?, projection)
+
 # Reverses `before`, appending it onto `acc`. O(before) time and space.
 def rev_app_cons(before: list?, acc: list?) -> list?:
     if cons?(before):

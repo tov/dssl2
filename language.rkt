@@ -19,7 +19,7 @@
            [bitwise-not         ~]
            [-                   -]
            [*                   *]
-           [dssl-/              /]
+           [/                   /]
            [dssl-+              +]
            [dssl-!=             !=]
            [dssl-!==            !==]
@@ -426,7 +426,77 @@
          (define-values (_lst cpu real gc) (time-apply (λ () body ...) '()))
          (printf "~a: cpu: ~a real: ~a gc: ~a\n" lab cpu real gc))]))
 
-(define (dssl-make-vector a b)
+(define (num? x) (number? x))
+
+(define (int? x) (exact-integer? x))
+
+(define (float? x) (flonum? x))
+
+(define (str? x) (string? x))
+
+(define (bool? x) (boolean? x))
+
+(define (proc? x) (procedure? x))
+
+(define (vec? x) (vector? x))
+
+(define AnyC (flat-named-contract 'AnyC any/c))
+
+(define VoidC (flat-named-contract 'VoidC void?))
+
+(define (format-fun f x xs)
+  (define port (open-output-string))
+  (fprintf port "~a(~a" f (contract-name x))
+  (for ([xi (in-list xs)])
+    (fprintf port ", ~a" (contract-name xi)))
+  (fprintf port ")")
+  (get-output-string port))
+
+(define/contract (OrC c . cs)
+  (-> contract? contract? ... contract?)
+  (rename-contract
+    (apply or/c c cs)
+    (format-fun 'OrC c cs)))
+
+(define/contract (AndC c . cs)
+  (-> contract? contract? ... contract?)
+  (rename-contract
+    (apply and/c c cs)
+    (format-fun 'AndC c cs)))
+
+(define/contract (FunC c . cs)
+  (-> contract? contract? ... contract?)
+  (define all (cons c cs))
+  (define rev-all (reverse all))
+  (define args (reverse (rest rev-all)))
+  (define res (first rev-all))
+  (rename-contract
+    (dynamic->* #:mandatory-domain-contracts args
+                #:range-contracts (list res))
+    (format-fun 'FunC c cs)))
+
+(define/contract (NewForallC name)
+  (-> str? contract?)
+  (new-∀/c (string->symbol name)))
+
+(define/contract (NewExistsC name)
+  (-> str? contract?)
+  (new-∃/c (string->symbol name)))
+
+(define/contract apply_contract
+  (case-> (-> contract? AnyC AnyC)
+          (-> contract? AnyC str? AnyC)
+          (-> contract? AnyC str? str? AnyC))
+  (case-lambda
+    [(contract value pos neg)
+     (racket:contract contract value pos neg)]
+    [(contract value pos)
+     (apply_contract contract value pos "the context")]
+    [(contract value)
+     (apply_contract contract value "the contracted value")]))
+
+(define/contract (dssl-make-vector a b)
+  (-> int? AnyC vec?)
   (make-vector a b))
 
 (define (vector . args)
@@ -449,15 +519,13 @@
     (unless (equal? v1 v2)
       (assertion-error "‘~a’ ≠ ‘~a’" v1 v2))))
 
-(define (dssl-/ a b)
+(define/contract (/ a b)
+  (-> num? num? num?)
   (cond
     [(and (int? a) (int? b))
      (quotient a b)]
-    [(and (num? a) (num? b))
-     (/ a b)]
-    [else (runtime-error
-            "operator / expects numbers, but given ‘~a’ and ‘~a’"
-            a b)]))
+    [else
+     (racket:/ a b)]))
 
 (define dssl-+
   (case-lambda
@@ -540,69 +608,6 @@
 
 (define (filter f vec)
   (list->vector (racket:filter f (vector->list vec))))
-
-(define (num? x) (number? x))
-
-(define (int? x) (exact-integer? x))
-
-(define (float? x) (flonum? x))
-
-(define (str? x) (string? x))
-
-(define (bool? x) (boolean? x))
-
-(define (proc? x) (procedure? x))
-
-(define (vec? x) (vector? x))
-
-(define AnyC (flat-named-contract 'AnyC any/c))
-
-(define VoidC (flat-named-contract 'VoidC void?))
-
-(define (format-fun f x xs)
-  (define port (open-output-string))
-  (fprintf port "~a(~a" f (contract-name x))
-  (for ([xi (in-list xs)])
-    (fprintf port ", ~a" (contract-name xi)))
-  (fprintf port ")")
-  (get-output-string port))
-
-(define (OrC c . cs)
-  (rename-contract
-    (apply or/c c cs)
-    (format-fun 'OrC c cs)))
-
-(define (AndC c . cs)
-  (rename-contract
-    (apply and/c c cs)
-    (format-fun 'AndC c cs)))
-
-(define (FunC c . cs)
-  (define all (cons c cs))
-  (define rev-all (reverse all))
-  (define args (reverse (rest rev-all)))
-  (define res (first rev-all))
-  (rename-contract
-    (dynamic->* #:mandatory-domain-contracts args
-                #:range-contracts (list res))
-    (format-fun 'FunC c cs)))
-
-(define/contract (NewForallC name)
-  (-> str? contract?)
-  (new-∀/c (string->symbol name)))
-
-(define/contract (NewExistsC name)
-  (-> str? contract?)
-  (new-∃/c (string->symbol name)))
-
-(define apply_contract
-  (case-lambda
-    [(contract value pos neg)
-     (racket:contract contract value pos neg)]
-    [(contract value pos)
-     (apply_contract contract value pos "the context")]
-    [(contract value)
-     (apply_contract contract value "the contracted value")]))
 
 (define (floor n)
   (inexact->exact (racket:floor n)))

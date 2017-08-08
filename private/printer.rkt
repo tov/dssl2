@@ -76,6 +76,6 @@
     (if first
       (set! first #f)
       (display ", " port))
-    (print element port))
+    (display (dssl-value->string element) port))
   (display "]" port)
   (get-output-string port))

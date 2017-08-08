@@ -33,7 +33,6 @@
            [and                 and]
            [or                  or]
            [begin               begin]
-           [cond                cond]
            [if                  if]
            [else                else]
            [void                pass]
@@ -43,6 +42,7 @@
            [dssl-assert         assert]
            [dssl-assert-eq      assert_eq]
            [dssl-break          break]
+           [dssl-cond           cond]
            [dssl-continue       continue]
            [dssl-def            def]
            [dssl-defstruct      defstruct]
@@ -164,7 +164,7 @@
                   (relocate-input-port line-port line column position
                                        #true #:name src))
                 (parse-dssl2 src relocated #t)])))))
-   expr ...))
+   (dssl-begin expr ...)))
 
 ; This is so that the documentation will consider elif a keyword.
 (define-syntax-parameter
@@ -183,6 +183,13 @@
   (unless (zero? (random 1))
     (set! f (void))))
 
+(define-syntax dssl-cond
+  (syntax-rules (else)
+    [(_ [test result ...] ... [else else-result ...])
+     (cond [test (dssl-begin result ...)]
+           ...
+           [else (dssl-begin else-result ... )])]))
+
 (define-syntax-rule (dssl-lambda (param ...) expr ...)
   (lambda (param ...)
     (let/ec return-f
@@ -190,7 +197,7 @@
          ([dssl-return (syntax-rules ()
                          [(_)         (return-f (void))]
                          [(_ ?result) (return-f ?result)])])
-         (begin expr ...)))))
+         (dssl-begin expr ...)))))
 
 (define-simple-macro (dssl-def (f:id [tv:id ...]
                                      (formal:id contract:expr) ...)
@@ -236,7 +243,7 @@
         ([dssl-break (syntax-rules () [(_) (break-f)])]
          [dssl-continue (syntax-rules () [(_) (continue-f)])])
         (when test
-          expr ...
+          (dssl-begin expr ...)
           (loop))))))
 
 (define-syntax (dssl-for stx)
@@ -253,7 +260,7 @@
                 [dssl-continue (syntax-rules () [(_) (continue-f)])])
                expr ...))))]
     [(_ [i:id v:expr] expr:expr ...+)
-     #'(dssl-for [(_ i) v] expr ...)]))
+     #'(dssl-for [(_ i) v] (dssl-begin expr ...))]))
 
 (define-syntax (dssl-for/vector stx)
   (syntax-parse stx
@@ -313,6 +320,48 @@
              (syntax->datum stx0)
              (map syntax->datum stxs)))))
 
+(define-syntax dssl-begin
+  (syntax-rules ()
+    [(_ defn ...) (dssl-begin/acc () () defn ...)]))
+
+(define-syntax (dssl-begin/acc stx)
+  (syntax-parse stx
+    #:literals (dssl-defstruct begin)
+    [(_ (early-defns ...) (late-defns ...))
+     #'(begin
+         early-defns ...
+         late-defns ...)]
+    [(_ (early-defns ...) (late-defns ...)
+        (begin firsts ...)
+        rest ...)
+     #'(dssl-begin/acc (early-defns ...) (late-defns ...)
+                       firsts ... rest ...)]
+    [(_ (early-defns ...) (late-defns ...)
+        (dssl-defstruct name:id ((field:id ctc:expr) ...))
+        rest ...)
+     #:fail-when (check-duplicate-identifier
+                   (syntax->list #'(field ...))) "duplicate field name"
+     (with-syntax ([s:cons (format-stx "s:~a" #'name)])
+       #`(dssl-begin/acc
+           (early-defns
+             ...
+             (define-struct (s:cons struct-base) (field ...)
+                            #:mutable
+                            #:transparent
+                            #:methods gen:custom-write
+                            [(define write-proc dssl-write-struct)])
+             (define (#,(format-stx "~a?" #'name) value)
+               (#,(format-stx "~a?" #'s:cons) value)))
+           (late-defns
+             ...
+             (dssl-defstruct/internal (name s:cons) ((field ctc) ...)))
+           rest ...))]
+    [(_ (early-defns ...) (late-defns ...)
+        first rest ...)
+     #'(dssl-begin/acc (early-defns ...)
+                       (late-defns ... first)
+                       rest ...)]))
+
 (define-syntax (struct-getter-name stx)
   (syntax-parse stx
     [(_ name:id field:id)
@@ -324,24 +373,25 @@
      (format-stx "set-~a-~a!" #'name #'field)]))
 
 (define-syntax (dssl-defstruct stx)
+  (raise-syntax-error
+    #f
+    (string-append "Saw dssl-defstruct, which should be changed to "
+                   "dssl-defstruct/internal by #%module-begin")
+    stx))
+
+(define-syntax (dssl-defstruct/internal stx)
   (syntax-parse stx
-    [(_ name:id ((formal-field:id contract:expr) ...))
-     #:fail-when (check-duplicate-identifier
-                   (syntax->list #'(formal-field ...)))
-                 "duplicate field name"
-     (with-syntax ([s:cons (format-stx "s:~a" #'name)]
+    [(_ (name:id internal-name:id) ((formal-field:id contract:expr) ...))
+     (with-syntax ([s:cons #'internal-name]
                    [(setter-name ...)
                     (map (λ (field)
                             (format-stx "field ‘~a’ assignment" field))
-                         (syntax->list #'(formal-field ...)))])
+                         (syntax->list #'(formal-field ...)))]
+                   [(contract-name ...)
+                    (generate-temporaries
+                      (syntax->list #'(formal-field ...)))])
        #`(begin
-           (define-struct (s:cons struct-base) (formal-field ...)
-                          #:mutable
-                          #:transparent
-                          #:methods gen:custom-write
-                          [(define write-proc dssl-write-struct)])
-           (define (#,(format-stx "~a?" #'name) value)
-             (#,(format-stx "~a?" #'s:cons) value))
+           (define contract-name (recursive-contract contract)) ...
            (define struct-info
              (make-struct-info
                'name
@@ -352,13 +402,13 @@
                    (let ()
                      (define/contract setter-name
                        (rename-contract
-                         (-> any/c (recursive-contract contract) any/c)
+                         (-> any/c contract-name any/c)
                          'assignment)
                        (struct-setter-name s:cons formal-field))
                      setter-name))
                  ...)))
            (define/contract (name formal-field ...)
-             (-> (recursive-contract contract) ... any/c)
+             (-> contract-name ... any/c)
              (s:cons struct-info formal-field ...))
            ; The name on the next line is generated by the parser:
            (define-syntax (#,(format-stx "m:~a" #'name) stx)
@@ -400,9 +450,10 @@
      #:fail-when (check-duplicate-identifier
                    (syntax->list #'(field ...)))
                  "duplicate field name"
-     #'(let ()
-         (dssl-defstruct name ((field any/c) ...))
-         (name expr ...))]))
+     #`(let ()
+         (dssl-begin
+           (dssl-defstruct name ((field any/c) ...))
+           (name expr ...)))]))
 
 (define (get-field-info struct field)
   (let/ec return
@@ -426,13 +477,14 @@
 (define-syntax (dssl-test stx)
   (syntax-parse stx
     [(_ name:expr body:expr ...+)
-     #'(test-case (~a name) body ...)]))
+     #'(test-case (~a name) (dssl-begin body ...))]))
 
 (define-syntax (dssl-time stx)
   (syntax-parse stx
     [(_ name:expr body:expr ...)
      #'(let ([lab name])
-         (define-values (_lst cpu real gc) (time-apply (λ () body ...) '()))
+         (define-values (_lst cpu real gc)
+           (time-apply (λ () (dssl-begin body ...)) '()))
          (printf "~a: cpu: ~a real: ~a gc: ~a\n" lab cpu real gc))]))
 
 (define (num? x) (number? x))

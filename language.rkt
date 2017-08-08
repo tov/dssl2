@@ -343,7 +343,7 @@
                     (generate-temporaries
                       (syntax->list #'(formal-field ...)))])
        #`(begin
-           (define contract-name (recursive-contract contract)) ...
+           (define contract-name contract) ...
            (define struct-info
              (make-struct-info
                'name

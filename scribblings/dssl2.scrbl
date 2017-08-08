@@ -207,9 +207,11 @@ def rbt_insert!(key, tree):
     # parent : RbLink<X> -> RbLink<X>
     def parent(link):
         link.parent if rbn?(link) else False
+
     # grandparent : RbLink<X> -> RbLink<X>
     def grandparent(link):
         parent(parent(link))
+
     # sibling : RbLink<X> -> RbLink<X>
     def sibling(link):
         let p = parent(link)
@@ -217,12 +219,13 @@ def rbt_insert!(key, tree):
             if link === p.left: p.right
             else: p.left
         else: False
+
     # aunt : RbLink<X> -> RbLink<X>
     def aunt(link):
         sibling(parent(link))
-    #
+
     # . . .
-    #
+
     def set_root!(new_node): tree.root = new_node
     search!(tree.root, set_root!)
 }|
@@ -264,15 +267,15 @@ Another example:
 # - False
 # - Node(X, Natural, RndBst<X>, RndBst<X>)
 defstruct Node(key, size, left, right)
-#
+
 # singleton : X -> RndBst<X>
 def singleton(key):
     Node(key, 1, False, False)
-#
+
 # size : RndBst<X> -> Natural
 def size(tree):
     tree.size if Node?(tree) else 0
-#
+
 # fix_size! : Node? -> Void
 def fix_size!(node):
     node.size = 1 + size(node.left) + size(node.right)
@@ -398,10 +401,12 @@ Declares a local variable, which will be undefined until it is assigned:
 
 @dssl2block|{
 let x
+
 if y:
     x = f()
 else:
     x = g()
+
 println(x)
 }|
 
@@ -520,15 +525,18 @@ of preparation and checks:
 test 'single-chaining hash table':
     let h = sch_new_1(10)
     assert !sch_member?(h, 'hello')
+
     sch_insert!(h, 'hello', 5)
     assert sch_member?(h, 'hello')
     assert_eq sch_lookup(h, 'hello'), 5
     assert !sch_member?(h, 'goodbye')
     assert !sch_member?(h, 'helo')
+
     sch_insert!(h, 'helo', 4)
     assert_eq sch_lookup(h, 'hello'), 5
     assert_eq sch_lookup(h, 'helo'), 4
     assert !sch_member?(h, 'hel')
+
     sch_insert!(h, 'hello', 10)
     assert_eq sch_lookup(h, 'hello'), 10
     assert_eq sch_lookup(h, 'helo'), 4
@@ -732,8 +740,10 @@ field value will use that variable:
 
 @dssl2block|{
 defstruct Foo(bar, baz)
+
 let bar = 4
 let baz = 5
+
 assert_eq Foo { bar, baz: 9 }, Foo(4, 9)
 }|
 

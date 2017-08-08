@@ -62,6 +62,7 @@
    LITERAL))
 
 (define-lex-abbrevs
+  [space       (:or #\space #\uA0)]
   [natural     (:+ numeric)]
   [exponent    (:: (:or #\e #\E) (:? #\-) natural)]
   [pointfloat  (:or (:: natural #\. (:* numeric))
@@ -241,14 +242,14 @@
       ["inf"                    (token-LITERAL +inf.0)]
       ["nan"                    (token-LITERAL +nan.0)]
       [identifier               (token-IDENT (string->symbol lexeme))]
-      [#\space
+      [space
        (return-without-pos (the-lexer port))]
       [comment
        (return-without-pos (the-lexer port))]
       [(:: #\\ #\newline)
        (return-without-pos (the-lexer port))]
-      [(:: (:* (:: #\newline (:* #\space) (:? comment)))
-           #\newline (:* #\space))
+      [(:: (:* (:: #\newline (:* space) (:? comment)))
+           #\newline (:* space))
        (return-without-pos
          (on-indent (last-spaces lexeme) start-pos end-pos))]
       [(:: #\\ #\newline)
@@ -256,7 +257,8 @@
       [#\tab
        (lexical-error start-pos "Tabs are not allowed in DSSL2")]
       [any-char
-       (lexical-error start-pos "Unexpected character ‘~a’" lexeme)]
+       (lexical-error start-pos "Unexpected character ‘~a’ (~a)"
+                      lexeme (char->integer (string-ref lexeme 0)))]
       [(special)
        (lexical-error start-pos "Unexpected special" lexeme)]
       [(special-comment)

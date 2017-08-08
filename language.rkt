@@ -273,7 +273,7 @@
     [(_ (dssl-vector-ref v i) rhs)
      (vector-set! v i rhs)]
     [(_ (dssl-struct-ref s f) rhs)
-     (dssl-struct-set! s f rhs)]
+     (dssl-struct-set! s 'f rhs)]
     [(_ i rhs)
      (set! i rhs)]))
 
@@ -383,9 +383,8 @@
   (let ([value expr])
     ((field-info-getter (get-field-info value 'field)) value)))
 
-(define-syntax-rule (dssl-struct-set! expr field rhs)
-  (let ([value expr])
-    ((field-info-setter (get-field-info value 'field)) value rhs)))
+(define (dssl-struct-set! struct field rhs)
+  ((field-info-setter (get-field-info struct field)) struct rhs))
 
 (define-syntax (dssl-test stx)
   (syntax-parse stx

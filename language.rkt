@@ -2,11 +2,11 @@
 
 (provide #%app
          #%datum
-         #%top
-         #%top-interaction)
+         #%top)
 (provide (rename-out
            ; special syntax
-           [dssl-module-begin   #%module-begin]
+           [dssl-module-begin           #%module-begin]
+           [dssl-top-interaction        #%top-interaction]
            ; built-in operators
            [modulo              %]
            [expt                **]
@@ -108,6 +108,9 @@
                                        #true #:name src))
                 (parse-dssl2 src relocated #t)])))))
    (dssl-begin expr ...)))
+
+(define-syntax-rule (dssl-top-interaction . expr)
+  (dssl-begin expr))
 
 ; This is so that the documentation will consider elif a keyword.
 (define-syntax-parameter

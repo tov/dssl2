@@ -724,14 +724,18 @@
     [(eq? #f x)  0.0]
     [else (type-error 'int x "number, string, or Boolean")]))
 
-(define random
+; This is the largest argument that `random` can take.
+(define RAND_MAX 4294967087)
+
+(define/contract random
+  (case->
+    (-> float?)
+    (-> (IntInC 1 RAND_MAX) nat?)
+    (-> int? int? int?))
   (case-lambda
     [() (racket:random)]
     [(limit) (racket:random limit)]
     [(low high) (racket:random low high)]))
-
-; This is the largest argument that `random` can take.
-(define RAND_MAX 4294967087)
 
 (define (random_bits n)
   (define *RADIX* 16)

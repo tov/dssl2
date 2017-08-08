@@ -1024,7 +1024,7 @@ respectively.
 @defprocforms[
   [random @list{() -> float?}]
   [random @list{(IntInC(1, 4294967087)) -> nat?}]
-  [random @list{(int?, IntInC(1, 4294967087)) -> nat?}]
+  [random @list{(int?, int?) -> nat?}]
 ]
 
 When called with zero arguments, returns a random floating point number

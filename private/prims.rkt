@@ -7,6 +7,7 @@
          nat?
          float?
          str?
+         char?
          bool?
          proc?
          vec?
@@ -30,44 +31,47 @@
                               (OrC #f (-> (-> str? VoidC) AnyC AnyC))
                               contract?)])
          ; * numeric operations
-         floor
-         ceiling
-         int
-         float
-         max
-         min
-         quotient
          (contract-out
+           [floor (-> num? int?)]
+           [ceiling (-> num? int?)]
+           [int (-> (OrC num? str? bool?) int?)]
+           [float (-> (OrC num? str? bool?) float?)]
+           [max (-> num? num? ... num?)]
+           [min (-> num? num? ... num?)]
+           [quotient (-> int? int? int?)]
            [random (case->
                      (-> float?)
                      (-> (IntInC 1 RAND_MAX) nat?)
-                     (-> int? int? int?))])
-         random_bits
-         RAND_MAX
-         remainder
-         sqrt
+                     (-> int? int? int?))]
+           [random_bits (-> nat? nat?)]
+           [RAND_MAX nat?]
+           [remainder (-> int? int? int?)]
+           [sqrt (-> num? num?)])
          ; ** predicates
-         zero?
-         positive?
-         negative?
-         even?
-         odd?
-         ; * string operations
-         chr
-         explode
-         format
-         implode
-         ord
          (contract-out
+           [zero? (-> num? bool?)]
+           [positive? (-> num? bool?)]
+           [negative? (-> num? bool?)]
+           [even? (-> int? bool?)]
+           [odd? (-> int? bool?)])
+         ; * string operations
+         (contract-out
+           [chr (-> nat? char?)]
+           [explode (-> str? vec?)]
+           [format (-> str? AnyC ... str?)]
+           [implode (-> vec? str?)]
+           [ord (-> char? nat?)]
            [strlen (-> str? nat?)])
          ; * vector operations
-         build_vector
-         len
-         map
-         filter
+         (contract-out
+           [build_vector (-> nat? (-> nat? AnyC) vec?)]
+           [len (-> vec? nat?)]
+           [map (-> (-> AnyC AnyC) vec? vec?)]
+           [filter (-> (-> AnyC AnyC) vec? vec?)])
          ; * I/O operations
-         print
-         println
+         (contract-out
+           [print (-> str? AnyC ... VoidC)]
+           [println (-> str? AnyC ... VoidC)])
          ; * other functions
          identity)
 (require dssl2/private/errors
@@ -82,6 +86,9 @@
 (define (float? x) (flonum? x))
 
 (define (str? x) (string? x))
+
+(define (char? x)
+  (and (string? x) (= 1 (string-length x))))
 
 (define (bool? x) (boolean? x))
 
@@ -189,8 +196,6 @@
   (apply string-append (vector->list vec)))
 
 (define (ord c)
-  (unless (= 1 (string-length c))
-    (error 'ord "expect character (string of length 1)"))
   (char->integer (string-ref c 0)))
 
 (define (strlen str)

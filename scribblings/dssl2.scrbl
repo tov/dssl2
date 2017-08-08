@@ -960,6 +960,10 @@ Determines whether its argument is a procedure (function).
 
 Determines whether its argument is a string.
 
+@defprocform[char?]{(AnyC) -> bool?}
+
+Determines whether its argument is a string of length 1.
+
 @defprocform[num?]{(AnyC) -> bool?}
 
 Determines whether its argument is a number.

@@ -9,7 +9,8 @@
 (require scribble/manual
          scribble/racket
          scribble/struct
-         (prefix-in scribble: scribble/manual))
+         (prefix-in scribble: scribble/manual)
+         (for-syntax syntax/parse))
 
 (define (q x)
   (elem (racketvalfont x)))
@@ -58,10 +59,15 @@
     vertical-inset-style
     (list table)))
 
-(define-syntax-rule (dssl2block str-expr ...)
-  (codeblock
-    #:keep-lang-line? #f
-    "#lang dssl2\n" str-expr ...))
+(define-syntax (dssl2block stx)
+  (syntax-parse stx
+    [(_ str-expr ...)
+     ; We want the first parameter to provide the right lexical context
+     ; (but this doesn't seem to work anyway).
+     (with-syntax ([hash-lang (datum->syntax stx "#lang dssl2\n")])
+       #'(codeblock
+           #:keep-lang-line? #f
+           hash-lang str-expr ...))]))
 
 (define-syntax-rule (code str-expr ...)
   (scribble:code #:lang "dssl2" str-expr ...))

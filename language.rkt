@@ -67,6 +67,7 @@
          ; * type predicates
          num?
          int?
+         nat?
          float?
          str?
          bool?
@@ -82,6 +83,7 @@
          FunC
          NewForallC
          NewExistsC
+         IntInC
          apply_contract
          ; * numeric operations
          floor
@@ -430,6 +432,8 @@
 
 (define (int? x) (exact-integer? x))
 
+(define (nat? x) (and (int? x) (not (negative? x))))
+
 (define (float? x) (flonum? x))
 
 (define (str? x) (string? x))
@@ -482,6 +486,12 @@
 (define/contract (NewExistsC name)
   (-> str? contract?)
   (new-∃/c (string->symbol name)))
+
+(define/contract (IntInC low high)
+  (-> int? int? contract?)
+  (rename-contract
+    (AndC int? (λ (x) (<= low x high)))
+    (format-fun 'IntInC low (list high))))
 
 (define/contract apply_contract
   (case-> (-> contract? AnyC AnyC)

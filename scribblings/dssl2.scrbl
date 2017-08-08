@@ -266,14 +266,14 @@ Another example:
 @dssl2block|{
 # A RndBst<X> is one of:
 # - False
-# - Node(X, Natural, RndBst<X>, RndBst<X>)
+# - Node(X, nat?, RndBst<X>, RndBst<X>)
 defstruct Node(key, size, left, right)
 
 # singleton : X -> RndBst<X>
 def singleton(key):
     Node(key, 1, False, False)
 
-# size : RndBst<X> -> Natural
+# size : RndBst<X> -> nat?
 def size(tree):
     tree.size if Node?(tree) else 0
 
@@ -320,7 +320,7 @@ For example, this function returns the @racket[size] field of parameter
 @racket[tree] if @racket[tree] is a @racket[Node], and @racket[0] otherwise:
 
 @dssl2block|{
-# size : RndBst<X> -> Natural
+# size : RndBst<X> -> nat?
 def size(tree):
     if Node?(tree): tree.size
     else: 0
@@ -429,7 +429,7 @@ In this example hash function producer, the @racket[for] loops over the
 characters in a string:
 
 @dssl2block|{
-# make_sbox_hash : -> [String -> Natural]
+# make_sbox_hash : -> [str? -> nat?]
 # Returns a new n-bit string hash function.
 def make_sbox_hash(n):
     let sbox = [ random_bits(n) for i in 256 ]
@@ -463,7 +463,7 @@ for ix, person in people_to_greet:
 Does nothing.
 
 @dssl2block|{
-# account_credit! : Number Account -> Void
+# account_credit! : num? account? -> VoidC
 # Adds the given amount to the given account’s balance.
 def account_credit!(amount, account):
     pass
@@ -491,7 +491,7 @@ of the loop and exits the function; the second @racket[return] is optional and
 could be omitted.
 
 @dssl2block|{
-# : BloomFilter String -> Boolean
+# : bloom-filter? str? -> bool?
 def bloom_check?(b, s):
     for hash in b.hashes:
         let index = hash(s) % b.bv.size
@@ -952,35 +952,35 @@ result of the conjunction is the result of @syn[expr]₂.
 
 @subsection{Type predicates}
 
-@defprocform[proc?]{(Any) -> Boolean}
+@defprocform[proc?]{(AnyC) -> bool?}
 
 Determines whether its argument is a procedure (function).
 
-@defprocform[str?]{(Any) -> Boolean}
+@defprocform[str?]{(AnyC) -> bool?}
 
 Determines whether its argument is a string.
 
-@defprocform[num?]{(Any) -> Boolean}
+@defprocform[num?]{(AnyC) -> bool?}
 
 Determines whether its argument is a number.
 
-@defprocform[int?]{(Any) -> Boolean}
+@defprocform[int?]{(AnyC) -> bool?}
 
 Determines whether its argument is an integer.
 
-@defprocform[float?]{(Any) -> Boolean}
+@defprocform[float?]{(AnyC) -> bool?}
 
 Determines whether its argument is a floating-point number.
 
-@defprocform[vec?]{(Any) -> Boolean}
+@defprocform[vec?]{(AnyC) -> bool?}
 
 Determines whether its argument is a vector.
 
-@defprocform[bool?]{(Any) -> Boolean}
+@defprocform[bool?]{(AnyC) -> bool?}
 
-Determines whether its argument is a Boolean.
+Determines whether its argument is a bool?.
 
-@defprocform[contract?]{(Any) -> Boolean}
+@defprocform[contract?]{(AnyC) -> bool?}
 
 Determines whether its value is a contract. Contracts include many
 constants (numbers, strings, Booleans), single-argument functions
@@ -989,18 +989,18 @@ as @racket[OrC] and @racket[FunC].
 
 @subsection{Numeric operations}
 
-@defprocform[floor]{(Number) -> Integer}
+@defprocform[floor]{(num?) -> int?}
 
 Rounds a number down to the largest integer that is no greater.
 
-@defprocform[ceiling]{(Number) -> Integer}
+@defprocform[ceiling]{(num?) -> int?}
 
 Rounds a number up to the smallest integer that is no less.
 
 @defprocforms[
-    [int @list{(Number) -> Integer}]
-    [int @list{(String) -> Integer}]
-    [int @list{(Boolean) -> Integer}]
+    [int @list{(num?) -> int?}]
+    [int @list{(str?) -> int?}]
+    [int @list{(bool?) -> int?}]
 ]
 
 Returns the integer part of a number, by truncation. That is, the
@@ -1010,21 +1010,21 @@ the conversion fails. Booleans @racket[True] and @racket[False] convert
 to @racket[1] and @racket[0], respectively.
 
 @defprocforms[
-  [float @list{(Number) -> Floating}]
-  [float @list{(String) -> Floating}]
-  [float @list{(Boolean) -> Floating}]
+  [float @list{(num?) -> float?}]
+  [float @list{(str?) -> float?}]
+  [float @list{(bool?) -> float?}]
 ]
 
-Converts an exact (integral or rational) number to the nearest
+Converts an exact integer to the nearest
 double-precision floating point value. If given a string, attempt to
 convert to a number, throwing an error if the conversion fails. Booleans
 @racket[True] and @racket[False] convert to @racket[1.0] and @racket[0.0],
 respectively.
 
 @defprocforms[
-  [random @list{() -> Floating}]
-  [random @list{(IntegerIn<1, 4294967087>) -> Natural}]
-  [random @list{(Integer, IntegerIn<1, 4294967087>) -> Natural}]
+  [random @list{() -> float?}]
+  [random @list{(IntInC(1, 4294967087)) -> nat?}]
+  [random @list{(int?, IntInC(1, 4294967087)) -> nat?}]
 ]
 
 When called with zero arguments, returns a random floating point number
@@ -1038,60 +1038,60 @@ random exact integer from the closed interval [@racket[min], @racket[max - 1]].
 The difference between the arguments can be no greater than
 @racket[4294967087].
 
-@defprocform[max]{(Number, Number, ...) -> Number}
+@defprocform[max]{(num?, num?, ...) -> num?}
 
 Returns the largest of the given numbers.
 
-@defprocform[min]{(Number, Number, ...) -> Number}
+@defprocform[min]{(num?, num?, ...) -> num?}
 
 Returns the smallest of the given numbers.
 
-@defprocform[quotient]{(Natural, Natural) -> Natural}
+@defprocform[quotient]{(nat?, nat?) -> nat?}
 
 Returns the truncated quotient.
 
-@defconstform[RAND_MAX]{Natural}
+@defconstform[RAND_MAX]{nat?}
 
 Defined to be @racket[4294967087], the largest parameter (or span) that
 can be passed to @racket[random].
 
-@defprocform[random_bits]{(Natural) -> Natural}
+@defprocform[random_bits]{(nat?) -> nat?}
 
 Returns a number consisting of the requested number of random bits.
 
-@defprocform[remainder]{(Natural, Natural) -> Natural}
+@defprocform[remainder]{(nat?, nat?) -> nat?}
 
 Returns the remainder of the truncated @racket[quotient].
 
-@defprocform[sqrt]{(Number) -> Floating}
+@defprocform[sqrt]{(num?) -> float?}
 
 Computes the square root of a number.
 
 @subsubsection{Predicates}
 
-@defprocform[zero?]{(Number) -> Boolean}
+@defprocform[zero?]{(num?) -> bool?}
 
 Determines whether its argument is zero.
 
-@defprocform[positive?]{(Number) -> Boolean}
+@defprocform[positive?]{(num?) -> bool?}
 
 Determines whether its argument is greater than zero.
 
-@defprocform[negative?]{(Number) -> Boolean}
+@defprocform[negative?]{(num?) -> bool?}
 
 Determines whether its argument is less than zero.
 
-@defprocform[even?]{(Integer) -> Boolean}
+@defprocform[even?]{(int?) -> bool?}
 
 Determines whether its argument is an even integer.
 
-@defprocform[odd?]{(Integer) -> Boolean}
+@defprocform[odd?]{(int?) -> bool?}
 
 Determines whether its argument is an odd integer.
 
 @subsection{String operations}
 
-@defprocform[chr]{(Natural) -> String}
+@defprocform[chr]{(nat?) -> str?}
 
 Converts the code point of a character to the character that it
 represents, as a one-character string. Inverse to @racket[ord].
@@ -1100,11 +1100,11 @@ represents, as a one-character string. Inverse to @racket[ord].
 assert_eq chr(97), 'a'
 }|
 
-@defprocform[explode]{(String) -> Vector<String>}
+@defprocform[explode]{(str?) -> Vector<str?>}
 
 Breaks a string into a vector of 1-character strings.
 
-@defprocform[format]{(String, Any, ...) -> String}
+@defprocform[format]{(str?, AnyC, ...) -> str?}
 
 Using its first argument as a template, interpolates the remaining
 arguments, producing a string. The main recognized escape codes are
@@ -1115,11 +1115,11 @@ the difference being that @c{~s} quotes and escapes strings, whereas
 Additionally, @c{~n} can be used to insert a newline, and @c{~~}
 inserts a literal @c{~}.
 
-@defprocform[implode]{(Vector<String>) -> String}
+@defprocform[implode]{(Vector<str?>) -> str?}
 
 Concatenates a vector of strings into a single string.
 
-@defprocform[ord]{(String) -> Natural}
+@defprocform[ord]{(str?) -> nat?}
 
 Converts a character, represented as a one-character string, to its
 code point. Inverse to @racket[chr].
@@ -1128,13 +1128,13 @@ code point. Inverse to @racket[chr].
 assert_eq ord('a'), 97
 }|
 
-@defprocform[strlen]{(String) -> Natural}
+@defprocform[strlen]{(str?) -> nat?}
 
 Returns the length of a string in characters.
 
 @subsection{Vector operations}
 
-@defprocform[build_vector]{(n: Natural, f: (Natural) -> X) -> Vector<X>}
+@defprocform[build_vector]{[X](n: nat?, f: FunC(nat?, X)) -> Vector<X>}
 
 Creates a vector of size @c{n} whose elements are @code{f(0)},
 @code{f(1)}, ..., @code{f(n - 1)}. Equivalent to
@@ -1143,7 +1143,7 @@ Creates a vector of size @c{n} whose elements are @code{f(0)},
 [ f(x) for x in n ]
 }|
 
-@defprocform[filter]{(pred: (X) -> Boolean, vec: Vector<X>) -> Vector<X>}
+@defprocform[filter]{[X](pred: FunC(X, bool?), vec: Vector<X>) -> Vector<X>}
 
 Returns a vector containing the elements of @c{vec} for which
 @c{pred} returns non-false. Equivalent to
@@ -1152,11 +1152,11 @@ Returns a vector containing the elements of @c{vec} for which
 [ x for x in vec if pred(x) ]
 }|
 
-@defprocform[len]{(Vector<X>) -> Natural}
+@defprocform[len]{[X](Vector<X>) -> nat?}
 
 Returns the length of a vector.
 
-@defprocform[map]{(f: (X) -> Y, vec: Vector<X>) -> Vector<Y>}
+@defprocform[map]{[X, Y](f: FunC(X, Y), vec: Vector<X>) -> Vector<Y>}
 
 Returns a vector consisting of @c{f} applied to each element of
 @c{vec}. Equivalent to
@@ -1167,19 +1167,19 @@ Returns a vector consisting of @c{f} applied to each element of
 
 @subsection{I/O Functions}
 
-@defprocform[print]{(String, Any, ...) -> Void}
+@defprocform[print]{(str?, AnyC, ...) -> Void}
 
 The first argument is treated as a format string into which the
 remaining arguments are interpolated, à la @racket[format]. Then the
 result is printed.
 
-@defprocform[println]{(String, Any, ...) -> Void}
+@defprocform[println]{(str?, AnyC, ...) -> Void}
 
 Like @racket[print], but adds a newline at the end.
 
 @subsection{Other functions}
 
-@defprocform[identity]{(X) -> X}
+@defprocform[identity]{[X](X) -> X}
 
 The identity function, which just returns its argument.
 
@@ -1288,10 +1288,15 @@ parametric contracts.
 Creates a new, existential contract variable, useful in constructing
 parametric contracts.
 
+@defprocform[IntInC]{(low: int?, high: int?) -> contract?}
+
+Constructs a contract that accepts integers in the closed interval
+[@c{low}, @c{high}].
+
 @defprocforms[
-    [apply_contract @list{(contract?, X) -> X}]
-    [apply_contract @list{(contract?, X, pos: str?) -> X}]
-    [apply_contract @list{(contract?, X, pos: str?, neg: str?) -> X}]
+    [apply_contract @list{[X](contract?, X) -> X}]
+    [apply_contract @list{[X](contract?, X, pos: str?) -> X}]
+    [apply_contract @list{[X](contract?, X, pos: str?, neg: str?) -> X}]
 ]
 
 Applies a contract to a value, optionally specifying the parties.

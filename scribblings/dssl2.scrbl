@@ -1204,7 +1204,12 @@ variables. A number of DSSL2 values may be used as contracts, including:
 @defcmpdform{@defidform/inline[def] @syn[name](@syn[var]₁: @syn[contract]₁, ... @syn[var]@subscript{k}: @syn[contract]@subscript{k}) -> @syn[contract]@subscript{r}: @syn[block]}
 
 Defines a function while specifying contracts for the parameters and the
-result.
+result. For example:
+
+@dssl2block|{
+def pythag(x: num?, y: num?) -> num?:
+    sqrt(x * x + y * y)
+}|
 
 Each of the contract positions is optional, and if omitted defaults to
 @racket[AnyC].
@@ -1212,20 +1217,37 @@ Each of the contract positions is optional, and if omitted defaults to
 @defcmpdform{@defidform/inline[let] @syn[name] : @syn[contract] = @syn[expr]}
 
 Binds a variable while applying a contracts. Subsequent assignments to
-the variable also must satisfy the contract.
+the variable also must satisfy the contract. For example:
+
+@dssl2block|{
+let x : int? = 0
+}|
 
 Note that while the @syn[expr] is optional, the contract will still be
 checked on the initial values, so in that case the contract should
-include @racket[VoidC].
+include @racket[VoidC]:
+
+@dssl2block|{
+let x : OrC(int?, VoidC)
+
+x = 5
+}|
 
 @defsmplform{@defidform/inline[defstruct] @syn[structname](@syn[field]₁: @syn[contract]₁, ..., @syn[field]@subscript{k}: @syn[contract]@subscript{k})}
 
 Defines a structure with the given contracts applied to the fields. This
 means that the contracts will be applied both when constructing the
-structure and when mutating it.
+structure and when mutating it. For example:
+
+@dssl2block|{
+defstruct posn(x: float?, y: float?)
+}|
+
+Now constructing a @code{posn} will require both parameters to satisfy
+the @racket[float?] predicate, as will assigning to either field.
 
 It’s possible to include contracts on some fields without including them
-on all.
+on all, and the fields with omitted contracts default to @racket[AnyC].
 
 @subsection{Contract combinators}
 
@@ -1235,7 +1257,8 @@ A flat contract that accepts any value.
 
 @defconstform[VoidC]{contract?}
 
-A flat contract that accepts the result of @racket[pass].
+A flat contract that accepts the result of @racket[pass] and other
+statements that return no value (such as assignment and loops).
 
 @defprocform[OrC]{(contract?, contract, ...) -> contract?}
 

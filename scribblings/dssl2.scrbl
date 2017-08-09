@@ -42,7 +42,7 @@ is indented by 4 spaces, and the @racket[elif] blocks by
 8. When a block is a simple statement, it can be placed on the same
 line, as in the @racket[if] and @racket[else] cases.
 
-Extranous indentation is an error.
+Extraneous indentation is an error.
 
 @subsection{DSSL2 Formal Grammar}
 

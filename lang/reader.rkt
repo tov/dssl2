@@ -5,7 +5,8 @@ dssl2/language
 #:info info
 
 (require dssl2/private/parser
-         dssl2/private/indent)
+         dssl2/private/indent
+         dssl2/private/syntax-color)
 (require (only-in racket send))
 
 (define (my-read in)
@@ -17,7 +18,7 @@ dssl2/language
 (define (info key defval default)
   (case key
     [(color-lexer)
-     (dynamic-require 'dssl2/private/syntax-color 'get-syntax-token)]
+     get-syntax-token]
     [(drracket:opt-out-toolbar-buttons)
      '(debug-tool macro-stepper drracket:syncheck)]
     [(drracket:indentation)

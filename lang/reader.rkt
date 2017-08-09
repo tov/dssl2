@@ -20,21 +20,15 @@ dssl2/language
     [(color-lexer)
      get-syntax-token]
     [(drracket:opt-out-toolbar-buttons)
-     '(debug-tool macro-stepper drracket:syncheck)]
+     '(debug-tool drracket:syncheck)] ; macro-stepper?
     [(drracket:indentation)
      find-current-indent]
     [(drracket:keystrokes)
-     `(["["             ,handle-keystroke]
-       ["tab"           ,handle-keystroke]
-       ["s:tab"         ,handle-keystroke]
-       ["enter"         ,handle-keystroke])]
+     `(["["             ,(λ (text e) (send text insert #\[))]
+       ["tab"           ,(λ (text e) (go-to-indent text #f))]
+       ["s:tab"         ,(λ (text e) (go-to-indent text #t))]
+       ["enter"         ,(λ (text e) (enter-and-indent text))])]
     [(drracket:submit-predicate)
      (λ (port space) #t)]
     [else
       (default key defval)]))
-
-(define (handle-keystroke text event)
-  (case (send event get-key-code)
-    [(#\[)      (send text insert #\[)]
-    [(#\tab)    (go-to-indent text (send event get-shift-down))]
-    [(#\return) (enter-and-indent text)]))

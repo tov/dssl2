@@ -2,7 +2,7 @@
 (define name "dssl2: a data structures student language")
 (define categories '(devtools))
 (define can-be-loaded-with 'all)
-(define required-core-version "6.9")
+(define required-core-version "6.10")
 (define version "2.7.1")
 (define deps '("base" "rackunit-lib" "parser-tools-lib"))
 (define build-deps '("scribble-lib" "racket-doc"))

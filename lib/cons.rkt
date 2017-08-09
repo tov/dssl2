@@ -1,12 +1,12 @@
 #lang dssl2
 
-defstruct nil()
-defstruct cons(car: AnyC, cdr: OrC(cons?, nil?))
-
 # A list? is one of:
 # - nil()
 # - cons(AnyC, list?)
 let list? = OrC(cons?, nil?)
+
+defstruct nil()
+defstruct cons(car: AnyC, cdr: list?)
 
 # Creates a contract that copies a list while applying the given contract
 # to each element.
@@ -25,7 +25,7 @@ def rev_app_cons(before: list?, acc: list?) -> list?:
 # Reverses a list. O(lst) time and space.
 def rev_cons(lst: list?) -> list?:
     rev_app_cons(lst, nil())
-    
+
 # Appends two lists, functionally. The resulting list will share structure
 # with `after`. O(before) time and space.
 def app_cons(before: list?, after: list?) -> list?:

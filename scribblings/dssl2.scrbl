@@ -560,11 +560,11 @@ time '10,000,000 zeroes':
 The result is printed as follows:
 
 @verbatim|{
-1,000,000 zeroes: cpu: 45 real: 46 gc: 20
+10,000,000 zeroes: cpu: 309 real: 792 gc: 238
 }|
 
-This means it tooks 45 milliseconds of CPU time over 46 milliseconds of
-wall clock time, with 20 ms of CPU time spent on garbage collection.
+This means it tooks 309 milliseconds of CPU time over 792 milliseconds of
+wall clock time, with 238 ms of CPU time spent on garbage collection.
 
 @defcmpdform{@defidform/inline[while] @syn[expr]: @syn[block]}
 

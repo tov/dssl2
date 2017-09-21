@@ -17,13 +17,14 @@
 (define (dssl-print-print-hook value _write port)
   (display (dssl-value->string value) port))
 
-(define (dssl-value->string value)
+(define (dssl-value->string value [recursive #false])
   (cond
     [(real? value)
      (cond
        [(= +inf.0 value)        "inf"]
        [(= -inf.0 value)        "-inf"]
        [(nan? value)            "nan"]
+       [recursive               (~a value)]
        [else                    #false])]
     [(boolean? value)
      (cond
@@ -37,7 +38,8 @@
        (dssl-string->string #\' value))]
     [(vector? value)
      (dssl-vector->string value)]
-    [else #false]))
+    [recursive                  (~a value)]
+    [else                       #false]))
 
 (define (dssl-string->string q str)
   (define out (open-output-string))
@@ -76,6 +78,6 @@
     (if first
       (set! first #f)
       (display ", " port))
-    (display (dssl-value->string element) port))
+    (display (dssl-value->string element #true) port))
   (display "]" port)
   (get-output-string port))

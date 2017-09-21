@@ -3,50 +3,50 @@
 (provide dssl-print
          dssl-print-size-hook
          dssl-print-print-hook)
+(require dssl2/private/struct)
 
 (define (dssl-print value)
   (unless (void? value)
     (pretty-print value)))
 
-(define (dssl-print-size-hook value write _port)
-  (cond
-    [write #false]
-    [(dssl-value->string value) => string-length]
-    [else #false]))
+(define (dssl-print-size-hook value _write _port)
+  (define port (open-output-string))
+  (print-dssl-value value port)
+  (string-length (get-output-string port)))
 
 (define (dssl-print-print-hook value _write port)
-  (display (dssl-value->string value) port))
+  (print-dssl-value value port))
 
-(define (dssl-value->string value [recursive #false])
+(define (print-dssl-value value port)
   (cond
     [(real? value)
      (cond
-       [(= +inf.0 value)        "inf"]
-       [(= -inf.0 value)        "-inf"]
-       [(nan? value)            "nan"]
-       [recursive               (~a value)]
-       [else                    #false])]
+       [(= +inf.0 value)        (display "inf" port)]
+       [(= -inf.0 value)        (display "-inf" port)]
+       [(nan? value)            (display "nan" port)]
+       [else                    (display value port)])]
+    [(integer? value)           (display value port)]
     [(boolean? value)
      (cond
-       [value                   "True"]
-       [else                    "False"])]
+       [value                   (display "True" port)]
+       [else                    (display "False" port)])]
     [(string? value)
      (define contains-sq (string-contains? value "'"))
      (define contains-dq (string-contains? value "\""))
      (if (and contains-sq (not contains-dq))
-       (dssl-string->string #\" value)
-       (dssl-string->string #\' value))]
+       (print-dssl-string #\" value port)
+       (print-dssl-string #\' value port))]
     [(vector? value)
-     (dssl-vector->string value)]
-    [recursive                  (~a value)]
-    [else                       #false]))
+     (print-dssl-vector value port)]
+    [(struct-base? value)
+     (dssl-write-struct value port print-dssl-value)]
+    [else                       (display "#<unknown-value>" port)]))
 
-(define (dssl-string->string q str)
-  (define out (open-output-string))
+(define (print-dssl-string q str port)
   (define (esc c)
-    (display #\\ out)
-    (display c out))
-  (display q out)
+    (display #\\ port)
+    (display c port))
+  (display q port)
   (for ([c (in-string str)])
     (case c
       [(#\\)                            (esc #\\)]
@@ -57,27 +57,24 @@
       [(#\return)                       (esc #\r)]
       [(#\tab)                          (esc #\t)]
       [(#\vtab)                         (esc #\v)]
-      [(#\space)                        (display #\space out)]
+      [(#\space)                        (display #\space port)]
       [else
         (cond
           [(char=? c q)                 (esc c)]
           [(not (char-graphic? c))
            (define hex (format "~x" (char->integer c)))
-           (fprintf out
+           (fprintf port
                     (if (= 1 (string-length hex)) "\\x0~a" "\\x~a")
                     hex)]
-          [else                         (display c out)])]))
-  (display q out)
-  (get-output-string out))
+          [else                         (display c port)])]))
+  (display q port))
 
-(define (dssl-vector->string vec)
-  (define port (open-output-string))
+(define (print-dssl-vector vec port)
   (display "[" port)
   (define first #t)
   (for ([element (in-vector vec)])
     (if first
       (set! first #f)
       (display ", " port))
-    (display (dssl-value->string element #true) port))
-  (display "]" port)
-  (get-output-string port))
+    (print-dssl-value element port))
+  (display "]" port))

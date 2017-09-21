@@ -22,9 +22,10 @@
       (display ", " port))
     (fprintf port "~a: " (field-info-name field-vec))
     (define field-value ((field-info-getter field-vec) struct))
-    (case mode
-      [(#t) (write field-value port)]
-      [(#f) (display field-value port)]
-      [else (print field-value port mode)]))
+    (cond
+      [(eq? #t mode)     (write field-value port)]
+      [(eq? #f mode)     (display field-value port)]
+      [(procedure? mode) (mode field-value port)]
+      [else              (print field-value port mode)]))
   (display "}" port))
 

@@ -80,6 +80,9 @@
 (define dssl-True #t)
 (define dssl-False #f)
 
+(define total-tests (make-parameter 0))
+(define passed-tests (make-parameter 0))
+
 (define-syntax-rule (dssl-module-begin expr ...)
   (#%module-begin
    (#%provide (all-defined))
@@ -107,7 +110,19 @@
                   (relocate-input-port line-port line column position
                                        #true #:name src))
                 (parse-dssl2 src relocated #t)])))))
-   (dssl-begin expr ...)))
+   (parameterize ([total-tests   0]
+                  [passed-tests  0])
+     (dssl-begin expr ...)
+     (print-test-results (passed-tests) (total-tests)))))
+
+(define (print-test-results passed total)
+  (cond
+    [(zero? total)       (void)]
+    [(= passed total 1)  (printf "The only test passed\n")]
+    [(= total 1)         (printf "The only test failed\n")]
+    [(= passed total)    (printf "All ~a tests passed\n" total)]
+    [(zero? passed)      (printf "All ~a tests failed\n" total)]
+    [else                (printf "~a of ~a tests passed\n" passed total)]))
 
 (define-syntax-rule (dssl-top-interaction . expr)
   (dssl-begin expr))
@@ -429,7 +444,10 @@
 (define-syntax (dssl-test stx)
   (syntax-parse stx
     [(_ name:expr body:expr ...+)
-     #'(test-case (~a name) (dssl-begin body ...))]))
+     #'(test-case (~a name)
+                  (total-tests (add1 (total-tests)))
+                  (dssl-begin body ...)
+                  (passed-tests (add1 (passed-tests))))]))
 
 (define-syntax (dssl-time stx)
   (syntax-parse stx

@@ -110,6 +110,7 @@
                   (relocate-input-port line-port line column position
                                        #true #:name src))
                 (parse-dssl2 src relocated #t)])))))
+   (find-imports () expr ...)
    (parameterize ([total-tests   0]
                   [passed-tests  0])
      (dssl-begin expr ...)
@@ -293,22 +294,47 @@
          (define (#,(format-stx "~a?" #'name) value)
            (#,(format-stx "~a?" #'internal-name) value)))]))
 
+(define-syntax find-imports
+  (syntax-rules (begin dssl-import)
+    ; Done, return the imports
+    [(_ (acc ...))
+     (begin acc ...)]
+    ; Add import to accumulator
+    [(_ (acc ...) (dssl-import lib ...) rest ...)
+     (find-imports (acc ... (dssl-import lib ...)) rest ...)]
+    ; Descend into begins
+    [(_ (acc ...) (begin expr ...) rest ...)
+     (find-imports (acc ...) expr ... rest ...)]
+    ; Drop anything else
+    [(_ (acc ...)
+        first rest ...)
+     (find-imports (acc ...) rest ...)]))
+
 (define-syntax dssl-begin
   (syntax-rules ()
     [(_ defn ...) (dssl-begin/acc () () defn ...)]))
 
 (define-syntax (dssl-begin/acc stx)
   (syntax-parse stx
-    #:literals (dssl-defstruct begin)
+    #:literals (dssl-defstruct begin dssl-import)
+    ; Done, splice together the early and late defns
     [(_ (early-defns ...) (late-defns ...))
      #'(begin
          early-defns ...
          late-defns ...)]
+    ; Throw out imports
+    [(_ (early-defns ...) (late-defns ...)
+        (dssl-import lib ...)
+        rest ...)
+     #'(dssl-begin/acc (early-defns ...) (late-defns ...)
+                       rest ...)]
+    ; Descend into begins
     [(_ (early-defns ...) (late-defns ...)
         (begin firsts ...)
         rest ...)
      #'(dssl-begin/acc (early-defns ...) (late-defns ...)
                        firsts ... rest ...)]
+    ; Interpret defstructs
     [(_ (early-defns ...) (late-defns ...)
         (dssl-defstruct name:id ((field:id ctc:expr) ...))
         rest ...)
@@ -323,6 +349,7 @@
              ...
              (dssl-defstruct/late (name s:cons) ((field ctc) ...)))
            rest ...))]
+    ; Pass everything else through
     [(_ (early-defns ...) (late-defns ...)
         first rest ...)
      #'(dssl-begin/acc (early-defns ...)

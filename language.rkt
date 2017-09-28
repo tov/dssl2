@@ -80,8 +80,15 @@
 (define dssl-True #t)
 (define dssl-False #f)
 
-(define total-tests (make-parameter 0))
-(define passed-tests (make-parameter 0))
+(define-syntax-parameter
+  inc-passed-tests!
+  (lambda (stx)
+    (raise-syntax-error #f "use of inc-passed-tests!" stx)))
+
+(define-syntax-parameter
+  inc-total-tests!
+  (lambda (stx)
+    (raise-syntax-error #f "use of inc-total-tests!" stx)))
 
 (define-syntax-rule (dssl-module-begin expr ...)
   (#%module-begin
@@ -110,11 +117,15 @@
                   (relocate-input-port line-port line column position
                                        #true #:name src))
                 (parse-dssl2 src relocated #t)])))))
-   (find-imports () expr ...)
-   (parameterize ([total-tests   0]
-                  [passed-tests  0])
-     (dssl-begin expr ...)
-     (print-test-results (passed-tests) (total-tests)))))
+   (define passed-tests 0)
+   (define total-tests 0)
+   (syntax-parameterize
+     ([inc-passed-tests! (syntax-rules ()
+                           [(_) (set! passed-tests (add1 passed-tests))])]
+      [inc-total-tests! (syntax-rules ()
+                          [(_) (set! total-tests (add1 total-tests))])])
+     (dssl-begin expr ...))
+   (print-test-results passed-tests total-tests)))
 
 (define (print-test-results passed total)
   (cond
@@ -294,40 +305,18 @@
          (define (#,(format-stx "~a?" #'name) value)
            (#,(format-stx "~a?" #'internal-name) value)))]))
 
-(define-syntax find-imports
-  (syntax-rules (begin dssl-import)
-    ; Done, return the imports
-    [(_ (acc ...))
-     (begin acc ...)]
-    ; Add import to accumulator
-    [(_ (acc ...) (dssl-import lib ...) rest ...)
-     (find-imports (acc ... (dssl-import lib ...)) rest ...)]
-    ; Descend into begins
-    [(_ (acc ...) (begin expr ...) rest ...)
-     (find-imports (acc ...) expr ... rest ...)]
-    ; Drop anything else
-    [(_ (acc ...)
-        first rest ...)
-     (find-imports (acc ...) rest ...)]))
-
 (define-syntax dssl-begin
   (syntax-rules ()
     [(_ defn ...) (dssl-begin/acc () () defn ...)]))
 
 (define-syntax (dssl-begin/acc stx)
   (syntax-parse stx
-    #:literals (dssl-defstruct begin dssl-import)
+    #:literals (dssl-defstruct begin)
     ; Done, splice together the early and late defns
     [(_ (early-defns ...) (late-defns ...))
      #'(begin
          early-defns ...
          late-defns ...)]
-    ; Throw out imports
-    [(_ (early-defns ...) (late-defns ...)
-        (dssl-import lib ...)
-        rest ...)
-     #'(dssl-begin/acc (early-defns ...) (late-defns ...)
-                       rest ...)]
     ; Descend into begins
     [(_ (early-defns ...) (late-defns ...)
         (begin firsts ...)
@@ -472,9 +461,9 @@
   (syntax-parse stx
     [(_ name:expr body:expr ...+)
      #'(test-case (~a name)
-                  (total-tests (add1 (total-tests)))
+                  (inc-total-tests!)
                   (dssl-begin body ...)
-                  (passed-tests (add1 (passed-tests))))]))
+                  (inc-passed-tests!))]))
 
 (define-syntax (dssl-time stx)
   (syntax-parse stx

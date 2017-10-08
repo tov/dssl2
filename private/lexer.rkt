@@ -254,8 +254,6 @@
            #\newline (:* space))
        (return-without-pos
          (on-indent (last-spaces lexeme) start-pos end-pos))]
-      [(:: #\\ #\newline)
-       (return-without-pos (the-lexer port))]
       [#\tab
        (lexical-error start-pos "Tabs are not allowed in DSSL2")]
       [any-char

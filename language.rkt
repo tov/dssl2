@@ -69,6 +69,7 @@
          dssl2/private/prims
          dssl2/private/struct)
 (require racket/stxparam
+         racket/splicing
          racket/contract/region
          syntax/parse/define
          rackunit)
@@ -119,11 +120,11 @@
                 (parse-dssl2 src relocated #t)])))))
    (define passed-tests 0)
    (define total-tests 0)
-   (syntax-parameterize
-     ([inc-passed-tests! (syntax-rules ()
-                           [(_) (set! passed-tests (add1 passed-tests))])]
-      [inc-total-tests! (syntax-rules ()
-                          [(_) (set! total-tests (add1 total-tests))])])
+   (splicing-syntax-parameterize
+     ([inc-passed-tests!  (syntax-rules ()
+                            [(_) (set! passed-tests (add1 passed-tests))])]
+      [inc-total-tests!   (syntax-rules ()
+                            [(_) (set! total-tests (add1 total-tests))])])
      (dssl-begin expr ...))
    (print-test-results passed-tests total-tests)))
 

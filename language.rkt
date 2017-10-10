@@ -437,7 +437,7 @@
   (let/ec return
     (unless (struct-base? struct)
       (runtime-error #:srclocs srclocs
-                     "Value ‘~a’ is not a struct" struct))
+                     "Value ‘~e’ is not a struct" struct))
     (define info-vector (struct-info-field-infos
                           (struct-base-struct-info struct)))
     (for ([info (in-vector info-vector)])
@@ -492,7 +492,7 @@
     (define v2 e2)
     (unless (equal? v1 v2)
       (assertion-error #:srclocs (get-srclocs e1 e2)
-                       'assert_eq "~a ≠ ~a" v1 v2))))
+                       'assert_eq "~e ≠ ~e" v1 v2))))
 
 (define (dssl-assert-error/thunk srclocs thunk string-pattern)
   (define pattern (regexp (regexp-quote string-pattern #false)))
@@ -539,7 +539,7 @@
         (format "~a~a" a b)]
        [else
          (runtime-error
-           "+ expects 2 numbers or at least 1 string, but given ‘~s’ and ‘~s’"
+           "+ expects 2 numbers or at least 1 string, but given ~e and ~e"
            a b)])]))
 
 (define (dssl-!= a b)
@@ -557,7 +557,7 @@
        (number-cmp a b)]
       [else
         (runtime-error
-          "Comparator ‘~a’ only applies to 2 strings or 2 numbers"
+          "Comparator ~a only applies to 2 strings or 2 numbers"
           'number-cmp)])))
 
 (make-comparison dssl-< string<? <)

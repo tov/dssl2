@@ -447,24 +447,30 @@
            (dssl-defstruct name ((field AnyC) ...))
            (name expr ...)))]))
 
-(define (get-field-info struct field)
+(define (get-field-info #:srclocs [srclocs '()] struct field)
   (let/ec return
     (unless (struct-base? struct)
-      (runtime-error "Value ‘~a’ is not a struct" struct))
+      (runtime-error #:srclocs srclocs
+                     "Value ‘~a’ is not a struct" struct))
     (define info-vector (struct-info-field-infos
                           (struct-base-struct-info struct)))
     (for ([info (in-vector info-vector)])
       (when (eq? field (field-info-name info))
         (return info)))
-    (runtime-error "Struct ‘~a’ does not have field ‘~a’"
+    (runtime-error #:srclocs srclocs
+                   "Struct ‘~a’ does not have field ‘~a’"
                    struct field)))
 
 (define-syntax-rule (dssl-struct-ref expr field)
   (let ([value expr])
-    ((field-info-getter (get-field-info value 'field)) value)))
+    ((field-info-getter (get-field-info #:srclocs (get-srclocs expr)
+                                        value 'field))
+     value)))
 
-(define (dssl-struct-set! struct field rhs)
-  ((field-info-setter (get-field-info struct field)) struct rhs))
+(define-syntax-rule (dssl-struct-set! struct field rhs)
+  ((field-info-setter (get-field-info #:srclocs (get-srclocs struct)
+                                      struct field))
+   struct rhs))
 
 (define-syntax (dssl-test stx)
   (syntax-parse stx
@@ -491,14 +497,16 @@
 
 (define-syntax-rule (dssl-assert expr)
   (unless expr
-    (assertion-error 'assert "did not evaluate to true")))
+    (assertion-error #:srclocs (get-srclocs expr)
+                     'assert "did not evaluate to true")))
 
 (define-syntax-rule (dssl-assert-eq e1 e2)
   (begin
     (define v1 e1)
     (define v2 e2)
     (unless (equal? v1 v2)
-      (assertion-error 'assert_eq "~a ≠ ~a" v1 v2))))
+      (assertion-error #:srclocs (get-srclocs e1 e2)
+                       'assert_eq "~a ≠ ~a" v1 v2))))
 
 (define (dssl-assert-error/thunk srclocs thunk string-pattern)
   (define pattern (regexp (regexp-quote string-pattern #false)))

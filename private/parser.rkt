@@ -166,6 +166,10 @@
          (loc `(assert ,$2))]
         [(ASSERT-EQ <expr> COMMA <expr>)
          (loc `(assert_eq ,$2 ,$4))]
+        [(ASSERT-ERROR <expr>)
+         (loc `(assert_error ,$2))]
+        [(ASSERT-ERROR <expr> COMMA STRING-LITERAL)
+         (loc `(assert_error ,$2 ,$4))]
         [(PASS)
          (loc `(pass))])
 
@@ -208,6 +212,8 @@
       (<atom>
         [(<lvalue>)
          $1]
+        [(STRING-LITERAL)
+         (loc $1)]
         [(LITERAL)
          (loc $1)]
         [(<atom> LPAREN <actuals> RPAREN)

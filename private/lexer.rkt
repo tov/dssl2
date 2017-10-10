@@ -29,6 +29,7 @@
    LAMBDA
    ASSERT
    ASSERT-EQ
+   ASSERT-ERROR
    LET
    IF
    ELIF
@@ -60,7 +61,8 @@
    OP8  ; * / %
    OP9  ; (unary) ~ ! (+ -)
    OP10 ; **
-   LITERAL))
+   LITERAL
+   STRING-LITERAL))
 
 (define-lex-abbrevs
   [space       (:or #\space #\uA0)]
@@ -195,6 +197,7 @@
       ["let"                    (token-LET)]
       ["assert"                 (token-ASSERT)]
       ["assert_eq"              (token-ASSERT-EQ)]
+      ["assert_error"           (token-ASSERT-ERROR)]
       ["if"                     (token-IF)]
       ["elif"                   (token-ELIF)]
       ["else"                   (token-ELSE)]
@@ -227,10 +230,10 @@
       [(:or #\! #\~)            (token-OP9 (string->symbol lexeme))]
       ["**"                     (token-OP10 (string->symbol lexeme))]
       [(:: #\" (:* dq-str-char) #\")
-       (token-LITERAL
+       (token-STRING-LITERAL
          (interpret-string (remove-first-and-last lexeme)))]
       [(:: #\' (:* sq-str-char) #\')
-       (token-LITERAL
+       (token-STRING-LITERAL
          (interpret-string (remove-first-and-last lexeme)))]
       [(:: #\" (:* dq-str-char))
        (lexical-error start-pos "Unterminated string")]

@@ -43,7 +43,7 @@ def concat_cons!(before: list?, after: list?) -> list?:
         while cons?(current.cdr): current = current.cdr
         current.cdr = after
         before
-        
+
 # Finds the length of a list. O(lst) time and O(1) space.
 def len_cons(lst: list?) -> int?:
     let result = 0
@@ -51,7 +51,7 @@ def len_cons(lst: list?) -> int?:
         lst = lst.cdr
         result = result + 1
     result
-     
+
 # Copies a list into a vector starting at index `where`. Assumes there is enough
 # space in the vector. O(lst) time and O(1) space.
 def cons_into_vec(lst: list?, vec: vec?, where: int?) -> VoidC:
@@ -85,7 +85,7 @@ def foldr_cons[Y](f: FunC(AnyC, Y, Y), z: Y, lst: list?) -> Y:
         f(lst.car, foldr_cons(f, z, lst.cdr))
     else:
         z
-        
+
 # Traverses a list from left to right, accumulating a result using the given
 # function. O(lst * f) time and O(1) space.
 def foldl_cons[Y](f: FunC(Y, AnyC, Y), z: Y, lst: list?) -> Y:
@@ -124,16 +124,16 @@ def filter_cons(f: FunC(AnyC, AnyC), lst: list?) -> list?:
                 current = current.cdr
             lst = lst.cdr
         result
-        
+
 def cons_tests():
     let list = cons_from_vec
-     
+
     test 'map_cons':
         def add2(x): x + 2
         assert_eq map_cons(add2, list([2, 3, 4])), list([4, 5, 6])
-        
+
     test 'filter_cons':
         let lst = list([2, 3, 4, 5, 6])
         assert_eq filter_cons(even?, lst), list([2, 4, 6])
         assert_eq filter_cons(odd?, lst), list([3, 5])
-    
+

@@ -41,6 +41,7 @@
            [dssl-False          False]
            [dssl-assert         assert]
            [dssl-assert-eq      assert_eq]
+           [dssl-assert-error   assert_error]
            [dssl-break          break]
            [dssl-cond           cond]
            [dssl-continue       continue]
@@ -491,6 +492,29 @@
     (define v2 e2)
     (unless (equal? v1 v2)
       (assertion-error "‘~a’ ≠ ‘~a’" v1 v2))))
+
+(define-syntax (dssl-assert-error stx)
+  (syntax-parse stx
+    [(_ test:expr expected:str)
+     #'(begin
+         (define (bad-pattern message)
+           (error (format "assert_error: ~a: ~s" message expected)))
+         (define pattern (pregexp expected bad-pattern))
+         (define (handler e)
+           (if (regexp-match? pattern (exn-message e))
+             (λ () (void))
+             (λ ()
+                (assertion-error
+                  "‘~a’ errored, but didn’t match the pattern ~s"
+                  'test expected))))
+         ((with-handlers ([exn:fail? handler])
+             test
+             (λ ()
+                (assertion-error
+                  "assert_error: ‘~a’ did not error as expected"
+                  'test)))))]
+    [(_ test:expr)
+     #'(dssl-assert-error test "")]))
 
 (define/contract (/ a b)
   (-> num? num? num?)

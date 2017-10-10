@@ -3,7 +3,7 @@
 (define categories '(devtools))
 (define can-be-loaded-with 'all)
 (define required-core-version "6.10")
-(define version "2.8.3")
+(define version "2.9.0")
 (define deps '("base" "rackunit-lib" "parser-tools-lib"))
 (define build-deps '("scribble-lib" "racket-doc"))
 (define scribblings '(("scribblings/dssl2.scrbl" ())))

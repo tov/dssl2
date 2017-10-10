@@ -24,7 +24,8 @@
     [(eof)                      (token eof)]
     [(:+ whitespace)            (token white-space)]
     [(:: #\\ #\newline)         (token comment)]
-    [(:or "λ" "lambda" "let" "assert" "assert_eq" "if" "elif" "else"
+    [(:or "λ" "lambda" "let" "assert" "assert_eq" "assert_error"
+          "if" "elif" "else"
           "while" "for" "in" "return" "pass" "def" "defstruct" "test"
           "time" "object" "import")
                                 (token keyword)]

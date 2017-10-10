@@ -475,7 +475,7 @@
 (define-syntax (dssl-test stx)
   (syntax-parse stx
     [(_ name:expr body:expr ...+)
-     #'(test-case (~a name)
+     #`(test-case (format "~a (line ~a)" name '#,(syntax-line stx))
                   (inc-total-tests!)
                   (dssl-begin body ...)
                   (inc-passed-tests!))]))

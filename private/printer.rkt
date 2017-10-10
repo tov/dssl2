@@ -3,7 +3,8 @@
 (provide dssl-print-size-hook
          dssl-print-print-hook)
 (require "struct.rkt")
-(require (only-in racket/math nan?)
+(require (only-in racket/contract/base contract? contract-name)
+         (only-in racket/math nan?)
          (only-in racket/string string-contains?))
 
 (define (dssl-print-size-hook value _write _port)
@@ -37,6 +38,8 @@
      (print-dssl-vector value port)]
     [(struct-base? value)
      (dssl-write-struct value port print-dssl-value)]
+    [(contract? value)
+     (display (contract-name value) port)]
     [else                       (display "#<unknown-value>" port)]))
 
 (define (print-dssl-string q str port)

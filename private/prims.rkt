@@ -129,9 +129,9 @@
 
 (define (format-fun f x xs)
   (define port (open-output-string))
-  (fprintf port "~a(~a" f (contract-name x))
+  (fprintf port "~a(~e" f x)
   (for ([xi (in-list xs)])
-    (fprintf port ", ~a" (contract-name xi)))
+    (fprintf port ", ~e" xi))
   (fprintf port ")")
   (get-output-string port))
 

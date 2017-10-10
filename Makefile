@@ -5,6 +5,12 @@ default: doc
 test:
 	racket test/run-dssl2-tests.rkt
 
+startup_bench:
+	racket test/dssl2/and.rkt > /dev/null; \
+	time for i in 0 1 2 3 4; do \
+		racket test/dssl2/and.rkt > /dev/null; \
+	done
+
 all:
 	find . -name '*.rkt' | xargs raco make
 

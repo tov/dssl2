@@ -259,6 +259,8 @@
 
 (define-syntax (dssl-import stx)
   (syntax-parse stx
+    [(_ lib:string)
+     #'(#%require (file lib))]
     [(_ lib:id)
      (let ([filename (path->string
                        (build-path

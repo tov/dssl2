@@ -156,6 +156,8 @@
          (loc `(continue))]
         [(IMPORT IDENT)
          (loc `(import ,$2))]
+        [(IMPORT STRING-LITERAL)
+         (loc `(import ,$2))]
         [(RETURN <expr>)
          (loc `(return ,$2))]
         [(RETURN)

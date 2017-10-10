@@ -4,10 +4,10 @@ dssl2/language
 #:read-syntax my-read-syntax
 #:info info
 
-(require dssl2/private/parser
-         dssl2/private/indent
-         dssl2/private/syntax-color)
-(require (only-in racket send))
+(require "../private/parser.rkt"
+         "../private/indent.rkt"
+         "../private/syntax-color.rkt")
+(require (only-in racket/class send))
 
 (define (my-read in)
   (syntax->datum (my-read-syntax #f in)))

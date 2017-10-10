@@ -1,6 +1,6 @@
-#lang racket
+#lang racket/base
 
-(require dssl2/private/parser)
+(require "../private/parser.rkt")
 
 (module+ test
   (require rackunit)
@@ -10,7 +10,7 @@
                   result))
 
   ; simple expressions
-  
+
   (test-parse "a"
               '(begin a))
   (test-parse "5"

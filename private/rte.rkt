@@ -1,8 +1,13 @@
-#lang racket
+#lang racket/base
 
 (provide setup-rte)
 
-(require racket/pretty
+(require (only-in racket/pretty
+                  pretty-print
+                  pretty-print-size-hook
+                  pretty-print-print-hook)
+         (only-in racket/port
+                  relocate-input-port)
          "parser.rkt"
          "printer.rkt")
 

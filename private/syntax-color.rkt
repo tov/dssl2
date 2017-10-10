@@ -1,10 +1,11 @@
-#lang racket
+#lang racket/base
 
 (provide get-syntax-token)
 
-(require dssl2/private/lexer
+(require "lexer.rkt"
          parser-tools/lex
-         (prefix-in : parser-tools/lex-sre))
+         (prefix-in : parser-tools/lex-sre)
+         (for-syntax racket/base))
 
 (define-syntax (token stx)
   (syntax-case stx ()

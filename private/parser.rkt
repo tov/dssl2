@@ -1,13 +1,14 @@
-#lang racket
+#lang racket/base
 
 (provide parse-dssl2)
-(require dssl2/private/lexer
+(require "lexer.rkt"
          (only-in parser-tools/lex
                   position-line
                   position-col
                   position-offset)
          parser-tools/yacc
          syntax/readerr)
+(require (for-syntax racket/base))
 
 (define (parse-dssl2 src port interactive?)
   ((dssl2-parser src)

@@ -1,8 +1,10 @@
-#lang racket
+#lang racket/base
 
 (provide dssl-print-size-hook
          dssl-print-print-hook)
-(require dssl2/private/struct)
+(require "struct.rkt")
+(require (only-in racket/math nan?)
+         (only-in racket/string string-contains?))
 
 (define (dssl-print-size-hook value _write _port)
   (define port (open-output-string))

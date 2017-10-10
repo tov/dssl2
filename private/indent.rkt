@@ -1,8 +1,10 @@
-#lang racket
+#lang racket/base
 
 (provide enter-and-indent
          find-current-indent
          go-to-indent)
+(require (only-in racket/list first second)
+         (only-in racket/class send))
 
 ; text% natural? -> natural?
 ; Returns the current indent of the line.

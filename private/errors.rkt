@@ -1,4 +1,4 @@
-#lang racket
+#lang racket/base
 
 (provide exn:fail:dssl?
          get-srclocs
@@ -7,7 +7,10 @@
          type-error
          assertion-error)
 
-(require (for-syntax syntax/parse))
+(require
+  (only-in racket/format ~a)
+  (for-syntax racket/base
+              syntax/parse))
 
 (define-syntax (get-srclocs stx)
   (syntax-parse stx

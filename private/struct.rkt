@@ -1,4 +1,4 @@
-#lang racket
+#lang racket/base
 
 (provide dssl-write-struct
          struct-base struct-base? struct-base-struct-info

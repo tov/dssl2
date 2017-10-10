@@ -1,4 +1,4 @@
-#lang racket
+#lang racket/base
 
 (provide #%app
          #%datum
@@ -73,12 +73,20 @@
          racket/splicing
          racket/contract/region
          syntax/parse/define
-         rackunit)
+         rackunit
+         (only-in racket/contract/base
+                  ->
+                  rename-contract)
+         (only-in racket/contract/parametric
+                  parametric->/c)
+         (only-in racket/math
+                  natural?))
 (require (prefix-in racket: racket))
 
-(require (for-syntax syntax/parse))
-(require (for-syntax "private/errors.rkt"))
-(require (for-syntax "private/find-lib.rkt"))
+(require (for-syntax racket/base
+                     syntax/parse
+                     "private/errors.rkt"
+                     "private/find-lib.rkt"))
 
 (define dssl-True #t)
 (define dssl-False #f)

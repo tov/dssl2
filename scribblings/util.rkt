@@ -1,4 +1,11 @@
-#lang racket
+#lang racket/base
+
+(require (only-in racket/list
+                  first
+                  rest)
+         (only-in racket/format
+                  ~a)
+         (for-syntax racket/base))
 
 (provide defexpform defexpforms defsmplform defcmpdform
          defconstform

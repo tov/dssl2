@@ -1,8 +1,8 @@
 #lang dssl2
 
-# An ArrayOf<X> is an object with the methods listed below.
+# An ArrayOf[X] is an object with the methods listed below.
 
-# : Natural VectorOf<X or False> -> ArrayOf<X>
+# : Natural VectorOf[OrC(X, False)] -> ArrayOf[X]
 # Creates a new dynamic array with the given size and elements.
 #
 # Precondition:
@@ -64,11 +64,11 @@ def Array_from_parts(size_, data_):
     def clone():
         Array_from_parts(size_, [ v for v in data_ ])
 
-    # : Self -> VectorOf<X>
+    # : Self -> VectorOf[X]
     def as_vector():
         [ data_[i] for i in size_ ]
 
-    # : Self ArrayOf<Y> [X Y -> Boolean] -> Boolean
+    # : Self ArrayOf[Y] [X Y -> Boolean] -> Boolean
     def equals_with?(other, pred?):
         if size() != other.size(): return False
         for i in size_:
@@ -76,7 +76,7 @@ def Array_from_parts(size_, data_):
                 return False
         return True
 
-    # : Self ArrayOf<X> -> Boolean
+    # : Self ArrayOf[X] -> Boolean
     def equals?(other):
         equals_with?(other, lambda x, y: x == y)
 
@@ -96,17 +96,17 @@ def Array_from_parts(size_, data_):
         equals?,
     }
 
-# : Natural -> ArrayOf<X>
+# : Natural -> ArrayOf[X]
 # Creates a new, empty dynamic array with the given capacity.
 def Array_with_capacity(capacity):
     Array_from_parts(0, [False; capacity])
 
-# : X Natural -> ArrayOf<X>
+# : X Natural -> ArrayOf[X]
 # Creates a new dynamic array of the given `value` repeated `size` times.
 def Array_fill(value, size):
     Array_from_parts(size, [value; size])
 
-# : -> ArrayOf<X>
+# : -> ArrayOf[X]
 # Creates a new, empty dynamic array with a small capacity.
 def Array():
     Array_with_capacity(8)

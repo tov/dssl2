@@ -1,10 +1,11 @@
-#lang racket
+#lang racket/base
 
 (provide dssl2-empty-tokens dssl2-tokens new-dssl2-lexer
          natural float hexadecimal octal binary
          comment sq-str-char dq-str-char identifier)
 (require parser-tools/lex
          (prefix-in : parser-tools/lex-sre)
+         racket/list
          syntax/readerr)
 
 (define-empty-tokens dssl2-empty-tokens

@@ -1,7 +1,8 @@
-#lang racket
+#lang racket/base
 
 (require racket/runtime-path
-         file/glob)
+         file/glob
+         (for-syntax racket/base))
 
 (define-runtime-path TESTS (build-path 'same))
 

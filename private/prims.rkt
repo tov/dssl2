@@ -1,4 +1,6 @@
-#lang racket
+#lang racket/base
+
+(require (only-in racket/contract/base contract-out))
 
 (provide ; values
          ; * type predicates
@@ -74,8 +76,33 @@
            [println (-> str? AnyC ... VoidC)])
          ; * other functions
          identity)
-(require dssl2/private/errors
-         (prefix-in racket: racket))
+(require "errors.rkt"
+         (only-in racket/list
+                  first
+                  rest)
+         (only-in racket/contract
+                  ->
+                  and/c
+                  any/c
+                  case->
+                  contract?
+                  contract-out
+                  contract-name
+                  dynamic->*
+                  flat-named-contract
+                  integer-in
+                  make-contract
+                  new-∀/c
+                  new-∃/c
+                  or/c
+                  raise-blame-error
+                  rename-contract)
+         (only-in racket/format
+                  ~a)
+         (only-in racket/function
+                  identity)
+         (prefix-in r: racket/base)
+         (prefix-in r: racket/contract/base))
 
 (define (num? x) (number? x))
 
@@ -142,7 +169,7 @@
 (define apply_contract
   (case-lambda
     [(contract value pos neg)
-     (racket:contract contract value pos neg)]
+     (r:contract contract value pos neg)]
     [(contract value pos)
      (apply_contract contract value pos "the context")]
     [(contract value)
@@ -163,7 +190,7 @@
                          value)))))
 
 (define (build_vector n f)
-  (racket:build-vector n f))
+  (r:build-vector n f))
 
 (define (len v)
   (vector-length v))
@@ -173,7 +200,7 @@
                 (λ (i) (f (vector-ref vec i)))))
 
 (define (filter f vec)
-  (list->vector (racket:filter f (vector->list vec))))
+  (list->vector (r:filter f (vector->list vec))))
 
 (define (print fmt . values)
   (cond
@@ -189,7 +216,7 @@
 
 (define (explode s)
   (list->vector
-    (racket:map (λ (c) (list->string (list c)))
+    (r:map (λ (c) (list->string (list c)))
                 (string->list s))))
 
 (define (implode vec)
@@ -202,10 +229,10 @@
   (string-length str))
 
 (define (floor n)
-  (inexact->exact (racket:floor n)))
+  (inexact->exact (r:floor n)))
 
 (define (ceiling n)
-  (inexact->exact (racket:ceiling n)))
+  (inexact->exact (r:ceiling n)))
 
 (define (int x)
   (cond
@@ -234,9 +261,9 @@
 
 (define random
   (case-lambda
-    [() (racket:random)]
-    [(limit) (racket:random limit)]
-    [(low high) (racket:random low high)]))
+    [() (r:random)]
+    [(limit) (r:random limit)]
+    [(low high) (r:random low high)]))
 
 (define (random_bits n)
   (define *RADIX* 16)

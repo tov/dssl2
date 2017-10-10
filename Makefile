@@ -5,10 +5,13 @@ default: doc
 test:
 	racket test/run-dssl2-tests.rkt
 
+BENCH_FILE = test/dssl2/and.rkt
+
 startup_bench:
-	racket test/dssl2/and.rkt > /dev/null; \
+	raco make $(BENCH_FILE)
+	racket $(BENCH_FILE) > /dev/null; \
 	time for i in 0 1 2 3 4; do \
-		racket test/dssl2/and.rkt > /dev/null; \
+		racket $(BENCH_FILE) > /dev/null; \
 	done
 
 all:

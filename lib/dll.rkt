@@ -17,6 +17,7 @@ def MakeDll(X: contract?):
        next: MaybeC(Node?)) # Only includes False for initialization
 
     defstruct Dll (
+        ElementC,               # contract?
         empty?,                 # -> bool?
         size,                   # -> int?
         front,                  # -> MaybeC(X)
@@ -187,6 +188,7 @@ def MakeDll(X: contract?):
             v
 
         Dll {
+            ElementC: X,
             empty?,
             size,
             front,

@@ -493,28 +493,23 @@
     (unless (equal? v1 v2)
       (assertion-error "‘~a’ ≠ ‘~a’" v1 v2))))
 
+(define (dssl-assert-error/thunk thunk string-pattern)
+  (define pattern (regexp (regexp-quote string-pattern #false)))
+  (define (handler exception)
+    (if (regexp-match? pattern (exn-message exception))
+      #false
+      "assert_error: errored as expected, but didn’t match the pattern"))
+  (define message (with-handlers ([exn:fail? handler])
+                    (thunk)
+                    "assert_error: did not error as expected"))
+  (when (string? message) (assertion-error message)))
+
 (define-syntax (dssl-assert-error stx)
   (syntax-parse stx
-    [(_ test:expr expected:str)
-     #'(begin
-         (define (bad-pattern message)
-           (error (format "assert_error: ~a: ~s" message expected)))
-         (define pattern (pregexp expected bad-pattern))
-         (define (handler e)
-           (if (regexp-match? pattern (exn-message e))
-             (λ () (void))
-             (λ ()
-                (assertion-error
-                  "‘~a’ errored, but didn’t match the pattern ~s"
-                  'test expected))))
-         ((with-handlers ([exn:fail? handler])
-             test
-             (λ ()
-                (assertion-error
-                  "assert_error: ‘~a’ did not error as expected"
-                  'test)))))]
-    [(_ test:expr)
-     #'(dssl-assert-error test "")]))
+    [(_ code:expr expected:str)
+     #'(dssl-assert-error/thunk (λ () code) expected)]
+    [(_ code:expr)
+     #'(dssl-assert-error/thunk (λ () code) "")]))
 
 (define/contract (/ a b)
   (-> num? num? num?)

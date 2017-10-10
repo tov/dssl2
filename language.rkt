@@ -134,7 +134,10 @@
   (cond
     [(zero? total)       (void)]
     [(= passed total 1)  (printf "The only test passed\n")]
+    [(= passed total 2)  (printf "Both tests passed\n")]
     [(= total 1)         (printf "The only test failed\n")]
+    [(and (= total 2) (zero? passed))
+                         (printf "Both tests failed\n")]
     [(= passed total)    (printf "All ~a tests passed\n" total)]
     [(zero? passed)      (printf "All ~a tests failed\n" total)]
     [else                (printf "~a of ~a tests passed\n" passed total)]))

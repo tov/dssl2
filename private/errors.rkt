@@ -1,15 +1,50 @@
 #lang racket
 
-(provide runtime-error
+(provide exn:fail:dssl?
+         get-srclocs
+         dssl-error
+         runtime-error
          type-error
          assertion-error)
 
-(define (runtime-error fmt . args)
-  (error (apply format (string-append "Runtime error: " fmt) args)))
+(require (for-syntax syntax/parse))
 
-(define (type-error who got expected)
-  (runtime-error "~a: got ~s where ~a expected" who got expected))
+(define-syntax (get-srclocs stx)
+  (syntax-parse stx
+    [(_)
+     #`'()]
+    [(_ expr:expr rest:expr ...)
+     #`(cons (srcloc
+               '#,(syntax-source #'expr)
+               '#,(syntax-line #'expr)
+               '#,(syntax-column #'expr)
+               '#,(syntax-position #'expr)
+               '#,(syntax-span #'expr))
+             (get-srclocs rest ...))]))
 
-(define (assertion-error fmt . args)
-  (error (apply format (string-append "Assertion failed: " fmt) args)))
+(define-struct (exn:fail:dssl exn:fail) (srclocs)
+  #:transparent
+  #:property prop:exn:srclocs
+  (λ (a-struct) (exn:fail:dssl-srclocs a-struct)))
+
+(define (dssl-error #:srclocs [srclocs '()] fmt . args)
+  (raise (make-exn:fail:dssl
+           (apply format fmt args)
+           (current-continuation-marks)
+           srclocs)))
+
+(define (runtime-error #:srclocs [srclocs '()] fmt . args)
+  (apply dssl-error #:srclocs srclocs
+         (string-append "Runtime error: " fmt)
+         args))
+
+(define (type-error #:srclocs [srclocs '()] who got expected)
+  (dssl-error #:srclocs srclocs
+              "~a: type error\n  got: ~s\n  expected: ~s"
+              who got expected))
+
+(define (assertion-error #:srclocs [srclocs '()] who fmt . args)
+  (apply dssl-error #:srclocs srclocs
+         (string-append "Assertion failed: " (~a who) ";\n " fmt)
+         args))
 

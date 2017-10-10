@@ -64,11 +64,11 @@
            [dssl-time           time]
            [dssl-vector-ref     vector-ref]
            [dssl-while          while])
-         (all-from-out dssl2/private/prims))
+         (all-from-out "private/prims.rkt"))
 
-(require dssl2/private/errors
-         dssl2/private/prims
-         dssl2/private/struct)
+(require "private/errors.rkt"
+         "private/prims.rkt"
+         "private/struct.rkt")
 (require racket/stxparam
          racket/splicing
          racket/contract/region
@@ -77,7 +77,8 @@
 (require (prefix-in racket: racket))
 
 (require (for-syntax syntax/parse))
-(require (for-syntax dssl2/private/find-lib))
+(require (for-syntax "private/errors.rkt"))
+(require (for-syntax "private/find-lib.rkt"))
 
 (define dssl-True #t)
 (define dssl-False #f)
@@ -257,12 +258,18 @@
     [(_ [j:id v:expr] #:when when:expr expr:expr)
      #'(dssl-for/vector [(_ j) v] #:when when expr)]))
 
-(define (dssl-in-value v)
+(define (dssl-in-value/value srclocs v)
   (cond
     [(vector? v)   (in-vector v)]
     [(natural? v)  (in-range v)]
     [(string? v)   (in-vector (explode v))]
-    [else          (type-error 'for v "something iterable")]))
+    [else          (type-error #:srclocs srclocs
+                               'for v "something iterable")]))
+
+(define-syntax (dssl-in-value stx)
+  (syntax-parse stx
+    [(_ v:expr)
+     #'(dssl-in-value/value (get-srclocs v) v)]))
 
 (define-syntax (dssl-import stx)
   (syntax-parse stx
@@ -484,32 +491,33 @@
 
 (define-syntax-rule (dssl-assert expr)
   (unless expr
-    (assertion-error "assert: did not evaluate to true")))
+    (assertion-error 'assert "did not evaluate to true")))
 
 (define-syntax-rule (dssl-assert-eq e1 e2)
   (begin
     (define v1 e1)
     (define v2 e2)
     (unless (equal? v1 v2)
-      (assertion-error "assert_eq: ‘~a’ ≠ ‘~a’" v1 v2))))
+      (assertion-error 'assert_eq "~a ≠ ~a" v1 v2))))
 
-(define (dssl-assert-error/thunk thunk string-pattern)
+(define (dssl-assert-error/thunk srclocs thunk string-pattern)
   (define pattern (regexp (regexp-quote string-pattern #false)))
   (define (handler exception)
     (if (regexp-match? pattern (exn-message exception))
       #false
-      "assert_error: errored as expected, but didn’t match the pattern"))
+      "errored as expected, but didn’t match the pattern"))
   (define message (with-handlers ([exn:fail? handler])
                     (thunk)
-                    "assert_error: did not error as expected"))
-  (when (string? message) (assertion-error message)))
+                    "did not error as expected"))
+  (when (string? message)
+    (assertion-error #:srclocs srclocs 'assert-error message)))
 
 (define-syntax (dssl-assert-error stx)
   (syntax-parse stx
     [(_ code:expr expected:str)
-     #'(dssl-assert-error/thunk (λ () code) expected)]
+     #`(dssl-assert-error/thunk (get-srclocs code) (λ () code) expected)]
     [(_ code:expr)
-     #'(dssl-assert-error/thunk (λ () code) "")]))
+     #`(dssl-assert-error/thunk (get-srclocs code) (λ () code) "")]))
 
 (define/contract (/ a b)
   (-> num? num? num?)
@@ -568,7 +576,4 @@
 
 (define (dssl->> n m)
   (arithmetic-shift n (- m)))
-
-(define-syntax-rule (dssl-error msg arg ...)
-  (error (format msg arg ...)))
 

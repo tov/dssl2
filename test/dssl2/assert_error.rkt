@@ -13,5 +13,5 @@ test 'no error':
 
 test 'does not match':
     def inner():
-        assert_error error('hello'), 'El'
+        assert_error error('hello'), 'Elf'
     assert_error inner(), 'didn’t match the pattern'

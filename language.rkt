@@ -484,14 +484,14 @@
 
 (define-syntax-rule (dssl-assert expr)
   (unless expr
-    (assertion-error "‘~a’ did not evaluate to true" 'expr)))
+    (assertion-error "assert: did not evaluate to true")))
 
 (define-syntax-rule (dssl-assert-eq e1 e2)
   (begin
     (define v1 e1)
     (define v2 e2)
     (unless (equal? v1 v2)
-      (assertion-error "‘~a’ ≠ ‘~a’" v1 v2))))
+      (assertion-error "assert_eq: ‘~a’ ≠ ‘~a’" v1 v2))))
 
 (define (dssl-assert-error/thunk thunk string-pattern)
   (define pattern (regexp (regexp-quote string-pattern #false)))

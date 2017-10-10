@@ -68,8 +68,8 @@
 
 (require "private/errors.rkt"
          "private/prims.rkt"
-         "private/struct.rkt")
-(require racket/stxparam
+         "private/struct.rkt"
+         racket/stxparam
          racket/splicing
          racket/contract/region
          syntax/parse/define
@@ -97,31 +97,14 @@
   (#%module-begin
    (#%provide (all-defined))
    (module* configure-runtime racket/base
-     (require dssl2/private/parser
-              dssl2/private/printer
-              racket/pretty)
-     (pretty-print-size-hook dssl-print-size-hook)
-     (pretty-print-print-hook dssl-print-print-hook)
-     (current-print dssl-print)
-     (current-read-interaction
-       (λ (src in)
-          (let loop ()
-            (define-values (line column position) (port-next-location in))
-            (define the-line (read-line in))
-            (cond
-              [(eof-object? the-line)
-               the-line]
-              [(regexp-match #rx"^ *$" the-line)
-               (loop)]
-              [else
-                (define line-port (open-input-string the-line))
-                (port-count-lines! line-port)
-                (define relocated
-                  (relocate-input-port line-port line column position
-                                       #true #:name src))
-                (parse-dssl2 src relocated #t)])))))
+     (require dssl2/private/rte)
+     (setup-rte))
    (define passed-tests 0)
    (define total-tests 0)
+   (module+ test-info
+     (provide get-test-info)
+     (define (get-test-info)
+       (values passed-tests total-tests)))
    (splicing-syntax-parameterize
      ([inc-passed-tests!  (syntax-rules ()
                             [(_) (set! passed-tests (add1 passed-tests))])]

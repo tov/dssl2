@@ -40,7 +40,7 @@
 
 (define (type-error #:srclocs [srclocs '()] who got expected)
   (dssl-error #:srclocs srclocs
-              "~a: type error\n  got: ~s\n  expected: ~s"
+              "~a: type error\n  got: ~e\n  expected: ~e"
               who got expected))
 
 (define (assertion-error #:srclocs [srclocs '()] who fmt . args)

@@ -1,13 +1,8 @@
 #lang racket
 
-(provide dssl-print
-         dssl-print-size-hook
+(provide dssl-print-size-hook
          dssl-print-print-hook)
 (require dssl2/private/struct)
-
-(define (dssl-print value)
-  (unless (void? value)
-    (pretty-print value)))
 
 (define (dssl-print-size-hook value _write _port)
   (define port (open-output-string))

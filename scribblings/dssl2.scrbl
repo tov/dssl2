@@ -70,13 +70,14 @@ by a newline, or a compound statement.
 @racketgrammar*[
 #:literals (def defstruct let lambda λ else if elif while for in test
             time object break continue : True False =
-            assert assert_eq pass return NEWLINE INDENT DEDENT)
+            assert assert_eq assert_error pass return NEWLINE INDENT DEDENT)
 [program (code:line @#,m["{"] statement @#,m["}*"])]
 [statement   (code:line simple @#,q{NEWLINE})
              compound]
 [simple
             (code:line assert expr)
             (code:line assert_eq expr @#,q{,} expr)
+            (code:line assert_error expr @#,m["["] @#,q{,} string @#,m["]"])
             break
             continue
             (code:line defstruct name @#,q{(} @#,m["{"] field @#,m["["] @#,q{:} contract @#,m["]"] @#,m["},*"] @#,q{)})
@@ -164,6 +165,16 @@ test 'first_char_hasher':
     assert_eq first_char_hasher('Apple'), 65
     assert_eq first_char_hasher('apple'), 97
 }|
+
+@defsmplform{@defidform/inline[assert_error] @syn[expr], @syn[string]}
+
+Asserts that the given @syn[expr] errors, and that the error message
+contains the substring @syn[string].
+
+@defsmplform{@defidform/inline[assert_error] @syn[expr]}
+
+Asserts that the given @syn[expr] errors without checking for a
+particular error.
 
 @defsmplform{@defidform/inline[break]}
 

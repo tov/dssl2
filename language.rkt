@@ -2,7 +2,8 @@
 
 (provide #%app
          #%datum
-         #%top)
+         #%top
+         #%require)
 (provide (rename-out
            ; special syntax
            [dssl-module-begin           #%module-begin]
@@ -266,16 +267,15 @@
      #'(dssl-in-value/value (get-srclocs v) v)]))
 
 (define-syntax (dssl-import stx)
-  (syntax-parse stx
-    [(_ lib:string)
-     #'(#%require (file lib))]
-    [(_ lib:id)
-     (let ([filename (path->string
-                       (build-path
-                         lib-directory
-                         (format "~a.rkt" (syntax->datum #'lib))))])
-       #`(#%require
-          #,(datum->syntax stx `(file ,filename))))]))
+  (define filename
+    (syntax-parse stx
+      [(_ lib:string) (syntax->datum #'lib)]
+      [(_ lib:id)
+       (path->string
+         (build-path
+           lib-directory
+           (format "~a.rkt" (syntax->datum #'lib))))]))
+  (datum->syntax stx `(#%require (file ,filename))))
 
 ; setf! is like Common Lisp setf, but it just recognizes three forms. We
 ; use this to translate assignments.

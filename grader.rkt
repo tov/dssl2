@@ -17,7 +17,8 @@
 
 (define (grade-file/values subject)
   (define (handler exn)
-    (fprintf (current-error-port) "ERROR WHILE TESTING;\n ~e~n" exn)
+    (fprintf (current-error-port) "*** ERROR WHILE TESTING: ~a~n"
+             (exn-message exn))
     (values 0 0))
   (with-handlers ([exn:fail? handler])
     (call-with-input-file subject
@@ -31,8 +32,7 @@
                    [sandbox-output current-output-port]
                    [sandbox-error-output current-error-port])
       ((make-evaluator 'racket/base
-                       `(require (submod ,subject test-info))
-                       #:allow-read `("/"))
+                       `(require (submod ,subject test-info)))
        '(get-test-info)))))
 
 (define (grade-file subject)

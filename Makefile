@@ -3,7 +3,7 @@ PACKAGE = dssl2
 default: doc
 
 test:
-	racket test/run-dssl2-tests.rkt
+	raco test test/*.rkt
 
 BENCH_FILE = test/dssl2/and.rkt
 

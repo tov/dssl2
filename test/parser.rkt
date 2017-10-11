@@ -28,7 +28,7 @@
   (test-parse "[0; 10]"
               '(begin (make-vector 10 0)))
   (test-parse "posn { x: 3, y: 4 }"
-              '(begin (posn [x 3] [y 4])))
+              '(begin (m:posn [x 3] [y 4])))
   (test-parse "a == 4"
               '(begin (== a 4)))
   (test-parse "lambda x, y: x == y"
@@ -64,16 +64,16 @@
 ;  (test-parse "a = b\nc = d\n"
 ;              '(begin (setf! a b) (setf! c d)))
   (test-parse "let x"
-              '(begin (let x)))
+              '(begin (let (x any/c))))
   (test-parse "defstruct posn(x, y)"
-              '(begin (defstruct posn (x y))))
+              '(begin (defstruct posn ((x any/c) (y any/c)))))
   (test-parse "a.b.c = e[f]"
               '(begin (setf! (struct-ref (struct-ref a b) c)
                              (vector-ref e f))))
   (test-parse "assert False"
               '(begin (assert #f)))
   (test-parse "assert_eq a + 1, 6"
-              '(begin (assert-eq (+ a 1) 6)))
+              '(begin (assert_eq (+ a 1) 6)))
 
   ; compound statements
   
@@ -101,7 +101,8 @@
   (test-parse (string-append "def fact(n):\n"
                              "  if n <= 1: return 1\n"
                              "  else: return n * fact(n - 1)")
-              '(begin (def (fact n)
+              '(begin (def (fact () (n any/c))
+                           any/c
                         (cond [(<= n 1) (return 1)]
                               [else     (return (* n (fact (- n 1))))]))))
   (test-parse (string-append "for j in v:\n"

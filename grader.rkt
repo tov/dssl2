@@ -5,7 +5,9 @@
          grader-memory-limit
          grader-time-limit)
 
-(require (only-in racket/sandbox
+(require (only-in racket/format
+                  ~a)
+         (only-in racket/sandbox
                   make-evaluator
                   sandbox-eval-limits
                   sandbox-memory-limit
@@ -32,7 +34,7 @@
                    [sandbox-output current-output-port]
                    [sandbox-error-output current-error-port])
       ((make-evaluator 'racket/base
-                       `(require (submod (file ,subject) test-info))
+                       `(require (submod (file ,(~a subject)) test-info))
                        #:allow-read (list
                                       "/Applications/Racket"
                                       (current-directory)))

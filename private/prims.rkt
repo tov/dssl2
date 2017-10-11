@@ -73,7 +73,8 @@
          ; * I/O operations
          (contract-out
            [print (-> str? AnyC ... VoidC)]
-           [println (-> str? AnyC ... VoidC)])
+           [println (-> str? AnyC ... VoidC)]
+           [sleep (-> num? VoidC)])
          ; * other functions
          identity)
 (require "errors.rkt"
@@ -272,3 +273,5 @@
     [else           (+ (* 2 (random_bits (sub1 n)))
                        (random 2))]))
 
+(define (sleep sec)
+  (r:sleep sec))

@@ -15,7 +15,7 @@ startup_bench:
 	done
 
 all:
-	find . -name '*.rkt' | xargs raco make
+	find . -name '*.rkt' | grep -v test/grader | xargs raco make
 
 clean:
 	find . -name compiled -type d | xargs rm -R

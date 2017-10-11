@@ -8,7 +8,9 @@
 (require (only-in racket/sandbox
                   make-evaluator
                   sandbox-eval-limits
-                  sandbox-memory-limit))
+                  sandbox-memory-limit
+                  sandbox-output
+                  sandbox-error-output))
 
 (define grader-time-limit (make-parameter 10))
 (define grader-memory-limit (make-parameter 256))
@@ -25,7 +27,9 @@
       #:mode 'text)
     (parameterize ([sandbox-eval-limits (list (grader-time-limit)
                                               (grader-memory-limit))]
-                   [sandbox-memory-limit (grader-memory-limit)])
+                   [sandbox-memory-limit (grader-memory-limit)]
+                   [sandbox-output current-output-port]
+                   [sandbox-error-output current-error-port])
       ((make-evaluator 'racket/base
                        `(require (submod ,subject test-info))
                        #:allow-read `("/"))

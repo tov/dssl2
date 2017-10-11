@@ -32,6 +32,7 @@
 (check-grades "1_of_2_out_of_memory.rkt" 1 2)
 (parameterize ([grader-time-limit 10])
   (check-grades "0_of_0_infinite_loop.rkt" 0 0))
+(check-grades "4_of_4_prints.rkt" 4 4)
 
 (define EPSILON 1E-5)
 

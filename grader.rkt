@@ -15,7 +15,7 @@
 
 (define (grade-file/values subject)
   (define (handler exn)
-    (fprintf (current-error-port) "ERROR WHILE TESTING: ~e~n" exn)
+    (fprintf (current-error-port) "ERROR WHILE TESTING;\n ~e~n" exn)
     (values 0 0))
   (with-handlers ([exn:fail? handler])
     (call-with-input-file subject

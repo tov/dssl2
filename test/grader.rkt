@@ -12,7 +12,7 @@
   (parameterize ([current-output-port (open-output-nowhere)]
                  [current-error-port (open-output-nowhere)])
     body ...))
-  
+
 (define (check-grades subject expected-successes expected-total)
   (define-values (actual-successes actual-total)
     (silence (grade-file/values (build-path grader-tests subject))))

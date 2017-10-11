@@ -32,7 +32,10 @@
                    [sandbox-output current-output-port]
                    [sandbox-error-output current-error-port])
       ((make-evaluator 'racket/base
-                       `(require (submod ,subject test-info)))
+                       `(require (submod ,subject test-info))
+                       #:allow-read (list
+                                      "/Applications/Racket"
+                                      (current-directory)))
        '(get-test-info)))))
 
 (define (grade-file subject)

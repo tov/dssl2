@@ -3,4 +3,4 @@
 test 1: pass
 test 2: pass
 
-import 'crashes.rkt'
+import '0_of_0_crashes.rkt'

@@ -108,14 +108,14 @@ def foldr_cons[Y](f: FunC(AnyC, Y, Y), z: Y, lst: list?) -> Y:
 # Traverses a list from left to right, accumulating a result using the given
 # function. O(lst * f) time and O(1) space.
 def foldl_cons[Y](f: FunC(Y, AnyC, Y), z: Y, lst: list?) -> Y:
-    foreach_cons(lambda element: z = f(z, element), lst)
+    foreach_cons(λ element: z = f(z, element), lst)
     return z
 
 # Maps a list by applying a function to each element. O(lst) time and O(lst)
 # space (to allocate the new list).
 def map_cons(f: FunC(AnyC, AnyC), lst: list?) -> list?:
     let builder = new_cons_builder()
-    foreach_cons(lambda element: builder.cons!(f(element)), lst)
+    foreach_cons(λ element: builder.cons!(f(element)), lst)
     builder.get_head()
 
 # Filters a list by applying a predicate to each element. O(lst) time and O(lst)
@@ -138,4 +138,4 @@ def cons_tests():
         let lst = list([2, 3, 4, 5, 6])
         assert_eq filter_cons(even?, lst), list([2, 4, 6])
         assert_eq filter_cons(odd?, lst), list([3, 5])
-
+    

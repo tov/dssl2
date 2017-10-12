@@ -16,11 +16,9 @@ assert !q.empty?()
 assert_eq q.size(), 1
 assert_eq q.peek(), 5
 
-test 'cannot enqueue string':
-    assert_error q.enqueue('hello')
+assert_error q.enqueue('hello')
     
-test 'cannot enqueue False':
-    assert_error q.enqueue(False)
+assert_error q.enqueue(False)
 
 q.enqueue(7)
 q.enqueue(8)

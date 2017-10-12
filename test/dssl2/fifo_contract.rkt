@@ -2,7 +2,9 @@
 
 import fifo
 
-let q = Fifo.empty()
+let IntFifo = MakeFifo(int?)
+
+let q = IntFifo.empty()
 
 assert q.empty?()
 assert_eq q.size(), 0
@@ -14,8 +16,14 @@ assert !q.empty?()
 assert_eq q.size(), 1
 assert_eq q.peek(), 5
 
-q.enqueue('hello')
-q.enqueue('world')
+test 'cannot enqueue string':
+    assert_error q.enqueue('hello')
+    
+test 'cannot enqueue False':
+    assert_error q.enqueue(False)
+
+q.enqueue(7)
+q.enqueue(8)
 
 assert !q.empty?()
 assert_eq q.size(), 3
@@ -25,31 +33,18 @@ assert_eq q.dequeue(), 5
 
 assert !q.empty?()
 assert_eq q.size(), 2
-assert_eq q.peek(), 'hello'
+assert_eq q.peek(), 7
 
-assert_eq q.dequeue(), 'hello'
+assert_eq q.dequeue(), 7
 
 assert !q.empty?()
 assert_eq q.size(), 1
-assert_eq q.peek(), 'world'
+assert_eq q.peek(), 8
 
-assert_eq q.dequeue(), 'world'
+assert_eq q.dequeue(), 8
 
 assert q.empty?()
 assert_eq q.size(), 0
 assert_eq q.peek(), False
 
 assert_eq q.dequeue(), False
-
-# yay untyped
-q.enqueue(False)
-
-assert !q.empty?()
-assert_eq q.size(), 1
-assert_eq q.peek(), False
-
-assert_eq q.dequeue(), False
-
-assert q.empty?()
-assert_eq q.size(), 0
-assert_eq q.peek(), False

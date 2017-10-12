@@ -90,6 +90,8 @@ def Array_from_parts(size_, data_):
         set,
         push,
         pop,
+        push_back: push,
+        pop_back: pop,
         clone,
         as_vector,
         equals_with?,

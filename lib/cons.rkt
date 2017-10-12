@@ -138,4 +138,3 @@ def cons_tests():
         let lst = list([2, 3, 4, 5, 6])
         assert_eq filter_cons(even?, lst), list([2, 4, 6])
         assert_eq filter_cons(odd?, lst), list([3, 5])
-    

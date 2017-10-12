@@ -40,6 +40,8 @@
      (dssl-write-struct value port print-dssl-value)]
     [(contract? value)
      (display (contract-name value) port)]
+    [(procedure? value)
+     (display (or (object-name value) "#<proc>") port)]
     [(void? value)
      (display "void" port)]
     [else                       (display "#<unknown-value>" port)]))

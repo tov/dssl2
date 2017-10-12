@@ -55,8 +55,18 @@
       (<program>
         [(<newlines>)
          eof]
-        [(<newlines> <statements>)
+        [(<newlines> <statements> <crap>)
          (loc `(begin ,@$2))])
+
+      (<crap>
+        [()
+         #true]
+        [(INDENT <crap>)
+         #true]
+        [(DEDENT <crap>)
+         #true]
+        [(NEWLINE <crap>)
+         #true])
 
       (<statements>
         [(<statement> <newlines>)

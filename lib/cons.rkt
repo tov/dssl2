@@ -92,7 +92,7 @@ def cons_from_vec(vec: vec?) -> list?:
     builder.get_head()
 
 # Calls a visitor function on each element of a list, in order.
-def foreach_cons[X](visit: FunC(X, VoidC), lst: list?) -> VoidC:
+def foreach_cons(visit: FunC(AnyC, VoidC), lst: list?) -> VoidC:
     while cons?(lst):
         visit(lst.car)
         lst = lst.cdr

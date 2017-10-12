@@ -15,6 +15,25 @@ def ListOfC(element: contract?) -> contract?:
         map_cons(λ x: apply_contract(element, x, 'list element'), value)
     make_contract(format('ListOfC(~a)', element), list?, projection)
 
+# Creates an object to help build a list in order. The object has two methods:
+#
+#   - get_head() -> ListC     returns the list
+#   - cons!(AnycC) -> VoidC   adds an element to the end of the list
+def new_cons_builder():
+    let head = nil()
+    let tail = nil()
+    def cons!(x):
+        if cons?(tail):
+            tail.cdr = cons(x, nil())
+            tail = tail.cdr
+        else:
+            head = cons(x, nil())
+            tail = head
+    object ListBuilder {
+        get_head: lambda: head,
+        cons!:    cons!,
+    }
+
 # Reverses `before`, appending it onto `acc`. O(before) time and space.
 def rev_app_cons(before: list?, acc: list?) -> list?:
     if cons?(before):
@@ -66,17 +85,17 @@ def cons_to_vec(lst: list?) -> vec?:
     cons_into_vec(lst, result, 0)
     result
 
-# Creates a list from the contents of a vector starting at the given index.
-# O(|vec| - where) time and space.
-def cons_from_vec_index(vec: vec?, where: int?) -> list?:
-    if where < len(vec):
-        cons(vec[where], cons_from_vec_index(vec, where + 1))
-    else:
-        nil()
-
 # Creates a list from the elements of a vector. O(vec) time and space.
 def cons_from_vec(vec: vec?) -> list?:
-    cons_from_vec_index(vec, 0)
+    let builder = new_cons_builder()
+    for element in vec: builder.cons!(element)
+    builder.get_head()
+
+# Calls a visitor function on each element of a list, in order.
+def foreach_cons[X](visit: FunC(X, VoidC), lst: list?) -> VoidC:
+    while cons?(lst):
+        visit(lst.car)
+        lst = lst.cdr
 
 # Traverses a list from right to left, accumulating a result using the given
 # function. O(lst * f) time and O(lst) space.
@@ -89,41 +108,24 @@ def foldr_cons[Y](f: FunC(AnyC, Y, Y), z: Y, lst: list?) -> Y:
 # Traverses a list from left to right, accumulating a result using the given
 # function. O(lst * f) time and O(1) space.
 def foldl_cons[Y](f: FunC(Y, AnyC, Y), z: Y, lst: list?) -> Y:
-    while cons?(lst):
-        z = f(z, lst.car)
-        lst = lst.cdr
-    z
+    foreach_cons(lambda element: z = f(z, element), lst)
+    return z
 
 # Maps a list by applying a function to each element. O(lst) time and O(lst)
 # space (to allocate the new list).
 def map_cons(f: FunC(AnyC, AnyC), lst: list?) -> list?:
-    if nil?(lst): nil()
-    else:
-        let result = cons(f(lst.car), nil())
-        let current = result
-        lst = lst.cdr
-        while cons?(lst):
-            current.cdr = cons(f(lst.car), nil())
-            current = current.cdr
-            lst = lst.cdr
-        result
+    let builder = new_cons_builder()
+    foreach_cons(lambda element: builder.cons!(f(element)), lst)
+    builder.get_head()
 
 # Filters a list by applying a predicate to each element. O(lst) time and O(lst)
 # space (or more precisely, O(result) space).
 def filter_cons(f: FunC(AnyC, AnyC), lst: list?) -> list?:
-    while cons?(lst) and !f(lst.car):
-       lst = lst.cdr
-    if nil?(lst): nil()
-    else:
-        let result = cons(lst.car, nil())
-        let current = result
-        lst = lst.cdr
-        while cons?(lst):
-            if f(lst.car):
-                current.cdr = cons(lst.car, nil())
-                current = current.cdr
-            lst = lst.cdr
-        result
+    let builder = new_cons_builder()
+    def each(element):
+        if f(element): builder.cons!(element)
+    foreach_cons(each, lst)
+    builder.get_head()
 
 def cons_tests():
     let list = cons_from_vec

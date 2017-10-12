@@ -40,6 +40,8 @@
      (dssl-write-struct value port print-dssl-value)]
     [(contract? value)
      (display (contract-name value) port)]
+    [(void? value)
+     (display "void" port)]
     [else                       (display "#<unknown-value>" port)]))
 
 (define (print-dssl-string q str port)

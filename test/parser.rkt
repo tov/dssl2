@@ -8,6 +8,9 @@
     (check-equal? (syntax->datum
                    (parse-dssl2 #false (open-input-string str) #false))
                   result))
+  (define-syntax-rule (check-parse? source body ...)
+    (test-parse source
+                '(begin body ...)))
 
   ; simple expressions
 
@@ -110,4 +113,17 @@
               '(begin (for [j v] (println j))))
   (test-parse (string-append "for i, j in v:\n"
                              "  println(i, j)")
-              '(begin (for [(i j) v] (println i j)))))
+              '(begin (for [(i j) v] (println i j))))
+
+  (check-parse? "pass"
+                (pass))
+  (check-parse? "pass    "
+                (pass))
+  (check-parse? "pass    \n"
+                (pass))
+  (check-parse? "pass\n"
+                (pass))
+  #| (check-parse? "pass\n    " |#
+  #|               (pass)) |#
+  (check-parse? "pass\n    \n"
+                (pass)))

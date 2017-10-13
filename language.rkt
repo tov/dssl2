@@ -11,7 +11,7 @@
            ; built-in operators
            [modulo              %]
            [expt                **]
-           [equal?              ==]
+           [dssl-equal?         ==]
            [eq?                 ===]
            [not                 !]
            [bitwise-and         &]
@@ -68,6 +68,7 @@
          (all-from-out "private/prims.rkt"))
 
 (require "private/errors.rkt"
+         "private/equal.rkt"
          "private/prims.rkt"
          "private/struct.rkt"
          racket/stxparam
@@ -551,7 +552,7 @@
            a b)])]))
 
 (define (dssl-!= a b)
-  (not (equal? a b)))
+  (not (dssl-equal? a b)))
 
 (define (dssl-!== a b)
   (not (eq? a b)))

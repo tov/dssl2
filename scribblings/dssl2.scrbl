@@ -1123,9 +1123,9 @@ Breaks a string into a vector of 1-character strings.
 
 Using its first argument as a template, interpolates the remaining
 arguments, producing a string. The main recognized escape codes are
-@c{~e} and @c{~s}. The former, @{~e}, displays values the same way that
+@c{~e} and @c{~a}. The former, @c{~e}, displays values the same way that
 they are displayed in the interatcions window, including quotation marks
-around strings. The latter, @{~a}, can be used to display strings
+around strings. The latter, @c{~a}, can be used to display strings
 without quotation marks.
 
 Additionally, @c{~n} can be used to insert a newline, and @c{~~}

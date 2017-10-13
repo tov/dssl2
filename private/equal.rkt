@@ -5,7 +5,7 @@
 (require "struct.rkt")
 
 ; A HashPair is (make-hash-pair fixnum? fixnum?)
-(struct hash-pair [left right])
+(struct hash-pair [left right] #:transparent)
 
 (define (make-key a b)
   (hash-pair (eq-hash-code a) (eq-hash-code b)))
@@ -15,14 +15,12 @@
 
   (define (see! a b)
     (unless table (set! table (make-hash)))
-    (printf "(see! ~e ~e)\n" a b)
     (hash-update! table
                   (make-key a b)
                   (λ (pairs) (cons (cons a b) pairs))
                   '()))
 
   (define (seen? a b)
-    (printf "(seen ~e ~e)\n" a b)
     (and
       table
       (for/or ([pair (hash-ref table (make-key a b) '())])
@@ -37,13 +35,24 @@
         [(eq? a b)              #true]
         [(both number?)         (= a b)]
         [(both string?)         (string=? a b)]
-        [(seen? a b)            #true]
         [(and (both vector?) (= (vector-length a) (vector-length b)))
-         (see! a b)
-         (for/and ([x (in-vector a)]
-                   [y (in-vector b)])
-           (compare x y))]
-        [(both struct-base?)    #false]
+         (cond
+           [(seen? a b) #true]
+           [else
+             (see! a b)
+             (for/and ([x (in-vector a)]
+                       [y (in-vector b)])
+               (compare x y))])]
+        [(and (both struct-base?)
+              (eq? (struct-base-struct-info a) (struct-base-struct-info b)))
+         (cond
+           [(seen? a b) #true]
+           [else
+             (see! a b)
+             (for/and ([field-info (struct-info-field-infos
+                                     (struct-base-struct-info a))])
+               (compare ((field-info-getter field-info) a)
+                        ((field-info-getter field-info) b)))])]
         [else #false])))
 
   (compare a0 b0))

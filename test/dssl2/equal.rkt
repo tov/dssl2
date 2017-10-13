@@ -14,5 +14,9 @@ cycle1[2] = cycle1
 let cycle2 = [0, 1, 2]
 cycle2[2] = cycle2
 
-println("~e", cycle1)
-# assert cycle1 == cycle2
+assert cycle1 == cycle2
+
+defstruct posn(x, y)
+
+assert posn(3, 4) == posn(3, 4)
+assert posn(3, 4) != posn(3, 5)

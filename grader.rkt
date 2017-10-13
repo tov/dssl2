@@ -32,7 +32,9 @@
                                               (grader-memory-limit))]
                    [sandbox-memory-limit (grader-memory-limit)]
                    [sandbox-output current-output-port]
-                   [sandbox-error-output current-error-port])
+                   ; Redirecting error to output seems to prevent messages
+                   ; from being reordered.
+                   [sandbox-error-output current-output-port])
       ((make-evaluator 'racket/base
                        `(require (submod (file ,(~a subject)) test-info))
                        #:allow-read (list

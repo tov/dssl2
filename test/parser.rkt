@@ -6,7 +6,7 @@
   (require rackunit)
   (define (test-parse str result)
     (check-equal? (syntax->datum
-                   (parse-dssl2 #false (open-input-string str) #false))
+                    (parse-dssl2 #false (open-input-string str) #false))
                   result))
   (define-syntax-rule (check-parse? source body ...)
     (test-parse source
@@ -14,106 +14,106 @@
 
   ; simple expressions
 
-  (test-parse "a"
-              '(begin a))
-  (test-parse "5"
-              '(begin 5))
-  (test-parse "-5E-2"
-              '(begin (- 5E-2)))
-  (test-parse "v[i]"
-              '(begin (vector-ref v i)))
-  (test-parse "s.f"
-              '(begin (struct-ref s f)))
-  (test-parse "[0, 1, 2]"
-              '(begin (vector 0 1 2)))
-  (test-parse "[0, 1, 2,]"
-              '(begin (vector 0 1 2)))
-  (test-parse "[0; 10]"
-              '(begin (make-vector 10 0)))
-  (test-parse "posn { x: 3, y: 4 }"
-              '(begin (m:posn [x 3] [y 4])))
-  (test-parse "a == 4"
-              '(begin (== a 4)))
-  (test-parse "lambda x, y: x == y"
-              '(begin (lambda (x y) (== x y))))
-  (test-parse "λ x, y: x == y"
-              '(begin (lambda (x y) (== x y))))
-  (test-parse "f(3, x)"
-              '(begin (f 3 x)))
-  (test-parse "\na"
-              '(begin a))
+  (check-parse? "a" a)
+  (check-parse? "5" 5)
+  (check-parse? "-5E-2"
+                (- 5E-2))
+  (check-parse? "v[i]"
+                (vector-ref v i))
+  (check-parse? "s.f"
+                (struct-ref s f))
+  (check-parse? "[0, 1, 2]"
+                (vector 0 1 2))
+  (check-parse? "[0, 1, 2,]"
+                (vector 0 1 2))
+  (check-parse? "[0; 10]"
+                (make-vector 10 0))
+  (check-parse? "posn { x: 3, y: 4 }"
+                (m:posn [x 3] [y 4]))
+  (check-parse? "a == 4"
+                (== a 4))
+  (check-parse? "lambda x, y: x == y"
+                (lambda (x y) (== x y)))
+  (check-parse? "λ x, y: x == y"
+                (lambda (x y) (== x y)))
+  (check-parse? "f(3, x)"
+                (f 3 x))
+  (check-parse? "\na"
+                a)
 
   ; compound expressions
 
-  (test-parse "a + b * c + d"
-              '(begin (+ (+ a (* b c)) d)))
-  (test-parse "a ** b ** c"
-              '(begin (** a (** b c))))
-  (test-parse "a ** b ** c == 5"
-              '(begin (== (** a (** b c)) 5)))
-  (test-parse "a + -6"
-              '(begin (+ a (- 6))))
-  (test-parse "[5, lambda x: x + 1]"
-              '(begin (vector 5 (lambda (x) (+ x 1)))))
-  (test-parse "a.b.c"
-              '(begin (struct-ref (struct-ref a b) c)))
-  
+  (check-parse? "a + b * c + d"
+                (+ (+ a (* b c)) d))
+  (check-parse? "a ** b ** c"
+                (** a (** b c)))
+  (check-parse? "a ** b ** c == 5"
+                (== (** a (** b c)) 5))
+  (check-parse? "a + -6"
+                (+ a (- 6)))
+  (check-parse? "[5, lambda x: x + 1]"
+                (vector 5 (lambda (x) (+ x 1))))
+  (check-parse? "a.b.c"
+                (struct-ref (struct-ref a b) c))
+
   ; simple statements
 
-  (test-parse "a = b"
-              '(begin (setf! a b)))
-  (test-parse "a = b; c = d.e"
-              '(begin (setf! a b) (setf! c (struct-ref d e))))
-;  (test-parse "a = b\nc = d\n"
-;              '(begin (setf! a b) (setf! c d)))
-  (test-parse "let x"
-              '(begin (let (x any/c))))
-  (test-parse "defstruct posn(x, y)"
-              '(begin (defstruct posn ((x any/c) (y any/c)))))
-  (test-parse "a.b.c = e[f]"
-              '(begin (setf! (struct-ref (struct-ref a b) c)
-                             (vector-ref e f))))
-  (test-parse "assert False"
-              '(begin (assert #f)))
-  (test-parse "assert_eq a + 1, 6"
-              '(begin (assert_eq (+ a 1) 6)))
+  (check-parse? "a = b"
+                (setf! a b))
+  (check-parse? "a = b; c = d.e"
+                (setf! a b)
+                (setf! c (struct-ref d e)))
+  (check-parse? "a = b\nc = d\n"
+                (setf! a b)
+                (setf! c d))
+  (check-parse? "let x"
+                (let (x any/c)))
+  (check-parse? "defstruct posn(x, y)"
+                (defstruct posn ((x any/c) (y any/c))))
+  (check-parse? "a.b.c = e[f]"
+                (setf! (struct-ref (struct-ref a b) c)
+                       (vector-ref e f)))
+  (check-parse? "assert False"
+                (assert #f))
+  (check-parse? "assert_eq a + 1, 6"
+                (assert_eq (+ a 1) 6))
 
   ; compound statements
-  
-  (test-parse "if a: c = d"
-              '(begin (cond [a (setf! c d)] [else (pass)])))
-  (test-parse "if a: c = d\nelse: e = f"
-              '(begin (cond [a (setf! c d)] [else (setf! e f)])))
-  (test-parse "if a: c = d\nelif b: e = 3\nelse: f = 4"
-              '(begin (cond [a (setf! c d)]
-                            [b (setf! e 3)]
-                            [else (setf! f 4)])))
-  (test-parse "if a:\n  c = d"
-              '(begin (cond [a (setf! c d)]
-                            [else (pass)])))
-  (test-parse "if a:\n  c = d\n  e[0] = 9"
-              '(begin (cond [a (setf! c d)
-                               (setf! (vector-ref e 0) 9)]
-                            [else (pass)])))
-  (test-parse "if a:\n  if b:\n    5"
-              '(begin (cond [a (cond [b 5]
-                                     [else (pass)])]
-                            [else (pass)])))
-  (test-parse "while True:\n  a = 6\n  b = 7"
-              '(begin (while #t (setf! a 6) (setf! b 7))))
-  (test-parse (string-append "def fact(n):\n"
-                             "  if n <= 1: return 1\n"
-                             "  else: return n * fact(n - 1)")
-              '(begin (def (fact () (n any/c))
-                           any/c
-                        (cond [(<= n 1) (return 1)]
-                              [else     (return (* n (fact (- n 1))))]))))
-  (test-parse (string-append "for j in v:\n"
-                             "  println(j)")
-              '(begin (for [j v] (println j))))
-  (test-parse (string-append "for i, j in v:\n"
-                             "  println(i, j)")
-              '(begin (for [(i j) v] (println i j))))
+
+  (check-parse? "if a: c = d"
+                (cond [a (setf! c d)] [else (pass)]))
+  (check-parse? "if a: c = d\nelse: e = f"
+                (cond [a (setf! c d)] [else (setf! e f)]))
+  (check-parse? "if a: c = d\nelif b: e = 3\nelse: f = 4"
+                (cond [a (setf! c d)]
+                      [b (setf! e 3)]
+                      [else (setf! f 4)]))
+  (check-parse? "if a:\n  c = d"
+                (cond [a (setf! c d)]
+                      [else (pass)]))
+  (check-parse? "if a:\n  c = d\n  e[0] = 9"
+                (cond [a (setf! c d)
+                         (setf! (vector-ref e 0) 9)]
+                      [else (pass)]))
+  (check-parse? "if a:\n  if b:\n    5"
+                (cond [a (cond [b 5]
+                               [else (pass)])]
+                      [else (pass)]))
+  (check-parse? "while True:\n  a = 6\n  b = 7"
+                (while #t (setf! a 6) (setf! b 7)))
+  (check-parse? (string-append "def fact(n):\n"
+                               "  if n <= 1: return 1\n"
+                               "  else: return n * fact(n - 1)")
+                (def (fact () (n any/c))
+                     any/c
+                     (cond [(<= n 1) (return 1)]
+                           [else     (return (* n (fact (- n 1))))])))
+  (check-parse? (string-append "for j in v:\n"
+                               "  println(j)")
+                (for [j v] (println j)))
+  (check-parse? (string-append "for i, j in v:\n"
+                               "  println(i, j)")
+                (for [(i j) v] (println i j)))
 
   (check-parse? "pass"
                 (pass))
@@ -124,6 +124,6 @@
   (check-parse? "pass\n"
                 (pass))
   #| (check-parse? "pass\n    " |#
-  #|               (pass)) |#
+                   #|               (pass)) |#
   (check-parse? "pass\n    \n"
                 (pass)))

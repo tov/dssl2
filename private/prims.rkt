@@ -34,6 +34,7 @@
                               contract?)])
          ; * numeric operations
          (contract-out
+           [abs (-> num? num?)]
            [floor (-> num? int?)]
            [ceiling (-> num? int?)]
            [int (-> (OrC num? str? bool?) int?)]

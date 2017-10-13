@@ -53,19 +53,17 @@
     (grammar
 
       (<program>
-        [(<newlines>)
+        [(<whitespace>)
          eof]
-        [(<newlines> <statements> <crap>)
+        [(<whitespace> <statements> <whitespace>)
          (loc `(begin ,@$2))])
 
-      (<crap>
+      (<whitespace>
         [()
          #true]
-        [(INDENT <crap>)
+        [(INDENT <whitespace> DEDENT <whitespace>)
          #true]
-        [(DEDENT <crap>)
-         #true]
-        [(NEWLINE <crap>)
+        [(NEWLINE <whitespace>)
          #true])
 
       (<statements>

@@ -123,7 +123,7 @@
                 (pass))
   (check-parse? "pass\n"
                 (pass))
-  #| (check-parse? "pass\n    " |#
-                   #|               (pass)) |#
+  (check-parse? "pass\n    "
+                (pass))
   (check-parse? "pass\n    \n"
                 (pass)))

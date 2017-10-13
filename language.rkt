@@ -304,9 +304,7 @@
      #`(begin
          (define-struct (internal-name struct-base) (field ...)
                         #:mutable
-                        #:transparent
-                        #:methods gen:custom-write
-                        [(define write-proc dssl-write-struct)])
+                        #:transparent)
          (define (#,(format-stx "~a?" #'name) value)
            (#,(format-stx "~a?" #'internal-name) value)))]))
 

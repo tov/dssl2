@@ -2,21 +2,13 @@
 
 (provide setup-rte)
 
-(require (only-in racket/pretty
-                  pretty-print
-                  pretty-print-size-hook
-                  pretty-print-print-hook)
-         (only-in racket/port
+(require (only-in racket/port
                   relocate-input-port)
          "parser.rkt"
          "printer.rkt")
 
 (define (setup-rte)
-  (pretty-print-size-hook dssl-print-size-hook)
-  (pretty-print-print-hook dssl-print-print-hook)
-  (global-port-print-handler
-    (λ (v port)
-       (pretty-print v port #:newline? #false)))
+  (global-port-print-handler dssl-print)
   (current-read-interaction
     (λ (src in)
        (let loop ()

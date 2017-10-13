@@ -1,50 +1,109 @@
 #lang racket/base
 
-(provide dssl-print-size-hook
-         dssl-print-print-hook)
+(provide dssl-print)
 (require "struct.rkt")
-(require (only-in racket/contract/base contract? contract-name)
+(require (only-in racket/set
+                  mutable-seteq
+                  set-member?
+                  set-add!)
+         (only-in racket/contract/base
+                  contract?
+                  contract-name)
          (only-in racket/math nan?)
          (only-in racket/string string-contains?))
 
-(define (dssl-print-size-hook value _write _port)
-  (define port (open-output-string))
-  (print-dssl-value value port)
-  (string-length (get-output-string port)))
+; Dssl2Value OutputPort -> Void
+(define (dssl-print value0 [port (current-output-port)])
+  (define seen (mutable-seteq))
+  (define cycle-info (find-cycles value0))
+  (define (seen!? value)
+    (define info (hash-ref cycle-info value #false))
+    (cond
+      [(set-member? seen value)
+       (fprintf port "#~a#" info)
+       #true]
+      [(number? info)
+        (set-add! seen value)
+        (fprintf port "#~a=" info)
+        #false]
+      [else
+        #false]))
+  (let visit ([value value0])
+    (cond
+      [(real? value)
+       (cond
+         [(= +inf.0 value)        (display "inf" port)]
+         [(= -inf.0 value)        (display "-inf" port)]
+         [(nan? value)            (display "nan" port)]
+         [else                    (display value port)])]
+      [(integer? value)           (display value port)]
+      [(boolean? value)
+       (cond
+         [value                   (display "True" port)]
+         [else                    (display "False" port)])]
+      [(string? value)
+       (define contains-sq (string-contains? value "'"))
+       (define contains-dq (string-contains? value "\""))
+       (if (and contains-sq (not contains-dq))
+         (print-dssl-string #\" value port)
+         (print-dssl-string #\' value port))]
+      [(vector? value)
+       (unless (seen!? value)
+         (display "[" port)
+         (define first #t)
+           (for ([element (in-vector value)])
+             (if first
+               (set! first #f)
+               (display ", " port))
+             (visit element))
+           (display "]" port))]
+      [(struct-base? value)
+       (unless (seen!? value)
+         (define info (struct-base-struct-info value))
+         (define first #true)
+         (fprintf port "~a {" (struct-info-name info))
+         (for ([field-info (in-vector (struct-info-field-infos info))])
+           (if first
+             (set! first #f)
+             (display ", " port))
+           (fprintf port "~a: " (field-info-name field-info))
+           (visit ((field-info-getter field-info) value)))
+         (display "}" port))]
+      [(contract? value)
+       (display (contract-name value) port)]
+      [(procedure? value)
+       (display (or (object-name value) "#<proc>") port)]
+      [(void? value)              (display "#<void>" port)]
+      [else                       (display "#<unknown-value>" port)])))
 
-(define (dssl-print-print-hook value _write port)
-  (print-dssl-value value port))
-
-(define (print-dssl-value value port)
-  (cond
-    [(real? value)
-     (cond
-       [(= +inf.0 value)        (display "inf" port)]
-       [(= -inf.0 value)        (display "-inf" port)]
-       [(nan? value)            (display "nan" port)]
-       [else                    (display value port)])]
-    [(integer? value)           (display value port)]
-    [(boolean? value)
-     (cond
-       [value                   (display "True" port)]
-       [else                    (display "False" port)])]
-    [(string? value)
-     (define contains-sq (string-contains? value "'"))
-     (define contains-dq (string-contains? value "\""))
-     (if (and contains-sq (not contains-dq))
-       (print-dssl-string #\" value port)
-       (print-dssl-string #\' value port))]
-    [(vector? value)
-     (print-dssl-vector value port)]
-    [(struct-base? value)
-     (dssl-write-struct value port print-dssl-value)]
-    [(contract? value)
-     (display (contract-name value) port)]
-    [(procedure? value)
-     (display (or (object-name value) "#<proc>") port)]
-    [(void? value)
-     (display "void" port)]
-    [else                       (display "#<unknown-value>" port)]))
+; Dssl2Value -> [HashEq Dssl2Value [Or #true Natural]]
+(define (find-cycles value0)
+  (define table (make-hasheq))
+  (define revisited-count 0)
+  (define (seen!? value)
+    (define value-info (hash-ref table value #false))
+    (cond
+      [(number? value-info) #true]
+      [value-info
+        (hash-set! table value revisited-count)
+        (set! revisited-count (add1 revisited-count))
+        #true]
+      [else
+        (hash-set! table value #true)
+        #false]))
+  (define (visit value)
+    (cond
+      [(vector? value)
+       (unless (seen!? value)
+         (for ([element (in-vector value)])
+           (visit element)))]
+      [(struct-base? value)
+       (unless (seen!? value)
+         (define info (struct-base-struct-info value))
+         (for ([field (in-vector (struct-info-field-infos info))])
+           (visit ((field-info-getter field) value))))]))
+  (visit value0)
+  table)
 
 (define (print-dssl-string q str port)
   (define (esc c)
@@ -72,13 +131,3 @@
                     hex)]
           [else                         (display c port)])]))
   (display q port))
-
-(define (print-dssl-vector vec port)
-  (display "[" port)
-  (define first #t)
-  (for ([element (in-vector vec)])
-    (if first
-      (set! first #f)
-      (display ", " port))
-    (print-dssl-value element port))
-  (display "]" port))

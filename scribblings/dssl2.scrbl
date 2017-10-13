@@ -466,7 +466,7 @@ characters; if a natural number then both variables count together.
 
 @dssl2block|{
 for ix, person in people_to_greet:
-    println("~a: Hello, ~a!", ix, person)
+    println("~e: Hello, ~a!", ix, person)
 }|
 
 @defsmplform{@defidform/inline[pass]}
@@ -773,7 +773,7 @@ object might be defined as:
 def Posn(x_, y_):
     def get_x(): x_
     def get_y(): y_
-    def fmt(): format("(~a, ~a)", x_, y_)
+    def fmt(): format("(~e, ~e)", x_, y_)
     object Posn { get_x: get_x, get_y: get_y, fmt: fmt, }
 }|
 
@@ -1123,9 +1123,10 @@ Breaks a string into a vector of 1-character strings.
 
 Using its first argument as a template, interpolates the remaining
 arguments, producing a string. The main recognized escape codes are
-@c{~a} and @c{~s}. Both can be used to include any kind of data,
-the difference being that @c{~s} quotes and escapes strings, whereas
-@c{~a} includes them literally.
+@c{~e} and @c{~s}. The former, @{~e}, displays values the same way that
+they are displayed in the interatcions window, including quotation marks
+around strings. The latter, @{~a}, can be used to display strings
+without quotation marks.
 
 Additionally, @c{~n} can be used to insert a newline, and @c{~~}
 inserts a literal @c{~}.

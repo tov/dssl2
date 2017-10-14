@@ -216,7 +216,7 @@
                   ([dssl-return (syntax-rules ()
                                   [(_)        (return-f (void))]
                                   [(_ result) (return-f result)])])
-                   expr ...))))
+                  (dssl-begin expr ...)))))
     (make-set!able f)))
 
 (define-syntax (dssl-let stx)
@@ -367,6 +367,13 @@
              ...
              (dssl-defstruct/late (name s:cons) ((b.var b.rhs) ...)))
            rest ...))]
+    [(_ (early-defns ...) (late-defns ...)
+        (dssl-defstruct stuff:expr ...)
+        rest ...)
+     (raise-syntax-error
+       #f
+       "Bad defstruct!"
+       stx)]
     ; Pass everything else through
     [(_ (early-defns ...) (late-defns ...)
         first rest ...)

@@ -78,7 +78,7 @@ by a newline, or a compound statement.
 [simple
             (code:line assert expr)
             (code:line assert_eq expr @#,q{,} expr)
-            (code:line assert_error expr @#,m["["] @#,q{,} string @#,m["]"])
+            (code:line assert_error expr @#,m["["] @#,q{,} string-expr @#,m["]"])
             break
             continue
             (code:line defstruct name @#,q{(} @#,m["{"] field @#,m["["] @#,q{:} contract @#,m["]"] @#,m["},*"] @#,q{)})
@@ -167,10 +167,10 @@ test 'first_char_hasher':
     assert_eq first_char_hasher('apple'), 97
 }|
 
-@defsmplform{@defidform/inline[assert_error] @syn[expr], @syn[string]}
+@defsmplform{@defidform/inline[assert_error] @syn[expr], @syn[string-expr]}
 
 Asserts that the given @syn[expr] errors, and that the error message
-contains the substring @syn[string].
+contains the substring that results from evaluating @syn[string-expr].
 
 @defsmplform{@defidform/inline[assert_error] @syn[expr]}
 

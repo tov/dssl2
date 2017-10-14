@@ -92,7 +92,7 @@ by a newline, or a compound statement.
         (code:line struct_expr @#,q{.} field_name)
         (code:line vec_expr @#,q["["] index_expr @#,q["]"])]
 [compound
-            (code:line def fun_name @#,q{(} var_name @#,m["["] @#,q{:} contract_expr @#,m["]"] @#,q{,} @#,m{...} @#,q{)} @#,m["["] @#,q{->} contract_expr @#,m["]"] @#,q{:} block)
+            (code:line def name @#,q{(} name @#,m["["] @#,q{:} ctc_expr @#,m["]"] @#,q{,} @#,m{...} @#,q{)} @#,m["["] @#,q{->} ctc_expr @#,m["]"] @#,q{:} block)
             (code:line if expr @#,q{:} block @#,m["{"] elif expr @#,q{:} block @#,m["}*"] @#,m["["] else expr @#,q{:} block @#,m["]"])
             (code:line for @#,m{[} var_name @#,q{,} @#,m{]} var_name @#,q{in} expr @#,q{:} block)
             (code:line test @#,m{[} expr @#,m{]} @#,q{:} block)

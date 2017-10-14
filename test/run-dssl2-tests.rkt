@@ -2,6 +2,7 @@
 
 (require racket/runtime-path
          file/glob
+         "../private/printer.rkt"
          (for-syntax racket/base))
 
 (define-runtime-path TESTS (build-path 'same))
@@ -19,10 +20,11 @@
                          (if should-fail
                            'okay
                            (format "threw ~a" e)))])
-      (dynamic-require test-file #f)
-      (if should-fail
-        (format "expected to throw but didn't")
-        'okay)))
+      (parameterize ([global-port-print-handler dssl-print])
+        (dynamic-require test-file #f)
+        (if should-fail
+          (format "expected to throw but didn't")
+          'okay))))
   (cond
     [(eq? result 'okay)
      (set! pass-count (add1 pass-count))

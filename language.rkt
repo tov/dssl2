@@ -349,6 +349,7 @@
 
 (define-syntax (dssl-defstruct/early stx)
   (syntax-parse stx
+    #:context 'defstruct
     [(_ (name:id internal-name:id) fields:unique-identifiers)
      #`(begin
          (define-struct (internal-name struct-base) (fields.var ...)

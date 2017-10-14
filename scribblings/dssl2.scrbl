@@ -14,12 +14,13 @@
 
 @subsection{Compound statements and blocks}
 
-DSSL2 uses alignment and indentation to delimit blocks. In particular,
-compound statements such as @racket[if]-@racket[elif]-@racket[else] take
-@syn[block]s for each condition, where a @syn[block] can be either one
-simple statement followed by a newline, or a sequence of statements on
-subsequent lines that are all indented by four additional spaces. Here
-is an example of a tree insertion function written using indentation:
+DSSL2 uses alignment and indentation to delimit @deftech{blocks}. In
+particular, compound statements such as
+@racket[if]-@racket[elif]-@racket[else] take @syn[block]s for each
+condition, where a @syn[block] can be either one simple statement
+followed by a newline, or a sequence of statements on subsequent lines
+that are all indented by four additional spaces. Here is an example of a
+tree insertion function written using indentation:
 
 @dssl2block|{
 def insert!(t, k):
@@ -207,9 +208,9 @@ A function may have zero arguments, as in @racket[greet]:
 def greet(): println("Hello, world!")
 }|
 
-The body of a function is defined to be a block, which means it can be
-an indented sequence of statements, or a single simple statement on the
-same line as the @racket[def].
+The body of a function is defined to be a @tech{block}, which means it
+can be an indented sequence of statements, or a single simple statement
+on the same line as the @racket[def].
 
 Note that @racket[def]s can be nested:
 
@@ -346,8 +347,8 @@ The DSSL2 conditional statement contains an @racket[if], 0 or more
 conditions holds.
 
 First it evaluates the @racket[if] condition @syn[expr]@subscript{if}.
-If non-false, it then evaluates @syn[block]@subscript{if} and finishes.
-Otherwise, it evaluates each @racket[elif] condition
+If non-false, it then evaluates @tech{block} @syn[block]@subscript{if}
+and finishes. Otherwise, it evaluates each @racket[elif] condition
 @syn[expr]@subscript{i} in turn; if each is false, it goes on to the
 next, but when one is non-false then it finishes with the corresponding
 @syn[block]@subscript{i}. Otherwise, if all of the conditions were false
@@ -425,7 +426,7 @@ println(x)
 @defcmpdform{@defidform/inline[for] @syn[var] @q{in} @syn[expr]: @syn[block]}
 
 Loops over the values of the given @syn[expr], evaluating the
-@syn[block] for each. The @syn[expr] can evaluate to a vector, a string,
+@tech{block} for each. The @syn[expr] can evaluate to a vector, a string,
 or a natural number. If a vector, then this form iterates over the
 values (not the indices) of the vector; if a string, this iterates over
 the characters as 1-character strings; if a natural number @racket[n]
@@ -457,7 +458,7 @@ def make_sbox_hash(n):
 @defcmpdform{@defidform/inline[for] @syn[var]₁, @syn[var]₂ @q{in} @syn[expr]: @syn[block]}
 
 Loops over the indices and values of the given @syn[expr], evaluating
-the @syn[block] for each. The @syn[expr] can evaluate to a vector, a
+the @tech{block} for each. The @syn[expr] can evaluate to a vector, a
 string, or a natural number. If a vector, then @syn[var]₁
 takes on the indices of the vector while @syn[var]₂ takes on
 the values; if a string, then @syn[var]₁ takes on the
@@ -516,11 +517,11 @@ Returns void from the current function.
 
 @defcmpdform{@defidform/inline[test] @syn[expr]: @syn[block]}
 
-Runs the code in @syn[block] as a test case named @syn[expr]
+Runs the code in @tech{block} as a test case named @syn[expr]
 (which is optional). If an
 assertion fails or an error occurs in @syn[block], the test case
 terminates, failure is reported, and the program continues after the
-block.
+@tech{block}.
 
 For example:
 
@@ -530,8 +531,8 @@ test "arithmetic":
     assert_eq 2 + 2, 4
 }|
 
-A @racket[test] block can be used to perform just one check or a long sequence
-of preparation and checks:
+A @racket[test] @tech{block} can be used to perform just one check or a
+long sequence of preparation and checks:
 
 @dssl2block|{
 test 'single-chaining hash table':
@@ -558,7 +559,7 @@ test 'single-chaining hash table':
 
 @defcmpdform{@defidform/inline[time] @syn[expr]: @syn[block]}
 
-Times the execution of the block, and then prints the results labeled
+Times the execution of the @tech{block}, and then prints the results labeled
 with the result of @syn[expr] (which isn’t timed, and which is optional).
 
 For example, we can time how long it takes to create an array of
@@ -580,7 +581,8 @@ wall clock time, with 238 ms of CPU time spent on garbage collection.
 
 @defcmpdform{@defidform/inline[while] @syn[expr]: @syn[block]}
 
-Iterates the @syn[block] while the @syn[expr] evaluates to non-false. For example:
+Iterates the @tech{block} while the @syn[expr] evaluates to non-false.
+For example:
 
 @dssl2block|{
 while !is_empty(queue):

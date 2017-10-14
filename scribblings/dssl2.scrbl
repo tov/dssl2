@@ -93,7 +93,7 @@ by a newline, or a compound statement.
         (code:line vec_expr @#,q["["] index_expr @#,q["]"])]
 [compound
             (code:line def name @#,q{(} name @#,m["["] @#,q{:} ctc_expr @#,m["]"] @#,q{,} @#,m{...} @#,q{)} @#,m["["] @#,q{->} ctc_expr @#,m["]"] @#,q{:} block)
-            (code:line if expr @#,q{:} block @#,m["{"] elif expr @#,q{:} block @#,m["}*"] @#,m["["] else expr @#,q{:} block @#,m["]"])
+            (code:line if expr @#,q{:} block @#,m["{"] elif expr @#,q{:} block @#,m["}*"] @#,m["["] else @#,q{:} block @#,m["]"])
             (code:line for @#,m{[} var_name @#,q{,} @#,m{]} var_name @#,q{in} expr @#,q{:} block)
             (code:line test @#,m{[} expr @#,m{]} @#,q{:} block)
             (code:line time @#,m{[} expr @#,m{]} @#,q{:} block)

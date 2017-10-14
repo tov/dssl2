@@ -104,7 +104,7 @@
   (check-parse? (string-append "def fact(n):\n"
                                "  if n <= 1: return 1\n"
                                "  else: return n * fact(n - 1)")
-                (def (fact () (n any/c))
+                (def (fact (n any/c))
                      any/c
                      (cond [(<= n 1) (return 1)]
                            [else     (return (* n (fact (- n 1))))])))

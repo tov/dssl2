@@ -1,6 +1,7 @@
 #lang racket/base
 
 (provide exn:fail:dssl?
+         get-srcloc
          get-srclocs
          dssl-error
          runtime-error
@@ -12,18 +13,20 @@
   (for-syntax racket/base
               syntax/parse))
 
+(define-syntax (get-srcloc stx)
+  (syntax-parse stx
+    [(_ expr:expr)
+     #`(srcloc
+         '#,(syntax-source #'expr)
+         '#,(syntax-line #'expr)
+         '#,(syntax-column #'expr)
+         '#,(syntax-position #'expr)
+         '#,(syntax-span #'expr))]))
+
 (define-syntax (get-srclocs stx)
   (syntax-parse stx
-    [(_)
-     #`'()]
-    [(_ expr:expr rest:expr ...)
-     #`(cons (srcloc
-               '#,(syntax-source #'expr)
-               '#,(syntax-line #'expr)
-               '#,(syntax-column #'expr)
-               '#,(syntax-position #'expr)
-               '#,(syntax-span #'expr))
-             (get-srclocs rest ...))]))
+    [(_ expr:expr ...)
+     #'(list (get-srcloc expr) ...)]))
 
 (define-struct (exn:fail:dssl exn:fail) (srclocs)
   #:transparent

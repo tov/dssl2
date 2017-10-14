@@ -74,15 +74,20 @@
          racket/stxparam
          racket/splicing
          racket/contract/region
+         (only-in racket/unsafe/undefined
+                  unsafe-undefined
+                  check-not-unsafe-undefined)
          syntax/parse/define
          rackunit
          (only-in racket/contract/base
                   ->
+                  contract
                   rename-contract)
          (only-in racket/contract/parametric
                   parametric->/c)
          (only-in racket/math
-                  natural?))
+                  natural?)
+         (only-in syntax/location quote-srcloc))
 (require (prefix-in racket: racket))
 
 (require (for-syntax racket/base
@@ -223,8 +228,24 @@
   (syntax-parse stx
     [(_ b:contracted-binding)
      #'(begin
-         (define/contract b.var b.rhs (void))
-         (make-set!able b.var))]
+         (define real-var unsafe-undefined)
+         (make-set!able real-var)
+         (define-syntax b.var
+           (make-set!-transformer
+            (λ (stx)
+              (syntax-parse stx #:literals (set!)
+                [(set! _:id e:expr)
+                 #`(set! real-var (contract b.rhs e
+                                            "assignment" 'b.var
+                                            'b.var
+                                            (get-srcloc e)))]
+                [_:id
+                 #'(check-not-unsafe-undefined real-var 'b.var)]
+                [(_:id . args)
+                 (with-syntax ([app (datum->syntax stx '#%app)])
+                   #'(app
+                       (check-not-unsafe-undefined real-var 'b.var)
+                       . args))])))))]
     [(_ b:contracted-binding expr)
      #'(begin
          (define/contract b.var b.rhs expr)

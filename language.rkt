@@ -517,7 +517,7 @@
 
 (define-syntax (dssl-assert-error stx)
   (syntax-parse stx
-    [(_ code:expr expected:str)
+    [(_ code:expr expected:expr)
      #`(dssl-assert-error/thunk (get-srclocs code) (λ () code) expected)]
     [(_ code:expr)
      #`(dssl-assert-error/thunk (get-srclocs code) (λ () code) "")]))

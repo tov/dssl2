@@ -10,7 +10,7 @@
 (provide defexpform defexpforms defsmplform defcmpdform
          defconstform
          defprocform defprocforms
-         c syn
+         c syn syn_
          q m
          dssl2block code)
 (require scribble/manual
@@ -30,6 +30,9 @@
 
 (define-syntax-rule (syn var)
   (c (italic (~a 'var))))
+
+(define-syntax-rule (syn_ var sub ...)
+  (c (italic (~a 'var) (subscript sub ...))))
 
 (define-syntax-rule (defexpform chunk ...)
   (*defforms "expr" (list (list chunk ...))))

@@ -46,7 +46,7 @@ line, as in the @racket[if] and @racket[else] cases.
 
 Extraneous indentation is an error.
 
-@subsection{DSSL2 Formal Grammar}
+@subsection{Formal Grammar}
 
 The DSSL2 language has a number of statement and expression forms, which
 are described in more depth below. Here they are summarized in
@@ -78,23 +78,23 @@ by a newline, or a compound statement.
 [simple
             (code:line assert expr)
             (code:line assert_eq expr @#,q{,} expr)
-            (code:line assert_error expr @#,m["["] @#,q{,} string-expr @#,m["]"])
+            (code:line assert_error expr @#,m["["] @#,q{,} string_expr @#,m["]"])
             break
             continue
-            (code:line defstruct name @#,q{(} @#,m["{"] field @#,m["["] @#,q{:} contract @#,m["]"] @#,m["},*"] @#,q{)})
+            (code:line defstruct struct_name @#,q{(} @#,m["{"] field_name @#,m["["] @#,q{:} contract_expr @#,m["]"] @#,m["},*"] @#,q{)})
             (code:line lvalue = expr)
             expr
-            (code:line let var @#,m["["] @#,q{:} contract @#,m["]"] @#,m["["] @#,q{=} expr @#,m["]"])
+            (code:line let var_name @#,m["["] @#,q{:} contract_expr @#,m["]"] @#,m["["] @#,q{=} expr @#,m["]"])
             (code:line pass)
             (code:line return @#,m["["] expr @#,m["]"])
             (code:line simple @#,q{;} simple)]
-[lvalue var
-        (code:line expr @#,q{.} field)
-        (code:line expr @#,q["["] expr @#,q["]"])]
+[lvalue var_name
+        (code:line struct_expr @#,q{.} field_name)
+        (code:line vec_expr @#,q["["] index_expr @#,q["]"])]
 [compound
-            (code:line def name @#,q{(} var @#,m["["] @#,q{:} contract @#,m["]"] @#,q{,} @#,m{...} @#,q{)} @#,m["["] @#,q{->} contract @#,m["]"] @#,q{:} block)
+            (code:line def fun_name @#,q{(} var_name @#,m["["] @#,q{:} contract_expr @#,m["]"] @#,q{,} @#,m{...} @#,q{)} @#,m["["] @#,q{->} contract_expr @#,m["]"] @#,q{:} block)
             (code:line if expr @#,q{:} block @#,m["{"] elif expr @#,q{:} block @#,m["}*"] @#,m["["] else expr @#,q{:} block @#,m["]"])
-            (code:line for var @#,m{[} @#,q{,} var @#,m{]} @#,q{in} expr @#,q{:} block)
+            (code:line for @#,m{[} var_name @#,q{,} @#,m{]} var_name @#,q{in} expr @#,q{:} block)
             (code:line test @#,m{[} expr @#,m{]} @#,q{:} block)
             (code:line time @#,m{[} expr @#,m{]} @#,q{:} block)
             (code:line while expr @#,q{:} block)
@@ -108,14 +108,14 @@ by a newline, or a compound statement.
       True
       False
       (code:line expr @#,q{(} @#,m["{"] expr @#,m["},*"] @#,q{)})
-      (code:line lambda @#,m["{"] var @#,m["},*"] @#,q{:} simple)
-      (code:line @#,q{λ} @#,m["{"] var @#,m["},*"] @#,q{:} simple)
+      (code:line lambda @#,m["{"] var_name @#,m["},*"] @#,q{:} simple)
+      (code:line @#,q{λ} @#,m["{"] var_name @#,m["},*"] @#,q{:} simple)
       (code:line expr @#,q{if} expr @#,q{else} expr)
-      (code:line structname @#,q["{"] @#,m["{"] fieldname : expr @#,m["},*"] @#,q[" }"])
-      (code:line object structname @#,q["{"] @#,m["{"] fieldname : expr @#,m["},*"] @#,q[" }"])
+      (code:line struct_name @#,q["{"] @#,m["{"] field_name : expr @#,m["},*"] @#,q[" }"])
+      (code:line object struct_name @#,q["{"] @#,m["{"] field_name : expr @#,m["},*"] @#,q[" }"])
       (code:line @#,q{[} @#,m["{"] expr @#,m["},*"] @#,q{]})
       (code:line @#,q{[} expr @#,q{;} expr @#,q{]})
-      (code:line @#,q{[} expr @#,q{for} var @#,m{[} @#,q{,} var @#,m{]} @#,q{in} expr @#,m{[} @#,q{if} expr @#,m{]} @#,q{]})
+      (code:line @#,q{[} expr @#,q{for} @#,m{[} var_name @#,q{,} @#,m{]} var_name @#,q{in} expr @#,m{[} @#,q{if} expr @#,m{]} @#,q{]})
       (code:line expr BINOP expr)
       (code:line UNOP expr)
       ]
@@ -134,10 +134,76 @@ by a newline, or a compound statement.
  @item{@racket[==], @racket[<], @racket[>], @racket[<=], @racket[>=],
  @racket[!=], @racket[===], and @racket[!==]}
  @item{@racket[and]}
- @item{@racket[or] (not written with the backslashes)}
+ @item{@racket[or]}
 ]
 
 @italic{UNOP}s are @racket[!], @racket[~], @racket[+], @racket[-].
+
+@subsection{Lexical Syntax}
+
+@subsubsection{Identifiers}
+
+@italic{Name}s, used for variables, functions, and struct fields, must
+start with a letter, followed by 0 or more letters or digits. The last
+character also may be @q{?} or @q{!}.
+
+@subsubsection{Numeric Literals}
+
+Numeric literals include:
+
+@itemlist[
+  @item{Decimal integers: @racket[0], @racket[3], @racket[18446744073709551617]}
+  @item{Hexadedecimal, octal, and binary integers: @q{0xFFFF00},
+      @q{0o0177}, @q{0b011010010}}
+  @item{Floating point: @racket[3.5], @q{6.02E23}, @racket[1e-12]}
+]
+
+@subsubsection{String Literals}
+
+String literals are delimited by either single or double quotes:
+
+@dssl2block|{
+def does_not_matter(double):
+    if double:
+        return "This is the same string."
+    else:
+        return 'This is the same string.'
+}|
+
+The contents of each kind of string is treated the same, except that
+each kind of quotation mark can contain the other kind unescaped:
+
+@dssl2block|{
+def does_matter(double):
+    if double:
+        return "This isn't the same string."
+    else:
+        return '"This is not the same string" isn\'t the same string.'
+}|
+
+Strings cannot contain newlines directly, but can contain newline
+characters via the escape code @c{\n}. Other escape codes include:
+
+@itemlist[
+  @item{@c{\a} for ASCII alert (also @c{\x07})}
+  @item{@c{\b} for ASCII backspace (also @c{\x08})}
+  @item{@c{\f} for ASCII formfeed (also @c{\x0C})}
+  @item{@c{\n} for ASCII newline (also @c{\x0A})}
+  @item{@c{\r} for ASCII carriage return (also @c{\x0D})}
+  @item{@c{\t} for ASCII tab (also @c{\x09})}
+  @item{@c{\v} for ASCII vertical tab (also @c{\x0B})}
+  @item{@c{\x@syn{hh}} in hex, for example @c{\x0A} is newline}
+  @item{@c{\@syn{ooo}} in octal, for example @c{\011} is tab}
+  @item{A backslash immediately followed by a newline causes both characters to
+      be ignored, which provides a way to wrap long strings across lines.}
+]
+
+Any other character following a backslash stands for itself.
+
+@subsubsection{Comments}
+
+A comment in DSSL2 starts with the @q{#} character and continues to the
+end of the line.
 
 @subsection[#:tag "stm-forms"]{Statement Forms}
 
@@ -167,10 +233,10 @@ test 'first_char_hasher':
     assert_eq first_char_hasher('apple'), 97
 }|
 
-@defsmplform{@defidform/inline[assert_error] @syn[expr], @syn[string-expr]}
+@defsmplform{@defidform/inline[assert_error] @syn[expr], @syn[string_expr]}
 
 Asserts that the given @syn[expr] errors, and that the error message
-contains the substring that results from evaluating @syn[string-expr].
+contains the substring that results from evaluating @syn[string_expr].
 
 @defsmplform{@defidform/inline[assert_error] @syn[expr]}
 
@@ -187,10 +253,10 @@ loop immediately.
 When in a @racket[for] or @racket[while] loop, ends the current
 iteration of the (inner-most) loop and begins the next iteration.
 
-@defcmpdform{@defidform/inline[def] @syn[name](@syn[var]₁, ... @syn[var]@subscript{k}): @syn[block]}
+@defcmpdform{@defidform/inline[def] @syn[fun_name](@syn[var_name]₁, ... @syn[var_name]@subscript{k}): @syn[block]}
 
-Defines @syn[name] to be a function with formal parameters @syn[var]₁,
-@c{...}, @syn[var]@subscript{k} and with body @syn[block].
+Defines @syn[fun_name] to be a function with formal parameters @syn[var_name]₁,
+@c{...}, @syn[var_name]@subscript{k} and with body @syn[block].
 
 For example,
 
@@ -215,17 +281,17 @@ on the same line as the @racket[def].
 Note that @racket[def]s can be nested:
 
 @dssl2block|{
-# rbt_insert! : X RbTree<X> -> Void
+# rbt_insert! : X RbTreeOf[X] -> Void
 def rbt_insert!(key, tree):
-    # parent : RbLink<X> -> RbLink<X>
+    # parent : RbLinkOf[X] -> RbLinkOf[X]
     def parent(link):
         link.parent if rbn?(link) else False
 
-    # grandparent : RbLink<X> -> RbLink<X>
+    # grandparent : RbLinkOf[X] -> RbLinkOf[X]
     def grandparent(link):
         parent(parent(link))
 
-    # sibling : RbLink<X> -> RbLink<X>
+    # sibling : RbLinkOf[X] -> RbLinkOf[X]
     def sibling(link):
         let p = parent(link)
         if rbn?(p):
@@ -233,7 +299,7 @@ def rbt_insert!(key, tree):
             else: p.left
         else: False
 
-    # aunt : RbLink<X> -> RbLink<X>
+    # aunt : RbLinkOf[X] -> RbLinkOf[X]
     def aunt(link):
         sibling(parent(link))
 
@@ -243,10 +309,10 @@ def rbt_insert!(key, tree):
     search!(tree.root, set_root!)
 }|
 
-@defsmplform{@defidform/inline[defstruct] @syn[structname](@syn[fieldname]₁, ..., @syn[fieldname]@subscript{k})}
+@defsmplform{@defidform/inline[defstruct] @syn[struct_name](@syn[field_name]₁, ..., @syn[field_name]@subscript{k})}
 
-Defines a new structure type @syn[structname] with fields given by
-@syn[fieldname]₁, @c{...}, @syn[fieldname]@subscript{k}. For example,
+Defines a new structure type @syn[struct_name] with fields given by
+@syn[field_name]₁, @c{...}, @syn[field_name]@subscript{k}. For example,
 to define a struct @racket[posn] with fields @racket[x] and @racket[y],
 we write:
 
@@ -276,16 +342,16 @@ assert_eq magnitude(posn(3, 4)), 5
 Another example:
 
 @dssl2block|{
-# A RndBst<X> is one of:
+# A RndBstOf[X] is one of:
 # - False
-# - Node(X, nat?, RndBst<X>, RndBst<X>)
+# - Node(X, nat?, RndBstOf[X], RndBstOf[X])
 defstruct Node(key, size, left, right)
 
-# singleton : X -> RndBst<X>
+# singleton : X -> RndBstOf[X]
 def singleton(key):
     Node(key, 1, False, False)
 
-# size : RndBst<X> -> nat?
+# size : RndBstOf[X] -> nat?
 def size(tree):
     tree.size if Node?(tree) else 0
 
@@ -332,7 +398,7 @@ For example, this function returns the @racket[size] field of parameter
 @racket[tree] if @racket[tree] is a @racket[Node], and @racket[0] otherwise:
 
 @dssl2block|{
-# size : RndBst<X> -> nat?
+# size : RndBstOf[X] -> nat?
 def size(tree):
     if Node?(tree): tree.size
     else: 0
@@ -395,7 +461,7 @@ def rebalance_left_(key, balance, left0, right):
     else: error('Cannot happen')
 }|
 
-@defsmplform{@defidform/inline[let] @syn[var] = @syn[expr]}
+@defsmplform{@defidform/inline[let] @syn[var_name] = @syn[expr]}
 
 Declares and defines a local variable. Local variables may be declared in any
 scope and last for that scope. A local variable may be re-assigned with the
@@ -408,7 +474,7 @@ def sum(vec):
     return result
 }|
 
-@defsmplform{@defidform/inline[let] @syn[var]}
+@defsmplform{@defidform/inline[let] @syn[var_name]}
 
 Declares a local variable, which will be undefined until it is assigned:
 
@@ -423,7 +489,7 @@ else:
 println(x)
 }|
 
-@defcmpdform{@defidform/inline[for] @syn[var] @q{in} @syn[expr]: @syn[block]}
+@defcmpdform{@defidform/inline[for] @syn[var_name] @q{in} @syn[expr]: @syn[block]}
 
 Loops over the values of the given @syn[expr], evaluating the
 @tech{block} for each. The @syn[expr] can evaluate to a vector, a string,
@@ -455,7 +521,7 @@ def make_sbox_hash(n):
     hash
 }|
 
-@defcmpdform{@defidform/inline[for] @syn[var]₁, @syn[var]₂ @q{in} @syn[expr]: @syn[block]}
+@defcmpdform{@defidform/inline[for] @syn[var_name]₁, @syn[var_name]₂ @q{in} @syn[expr]: @syn[block]}
 
 Loops over the indices and values of the given @syn[expr], evaluating
 the @tech{block} for each. The @syn[expr] can evaluate to a vector, a
@@ -606,7 +672,7 @@ def sch_lookup(hash, key):
 
 @subsection[#:tag "exp-forms"]{Expression Forms}
 
-@defexpform{@syn[var]}
+@defexpform{@syn[var_name]}
 
 The value of a variable, which must be a function parameter, bound with
 @racket[let], or defined with @racket[def]. For example,
@@ -622,7 +688,7 @@ Lexically, a variable is a letter or underscore, followed by zero or
 more letters, underscores, or digits, optionally ending in a question
 mark or exclamation point.
 
-@defexpform{@syn[expr].@syn[fieldname]}
+@defexpform{@syn[struct_expr].@syn[field_name]}
 
 Expression @syn[expr] must evaluate to struct value that has field
 @syn[fieldname]; then this expression evaluates to the value of that
@@ -633,59 +699,6 @@ field of the struct.
 Expression @syn[expr]₁ must evaluate to a vector @c{v}; @syn[expr]₂
 must evaluate to an integer @c{n} between 0 and @code{len(v) - 1}.
 Then this returns the @c{n}th element of vector @c{v}.
-
-@defexpform{@syn{number}}
-
-Numeric literals include:
-
-@itemlist[
-  @item{Decimal integers: @racket[0], @racket[3], @racket[18446744073709551617]}
-  @item{Hexadedecimal, octal, and binary integers: @q{0xFFFF00},
-      @q{0o0177}, @q{0b011010010}}
-  @item{Floating point: @racket[3.5], @q{6.02E23}, @racket[1e-12]}
-]
-
-@defexpform{@syn{string}}
-
-String literals are delimited by either single or double quotes:
-
-@dssl2block|{
-def does_not_matter(double):
-    if double:
-        return "This is the same string."
-    else:
-        return 'This is the same string.'
-}|
-
-The contents of each kind of string is treated the same, except that
-each kind of quotation mark can contain the other kind unescaped:
-
-@dssl2block|{
-def does_matter(double):
-    if double:
-        return "This isn't the same string."
-    else:
-        return '"This is not the same string" isn\'t the same string.'
-}|
-
-Strings cannot contain newlines directly, but can contain newline
-characters via the escape code @c{\n}. Other escape codes include:
-
-@itemlist[
-  @item{@c{\a} for ASCII alert (also @c{\x07})}
-  @item{@c{\b} for ASCII backspace (also @c{\x08})}
-  @item{@c{\f} for ASCII formfeed (also @c{\x0C})}
-  @item{@c{\n} for ASCII newline (also @c{\x0A})}
-  @item{@c{\r} for ASCII carriage return (also @c{\x0D})}
-  @item{@c{\t} for ASCII tab (also @c{\x09})}
-  @item{@c{\v} for ASCII vertical tab (also @c{\x0B})}
-  @item{@c{\x@syn{hh}} in hex, for example @c{\x0A} is newline}
-  @item{@c{\@syn{ooo}} in octal, for example @c{\011} is tab}
-  @item{A backslash immediately followed by a newline causes both characters to
-      be ignored, which provides a way to wrap long strings across lines.}
-]
-
-Any other character following a backslash stands for itself.
 
 @defexpform{@defidform/inline[True]}
 
@@ -717,12 +730,12 @@ calls the function @racket[ack] with arguments @racket[6] and
 @racket[7].
 
 @defexpforms[
-  @list{@defidform/inline[lambda] @syn[var]₁, ..., @syn[var]@subscript{k}: @syn[simple-stmt]}
-  @list{@q{λ} @syn[var]₁, ..., @syn[var]@subscript{k}: @syn[simple-stmt]}
+  @list{@defidform/inline[lambda] @syn[var_name]₁, ..., @syn[var_name]@subscript{k}: @syn[simple]}
+  @list{@q{λ} @syn[var_name]₁, ..., @syn[var_name]@subscript{k}: @syn[simple]}
 ]
 
-Creates an anonymous function with parameters @syn[var]₁, @c{...},
-@syn[var]@subscript{k} and body @syn[simple-stmt]. For example, the function to
+Creates an anonymous function with parameters @syn[var_name]₁, @c{...},
+@syn[var_name]@subscript{k} and body @syn[simple]. For example, the function to
 add twice its first argument to its second argument can be written
 
 @dssl2block|{
@@ -743,7 +756,7 @@ def parent(link):
     link.parent if rbn?(link) else False
 }|
 
-@defexpform{@syn[structname] { @syn[field]₁: @syn[expr]₁, ..., @syn[field]@subscript{k}: @syn[expr]@subscript{k} }}
+@defexpform{@syn[struct_name] { @syn[field_name]₁: @syn[expr]₁, ..., @syn[field_name]@subscript{k}: @syn[expr]@subscript{k} }}
 
 Constructs a struct with the given name and the values of the given
 expressions for its fields. The struct must have been declared with
@@ -761,11 +774,11 @@ let baz = 5
 assert_eq Foo { bar, baz: 9 }, Foo(4, 9)
 }|
 
-@defexpform{@defidform/inline[object] @syn[structname] { @syn[field]₁: @syn[expr]₁, ..., @syn[field]@subscript{k}: @syn[expr]@subscript{k} }}
+@defexpform{@defidform/inline[object] @syn[struct_name] { @syn[field_name]₁: @syn[expr]₁, ..., @syn[field_name]@subscript{k}: @syn[expr]@subscript{k} }}
 
 Creates a struct value without declaring the struct type with
 @racket[defstruct]. In particular, creates a struct with the given name
-@syn[structname] and the given fields and values, regardless of what
+@syn[struct_name] and the given fields and values, regardless of what
 structs might be declared. The field names cannot have any repeats.
 
 This is useful for one-off objects. For example, a simple 2-D point
@@ -806,8 +819,8 @@ means the same thing as
 }|
 
 @defexpforms[
-  @list{[ @syn[expr]₁ @q{for} @syn[var] @q{in} @syn[expr]₂ ]}
-  @list{[ @syn[expr]₁ @q{for} @syn[var]₁, @syn[var]₂ @q{in} @syn[expr]₂ ]}
+  @list{[ @syn[expr]₁ @q{for} @syn[var_name] @q{in} @syn[expr]₂ ]}
+  @list{[ @syn[expr]₁ @q{for} @syn[var_name]₁, @syn[var_name]₂ @q{in} @syn[expr]₂ ]}
 ]
 
 Vector comprehensions: produces a vector of the values of @syn[expr]₁
@@ -816,8 +829,8 @@ while iterating the variable(s) over @syn[expr]₂. In particular,
 natural number @c{n}; in which case the iterated-over values are
 the elements of @c{v}, the 1-character strings comprising
 @c{s}, or counting from 0 to @code{n - 1}, respectively. If one
-variable @syn[var] is provided, it takes on those values. If two are
-provided, then @syn[var]₂ takes on those values, while @syn[var]₁
+variable @syn[var_name] is provided, it takes on those values. If two are
+provided, then @syn[var_name]₂ takes on those values, while @syn[var_name]₁
 takes on the indices counting from 0 upward.
 
 For example,
@@ -845,8 +858,8 @@ evaluates to
 }|
 
 @defexpforms[
-  @list{[ @syn[expr]₁ @q{for} @syn[var] @q{in} @syn[expr]₂ @q{if} @syn[expr]₃ ]}
-  @list{[ @syn[expr]₁ @q{for} @syn[var]₁, @syn[var]₂ @q{in} @syn[expr]₂ @q{if} @syn[expr]₃ ]}
+  @list{[ @syn[expr]₁ @q{for} @syn[var_name] @q{in} @syn[expr]₂ @q{if} @syn[expr]₃ ]}
+  @list{[ @syn[expr]₁ @q{for} @syn[var_name]₁, @syn[var_name]₂ @q{in} @syn[expr]₂ @q{if} @syn[expr]₃ ]}
 ]
 
 If the optional @syn[expr]₃ is provided, only elements for which
@@ -1117,7 +1130,7 @@ represents, as a one-character string. Inverse to @racket[ord].
 assert_eq chr(97), 'a'
 }|
 
-@defprocform[explode]{(str?) -> Vector<str?>}
+@defprocform[explode]{(str?) -> VectorOf[str?]}
 
 Breaks a string into a vector of 1-character strings.
 
@@ -1126,14 +1139,14 @@ Breaks a string into a vector of 1-character strings.
 Using its first argument as a template, interpolates the remaining
 arguments, producing a string. The main recognized escape codes are
 @c{~e} and @c{~a}. The former, @c{~e}, displays values the same way that
-they are displayed in the interatcions window, including quotation marks
+they are displayed in the interactions window, including quotation marks
 around strings. The latter, @c{~a}, can be used to display strings
 without quotation marks.
 
 Additionally, @c{~n} can be used to insert a newline, and @c{~~}
 inserts a literal @c{~}.
 
-@defprocform[implode]{(Vector<str?>) -> str?}
+@defprocform[implode]{(VectorOf[str?]) -> str?}
 
 Concatenates a vector of strings into a single string.
 
@@ -1152,7 +1165,7 @@ Returns the length of a string in characters.
 
 @subsection{Vector operations}
 
-@defprocform[build_vector]{[X](n: nat?, f: FunC(nat?, X)) -> Vector<X>}
+@defprocform[build_vector]{[X](n: nat?, f: FunC(nat?, X)) -> VectorOf[X]}
 
 Creates a vector of size @c{n} whose elements are @code{f(0)},
 @code{f(1)}, ..., @code{f(n - 1)}. Equivalent to
@@ -1161,7 +1174,7 @@ Creates a vector of size @c{n} whose elements are @code{f(0)},
 [ f(x) for x in n ]
 }|
 
-@defprocform[filter]{[X](pred: FunC(X, bool?), vec: Vector<X>) -> Vector<X>}
+@defprocform[filter]{[X](pred: FunC(X, bool?), vec: VectorOf[X]) -> VectorOf[X]}
 
 Returns a vector containing the elements of @c{vec} for which
 @c{pred} returns non-false. Equivalent to
@@ -1170,11 +1183,11 @@ Returns a vector containing the elements of @c{vec} for which
 [ x for x in vec if pred(x) ]
 }|
 
-@defprocform[len]{[X](Vector<X>) -> nat?}
+@defprocform[len]{[X](VectorOf[X]) -> nat?}
 
 Returns the length of a vector.
 
-@defprocform[map]{[X, Y](f: FunC(X, Y), vec: Vector<X>) -> Vector<Y>}
+@defprocform[map]{[X, Y](f: FunC(X, Y), vec: VectorOf[X]) -> VectorOf[X]}
 
 Returns a vector consisting of @c{f} applied to each element of
 @c{vec}. Equivalent to
@@ -1219,10 +1232,11 @@ variables. A number of DSSL2 values may be used as contracts, including:
 
 @subsection{Contract syntax}
 
-@defcmpdform{@defidform/inline[def] @syn[name](@syn[var]₁: @syn[contract]₁, ... @syn[var]@subscript{k}: @syn[contract]@subscript{k}) -> @syn[contract]@subscript{r}: @syn[block]}
+@defcmpdform{@defidform/inline[def] @syn_[name]{f}(@syn[name]₁: @syn[expr]₁, ... @syn_[name]{k}: @syn_[expr]{k}) -> @syn_[expr]{r}: @syn[block]}
 
-Defines a function while specifying contracts for the parameters and the
-result. For example:
+Defines function @syn_[name]{f} while specifying contracts
+@syn_[expr]{1} through @syn_[expr]{k} for the parameters, and contract
+@syn_[expr]{r} for the result. For example:
 
 @dssl2block|{
 def pythag(x: num?, y: num?) -> num?:
@@ -1232,10 +1246,11 @@ def pythag(x: num?, y: num?) -> num?:
 Each of the contract positions is optional, and if omitted defaults to
 @racket[AnyC].
 
-@defcmpdform{@defidform/inline[let] @syn[name] : @syn[contract] = @syn[expr]}
+@defcmpdform{@defidform/inline[let] @syn[var_name] : @syn[contract_expr] = @syn[expr]}
 
-Binds a variable while applying a contracts. Subsequent assignments to
-the variable also must satisfy the contract. For example:
+Binds variable @syn[var_name] to the value of expression @syn[expr],
+while applying the contract @syn[contract_expr]. Subsequent assignments
+to the variable also must satisfy the contract. For example:
 
 @dssl2block|{
 let x : int? = 0
@@ -1251,11 +1266,12 @@ let x : OrC(int?, VoidC)
 x = 5
 }|
 
-@defsmplform{@defidform/inline[defstruct] @syn[structname](@syn[field]₁: @syn[contract]₁, ..., @syn[field]@subscript{k}: @syn[contract]@subscript{k})}
+@defsmplform{@defidform/inline[defstruct] @syn[name](@syn_[name]{1}: @syn_[expr]{1}, ..., @syn_[name]{k}: @syn_[expr]{k})}
 
-Defines a structure with the given contracts applied to the fields. This
-means that the contracts will be applied both when constructing the
-structure and when mutating it. For example:
+Defines a structure @syn[name] with the given contracts @syn_[expr]{i}
+applied to the fields @syn_[name]{i}. This means that the contracts will
+be applied both when constructing the structure and when mutating it.
+For example:
 
 @dssl2block|{
 defstruct posn(x: float?, y: float?)

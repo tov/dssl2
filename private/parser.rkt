@@ -100,7 +100,7 @@
          (loc `(for [(,$2 ,$4) ,$6] ,@$8))]
         [(DEF <ident> <foralls> LPAREN <contract-formals> RPAREN <result>
               COLON <suite>)
-         (loc `(def (,$2 ,$3 ,@$5) ,$7 ,@$9))]
+         (loc `(def (,$2 ,@$3 ,@$5) ,$7 ,@$9))]
         [(TEST <expr> COLON <suite>)
          (loc `(test ,$2 ,@$4))]
         [(TEST COLON <suite>)

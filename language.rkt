@@ -172,7 +172,7 @@
                          [(_ ?result) (return-f ?result)])])
          (dssl-begin expr ...)))))
 
-(define-simple-macro (dssl-def (f:id [tv:id ...]
+(define-simple-macro (dssl-def (f:id tv:id ...
                                      (formal:id contract:expr) ...)
                                result-contract:expr
                                expr:expr ...)
@@ -293,13 +293,20 @@
 (define (dssl-vector-ref v i)
   (vector-ref v i))
 
+(begin-for-syntax
+  (define-syntax-class field-names
+    #:description "field names"
+    (pattern (field-name:id ...)
+             #:fail-when
+             (check-duplicate-identifier (syntax->list #'(field-name ...)))
+             "duplicate field name"
+             #:with (field ...) #'(field-name ...))))
+
 (define-syntax (dssl-defstruct/early stx)
   (syntax-parse stx
-    [(_ (name:id internal-name:id) (field:id ...))
-     #:fail-when (check-duplicate-identifier
-                   (syntax->list #'(field ...))) "duplicate field name"
+    [(_ (name:id internal-name:id) fields:field-names)
      #`(begin
-         (define-struct (internal-name struct-base) (field ...)
+         (define-struct (internal-name struct-base) (fields.field ...)
                         #:mutable
                         #:transparent)
          (define (#,(format-id #'name "~a?" #'name) value)

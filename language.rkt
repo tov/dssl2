@@ -358,7 +358,7 @@
     [(_ (early-defns ...) (late-defns ...)
         (dssl-defstruct name:id (b:contracted-binding ...))
         rest ...)
-     (with-syntax ([s:cons (format-id #'name "s:~a" #'name)])
+     (with-syntax ([s:cons (format-id #f "s:~a" #'name)])
        #`(dssl-begin/acc
            (early-defns
              ...
@@ -367,13 +367,6 @@
              ...
              (dssl-defstruct/late (name s:cons) ((b.var b.rhs) ...)))
            rest ...))]
-    [(_ (early-defns ...) (late-defns ...)
-        (dssl-defstruct stuff:expr ...)
-        rest ...)
-     (raise-syntax-error
-       #f
-       "Bad defstruct!"
-       stx)]
     ; Pass everything else through
     [(_ (early-defns ...) (late-defns ...)
         first rest ...)

@@ -67,9 +67,9 @@
                 (setf! a b)
                 (setf! c d))
   (check-parse? "let x"
-                (let (x any/c)))
+                (let x))
   (check-parse? "defstruct posn(x, y)"
-                (defstruct posn ((x any/c) (y any/c))))
+                (defstruct posn (x y)))
   (check-parse? "a.b.c = e[f]"
                 (setf! (struct-ref (struct-ref a b) c)
                        (vector-ref e f)))
@@ -104,8 +104,7 @@
   (check-parse? (string-append "def fact(n):\n"
                                "  if n <= 1: return 1\n"
                                "  else: return n * fact(n - 1)")
-                (def (fact (n any/c))
-                     any/c
+                (def (fact n)
                      (cond [(<= n 1) (return 1)]
                            [else     (return (* n (fact (- n 1))))])))
   (check-parse? (string-append "for j in v:\n"
@@ -114,6 +113,10 @@
   (check-parse? (string-append "for i, j in v:\n"
                                "  println(i, j)")
                 (for [(i j) v] (println i j)))
+  (check-parse? "def f[X](): True"
+                (def (f #:forall [X]) #t))
+  (check-parse? "def f(x: y, z): True"
+                (def (f [x y] z) #t))
 
   (check-parse? "pass"
                 (pass))

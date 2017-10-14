@@ -100,7 +100,7 @@
          (loc `(for [(,$2 ,$4) ,$6] ,@$8))]
         [(DEF <ident> <foralls> LPAREN <contract-formals> RPAREN <result>
               COLON <suite>)
-         (loc `(def (,$2 ,@$3 ,@$5) ,$7 ,@$9))]
+         (loc `(def (,$2 ,@$3 ,@$5) ,@$7 ,@$9))]
         [(TEST <expr> COLON <suite>)
          (loc `(test ,$2 ,@$4))]
         [(TEST COLON <suite>)
@@ -128,9 +128,9 @@
 
       (<result>
         [(ARROW <expr>)
-         $2]
+         `(#:-> ,$2)]
         [()
-         `any/c])
+         `()])
 
       (<suite>
         [(<simple-statement>)
@@ -190,7 +190,7 @@
         [()
          `()]
         [(LBRACK <formals> RBRACK)
-         (loc $2)])
+         `(#:forall ,$2)])
 
       (<contract-formals>
         [()
@@ -204,7 +204,7 @@
         [(<ident> COLON <expr>)
          (loc (list $1 $3))]
         [(<ident>)
-         (loc (list $1 'any/c))])
+         $1])
 
       (<formals>
         [()

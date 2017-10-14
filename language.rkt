@@ -163,39 +163,72 @@
            ...
            [else (dssl-begin else-result ... )])]))
 
-(define-syntax-rule (dssl-lambda (param ...) expr ...)
+(define-simple-macro (dssl-lambda (param:id ...) expr:expr ...)
   (lambda (param ...)
-    (let/ec return-f
-       (syntax-parameterize
-         ([dssl-return (syntax-rules ()
-                         [(_)         (return-f (void))]
-                         [(_ ?result) (return-f ?result)])])
-         (dssl-begin expr ...)))))
+    (dssl-begin expr ...)))
 
-(define-simple-macro (dssl-def (f:id tv:id ...
-                                     (formal:id contract:expr) ...)
-                               result-contract:expr
-                               expr:expr ...)
+(begin-for-syntax
+  (define-syntax-class
+    contracted-binding
+    #:description "association of identifier with contract"
+    (pattern [var:id rhs:expr])
+    (pattern var:id
+             #:with rhs #'AnyC))
+
+  (define-syntax-class
+    unique-identifiers
+    #:description "sequence of unique identifiers"
+    (pattern (var:id ...)
+             #:fail-when (check-duplicate-identifier
+                           (syntax->list #'(var ...)))
+             "duplicate identifier name"))
+
+  (define-splicing-syntax-class
+    optional-return-contract
+    #:description "optional return contract"
+    (pattern (~seq #:-> result:expr))
+    (pattern (~seq)
+             #:with result #'AnyC))
+
+  (define-splicing-syntax-class
+    optional-contract-vars
+    #:description "optional forall-quantified contract variables"
+    (pattern (~seq #:forall vars:unique-identifiers)
+             #:with (var ...) #'(vars.var ...))
+    (pattern (~seq)
+             #:with (var ...) #'())))
+
+(define-simple-macro
+  (dssl-def (f:id cvs:optional-contract-vars bs:contracted-binding ...)
+            result-contract:optional-return-contract
+            expr:expr ...)
    #:fail-when (check-duplicate-identifier
-                 (syntax->list #'(tv ... formal ...)))
+                 (syntax->list #'(cvs.var ... bs.var ...)))
                "duplicate argument name"
   (begin
-    (define/contract f
-                     (parametric->/c [tv ...]
-                       (-> contract ... result-contract))
-                     (dssl-lambda (formal ...) expr ...))
+    (define/contract
+      f
+      (parametric->/c [cvs.var ...]
+                      (-> bs.rhs ... result-contract.result))
+      (lambda (bs.var ...)
+        (let/ec return-f
+                (syntax-parameterize
+                  ([dssl-return (syntax-rules ()
+                                  [(_)        (return-f (void))]
+                                  [(_ result) (return-f result)])])
+                   expr ...))))
     (make-set!able f)))
 
-(define-syntax dssl-let
-  (syntax-rules ()
-    [(_ (name contract))
-     (begin
-       (define/contract name contract (void))
-       (make-set!able name))]
-    [(_ (name contract) expr)
-     (begin
-       (define/contract name contract expr)
-       (make-set!able name))]))
+(define-syntax (dssl-let stx)
+  (syntax-parse stx
+    [(_ b:contracted-binding)
+     #'(begin
+         (define/contract b.var b.rhs (void))
+         (make-set!able b.var))]
+    [(_ b:contracted-binding expr)
+     #'(begin
+         (define/contract b.var b.rhs expr)
+         (make-set!able b.var))]))
 
 ; while uses two syntax parameters, break and continue (shared by for)
 (define-syntax-parameter
@@ -293,20 +326,11 @@
 (define (dssl-vector-ref v i)
   (vector-ref v i))
 
-(begin-for-syntax
-  (define-syntax-class field-names
-    #:description "field names"
-    (pattern (field-name:id ...)
-             #:fail-when
-             (check-duplicate-identifier (syntax->list #'(field-name ...)))
-             "duplicate field name"
-             #:with (field ...) #'(field-name ...))))
-
 (define-syntax (dssl-defstruct/early stx)
   (syntax-parse stx
-    [(_ (name:id internal-name:id) fields:field-names)
+    [(_ (name:id internal-name:id) fields:unique-identifiers)
      #`(begin
-         (define-struct (internal-name struct-base) (fields.field ...)
+         (define-struct (internal-name struct-base) (fields.var ...)
                         #:mutable
                         #:transparent)
          (define (#,(format-id #'name "~a?" #'name) value)
@@ -332,16 +356,16 @@
                        firsts ... rest ...)]
     ; Interpret defstructs
     [(_ (early-defns ...) (late-defns ...)
-        (dssl-defstruct name:id ((field:id ctc:expr) ...))
+        (dssl-defstruct name:id (b:contracted-binding ...))
         rest ...)
      (with-syntax ([s:cons (format-id #'name "s:~a" #'name)])
        #`(dssl-begin/acc
            (early-defns
              ...
-             (dssl-defstruct/early (name s:cons) (field ...)))
+             (dssl-defstruct/early (name s:cons) (b.var ...)))
            (late-defns
              ...
-             (dssl-defstruct/late (name s:cons) ((field ctc) ...)))
+             (dssl-defstruct/late (name s:cons) ((b.var b.rhs) ...)))
            rest ...))]
     ; Pass everything else through
     [(_ (early-defns ...) (late-defns ...)

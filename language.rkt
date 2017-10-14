@@ -302,6 +302,8 @@
 (define-syntax (dssl-defstruct/early stx)
   (syntax-parse stx
     [(_ (name:id internal-name:id) (field:id ...))
+     #:fail-when (check-duplicate-identifier
+                   (syntax->list #'(field ...))) "duplicate field name"
      #`(begin
          (define-struct (internal-name struct-base) (field ...)
                         #:mutable
@@ -331,8 +333,6 @@
     [(_ (early-defns ...) (late-defns ...)
         (dssl-defstruct name:id ((field:id ctc:expr) ...))
         rest ...)
-     #:fail-when (check-duplicate-identifier
-                   (syntax->list #'(field ...))) "duplicate field name"
      (with-syntax ([s:cons (format-stx "s:~a" #'name)])
        #`(dssl-begin/acc
            (early-defns

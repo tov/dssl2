@@ -6,6 +6,8 @@
                   position-line
                   position-col
                   position-offset)
+         (only-in racket/syntax
+                  format-id)
          parser-tools/yacc
          syntax/readerr)
 (require (for-syntax racket/base))
@@ -92,11 +94,11 @@
                  ,$6))]
         [(WHILE <expr0> COLON <suite>)
          (loc `(while ,$2 ,@$4))]
-        [(FOR IDENT IN <expr> COLON <suite>)
+        [(FOR <ident> IN <expr> COLON <suite>)
          (loc `(for [,$2 ,$4] ,@$6))]
-        [(FOR IDENT COMMA IDENT IN <expr> COLON <suite>)
+        [(FOR <ident> COMMA <ident> IN <expr> COLON <suite>)
          (loc `(for [(,$2 ,$4) ,$6] ,@$8))]
-        [(DEF IDENT <foralls> LPAREN <contract-formals> RPAREN <result>
+        [(DEF <ident> <foralls> LPAREN <contract-formals> RPAREN <result>
               COLON <suite>)
          (loc `(def (,$2 ,$3 ,@$5) ,$7 ,@$9))]
         [(TEST <expr> COLON <suite>)
@@ -157,13 +159,13 @@
          (loc `(let ,$2))]
         [(LET <contract-formal> EQUALS <expr>)
          (loc `(let ,$2 ,$4))]
-        [(DEFSTRUCT IDENT LPAREN <contract-formals> RPAREN)
+        [(DEFSTRUCT <ident> LPAREN <contract-formals> RPAREN)
          (loc `(defstruct ,$2 ,$4))]
         [(BREAK)
          (loc `(break))]
         [(CONTINUE)
          (loc `(continue))]
-        [(IMPORT IDENT)
+        [(IMPORT <ident>)
          (loc `(import ,$2))]
         [(IMPORT STRING-LITERAL)
          (loc `(import ,$2))]
@@ -199,23 +201,27 @@
          (loc (cons $1 $3))])
 
       (<contract-formal>
-        [(IDENT COLON <expr>)
+        [(<ident> COLON <expr>)
          (loc (list $1 $3))]
-        [(IDENT)
+        [(<ident>)
          (loc (list $1 'any/c))])
 
       (<formals>
         [()
          `()]
-        [(IDENT)
+        [(<ident>)
          (loc (list $1))]
-        [(IDENT COMMA <formals>)
+        [(<ident> COMMA <formals>)
          (loc (cons $1 $3))])
 
-      (<lvalue>
+      (<ident>
         [(IDENT)
+         (loc $1)])
+
+      (<lvalue>
+        [(<ident>)
          $1]
-        [(<atom> PERIOD IDENT)
+        [(<atom> PERIOD <ident>)
          (loc `(struct-ref ,$1 ,$3))]
         [(<atom> LBRACK <expr> RBRACK)
          (loc `(vector-ref ,$1 ,$3))])
@@ -233,17 +239,17 @@
          (loc `(vector ,@$2))]
         [(LBRACK <expr> SEMICOLON <expr> RBRACK)
          (loc `(make-vector ,$4 ,$2))]
-        [(LBRACK <expr> FOR IDENT IN <expr0> RBRACK)
+        [(LBRACK <expr> FOR <ident> IN <expr0> RBRACK)
          (loc `(for/vector [,$4 ,$6] ,$2))]
-        [(LBRACK <expr> FOR IDENT COMMA IDENT IN <expr0> RBRACK)
+        [(LBRACK <expr> FOR <ident> COMMA <ident> IN <expr0> RBRACK)
          (loc `(for/vector [(,$4 ,$6) ,$8] ,$2))]
-        [(LBRACK <expr> FOR IDENT IN <expr0> IF <expr> RBRACK)
+        [(LBRACK <expr> FOR <ident> IN <expr0> IF <expr> RBRACK)
          (loc `(for/vector [,$4 ,$6] #:when ,$8 ,$2))]
-        [(LBRACK <expr> FOR IDENT COMMA IDENT IN <expr0> IF <expr> RBRACK)
+        [(LBRACK <expr> FOR <ident> COMMA <ident> IN <expr0> IF <expr> RBRACK)
          (loc `(for/vector [(,$4 ,$6) ,$8] #:when ,$10 ,$2))]
-        [(IDENT LBRACE <fields> RBRACE)
-         (loc `(,(string->symbol (format "m:~a" $1)) ,@$3))]
-        [(OBJECT IDENT LBRACE <fields> RBRACE)
+        [(<ident> LBRACE <fields> RBRACE)
+         (loc `(,(format-id #f "m:~a" $1 #:source $1) ,@$3))]
+        [(OBJECT <ident> LBRACE <fields> RBRACE)
          (loc `(object ,$2 ,@$4))]
         [(LPAREN <expr> RPAREN)
          (loc $2)])
@@ -265,9 +271,9 @@
          (cons $1 $3)])
 
       (<field>
-        [(IDENT COLON <expr>)
+        [(<ident> COLON <expr>)
          (loc `[,$1 ,$3])]
-        [(IDENT)
+        [(<ident>)
          (loc `[,$1 ,$1])])
 
       (<expr>

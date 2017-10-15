@@ -155,7 +155,8 @@ Numeric literals include:
   @item{Decimal integers: @racket[0], @racket[3], @racket[18446744073709551617]}
   @item{Hexadedecimal, octal, and binary integers: @q{0xFFFF00},
       @q{0o0177}, @q{0b011010010}}
-  @item{Floating point: @racket[3.5], @q{6.02E23}, @racket[1e-12]}
+  @item{Floating point: @racket[3.5], @q{6.02E23}, @racket[1e-12], @racket[inf],
+  @racket[nan]}
 ]
 
 @subsubsection{String Literals}
@@ -1118,6 +1119,12 @@ Determines whether its argument is an even integer.
 @defprocform[odd?]{(int?) -> bool?}
 
 Determines whether its argument is an odd integer.
+
+@defprocform[nan?]{(num?) -> bool?}
+
+Determines whether its argument is the IEEE 754 @racket[float?]
+not-a-number value. This is useful, since @racket[nan] is not necessarily
+@racket[==] to other instances of @racket[nan].
 
 @subsection{String operations}
 

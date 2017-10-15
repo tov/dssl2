@@ -56,7 +56,8 @@
            [positive? (-> num? bool?)]
            [negative? (-> num? bool?)]
            [even? (-> int? bool?)]
-           [odd? (-> int? bool?)])
+           [odd? (-> int? bool?)]
+           [nan? (-> num? bool?)])
          ; * string operations
          (contract-out
            [chr (-> nat? char?)]
@@ -82,6 +83,8 @@
          (only-in racket/list
                   first
                   rest)
+         (only-in racket/math
+                  nan?)
          (only-in racket/contract
                   ->
                   and/c

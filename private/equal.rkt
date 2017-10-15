@@ -27,6 +27,12 @@
         (and (eq? a (car pair))
              (eq? b (cdr pair))))))
 
+  (define (seen!? a b)
+    (if (seen? a b) #true
+        (begin
+          (see! a b)
+          #false)))
+
   (define (compare a b)
     (cond
       ; This case covers equality for booleans, contracts, and
@@ -39,23 +45,19 @@
       [(vector? a)
        (and (vector? b)
             (= (vector-length a) (vector-length b))
-            (or (seen? a b)
-                (begin
-                  (see! a b)
-                  (for/and ([x (in-vector a)]
-                            [y (in-vector b)])
-                    (compare x y)))))]
+            (or (seen!? a b)
+                (for/and ([x (in-vector a)]
+                          [y (in-vector b)])
+                  (compare x y))))]
       [(struct-base? a)
        (and (struct-base? b)
             (let ([info (struct-base-struct-info a)])
               (and (eq? info (struct-base-struct-info b))
-                   (or (seen? a b)
-                       (begin
-                         (see! a b)
-                         (for/and ([field-info
-                                     (struct-info-field-infos info)])
-                           (compare ((field-info-getter field-info) a)
-                                    ((field-info-getter field-info) b))))))))]
+                   (or (seen!? a b)
+                       (for/and ([field-info
+                                   (struct-info-field-infos info)])
+                         (compare ((field-info-getter field-info) a)
+                                  ((field-info-getter field-info) b)))))))]
       [else #false]))
 
   (compare a0 b0))

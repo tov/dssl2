@@ -236,11 +236,15 @@
             (λ (stx)
               (syntax-parse stx #:literals (set!)
                 [(set! _:id e:expr)
-                 #`(set! real-var
-                     (racket:contract
-                       contract e
-                       "assignment" 'var
-                       'var (get-srcloc e)))]
+                 (quasisyntax/loc #'contract
+                   (set! real-var
+                     #,(quasisyntax/loc #'e
+                         (racket:contract
+                           contract e
+                           (format "assignment at ~a"
+                                   (srcloc->string (get-srcloc e)))
+                           'var
+                           'var (get-srcloc contract)))))]
                 [_:id
                  #'(check-not-unsafe-undefined real-var 'var)]
                 [(_:id . args)

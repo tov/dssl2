@@ -199,7 +199,7 @@
   (define-splicing-syntax-class
     optional-contract-vars
     #:description "optional forall-quantified contract variables"
-    (pattern (~seq #:forall vars:unique-identifiers)
+    (pattern (~seq (~or #:forall #:∀) vars:unique-identifiers)
              #:with (var ...) #'(vars.var ...))
     (pattern (~seq)
              #:with (var ...) #'())))

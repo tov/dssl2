@@ -598,7 +598,7 @@
         a]
        [else
          (runtime-error
-           "unary + expects a number, but given ‘~s’"
+           "unary + expects a number, but given ‘~e’"
            a)])]
     [(a b)
      (cond

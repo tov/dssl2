@@ -4,44 +4,72 @@
 
 (require "struct.rkt")
 
-; A HashPair is (make-hash-pair fixnum? fixnum?)
-(struct hash-pair [left right] #:transparent)
+; A Chain is one of:
+;  - [Box Natural]
+;  - [Box Chain]
 
-(define (make-key a b)
-  (hash-pair (eq-hash-code a) (eq-hash-code b)))
+; union-find!? : [EqHashTbl Any Chain] Any Any -> Boolean
+; Associates `a` and `b` in the hash table, and returns whether they
+; were associated already.
+(define (union-find!? h x y)
+  (define (find b)
+    (define n (unbox b))
+    (if (box? n)
+        (let loop ([b b] [n n])
+          (define nn (unbox n))
+          (if (box? nn)
+              (begin
+                (set-box! b nn)
+                (loop n nn))
+              n))
+        b))
+  (define bx (hash-ref h x #f))
+  (define by (hash-ref h y #f))
+  (cond
+    [(and bx by)
+     (define rx (find bx))
+     (define ry (find by))
+     (cond
+       [(eq? rx ry) #t]
+       [else
+         (define nx (unbox bx))
+         (define ny (unbox by))
+         (cond
+           [(> nx ny)
+            (set-box! ry rx)
+            (set-box! rx (+ nx ny))]
+           [else
+            (set-box! rx ry)
+            (set-box! ry (+ nx ny))])
+         #f])]
+    [bx
+     (define rx (find bx))
+     (hash-set! h y rx)
+     #f]
+    [by
+     (define ry (find by))
+     (hash-set! h x ry)
+     #f]
+    [else
+     (define b (box 1))
+     (hash-set! h x b)
+     (hash-set! h y b)
+     #f]))             
 
 (define (dssl-equal? a0 b0)
   (define table #false)
 
-  (define (see! a b)
-    (unless table (set! table (make-hash)))
-    (hash-update! table
-                  (make-key a b)
-                  (λ (pairs) (cons (cons a b) pairs))
-                  '()))
-
-  (define (seen? a b)
-    (and
-      table
-      (for/or ([pair (hash-ref table (make-key a b) '())])
-        (and (eq? a (car pair))
-             (eq? b (cdr pair))))))
-
   (define (seen!? a b)
-    (if (seen? a b) #true
-        (begin
-          (see! a b)
-          #false)))
+    (unless table (set! table (make-hasheq)))
+    (union-find!? table a b))
 
-  (define (compare a b)
+  (let compare ([a a0] [b b0])
     (cond
       ; This case covers equality for booleans, contracts, and
       ; procedures as well as physically equal pointers.
       [(eq? a b)              #true]
-      [(number? a)            (and (number? b)
-                                   (= a b))]
-      [(string? a)            (and (string? b)
-                                   (string=? a b))]
+      [(number? a)            (and (number? b) (= a b))]
+      [(string? a)            (and (string? b) (string=? a b))]
       [(vector? a)
        (and (vector? b)
             (= (vector-length a) (vector-length b))
@@ -58,6 +86,4 @@
                                    (struct-info-field-infos info)])
                          (compare ((field-info-getter field-info) a)
                                   ((field-info-getter field-info) b)))))))]
-      [else #false]))
-
-  (compare a0 b0))
+      [else #false])))

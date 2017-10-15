@@ -19,15 +19,15 @@
   (check-parse? "-5E-2"
                 (- 5E-2))
   (check-parse? "v[i]"
-                (vector-ref v i))
+                (vec-ref v i))
   (check-parse? "s.f"
                 (struct-ref s f))
   (check-parse? "[0, 1, 2]"
-                (vector 0 1 2))
+                (vec 0 1 2))
   (check-parse? "[0, 1, 2,]"
-                (vector 0 1 2))
+                (vec 0 1 2))
   (check-parse? "[0; 10]"
-                (make-vector 10 0))
+                (make-vec 10 0))
   (check-parse? "posn { x: 3, y: 4 }"
                 (m:posn [x 3] [y 4]))
   (check-parse? "a == 4"
@@ -52,7 +52,7 @@
   (check-parse? "a + -6"
                 (+ a (- 6)))
   (check-parse? "[5, lambda x: x + 1]"
-                (vector 5 (lambda (x) (+ x 1))))
+                (vec 5 (lambda (x) (+ x 1))))
   (check-parse? "a.b.c"
                 (struct-ref (struct-ref a b) c))
 
@@ -72,7 +72,7 @@
                 (defstruct posn (x y)))
   (check-parse? "a.b.c = e[f]"
                 (setf! (struct-ref (struct-ref a b) c)
-                       (vector-ref e f)))
+                       (vec-ref e f)))
   (check-parse? "assert False"
                 (assert #f))
   (check-parse? "assert_eq a + 1, 6"
@@ -93,7 +93,7 @@
                       [else (pass)]))
   (check-parse? "if a:\n  c = d\n  e[0] = 9"
                 (cond [a (setf! c d)
-                         (setf! (vector-ref e 0) 9)]
+                         (setf! (vec-ref e 0) 9)]
                       [else (pass)]))
   (check-parse? "if a:\n  if b:\n    5"
                 (cond [a (cond [b 5]

@@ -224,7 +224,7 @@
         [(<atom> PERIOD <ident>)
          (loc `(struct-ref ,$1 ,$3))]
         [(<atom> LBRACK <expr> RBRACK)
-         (loc `(vector-ref ,$1 ,$3))])
+         (loc `(vec-ref ,$1 ,$3))])
 
       (<atom>
         [(<lvalue>)
@@ -236,17 +236,17 @@
         [(<atom> LPAREN <actuals> RPAREN)
          (loc `(,$1 ,@$3))]
         [(LBRACK <actuals> RBRACK)
-         (loc `(vector ,@$2))]
+         (loc `(vec ,@$2))]
         [(LBRACK <expr> SEMICOLON <expr> RBRACK)
-         (loc `(make-vector ,$4 ,$2))]
+         (loc `(make-vec ,$4 ,$2))]
         [(LBRACK <expr> FOR <ident> IN <expr0> RBRACK)
-         (loc `(for/vector [,$4 ,$6] ,$2))]
+         (loc `(for/vec [,$4 ,$6] ,$2))]
         [(LBRACK <expr> FOR <ident> COMMA <ident> IN <expr0> RBRACK)
-         (loc `(for/vector [(,$4 ,$6) ,$8] ,$2))]
+         (loc `(for/vec [(,$4 ,$6) ,$8] ,$2))]
         [(LBRACK <expr> FOR <ident> IN <expr0> IF <expr> RBRACK)
-         (loc `(for/vector [,$4 ,$6] #:when ,$8 ,$2))]
+         (loc `(for/vec [,$4 ,$6] #:when ,$8 ,$2))]
         [(LBRACK <expr> FOR <ident> COMMA <ident> IN <expr0> IF <expr> RBRACK)
-         (loc `(for/vector [(,$4 ,$6) ,$8] #:when ,$10 ,$2))]
+         (loc `(for/vec [(,$4 ,$6) ,$8] #:when ,$10 ,$2))]
         [(<ident> LBRACE <fields> RBRACE)
          (loc `(,(format-id #f "m:~a" $1 #:source $1) ,@$3))]
         [(OBJECT <ident> LBRACE <fields> RBRACE)

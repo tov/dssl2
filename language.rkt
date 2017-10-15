@@ -37,7 +37,7 @@
            [if                  if]
            [else                else]
            [void                pass]
-           [vector              vector]
+           [vec                 vec]
            [dssl-True           True]
            [dssl-False          False]
            [dssl-assert         assert]
@@ -51,10 +51,10 @@
            [dssl-elif           elif]
            [dssl-error          error]
            [dssl-for            for]
-           [dssl-for/vector     for/vector]
+           [dssl-for/vec        for/vec]
            [dssl-lambda         lambda]
            [dssl-let            let]
-           [dssl-make-vector    make-vector]
+           [dssl-make-vec       make-vec]
            [dssl-object         object]
            [dssl-import         import]
            [dssl-return         return]
@@ -63,7 +63,7 @@
            [dssl-struct-ref     struct-ref]
            [dssl-test           test]
            [dssl-time           time]
-           [dssl-vector-ref     vector-ref]
+           [dssl-vec-ref        vec-ref]
            [dssl-while          while])
          (all-from-out "private/prims.rkt"))
 
@@ -289,7 +289,7 @@
     [(_ [i:id v:expr] expr:expr ...+)
      #'(dssl-for [(_ i) v] (dssl-begin expr ...))]))
 
-(define-syntax (dssl-for/vector stx)
+(define-syntax (dssl-for/vec stx)
   (syntax-parse stx
     [(_ [(i:id j:id) v:expr] expr:expr)
      #:fail-when (and (bound-identifier=? #'i #'j) #'j)
@@ -298,7 +298,7 @@
                     [j (dssl-in-value v)])
          expr)]
     [(_ [j:id v:expr] expr:expr)
-     #'(dssl-for/vector [(_ j) v] expr)]
+     #'(dssl-for/vec [(_ j) v] expr)]
     [(_ [(i:id j:id) v:expr] #:when when expr:expr)
      #:fail-when (and (bound-identifier=? #'i #'j) #'j)
                  "duplicate variable name"
@@ -307,7 +307,7 @@
                     #:when when)
          expr)]
     [(_ [j:id v:expr] #:when when:expr expr:expr)
-     #'(dssl-for/vector [(_ j) v] #:when when expr)]))
+     #'(dssl-for/vec [(_ j) v] #:when when expr)]))
 
 (define (dssl-in-value/value srclocs v)
   (cond
@@ -335,16 +335,16 @@
 
 ; setf! is like Common Lisp setf, but it just recognizes three forms. We
 ; use this to translate assignments.
-(define-syntax dssl-setf!
-  (syntax-rules (dssl-vector-ref dssl-struct-ref)
-    [(_ (dssl-vector-ref v i) rhs)
-     (vector-set! v i rhs)]
-    [(_ (dssl-struct-ref s f) rhs)
-     (dssl-struct-set! s 'f rhs)]
-    [(_ i rhs)
-     (set! i rhs)]))
+(define-syntax (dssl-setf! stx)
+  (syntax-parse stx #:literals (dssl-vec-ref dssl-struct-ref)
+    [(_ (dssl-vec-ref v:expr i:expr) rhs:expr)
+     #'(vector-set! v i rhs)]
+    [(_ (dssl-struct-ref s:expr f:id) rhs:expr)
+     #'(dssl-struct-set! s 'f rhs)]
+    [(_ i:id rhs:expr)
+     #'(set! i rhs)]))
 
-(define (dssl-vector-ref v i)
+(define (dssl-vec-ref v i)
   (vector-ref v i))
 
 (define-syntax (dssl-defstruct/early stx)
@@ -530,11 +530,11 @@
            (time-apply (λ () (dssl-begin body ...)) '()))
          (printf "~a: cpu: ~a real: ~a gc: ~a\n" lab cpu real gc))]))
 
-(define/contract (dssl-make-vector a b)
+(define/contract (dssl-make-vec a b)
   (-> int? AnyC vec?)
   (make-vector a b))
 
-(define (vector . args)
+(define (vec . args)
   (list->vector args))
 
 (define-syntax-rule (dssl-assert expr)

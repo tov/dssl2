@@ -561,7 +561,8 @@
   (define (handler exception)
     (if (regexp-match? pattern (exn-message exception))
       #false
-      "errored as expected, but didn’t match the pattern"))
+      (format "errored as expected, but didn’t match the pattern\n message: ~a"
+              (exn-message exception))))
   (define message (with-handlers ([exn:fail? handler])
                     (thunk)
                     "did not error as expected"))

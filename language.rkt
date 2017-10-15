@@ -88,7 +88,8 @@
          (only-in racket/math
                   natural?)
          (only-in syntax/location quote-srcloc))
-(require (prefix-in racket: racket))
+(require (prefix-in racket: racket/base)
+         (prefix-in racket: racket/contract/base))
 
 (require (for-syntax racket/base
                      syntax/parse
@@ -174,11 +175,11 @@
 
 (begin-for-syntax
   (define-syntax-class
-    contracted-binding
+    var&contract
     #:description "association of identifier with contract"
-    (pattern [var:id rhs:expr])
+    (pattern [var:id contract:expr])
     (pattern var:id
-             #:with rhs #'AnyC))
+             #:with contract #'AnyC))
 
   (define-syntax-class
     unique-identifiers
@@ -204,7 +205,7 @@
              #:with (var ...) #'())))
 
 (define-simple-macro
-  (dssl-def (f:id cvs:optional-contract-vars bs:contracted-binding ...)
+  (dssl-def (f:id cvs:optional-contract-vars bs:var&contract ...)
             result-contract:optional-return-contract
             expr:expr ...)
    #:fail-when (check-duplicate-identifier
@@ -214,7 +215,7 @@
     (define/contract
       f
       (parametric->/c [cvs.var ...]
-                      (-> bs.rhs ... result-contract.result))
+                      (-> bs.contract ... result-contract.result))
       (lambda (bs.var ...)
         (let/ec return-f
                 (syntax-parameterize
@@ -226,30 +227,31 @@
 
 (define-syntax (dssl-let stx)
   (syntax-parse stx
-    [(_ b:contracted-binding)
+    [(_ :var&contract)
      #'(begin
          (define real-var unsafe-undefined)
          (make-set!able real-var)
-         (define-syntax b.var
+         (define-syntax var
            (make-set!-transformer
             (λ (stx)
               (syntax-parse stx #:literals (set!)
                 [(set! _:id e:expr)
-                 #`(set! real-var (contract b.rhs e
-                                            "assignment" 'b.var
-                                            'b.var
-                                            (get-srcloc e)))]
+                 #`(set! real-var
+                     (racket:contract
+                       contract e
+                       "assignment" 'var
+                       'var (get-srcloc e)))]
                 [_:id
-                 #'(check-not-unsafe-undefined real-var 'b.var)]
+                 #'(check-not-unsafe-undefined real-var 'var)]
                 [(_:id . args)
                  (with-syntax ([app (datum->syntax stx '#%app)])
                    #'(app
-                       (check-not-unsafe-undefined real-var 'b.var)
+                       (check-not-unsafe-undefined real-var 'var)
                        . args))])))))]
-    [(_ b:contracted-binding expr)
+    [(_ :var&contract expr)
      #'(begin
-         (define/contract b.var b.rhs expr)
-         (make-set!able b.var))]))
+         (define/contract var contract expr)
+         (make-set!able var))]))
 
 ; while uses two syntax parameters, break and continue (shared by for)
 (define-syntax-parameter
@@ -378,16 +380,16 @@
                        firsts ... rest ...)]
     ; Interpret defstructs
     [(_ (early-defns ...) (late-defns ...)
-        (dssl-defstruct name:id (b:contracted-binding ...))
+        (dssl-defstruct name:id (:var&contract ...))
         rest ...)
      (with-syntax ([s:cons (format-id #f "s:~a" #'name)])
        #`(dssl-begin/acc
            (early-defns
              ...
-             (dssl-defstruct/early (name s:cons) (b.var ...)))
+             (dssl-defstruct/early (name s:cons) (var ...)))
            (late-defns
              ...
-             (dssl-defstruct/late (name s:cons) ((b.var b.rhs) ...)))
+             (dssl-defstruct/late (name s:cons) ((var contract) ...)))
            rest ...))]
     ; Pass everything else through
     [(_ (early-defns ...) (late-defns ...)

@@ -597,8 +597,12 @@
      (cond
        [(and (number? a) (number? b))
         (+ a b)]
-       [(or (string? a) (string? b))
-        (format "~a~a" a b)]
+       [(string? a)
+        (cond
+          [(string? b) (string-append a b)]
+          [else        (format "~a~e" a b)])]
+       [(string? b)
+        (format "~e~a" a b)]
        [else
          (runtime-error
            "+ expects 2 numbers or at least 1 string, but given ~e and ~e"

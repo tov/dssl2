@@ -214,8 +214,8 @@
   (begin
     (define/contract
       f
-      (parametric->/c [cvs.var ...]
-                      (-> bs.contract ... result-contract.result))
+      (maybe-parametric->/c [cvs.var ...]
+                            (-> bs.contract ... result-contract.result))
       (lambda (bs.var ...)
         (let/ec return-f
                 (syntax-parameterize
@@ -224,6 +224,12 @@
                                   [(_ result) (return-f result)])])
                   (dssl-begin expr ...)))))
     (make-set!able f)))
+
+(define-syntax (maybe-parametric->/c stx)
+  (syntax-parse stx
+    [(_ [] contract:expr) #'contract]
+    [(_ [cv:id ...] contract:expr)
+     #'(parametric->/c [cv ...] contract)]))
 
 (define-syntax (dssl-let stx)
   (syntax-parse stx

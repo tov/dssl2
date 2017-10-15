@@ -1,5 +1,9 @@
 #lang dssl2
 
+# Check that parametric contracts don't mess up non-parametric function names:
+def foo_bar(): 5
+assert_eq format('~e', foo_bar), 'foo_bar'
+
 def id[A](x: A) -> A: x
 
 assert_eq id(5), 5

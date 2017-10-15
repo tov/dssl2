@@ -54,7 +54,7 @@
      (define b (box 1))
      (hash-set! h x b)
      (hash-set! h y b)
-     #f]))             
+     #f]))
 
 (define (dssl-equal? a0 b0)
   (define table #false)
@@ -84,6 +84,6 @@
                    (or (seen!? a b)
                        (for/and ([field-info
                                    (struct-info-field-infos info)])
-                         (compare ((field-info-getter field-info) a)
-                                  ((field-info-getter field-info) b)))))))]
+                         (define getter (field-info-getter field-info))
+                         (compare (getter a) (getter b)))))))]
       [else #false])))

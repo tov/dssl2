@@ -169,9 +169,11 @@
            ...
            [else (dssl-begin else-result ... )])]))
 
-(define-simple-macro (dssl-lambda (param:id ...) expr:expr ...)
-  (lambda (param ...)
-    (dssl-begin expr ...)))
+(define-syntax (dssl-lambda stx)
+  (syntax-parse stx
+    [(_ (param:id ...) expr:expr ...)
+     (quasisyntax/loc stx
+       (lambda (param ...) (dssl-begin expr ...)))]))
 
 (begin-for-syntax
   (define-syntax-class
@@ -573,7 +575,7 @@
   (begin
     (define v1 e1)
     (define v2 e2)
-    (unless (equal? v1 v2)
+    (unless (dssl-equal? v1 v2)
       (assertion-error #:srclocs (get-srclocs e1 e2)
                        'assert_eq "~e ≠ ~e" v1 v2))))
 

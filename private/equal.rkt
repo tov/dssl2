@@ -65,10 +65,11 @@
 
   (let compare ([a a0] [b b0])
     (cond
+      ; We try number? before eq?, to get correct treatement of nan.
+      [(number? a)            (and (number? b) (= a b))]
       ; This case covers equality for booleans, contracts, and
       ; procedures as well as physically equal pointers.
       [(eq? a b)              #true]
-      [(number? a)            (and (number? b) (= a b))]
       [(string? a)            (and (string? b) (string=? a b))]
       [(vector? a)
        (and (vector? b)

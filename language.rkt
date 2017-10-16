@@ -576,11 +576,3 @@
      #`(dssl-assert-error/thunk (get-srclocs code) (λ () code) expected)]
     [(_ code:expr)
      #`(dssl-assert-error/thunk (get-srclocs code) (λ () code) "")]))
-
-#| (define-syntax (dssl-assert-prop stx) |#
-#|   (syntax-parse stx |#
-#|     #:literals (dssl-< dssl-> dssl-<= dssl->= |#
-#|                 dssl-equal? dssl-!= dssl-!= eq?) |#
-#|     [(_ (dssl-< a b) |#
-#|         (dssl-assert-prop/infix '< dssl-< a b) |#
-

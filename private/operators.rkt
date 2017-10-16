@@ -1,26 +1,32 @@
 #lang racket/base
 
-(provide %
-         **
+(require (only-in racket/contract/base contract-out case->))
+
+(provide (contract-out
+           [% (-> int? int? int?)]
+           [** (-> num? num? num?)])
          ==
          !=
          ===
          !==
          !
-         &
-         \|
-         ^
-         ~
+         (contract-out
+           [& (-> int? int? int?)]
+           [\| (-> int? int? int?)]
+           [^ (-> int? int? int?)]
+           [~ (-> int? int?)])
+         +
          -              ; from Racket
          *              ; from Racket
-         /
-         +
+         (contract-out
+           [/ (-> num? num? num?)])
          <
          >
          <=
          >=
-         >>
-         <<
+         (contract-out
+           [>> (-> int? int? int?)]
+           [<< (-> int? int? int?)])
          ; syntax
          and            ; from Racket
          or)            ; from Racket
@@ -55,14 +61,6 @@
 (define (~ a)
   (bitwise-not a))
 
-(define/contract (/ a b)
-  (-> num? num? num?)
-  (cond
-    [(and (int? a) (int? b))
-     (quotient a b)]
-    [else
-     (racket:/ a b)]))
-
 (define +
   (case-lambda
     [(a)
@@ -71,7 +69,7 @@
         a]
        [else
          (runtime-error
-           "unary + expects a number, but given ‘~e’"
+           "unary + expects a number\n  given: ~e"
            a)])]
     [(a b)
      (cond
@@ -85,8 +83,15 @@
         (format "~e~a" a b)]
        [else
          (runtime-error
-           "+ expects 2 numbers or at least 1 string, but given ~e and ~e"
+           "+ expects 2 numbers or at least 1 string\n  given: ~e\n  and: ~e"
            a b)])]))
+
+(define (/ a b)
+  (cond
+    [(and (int? a) (int? b))
+     (quotient a b)]
+    [else
+     (racket:/ a b)]))
 
 (define (== a b)
   (dssl-equal? a b))
@@ -110,7 +115,7 @@
       [else
         (runtime-error
           "Comparator ~a only applies to 2 strings or 2 numbers"
-          'number-cmp)])))
+          'name)])))
 
 (make-comparison < string<? racket:<)
 (make-comparison > string>? racket:>)

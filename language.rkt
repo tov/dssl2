@@ -204,6 +204,16 @@
     (pattern (~seq)
              #:with (var ...) #'())))
 
+(define-syntax-rule (ensure-contract who contract)
+  (ensure-contract/fn (get-srclocs contract) who contract))
+
+(define (ensure-contract/fn srclocs who contract)
+  (if (contract? contract)
+    contract
+    (runtime-error #:srclocs srclocs
+                   "~a: expected a contract\n got: ~e"
+                   who contract)))
+
 (define-simple-macro
   (dssl-def (f:id cvs:optional-contract-vars bs:var&contract ...)
             result-contract:optional-return-contract
@@ -215,7 +225,9 @@
     (define/contract
       f
       (maybe-parametric->/c [cvs.var ...]
-                            (-> bs.contract ... result-contract.result))
+                            (-> (ensure-contract 'def bs.contract)
+                                ...
+                                (ensure-contract 'def result-contract.result)))
       (lambda (bs.var ...)
         (let/ec return-f
                 (syntax-parameterize
@@ -260,7 +272,9 @@
                        . args))])))))]
     [(_ :var&contract expr)
      #'(begin
-         (define/contract var contract expr)
+         (define/contract var
+                          (ensure-contract 'let contract)
+                          expr)
          (make-set!able var))]))
 
 ; while uses two syntax parameters, break and continue (shared by for)
@@ -437,7 +451,8 @@
                     (generate-temporaries
                       (syntax->list #'(formal-field ...)))])
        #`(begin
-           (define contract-name contract) ...
+           (define contract-name (ensure-contract 'defstruct contract))
+           ...
            (define struct-info
              (make-struct-info
                'name

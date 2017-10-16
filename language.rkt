@@ -8,31 +8,7 @@
            ; special syntax
            [dssl-module-begin           #%module-begin]
            [dssl-top-interaction        #%top-interaction]
-           ; built-in operators
-           [modulo              %]
-           [expt                **]
-           [dssl-equal?         ==]
-           [eq?                 ===]
-           [not                 !]
-           [bitwise-and         &]
-           [bitwise-ior         \|]
-           [bitwise-xor         ^]
-           [bitwise-not         ~]
-           [-                   -]
-           [*                   *]
-           [/                   /]
-           [dssl-+              +]
-           [dssl-!=             !=]
-           [dssl-!==            !==]
-           [dssl-<              <]
-           [dssl->              >]
-           [dssl-<=             <=]
-           [dssl->=             >=]
-           [dssl->>             >>]
-           [dssl-<<             <<]
            ; syntax
-           [and                 and]
-           [or                  or]
            [begin               begin]
            [if                  if]
            [else                else]
@@ -65,11 +41,13 @@
            [dssl-time           time]
            [dssl-vec-ref        vec-ref]
            [dssl-while          while])
-         (all-from-out "private/prims.rkt"))
+         (all-from-out "private/prims.rkt")
+         (all-from-out "private/operators.rkt"))
 
 (require "private/errors.rkt"
          "private/equal.rkt"
          "private/prims.rkt"
+         "private/operators.rkt"
          "private/struct.rkt"
          racket/stxparam
          racket/splicing
@@ -599,65 +577,10 @@
     [(_ code:expr)
      #`(dssl-assert-error/thunk (get-srclocs code) (λ () code) "")]))
 
-(define/contract (/ a b)
-  (-> num? num? num?)
-  (cond
-    [(and (int? a) (int? b))
-     (quotient a b)]
-    [else
-     (racket:/ a b)]))
-
-(define dssl-+
-  (case-lambda
-    [(a)
-     (cond
-       [(number? a)
-        a]
-       [else
-         (runtime-error
-           "unary + expects a number, but given ‘~e’"
-           a)])]
-    [(a b)
-     (cond
-       [(and (number? a) (number? b))
-        (+ a b)]
-       [(string? a)
-        (cond
-          [(string? b) (string-append a b)]
-          [else        (format "~a~e" a b)])]
-       [(string? b)
-        (format "~e~a" a b)]
-       [else
-         (runtime-error
-           "+ expects 2 numbers or at least 1 string, but given ~e and ~e"
-           a b)])]))
-
-(define (dssl-!= a b)
-  (not (dssl-equal? a b)))
-
-(define (dssl-!== a b)
-  (not (eq? a b)))
-
-(define-syntax-rule (make-comparison name string-cmp number-cmp)
-  (define (name a b)
-    (cond
-      [(and (string? a) (string? b))
-       (string-cmp a b)]
-      [(and (number? a) (number? b))
-       (number-cmp a b)]
-      [else
-        (runtime-error
-          "Comparator ~a only applies to 2 strings or 2 numbers"
-          'number-cmp)])))
-
-(make-comparison dssl-< string<? <)
-(make-comparison dssl-> string>? >)
-(make-comparison dssl-<= string<=? <=)
-(make-comparison dssl->= string>=? >=)
-
-(define (dssl-<< n m)
-  (arithmetic-shift n m))
-
-(define (dssl->> n m)
-  (arithmetic-shift n (- m)))
+#| (define-syntax (dssl-assert-prop stx) |#
+#|   (syntax-parse stx |#
+#|     #:literals (dssl-< dssl-> dssl-<= dssl->= |#
+#|                 dssl-equal? dssl-!= dssl-!= eq?) |#
+#|     [(_ (dssl-< a b) |#
+#|         (dssl-assert-prop/infix '< dssl-< a b) |#
 

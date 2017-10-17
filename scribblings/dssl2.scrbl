@@ -495,6 +495,8 @@ else:
 println(x)
 }|
 
+Accessing an undefined variable is an error.
+
 @defcmpdform{@defidform/inline[for] @syn[var_name] @q{in} @syn[expr]: @syn[block]}
 
 Loops over the values of the given @syn[expr], evaluating the
@@ -1268,12 +1270,11 @@ to the variable also must satisfy the contract. For example:
 let x : int? = 0
 }|
 
-Note that while the @syn[expr] is optional, the contract will still be
-checked on the initial values, so in that case the contract should
-include @racket[VoidC]:
+Note that the @syn[expr] is optional, and the contract will not be
+checked before the variable is assigned:
 
 @dssl2block|{
-let x : OrC(int?, VoidC)
+let x : int?
 
 x = 5
 }|

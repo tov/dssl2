@@ -27,7 +27,7 @@ tree insertion function written using indentation:
 
 def insert!(t, k):
     if empty?(t): new_node(k)
-    elif random(size(t) + 1) == 0:
+    elif zero?(random(size(t) + 1)):
         root_insert!(t, k)
     elif k < t.key:
         t.left = insert!(t.left, k)

@@ -16,6 +16,22 @@
   ((dssl2-parser src)
    (new-dssl2-lexer src port interactive?)))
 
+
+(define (read-symbol/proc sym pos)
+  (let ([port (open-input-string (symbol->string sym))])
+    (port-count-lines! port)
+    (set-port-next-location! port
+                             (position-line pos)
+                             (position-col pos)
+                             (position-offset pos))
+    (read-syntax #f port)))
+
+(define-syntax (read-symbol stx)
+  (syntax-case stx ()
+    [(_ sym)
+     (with-syntax [(start (datum->syntax stx '$1-start-pos))]
+       #'(read-symbol/proc sym start))]))
+
 (define (dssl2-parser src)
   (define (parser-error tok-ok? tok-name tok-value start-pos end-pos)
     (raise-read-error (format "Syntax error: unexpected token ‘~a’"
@@ -95,7 +111,7 @@
         [(WHILE <expr0> COLON <suite>)
          (loc `(while ,$2 ,@$4))]
         [(FOR <ident> IN <expr> COLON <suite>)
-         (loc `(for [,$2 ,$4] ,@$6))]
+         (loc `(,(read-symbol 'for) [,$2 ,$4] ,@$6))]
         [(FOR <ident> COMMA <ident> IN <expr> COLON <suite>)
          (loc `(for [(,$2 ,$4) ,$6] ,@$8))]
         [(DEF <ident> <foralls> LPAREN <contract-formals> RPAREN <result>
@@ -216,7 +232,7 @@
 
       (<ident>
         [(IDENT)
-         (loc $1)])
+         (read-symbol $1)])
 
       (<lvalue>
         [(<ident>)
@@ -357,4 +373,3 @@
          (loc `(,$2 ,$1 ,$3))]
         [(<atom>)
          $1]))))
-

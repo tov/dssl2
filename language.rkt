@@ -10,7 +10,7 @@
            [dssl-top-interaction        #%top-interaction]
            ; syntax
            [begin               begin]
-           [if                  if]
+           [if                  if-e]
            [else                else]
            [void                pass]
            [vec                 vec]
@@ -20,7 +20,7 @@
            [dssl-assert-eq      assert_eq]
            [dssl-assert-error   assert_error]
            [dssl-break          break]
-           [dssl-cond           cond]
+           [dssl-if             if]
            [dssl-continue       continue]
            [dssl-def            def]
            [dssl-defstruct      defstruct]
@@ -34,8 +34,7 @@
            [dssl-object         object]
            [dssl-import         import]
            [dssl-return         return]
-           [dssl-setf!          setf!]
-           [dssl-setf!          =]
+           [dssl-=              =]
            [dssl-struct-ref     struct-ref]
            [dssl-test           test]
            [dssl-time           time]
@@ -140,10 +139,11 @@
   (unless (zero? (random 1))
     (set! f (void))))
 
-(define-syntax dssl-cond
-  (syntax-rules (else)
-    [(_ [test result ...] ... [else else-result ...])
-     (cond [test (dssl-begin result ...)]
+(define-syntax dssl-if
+  (syntax-rules (else dssl-elif)
+    [(_ [test0 result0 ...] [dssl-elif test result] ... [else else-result ...])
+     (cond [test0 (dssl-begin result0 ...)]
+           [test  (dssl-begin result)]
            ...
            [else (dssl-begin else-result ... )])]))
 
@@ -341,7 +341,7 @@
 
 ; setf! is like Common Lisp setf, but it just recognizes three forms. We
 ; use this to translate assignments.
-(define-syntax (dssl-setf! stx)
+(define-syntax (dssl-= stx)
   (syntax-parse stx #:literals (dssl-vec-ref dssl-struct-ref)
     [(_ (dssl-vec-ref v:expr i:expr) rhs:expr)
      #'(vector-set! v i rhs)]

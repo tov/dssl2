@@ -86,7 +86,7 @@
                 (if [a (= c d)] [else (= e f)]))
   (check-parse? "if a: c = d\nelif b: e = 3\nelse: f = 4"
                 (if [a (= c d)]
-                    [b (= e 3)]
+                    [elif b (= e 3)]
                     [else (= f 4)]))
   (check-parse? "if a:\n  c = d"
                 (if [a (= c d)]

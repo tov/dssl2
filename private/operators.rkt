@@ -1,6 +1,6 @@
 #lang racket/base
 
-(require (only-in racket/contract/base contract-out case->))
+(require (only-in racket/contract/base contract-out))
 
 (provide (contract-out
            [% (-> int? int? int?)]
@@ -35,10 +35,8 @@
          "errors.rkt"
          "equal.rkt")
 (require (prefix-in racket: racket/base))
-(require (only-in racket/contract/region
-                  define/contract)
-         (only-in racket/contract/base
-                  ->))
+(require (only-in racket/contract/region define/contract)
+         (only-in racket/contract/base ->))
 
 (define (% a b)
   (modulo a b))

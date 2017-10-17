@@ -22,7 +22,9 @@ followed by a newline, or a sequence of statements on subsequent lines
 that are all indented by four additional spaces. Here is an example of a
 tree insertion function written using indentation:
 
-@dssl2block|{
+@codeblock|{
+#lang dssl2
+
 def insert!(t, k):
     if empty?(t): new_node(k)
     elif random(size(t) + 1) == 0:

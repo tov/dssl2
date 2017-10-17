@@ -368,13 +368,13 @@ def fix_size!(node):
 Assignment. The assigned @syn[lvalue] can be in one of three forms:
 
 @itemlist[
- @item{@syn[var] assigns to a variable, which can be a @syn[let]-bound
+ @item{@syn[var_name] assigns to a variable, which can be a @syn[let]-bound
  local or a function parameter.}
- @item{@c{@syn[expr].@syn[fieldname]} assigns to a structure field, where
+ @item{@c{@syn[struct_expr].@syn[field_name]} assigns to a structure field, where
  the expression must evaluate to a structure that has the given field
- nane.}
- @item{@c{@syn[expr]₁[@syn[expr]₂]} assigns to a vector element, where
- @c{@syn[expr]₁} evaluates to the vector and @c{@syn[expr]₂}
+ name.}
+ @item{@c{@syn[vec_expr][@syn[index_expr]]} assigns to a vector element, where
+ @c{@syn[vec_expr]} evaluates to the vector and @c{@syn[index_expr]}
  evaluates to the index of the element.}
 ]
 
@@ -386,9 +386,12 @@ def sch_insert!(hash, key, value):
     let current = hash.buckets[index]
     while cons?(current):
         if key == current.first.key:
+            # struct assignment:
             current.first.value = value
             return
+        # variable assignment:
         current = current.rest
+    # vector assignment:
     hash.buckets[index] = cons(sc_entry(key, value), hash.buckets[index])
 }|
 

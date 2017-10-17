@@ -702,9 +702,9 @@ Expression @syn[expr] must evaluate to struct value that has field
 @syn[fieldname]; then this expression evaluates to the value of that
 field of the struct.
 
-@defexpform{@syn[expr]₁[@syn[expr]₂]}
+@defexpform{@syn[vec_expr][@syn[index_expr]]}
 
-Expression @syn[expr]₁ must evaluate to a vector @c{v}; @syn[expr]₂
+Expression @syn[vec_expr] must evaluate to a vector @c{v}; @syn[index_expr]
 must evaluate to an integer @c{n} between 0 and @code{len(v) - 1}.
 Then this returns the @c{n}th element of vector @c{v}.
 
@@ -750,12 +750,12 @@ add twice its first argument to its second argument can be written
 lambda x, y: 2 * x + y
 }|
 
-@defexpform{@syn[expr]₁ @q{if} @syn[expr]₂ @q{else} @syn[expr]₃}
+@defexpform{@syn[true_expr] @q{if} @syn[cond_expr] @q{else} @syn[false_expr]}
 
 The ternary expression first evaluates the condition
-@syn[expr]₂. If non-false,
-evaluates @syn[expr]₁ for its value; otherwise,
-evaluates @syn[expr]₃ for its value.
+@syn[cond_expr]. If non-false,
+evaluates @syn[true_expr] for its value; otherwise,
+evaluates @syn[false_expr] for its value.
 
 For example:
 
@@ -811,10 +811,10 @@ For example:
 let vec = [ 1, 2, 3, 4, 5 ]
 }|
 
-@defexpform{[ @syn[expr]₁; @syn[expr]₂ ]}
+@defexpform{[ @syn[init_expr]; @syn[size_expr] ]}
 
 Constructs a new vector whose length is the value of
-@syn[expr]₂, filled with the value of @syn[expr]₁. That is,
+@syn[size_expr], filled with the value of @syn[init_expr]. That is,
 
 @dssl2block|{
 [ 0; 5 ]
@@ -827,13 +827,13 @@ means the same thing as
 }|
 
 @defexpforms[
-  @list{[ @syn[expr]₁ @q{for} @syn[var_name] @q{in} @syn[expr]₂ ]}
-  @list{[ @syn[expr]₁ @q{for} @syn[var_name]₁, @syn[var_name]₂ @q{in} @syn[expr]₂ ]}
+  @list{[ @syn[elem_expr] @q{for} @syn[var_name] @q{in} @syn[iter_expr] ]}
+  @list{[ @syn[elem_expr] @q{for} @syn[var_name]₁, @syn[var_name]₂ @q{in} @syn[iter_expr] ]}
 ]
 
-Vector comprehensions: produces a vector of the values of @syn[expr]₁
-while iterating the variable(s) over @syn[expr]₂. In particular,
-@syn[expr]₂ must be a vector @c{v}, a string @c{s}, or a
+Vector comprehensions: produces a vector of the values of @syn[elem_expr]
+while iterating the variable(s) over @syn[iter_expr]. In particular,
+@syn[iter_expr] must be a vector @c{v}, a string @c{s}, or a
 natural number @c{n}; in which case the iterated-over values are
 the elements of @c{v}, the 1-character strings comprising
 @c{s}, or counting from 0 to @code{n - 1}, respectively. If one
@@ -866,14 +866,14 @@ evaluates to
 }|
 
 @defexpforms[
-  @list{[ @syn[expr]₁ @q{for} @syn[var_name] @q{in} @syn[expr]₂ @q{if} @syn[expr]₃ ]}
-  @list{[ @syn[expr]₁ @q{for} @syn[var_name]₁, @syn[var_name]₂ @q{in} @syn[expr]₂ @q{if} @syn[expr]₃ ]}
+  @list{[ @syn[elem_expr] @q{for} @syn[var_name] @q{in} @syn[iter_expr] @q{if} @syn[cond_expr] ]}
+  @list{[ @syn[elem_expr] @q{for} @syn[var_name]₁, @syn[var_name]₂ @q{in} @syn[iter_expr] @q{if} @syn[cond_expr] ]}
 ]
 
-If the optional @syn[expr]₃ is provided, only elements for which
-@syn[expr]₃ is non-false are included. That is, the variable(s) take on
-each of their values, then @syn[expr]₃ is evaluated in the scope of the
-variable(s). If it's non-false then @syn[expr]₁ is evaluated and
+If the optional @syn[cond_expr] is provided, only elements for which
+@syn[cond_expr] is non-false are included. That is, the variable(s) take on
+each of their values, then @syn[cond_expr] is evaluated in the scope of the
+variable(s). If it's non-false then @syn[elem_expr] is evaluated and
 included in the resulting vector.
 
 For example,

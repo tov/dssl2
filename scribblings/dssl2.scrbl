@@ -474,9 +474,9 @@ scope and last for that scope. A local variable may be re-assigned with the
 assignment form (@racket[=]), as in the third line here:
 
 @dssl2block|{
-def sum(vec):
+def sum(v):
     let result = 0
-    for v in vec: result = result + v
+    for elem in v: result = result + elem
     return result
 }|
 
@@ -808,7 +808,7 @@ of the expressions.
 For example:
 
 @dssl2block|{
-let vec = [ 1, 2, 3, 4, 5 ]
+let v = [ 1, 2, 3, 4, 5 ]
 }|
 
 @defexpform{[ @syn[init_expr]; @syn[size_expr] ]}
@@ -1198,26 +1198,26 @@ Creates a vector of size @c{n} whose elements are @code{f(0)},
 [ f(x) for x in n ]
 }|
 
-@defprocform[filter]{[X](pred: FunC(X, bool?), vec: VectorOf[X]) -> VectorOf[X]}
+@defprocform[filter]{[X](pred: FunC(X, bool?), v: VectorOf[X]) -> VectorOf[X]}
 
-Returns a vector containing the elements of @c{vec} for which
+Returns a vector containing the elements of @c{v} for which
 @c{pred} returns non-false. Equivalent to
 
 @dssl2block|{
-[ x for x in vec if pred(x) ]
+[ x for x in v if pred(x) ]
 }|
 
 @defprocform[len]{[X](VectorOf[X]) -> nat?}
 
 Returns the length of a vector.
 
-@defprocform[map]{[X, Y](f: FunC(X, Y), vec: VectorOf[X]) -> VectorOf[X]}
+@defprocform[map]{[X, Y](f: FunC(X, Y), v: VectorOf[X]) -> VectorOf[X]}
 
 Returns a vector consisting of @c{f} applied to each element of
-@c{vec}. Equivalent to
+@c{v}. Equivalent to
 
 @dssl2block|{
-[ f(x) for x in vec ]
+[ f(x) for x in v ]
 }|
 
 @subsection{I/O Functions}

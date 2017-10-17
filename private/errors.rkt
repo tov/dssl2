@@ -33,11 +33,13 @@
   #:property prop:exn:srclocs
   (λ (a-struct) (exn:fail:dssl-srclocs a-struct)))
 
-(define (dssl-error #:srclocs [srclocs '()] fmt . args)
+(define (error #:srclocs [srclocs '()] fmt . args)
   (raise (make-exn:fail:dssl
            (apply format fmt args)
            (current-continuation-marks)
            srclocs)))
+
+(define dssl-error error)
 
 (define (runtime-error #:srclocs [srclocs '()] fmt . args)
   (apply dssl-error #:srclocs srclocs

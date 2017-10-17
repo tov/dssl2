@@ -17,8 +17,8 @@
    (new-dssl2-lexer src port interactive?)))
 
 
-(define (read-symbol/proc sym pos)
-  (let ([port (open-input-string (symbol->string sym))])
+(define (read-symbol* sym pos)
+  (let ([port (open-input-string (format "~s" sym))])
     (port-count-lines! port)
     (set-port-next-location! port
                              (position-line pos)
@@ -30,7 +30,7 @@
   (syntax-case stx ()
     [(_ sym)
      (with-syntax [(start (datum->syntax stx '$1-start-pos))]
-       #'(read-symbol/proc sym start))]))
+       #'(read-symbol* sym start))]))
 
 (define (dssl2-parser src)
   (define (parser-error tok-ok? tok-name tok-value start-pos end-pos)
@@ -104,27 +104,27 @@
 
       (<compound-statement>
         [(IF <expr0> COLON <suite> <elifs> <maybe-else>)
-         (loc `(cond
+         (loc `(,(read-symbol 'cond)
                  [,$2 ,@$4]
                  ,@$5
                  ,$6))]
         [(WHILE <expr0> COLON <suite>)
-         (loc `(while ,$2 ,@$4))]
+         (loc `(,(read-symbol 'while) ,$2 ,@$4))]
         [(FOR <ident> IN <expr> COLON <suite>)
          (loc `(,(read-symbol 'for) [,$2 ,$4] ,@$6))]
         [(FOR <ident> COMMA <ident> IN <expr> COLON <suite>)
-         (loc `(for [(,$2 ,$4) ,$6] ,@$8))]
+         (loc `(,(read-symbol 'for) [(,$2 ,$4) ,$6] ,@$8))]
         [(DEF <ident> <foralls> LPAREN <contract-formals> RPAREN <result>
               COLON <suite>)
-         (loc `(def (,$2 ,@$3 ,@$5) ,@$7 ,@$9))]
+         (loc `(,(read-symbol 'def) (,$2 ,@$3 ,@$5) ,@$7 ,@$9))]
         [(TEST <expr> COLON <suite>)
-         (loc `(test ,$2 ,@$4))]
+         (loc `(,(read-symbol 'test) ,$2 ,@$4))]
         [(TEST COLON <suite>)
-         (loc `(test "<anonymous-test>" ,@$3))]
+         (loc `(,(read-symbol 'test) "<anonymous-test>" ,@$3))]
         [(TIME <expr> COLON <suite>)
-         (loc `(time ,$2 ,@$4))]
+         (loc `(,(read-symbol 'time) ,$2 ,@$4))]
         [(TIME COLON <suite>)
-         (loc `(time "<anonymous-time>" ,@$3))])
+         (loc `(,(read-symbol 'time) "<anonymous-time>" ,@$3))])
 
       (<elifs>
         [()
@@ -140,7 +140,7 @@
         [()
          `[else (pass)]]
         [(ELSE COLON <suite>)
-         (loc `[else ,@$3])])
+         (loc `[,(read-symbol 'else) ,@$3])])
 
       (<result>
         [(ARROW <expr>)
@@ -172,33 +172,33 @@
         [(<expr>)
          $1]
         [(LET <contract-formal>)
-         (loc `(let ,$2))]
+         (loc `(,(read-symbol 'let) ,$2))]
         [(LET <contract-formal> EQUALS <expr>)
-         (loc `(let ,$2 ,$4))]
+         (loc `(,(read-symbol 'let) ,$2 ,$4))]
         [(DEFSTRUCT <ident> LPAREN <contract-formals> RPAREN)
-         (loc `(defstruct ,$2 ,$4))]
+         (loc `(,(read-symbol 'defstruct) ,$2 ,$4))]
         [(BREAK)
-         (loc `(break))]
+         (loc `(,(read-symbol 'break)))]
         [(CONTINUE)
-         (loc `(continue))]
+         (loc `(,(read-symbol 'continue)))]
         [(IMPORT <ident>)
-         (loc `(import ,$2))]
+         (loc `(,(read-symbol 'import) ,$2))]
         [(IMPORT STRING-LITERAL)
-         (loc `(import ,$2))]
+         (loc `(,(read-symbol 'import) ,$2))]
         [(RETURN <expr>)
-         (loc `(return ,$2))]
+         (loc `(,(read-symbol 'return) ,$2))]
         [(RETURN)
-         (loc `(return))]
+         (loc `(,(read-symbol 'return)))]
         [(<lvalue> EQUALS <expr>)
-         (loc `(setf! ,$1 ,$3))]
+         (loc `(,(read-symbol 'setf!) ,$1 ,$3))]
         [(ASSERT <expr>)
-         (loc `(assert ,$2))]
+         (loc `(,(read-symbol 'assert) ,$2))]
         [(ASSERT-EQ <expr> COMMA <expr>)
-         (loc `(assert_eq ,$2 ,$4))]
+         (loc `(,(read-symbol 'assert_eq) ,$2 ,$4))]
         [(ASSERT-ERROR <expr>)
-         (loc `(assert_error ,$2))]
+         (loc `(,(read-symbol 'assert_error) ,$2))]
         [(ASSERT-ERROR <expr> COMMA STRING-LITERAL)
-         (loc `(assert_error ,$2 ,$4))]
+         (loc `(,(read-symbol 'assert_error) ,$2 ,$4))]
         [(PASS)
          (loc `(pass))])
 
@@ -252,21 +252,21 @@
         [(<atom> LPAREN <actuals> RPAREN)
          (loc `(,$1 ,@$3))]
         [(LBRACK <actuals> RBRACK)
-         (loc `(vec ,@$2))]
+         (loc `(,(read-symbol 'vec) ,@$2))]
         [(LBRACK <expr> SEMICOLON <expr> RBRACK)
-         (loc `(make-vec ,$4 ,$2))]
+         (loc `(,(read-symbol 'make-vec) ,$4 ,$2))]
         [(LBRACK <expr> FOR <ident> IN <expr0> RBRACK)
-         (loc `(for/vec [,$4 ,$6] ,$2))]
+         (loc `(,(read-symbol 'for/vec) [,$4 ,$6] ,$2))]
         [(LBRACK <expr> FOR <ident> COMMA <ident> IN <expr0> RBRACK)
-         (loc `(for/vec [(,$4 ,$6) ,$8] ,$2))]
+         (loc `(,(read-symbol 'for/vec) [(,$4 ,$6) ,$8] ,$2))]
         [(LBRACK <expr> FOR <ident> IN <expr0> IF <expr> RBRACK)
-         (loc `(for/vec [,$4 ,$6] #:when ,$8 ,$2))]
+         (loc `(,(read-symbol 'for/vec) [,$4 ,$6] #:when ,$8 ,$2))]
         [(LBRACK <expr> FOR <ident> COMMA <ident> IN <expr0> IF <expr> RBRACK)
-         (loc `(for/vec [(,$4 ,$6) ,$8] #:when ,$10 ,$2))]
+         (loc `(,(read-symbol 'for/vec) [(,$4 ,$6) ,$8] #:when ,$10 ,$2))]
         [(<ident> LBRACE <fields> RBRACE)
          (loc `(,(format-id #f "m:~a" $1 #:source $1) ,@$3))]
         [(OBJECT <ident> LBRACE <fields> RBRACE)
-         (loc `(object ,$2 ,@$4))]
+         (loc `(,(read-symbol 'object) ,$2 ,@$4))]
         [(LPAREN <expr> RPAREN)
          (loc $2)])
 
@@ -294,82 +294,82 @@
 
       (<expr>
         [(LAMBDA <formals> COLON <single-line-statement>)
-         (loc `(lambda ,$2 ,@$4))]
+         (loc `(,(read-symbol 'lambda) ,$2 ,@$4))]
         [(<expr0> IF <expr0> ELSE <expr>)
-         (loc `(if ,$3 ,$1 ,$5))]
+         (loc `(,(read-symbol 'if) ,$3 ,$1 ,$5))]
         [(<expr0>)
          $1])
 
       (<expr0>
         [(<expr0> OP0 <expr1>)
-         (loc `(,$2 ,$1 ,$3))]
+         (loc `(,(read-symbol $2) ,$1 ,$3))]
         [(<expr1>)
          $1])
 
       (<expr1>
         [(<expr1> OP1 <expr2>)
-         (loc `(,$2 ,$1 ,$3))]
+         (loc `(,(read-symbol $2) ,$1 ,$3))]
         [(<expr2>)
          $1])
 
       (<expr2>
         [(<expr3> OP2 <expr3>)
-         (loc `(,$2 ,$1 ,$3))]
+         (loc `(,(read-symbol $2) ,$1 ,$3))]
         [(<expr3>)
          $1])
 
       (<expr3>
         [(<expr3> OP3 <expr4>)
-         (loc `(,$2 ,$1 ,$3))]
+         (loc `(,(read-symbol $2) ,$1 ,$3))]
         [(<expr4>)
          $1])
 
       (<expr4>
         [(<expr4> OP4 <expr5>)
-         (loc `(,$2 ,$1 ,$3))]
+         (loc `(,(read-symbol $2) ,$1 ,$3))]
         [(<expr5>)
          $1])
 
       (<expr5>
         [(<expr5> OP5 <expr6>)
-         (loc `(,$2 ,$1 ,$3))]
+         (loc `(,(read-symbol $2) ,$1 ,$3))]
         [(<expr6>)
          $1])
 
       (<expr6>
         [(<expr6> OP6 <expr7>)
-         (loc `(,$2 ,$1 ,$3))]
+         (loc `(,(read-symbol $2) ,$1 ,$3))]
         [(<expr7>)
          $1])
 
       (<expr7>
         [(<expr7> PLUS <expr8>)
-         (loc `(+ ,$1 ,$3))]
+         (loc `(,(read-symbol '+) ,$1 ,$3))]
         [(<expr7> MINUS <expr8>)
-         (loc `(- ,$1 ,$3))]
+         (loc `(,(read-symbol '-) ,$1 ,$3))]
         [(<expr7> OP7 <expr8>)
-         (loc `(,$2 ,$1 ,$3))]
+         (loc `(,(read-symbol $2) ,$1 ,$3))]
         [(<expr8>)
          $1])
 
       (<expr8>
         [(<expr8> OP8 <expr9>)
-         (loc `(,$2 ,$1 ,$3))]
+         (loc `(,(read-symbol $2) ,$1 ,$3))]
         [(<expr9>)
          $1])
 
       (<expr9>
         [(OP9 <expr9>)
-         (loc `(,$1 ,$2))]
+         (loc `(,(read-symbol $1) ,$2))]
         [(PLUS <expr9>)
-         (loc `(+ ,$2))]
+         (loc `(,(read-symbol '+) ,$2))]
         [(MINUS <expr9>)
-         (loc `(- ,$2))]
+         (loc `(,(read-symbol '-) ,$2))]
         [(<expr10>)
          $1])
 
       (<expr10>
         [(<atom> OP10 <expr10>)
-         (loc `(,$2 ,$1 ,$3))]
+         (loc `(,(read-symbol $2) ,$1 ,$3))]
         [(<atom>)
          $1]))))

@@ -241,7 +241,7 @@ test 'first_char_hasher':
 Asserts that the given @syn[expr] errors, and that the error message
 contains the substring that results from evaluating @syn[string_expr].
 
-@defsmplform{@defidform/inline[assert_error] @syn[expr]}
+@defsmplform{@redefidform/inline[assert_error] @syn[expr]}
 
 Asserts that the given @syn[expr] errors without checking for a
 particular error.
@@ -480,7 +480,7 @@ def sum(vec):
     return result
 }|
 
-@defsmplform{@defidform/inline[let] @syn[var_name]}
+@defsmplform{@redefidform/inline[let] @syn[var_name]}
 
 Declares a local variable, which will be undefined until it is assigned:
 
@@ -529,7 +529,7 @@ def make_sbox_hash(n):
     hash
 }|
 
-@defcmpdform{@defidform/inline[for] @syn[var_name]₁, @syn[var_name]₂ @q{in} @syn[expr]: @syn[block]}
+@defcmpdform{@redefidform/inline[for] @syn[var_name]₁, @syn[var_name]₂ @q{in} @syn[expr]: @syn[block]}
 
 Loops over the indices and values of the given @syn[expr], evaluating
 the @tech{block} for each. The @syn[expr] can evaluate to a vector, a
@@ -585,7 +585,7 @@ def bloom_check?(b, s):
     return True
 }|
 
-@defsmplform{@defidform/inline[return]}
+@defsmplform{@redefidform/inline[return]}
 
 Returns void from the current function.
 
@@ -1035,10 +1035,10 @@ Rounds a number down to the largest integer that is no greater.
 
 Rounds a number up to the smallest integer that is no less.
 
-@defprocforms[
-    [int @list{(num?) -> int?}]
-    [int @list{(str?) -> int?}]
-    [int @list{(bool?) -> int?}]
+@defprocforms[int
+    [@list{(num?) -> int?}]
+    [@list{(str?) -> int?}]
+    [@list{(bool?) -> int?}]
 ]
 
 Returns the integer part of a number, by truncation. That is, the
@@ -1047,10 +1047,10 @@ attempt to convert to a number before truncating, throwing an error if
 the conversion fails. Booleans @racket[True] and @racket[False] convert
 to @racket[1] and @racket[0], respectively.
 
-@defprocforms[
-  [float @list{(num?) -> float?}]
-  [float @list{(str?) -> float?}]
-  [float @list{(bool?) -> float?}]
+@defprocforms[float
+  [@list{(num?) -> float?}]
+  [@list{(str?) -> float?}]
+  [@list{(bool?) -> float?}]
 ]
 
 Converts an exact integer to the nearest
@@ -1059,10 +1059,10 @@ convert to a number, throwing an error if the conversion fails. Booleans
 @racket[True] and @racket[False] convert to @racket[1.0] and @racket[0.0],
 respectively.
 
-@defprocforms[
-  [random @list{() -> float?}]
-  [random @list{(IntInC(1, 4294967087)) -> nat?}]
-  [random @list{(int?, int?) -> nat?}]
+@defprocforms[random
+  [@list{() -> float?}]
+  [@list{(IntInC(1, 4294967087)) -> nat?}]
+  [@list{(int?, int?) -> nat?}]
 ]
 
 When called with zero arguments, returns a random floating point number
@@ -1246,7 +1246,7 @@ variables. A number of DSSL2 values may be used as contracts, including:
 
 @subsection{Contract syntax}
 
-@defcmpdform{@defidform/inline[def] @syn_[name]{f}(@syn[name]₁: @syn[expr]₁, ... @syn_[name]{k}: @syn_[expr]{k}) -> @syn_[expr]{r}: @syn[block]}
+@defcmpdform{@redefidform/inline[def] @syn_[name]{f}(@syn[name]₁: @syn[expr]₁, ... @syn_[name]{k}: @syn_[expr]{k}) -> @syn_[expr]{r}: @syn[block]}
 
 Defines function @syn_[name]{f} while specifying contracts
 @syn_[expr]{1} through @syn_[expr]{k} for the parameters, and contract
@@ -1260,7 +1260,7 @@ def pythag(x: num?, y: num?) -> num?:
 Each of the contract positions is optional, and if omitted defaults to
 @racket[AnyC].
 
-@defcmpdform{@defidform/inline[let] @syn[var_name] : @syn[contract_expr] = @syn[expr]}
+@defcmpdform{@redefidform/inline[let] @syn[var_name] : @syn[contract_expr] = @syn[expr]}
 
 Binds variable @syn[var_name] to the value of expression @syn[expr],
 while applying the contract @syn[contract_expr]. Subsequent assignments
@@ -1279,7 +1279,7 @@ let x : int?
 x = 5
 }|
 
-@defsmplform{@defidform/inline[defstruct] @syn[name](@syn_[name]{1}: @syn_[expr]{1}, ..., @syn_[name]{k}: @syn_[expr]{k})}
+@defsmplform{@redefidform/inline[defstruct] @syn[name](@syn_[name]{1}: @syn_[expr]{1}, ..., @syn_[name]{k}: @syn_[expr]{k})}
 
 Defines a structure @syn[name] with the given contracts @syn_[expr]{i}
 applied to the fields @syn_[name]{i}. This means that the contracts will
@@ -1341,10 +1341,10 @@ Constructs a contract that accepts integers in the closed interval
 [@c{low}, @c{high}]. If either end of the interval is @code{False},
 that end of the interval is unchecked.
 
-@defprocforms[
-    [apply_contract @list{[X](contract?, X) -> X}]
-    [apply_contract @list{[X](contract?, X, pos: str?) -> X}]
-    [apply_contract @list{[X](contract?, X, pos: str?, neg: str?) -> X}]
+@defprocforms[apply_contract
+    [@list{[X](contract?, X) -> X}]
+    [@list{[X](contract?, X, pos: str?) -> X}]
+    [@list{[X](contract?, X, pos: str?, neg: str?) -> X}]
 ]
 
 Applies a contract to a value, optionally specifying the parties.

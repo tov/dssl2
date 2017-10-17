@@ -10,6 +10,7 @@
 (provide defexpform defexpforms defsmplform defcmpdform
          defconstform
          defprocform defprocforms
+         redefidform/inline
          c syn syn_
          q m
          dssl2block code)
@@ -52,9 +53,10 @@
 (define-syntax-rule (defprocform name chunk ...)
   (*defforms "procedure" (list (list (defidform/inline name) chunk ...))))
 
-(define-syntax-rule (defprocforms [name chunk ...] ...)
+(define-syntax-rule (defprocforms name [chunk0 ...] [chunk ...] ...)
   (*defforms "procedure"
-             (list (list (defidform/inline name) chunk ...) ...)))
+             (list (list (defidform/inline name) chunk0 ...)
+                   (list (redefidform/inline name) chunk ...) ...)))
 
 (define (*defforms kind forms)
   (define labeller (add-background-label (or kind "syntax")))
@@ -68,6 +70,9 @@
   (make-blockquote
     vertical-inset-style
     (list table)))
+
+(define-syntax-rule (redefidform/inline form)
+  (to-element 'form #:defn? #t))
 
 (define-syntax (dssl2block stx)
   (syntax-parse stx

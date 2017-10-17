@@ -923,12 +923,22 @@ that @syn[expr] evaluate to a number. Then @c{~} flips every bit,
 
 Multiplies, divides, or modulos the values of the expressions, respectively.
 
-@defexpforms[
-  @list{@syn[expr]₁ @defidform/inline[+] @syn[expr]₂}
-  @list{@syn[expr]₁ @defidform/inline[-] @syn[expr]₂}
+@defexpform{@syn[expr]₁ @defidform/inline[+] @syn[expr]₂}
+
+Addition:
+
+@itemlist[
+  @item{Given two numbers, adds them.}
+  @item{Given two strings, concatenates them.}
+  @item{Given a string and another value, in any order, converts
+        the other value to a string and concatenates them.}
 ]
 
-Addition and subtraction.
+Anything else is an error.
+
+@defexpform{@syn[expr]₁ @defidform/inline[-] @syn[expr]₂}
+
+Subtracts two numbers.
 
 @defexpforms[
   @list{@syn[expr]₁ @defidform/inline[<<] @syn[expr]₂}

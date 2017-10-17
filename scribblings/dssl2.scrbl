@@ -1234,6 +1234,12 @@ Like @racket[print], but adds a newline at the end.
 
 @subsection{Other functions}
 
+@defprocform[error]{(str?, AnyC, ...) -> Void}
+
+Terminates the program with an error message. The error message must be
+supplied as a format string followed by values to interpolate, in the
+style of @racket[format].
+
 @defprocform[identity]{[X](X) -> X}
 
 The identity function, which just returns its argument.

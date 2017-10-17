@@ -142,7 +142,7 @@
 
       (<elif>
         [(ELIF <expr0> COLON <suite>)
-         (loc `[,$2 ,@$4])])
+         (loc `[,(symbol 'elif) ,$2 ,@$4])])
 
       (<maybe-else>
         [()

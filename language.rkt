@@ -140,9 +140,10 @@
     (set! f (void))))
 
 (define-syntax dssl-if
-  (syntax-rules (else)
-    [(_ [test result ...] ... [else else-result ...])
-     (cond [test (dssl-begin result ...)]
+  (syntax-rules (else dssl-elif)
+    [(_ [test0 result0 ...] [dssl-elif test result] ... [else else-result ...])
+     (cond [test0 (dssl-begin result0 ...)]
+           [test  (dssl-begin result)]
            ...
            [else (dssl-begin else-result ... )])]))
 

@@ -57,9 +57,9 @@
   (define-syntax (loc stx)
     (syntax-case stx ()
       [(_ sexp)
-       (let [(start (datum->syntax stx '$1-start-pos))
-             (end   (datum->syntax stx '$n-end-pos))]
-         #`(locate #,start #,end sexp))]))
+       (with-syntax [(start (datum->syntax stx '$1-start-pos))
+                     (end   (datum->syntax stx '$n-end-pos))]
+         #'(locate start end sexp))]))
 
   (parser
     (tokens dssl2-empty-tokens dssl2-tokens)
@@ -302,59 +302,59 @@
 
       (<expr0>
         [(<expr0> OP0 <expr1>)
-         (loc `(,(read-symbol $2) ,$1 ,$3))]
+         (loc `(,(read-symbol* $2 $2-start-pos) ,$1 ,$3))]
         [(<expr1>)
          $1])
 
       (<expr1>
         [(<expr1> OP1 <expr2>)
-         (loc `(,(read-symbol $2) ,$1 ,$3))]
+         (loc `(,(read-symbol* $2 $2-start-pos) ,$1 ,$3))]
         [(<expr2>)
          $1])
 
       (<expr2>
         [(<expr3> OP2 <expr3>)
-         (loc `(,(read-symbol $2) ,$1 ,$3))]
+         (loc `(,(read-symbol* $2 $2-start-pos) ,$1 ,$3))]
         [(<expr3>)
          $1])
 
       (<expr3>
         [(<expr3> OP3 <expr4>)
-         (loc `(,(read-symbol $2) ,$1 ,$3))]
+         (loc `(,(read-symbol* $2 $2-start-pos) ,$1 ,$3))]
         [(<expr4>)
          $1])
 
       (<expr4>
         [(<expr4> OP4 <expr5>)
-         (loc `(,(read-symbol $2) ,$1 ,$3))]
+         (loc `(,(read-symbol* $2 $2-start-pos) ,$1 ,$3))]
         [(<expr5>)
          $1])
 
       (<expr5>
         [(<expr5> OP5 <expr6>)
-         (loc `(,(read-symbol $2) ,$1 ,$3))]
+         (loc `(,(read-symbol* $2 $2-start-pos) ,$1 ,$3))]
         [(<expr6>)
          $1])
 
       (<expr6>
         [(<expr6> OP6 <expr7>)
-         (loc `(,(read-symbol $2) ,$1 ,$3))]
+         (loc `(,(read-symbol* $2 $2-start-pos) ,$1 ,$3))]
         [(<expr7>)
          $1])
 
       (<expr7>
         [(<expr7> PLUS <expr8>)
-         (loc `(,(read-symbol '+) ,$1 ,$3))]
+         (loc `(,(read-symbol* '+ $2-start-pos) ,$1 ,$3))]
         [(<expr7> MINUS <expr8>)
-         (loc `(,(read-symbol '-) ,$1 ,$3))]
+         (loc `(,(read-symbol* '- $2-start-pos) ,$1 ,$3))]
         [(<expr7> OP7 <expr8>)
-         (loc `(,(read-symbol $2) ,$1 ,$3))]
+         (loc `(,(read-symbol* $2 $2-start-pos) ,$1 ,$3))]
         [(<expr8>)
          $1])
 
       (<expr8>
         [(<expr8> OP8 <expr9>)
-         (loc `(,(read-symbol $2) ,$1 ,$3))]
+         (loc `(,(read-symbol* $2 $2-start-pos) ,$1 ,$3))]
         [(<expr9>)
          $1])
 
@@ -370,6 +370,6 @@
 
       (<expr10>
         [(<atom> OP10 <expr10>)
-         (loc `(,(read-symbol $2) ,$1 ,$3))]
+         (loc `(,(read-symbol* $2 $2-start-pos) ,$1 ,$3))]
         [(<atom>)
          $1]))))

@@ -279,3 +279,8 @@
 
 (define (sleep sec)
   (r:sleep sec))
+
+(define (sqrt x)
+  (cond
+    [(< x 0) (error "sqrt: cannot handle a negative")]
+    [else    (r:sqrt x)]))

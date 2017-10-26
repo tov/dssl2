@@ -475,14 +475,14 @@
                         [else
                           (raise-syntax-error
                             #f
-                            (format "Struct ~a requires field ~a"
+                            (format "Struct ~e requires field ~a"
                                     'name (syntax->datum field))
                             stx)])))
                   (for ([field actual-fields])
                     (unless (memq field (map syntax->datum formal-fields))
                       (raise-syntax-error
                         #f
-                        (format "Struct ~a does not have field ~a"
+                        (format "Struct ~e does not have field ~a"
                                 'name field)
                         field)))
                   #`(name #,@exprs))]))))]))
@@ -509,7 +509,7 @@
       (when (eq? field (field-info-name info))
         (return info)))
     (runtime-error #:srclocs srclocs
-                   "Struct ‘~a’ does not have field ‘~a’"
+                   "Struct ~e does not have field ~a"
                    struct field)))
 
 (define-syntax-rule (dssl-struct-ref expr field)

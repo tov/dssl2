@@ -83,7 +83,7 @@
                     (:: #\\ any-char))]
   [dq-str-char (:or (:- any-char (:or #\\ #\" #\newline))
                     (:: #\\ any-char))]
-  [identifier  (:: alphabetic
+  [identifier  (:: (:or alphabetic #\_)
                    (:* (:or alphabetic numeric #\_))
                    (:? (:or #\! #\?)))])
 

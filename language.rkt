@@ -291,7 +291,7 @@
                [j (dssl-in-value v)])
            (let/ec continue-f
              (syntax-parameterize
-               ([dssl-break    (syntax-rules () [(_) (break-f)])]
+               ([dssl-break    (syntax-rules () [(_) (break-f (void))])]
                 [dssl-continue (syntax-rules () [(_) (continue-f)])])
                expr ...))))]
     [(_ [i:id v:expr] expr:expr ...+)

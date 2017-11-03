@@ -273,9 +273,9 @@
 (define-syntax-rule (dssl-while test expr ...)
   (let/ec break-f
     (let loop ()
-      (define (continue-f) (loop) (break-f))
+      (define (continue-f) (loop) (break-f (void)))
       (syntax-parameterize
-        ([dssl-break (syntax-rules () [(_) (break-f)])]
+        ([dssl-break (syntax-rules () [(_) (break-f (void))])]
          [dssl-continue (syntax-rules () [(_) (continue-f)])])
         (when test
           (dssl-begin expr ...)

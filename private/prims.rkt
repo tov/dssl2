@@ -243,8 +243,10 @@
   (cond
     [(number? x) (inexact->exact (truncate x))]
     [(string? x)
+     (define n (string->number x))
      (cond
-       [(string->number x) => int]
+       [(int? n)  n]
+       [(real? n) (inexact->exact (truncate n))]
        [else (runtime-error "int: could not convert to integer: ~s" x)])]
     [(eq? #t x)  1]
     [(eq? #f x)  0]
@@ -254,8 +256,10 @@
   (cond
     [(number? x) (exact->inexact x)]
     [(string? x)
+     (define n (string->number x))
      (cond
-       [(string->number x) => float]
+       [(flonum? n) n]
+       [(real? n)   (exact->inexact n)]
        [else (runtime-error "float: could not convert to float: ~s" x)])]
     [(eq? #t x)  1.0]
     [(eq? #f x)  0.0]

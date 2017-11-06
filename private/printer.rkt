@@ -69,10 +69,13 @@
            (fprintf port "~a: " (field-info-name field-info))
            (visit ((field-info-getter field-info) value)))
          (display "}" port))]
-      [(contract? value)
+      [(and (contract? value)
+            (not (string=? "???" (format "~a" (contract-name value)))))
        (display (contract-name value) port)]
       [(procedure? value)
-       (display (or (object-name value) "#<proc>") port)]
+       (if (object-name value)
+         (fprintf port "#<proc:~a>" (object-name value))
+         (fprintf port "#<proc>"))]
       [(void? value)              (display "#<void>" port)]
       [else                       (display "#<unknown-value>" port)])))
 

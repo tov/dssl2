@@ -259,7 +259,7 @@
         [(<atom> LPAREN <actuals> RPAREN)
          (loc `(,$1 ,@$3))]
         [(LBRACK <actuals> RBRACK)
-         (loc `(vec ,@$2))]
+         (loc `(vec-lit ,@$2))]
         [(LBRACK <expr> SEMICOLON <expr> RBRACK)
          (loc `(make-vec ,$4 ,$2))]
         [(LBRACK <expr> FOR <ident> IN <expr0> RBRACK)

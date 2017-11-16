@@ -13,7 +13,7 @@
            [if                  if-e]
            [else                else]
            [void                pass]
-           [vec                 vec]
+           [vec                 vec-lit]
            [dssl-True           True]
            [dssl-False          False]
            [dssl-assert         assert]

@@ -23,9 +23,9 @@
   (check-parse? "s.f"
                 (struct-ref s f))
   (check-parse? "[0, 1, 2]"
-                (vec 0 1 2))
+                (vec-lit 0 1 2))
   (check-parse? "[0, 1, 2,]"
-                (vec 0 1 2))
+                (vec-lit 0 1 2))
   (check-parse? "[0; 10]"
                 (make-vec 10 0))
   (check-parse? "posn { x: 3, y: 4 }"
@@ -52,7 +52,7 @@
   (check-parse? "a + -6"
                 (+ a (- 6)))
   (check-parse? "[5, lambda x: x + 1]"
-                (vec 5 (lambda (x) (+ x 1))))
+                (vec-lit 5 (lambda (x) (+ x 1))))
   (check-parse? "a.b.c"
                 (struct-ref (struct-ref a b) c))
 

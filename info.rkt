@@ -7,6 +7,7 @@
 (define deps '("base" "rackunit-lib" "parser-tools-lib" "sandbox-lib"))
 (define build-deps '("scribble-lib" "racket-doc"))
 (define scribblings '(("scribblings/dssl2.scrbl" ())))
+(define test-omit-paths '("test/dssl2" "test/grader"))
 (define blurb
     '("A language for data structures students, version 2"))
 (define release-notes

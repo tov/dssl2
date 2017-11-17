@@ -14,7 +14,7 @@
                   sandbox-output
                   sandbox-error-output))
 
-(define grader-time-limit (make-parameter 10))
+(define grader-time-limit (make-parameter 30))
 (define grader-memory-limit (make-parameter 256))
 
 (define (grade-file/values subject)

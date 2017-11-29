@@ -66,7 +66,7 @@
    STRING-LITERAL))
 
 (define-lex-abbrevs
-  [space       (:or #\space #\uA0)]
+  [space       (:or #\space #\uA0 #\return)]
   [natural     (:+ numeric)]
   [exponent    (:: (:or #\e #\E) (:? #\-) natural)]
   [pointfloat  (:or (:: natural #\. (:* numeric))

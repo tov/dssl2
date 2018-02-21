@@ -87,25 +87,27 @@
   (lambda (stx)
     (raise-syntax-error #f "use of inc-total-tests!" stx)))
 
-(define-syntax-rule (dssl-module-begin expr ...)
-  (#%module-begin
-   (module* configure-runtime racket/base
-     (require dssl2/private/rte)
-     (setup-rte))
-   (#%provide (all-defined-except passed-tests total-tests))
-   (define passed-tests 0)
-   (define total-tests 0)
-   (module+ test-info
-     (provide get-test-info)
-     (define (get-test-info)
-       (values passed-tests total-tests)))
-   (splicing-syntax-parameterize
-     ([inc-passed-tests!  (syntax-rules ()
-                            [(_) (set! passed-tests (add1 passed-tests))])]
-      [inc-total-tests!   (syntax-rules ()
-                            [(_) (set! total-tests (add1 total-tests))])])
-     (dssl-begin expr ...))
-   (print-test-results passed-tests total-tests)))
+(define-syntax (dssl-module-begin stx)
+  (syntax-case stx ()
+    [(_ expr ...)
+     #`(#%module-begin
+        (module* configure-runtime racket/base
+          (require dssl2/private/rte)
+          (setup-rte))
+        (#%provide #,(datum->syntax stx '(all-defined)))
+        (define passed-tests 0)
+        (define total-tests 0)
+        (module+ test-info
+          (provide get-test-info)
+          (define (get-test-info)
+            (values passed-tests total-tests)))
+        (splicing-syntax-parameterize
+          ([inc-passed-tests!  (syntax-rules ()
+                                 [(_) (set! passed-tests (add1 passed-tests))])]
+           [inc-total-tests!   (syntax-rules ()
+                                 [(_) (set! total-tests (add1 total-tests))])])
+          (dssl-begin expr ...))
+        (print-test-results passed-tests total-tests))]))
 
 (define (print-test-results passed total)
   (cond

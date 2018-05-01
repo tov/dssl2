@@ -518,11 +518,11 @@ characters in a string:
 # make_sbox_hash : -> [str? -> nat?]
 # Returns a new n-bit string hash function.
 def make_sbox_hash(n):
-    let sbox = [ random_bits(n) for i in 256 ]
+    let sbox = [ random_bits(n) for _ in 256 ]
     def hash(input_string):
         let result = 0
         for c in input_string:
-            let svalue = sbox[ord(c)]
+            let svalue = sbox[ord(c) % 256]
             result = result ^ svalue
             result = (3 * result) % (2 ** n)
         return result

@@ -824,7 +824,7 @@
                  ...)
                (when (eq? unsafe-undefined actual-field-name)
                  (runtime-error
-                   #:srclocs name
+                   #:srclocs (get-srclocs #'(ctor-body ...))
                    "Constructor for class ~a did not assign field ~a"
                    'name 'field.var))
                ...

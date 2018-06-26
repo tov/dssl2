@@ -2,15 +2,15 @@
 
 # A PromiseOf[A] is promise(InnerOf[A])
 struct promise:
-  let inner
+    let inner
 
 # An InnerOf[A] is one of:
 #  - incomplete(FunC(A))
 #  - complete(A)
 struct incomplete:
-  let thunk
+    let thunk
 struct complete:
-  let value
+    let value
 
 # delay : FunC(A) -> PromiseOf[A]
 # Creates a promise that will be computed by the given thunk.

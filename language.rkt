@@ -789,10 +789,12 @@
              (#,(format-id #'internal-name "~a?" #'internal-name) value))
            (define/contract
              name
-             (-> (ensure-contract 'class ctor-params.contract)
+             (-> #,@(map (λ (_) #'contract?)
+                         (syntax->list #'(cvs.var ...)))
+                 (ensure-contract 'class ctor-params.contract)
                  ...
                  AnyC)
-             (lambda (ctor-params.var ...)
+             (lambda (cvs.var ... ctor-params.var ...)
                (define-field field.var
                              self.field-name
                              actual-field-name

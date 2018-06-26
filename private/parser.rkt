@@ -128,6 +128,8 @@
         [(DEF <ident> <foralls> LPAREN <contract-formals> RPAREN <result>
               COLON <suite>)
          (loc/1 `(def (,$2 ,@$3 ,@$5) ,@$7 ,@$9))]
+        [(STRUCT <ident> COLON <struct-suite>)
+         (loc/1 `(struct ,$2 ,@$4))]
         [(CLASS <ident> <foralls> <optional-interface> COLON <class-suite>)
          (loc/1 `(class ,$2 ,@$3 ,@$4 ,@$6))]
         [(INTERFACE <ident> <foralls> COLON <interface-suite>)
@@ -173,22 +175,30 @@
         [(NEWLINE INDENT <statements> DEDENT)
          $3])
 
+      (<struct-suite>
+        [(NEWLINE INDENT PASS NEWLINE DEDENT)
+         '()]
+        [(PASS NEWLINE)
+         '()]
+        [(NEWLINE INDENT <class-or-struct-fields> DEDENT)
+         $3])
+
       (<class-suite>
         [(NEWLINE INDENT <class-statements> DEDENT)
          $3])
 
       (<class-statements>
-        [(<class-fields> <class-constructor> <class-methods>)
+        [(<class-or-struct-fields> <class-constructor> <class-methods>)
          (append $1 (cons $2 $3))])
 
-      (<class-fields>
+      (<class-or-struct-fields>
         [() '()]
-        [(<class-field> SEMICOLON <class-fields>)
+        [(<class-or-struct-field> SEMICOLON <class-or-struct-fields>)
          (cons $1 $3)]
-        [(<class-field> <newlines+> <class-fields>)
+        [(<class-or-struct-field> <newlines+> <class-or-struct-fields>)
          (cons $1 $3)])
 
-      (<class-field>
+      (<class-or-struct-field>
         [(LET <contract-formal>)
          (loc/1 `(let ,$2))])
 
@@ -213,11 +223,15 @@
          (cons $1 $3)])
 
       (<interface-suite>
+        [(NEWLINE INDENT PASS NEWLINE DEDENT)
+         '()]
+        [(PASS NEWLINE)
+         '()]
         [(NEWLINE INDENT <interface-methods> DEDENT)
          $3])
 
       (<interface-methods>
-        [(<interface-method> <newlines>)
+        [(<interface-method> <newlines+>)
          (list $1)]
         [(<interface-method> SEMICOLON <interface-methods>)
          (cons $1 $3)]
@@ -249,8 +263,6 @@
          (loc/1 `(let ,$2))]
         [(LET <contract-formal> EQUALS <expr>)
          (loc/1 `(let ,$2 ,$4))]
-        [(STRUCT <ident> LPAREN <contract-formals> RPAREN)
-         (loc/1 `(struct ,$2 ,$4))]
         [(BREAK)
          (loc/1 `(break))]
         [(CONTINUE)

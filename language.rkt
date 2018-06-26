@@ -369,7 +369,7 @@
 (define-syntax (dssl-struct/early stx)
   (syntax-parse stx
     #:context 'struct
-    [(_ (name:id internal-name:id) fields:unique-identifiers)
+    [(_ (name:id internal-name:id) . fields:unique-identifiers)
      #`(begin
          (define-struct (internal-name struct-base) (fields.var ...)
                         #:mutable
@@ -383,7 +383,7 @@
 
 (define-syntax (dssl-begin/acc stx)
   (syntax-parse stx
-    #:literals (dssl-struct begin)
+    #:literals (dssl-struct dssl-let begin)
     ; Done, splice together the early and late defns
     [(_ (early-defns ...) (late-defns ...))
      #'(begin
@@ -397,16 +397,16 @@
                        firsts ... rest ...)]
     ; Interpret structs
     [(_ (early-defns ...) (late-defns ...)
-        (dssl-struct name:id (:var&contract ...))
+        (dssl-struct name:id (dssl-let :var&contract) ...)
         rest ...)
      (with-syntax ([s:cons (format-id #f "s:~a" #'name)])
        #`(dssl-begin/acc
            (early-defns
              ...
-             (dssl-struct/early (name s:cons) (var ...)))
+             (dssl-struct/early (name s:cons) var ...))
            (late-defns
              ...
-             (dssl-struct/late (name s:cons) ((var contract) ...)))
+             (dssl-struct/late (name s:cons) (var contract) ...))
            rest ...))]
     ; Pass everything else through
     [(_ (early-defns ...) (late-defns ...)
@@ -444,7 +444,7 @@
 
 (define-syntax (dssl-struct/late stx)
   (syntax-parse stx
-    [(_ (name:id internal-name:id) ((formal-field:id contract:expr) ...))
+    [(_ (name:id internal-name:id) (formal-field:id contract:expr) ...)
      (with-syntax ([s:cons #'internal-name]
                    [(setter-name ...)
                     (map (λ (field)
@@ -516,7 +516,7 @@
                  "duplicate field name"
      #`(let ()
          (dssl-begin
-           (dssl-struct name ((field AnyC) ...))
+           (dssl-struct name (field AnyC) ...)
            (name expr ...)))]))
 
 (define (get-field-info #:srclocs [srclocs '()] struct field)

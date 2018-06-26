@@ -1,7 +1,7 @@
 #lang dssl2
 
-defstruct cons(car, cdr)
-defstruct nil()
+struct cons(car, cdr)
+struct nil()
 
 let x = cons(2, cons(3, cons(4, nil())))
 let y = cons {

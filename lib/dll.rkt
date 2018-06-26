@@ -2,7 +2,7 @@
 
 def MaybeC(X): OrC(False, X)
 
-defstruct _DllNode(prev: MaybeC(_DllNode?), data, next: MaybeC(_DllNode?))
+struct _DllNode(prev: MaybeC(_DllNode?), data, next: MaybeC(_DllNode?))
 
 class Dll[X]:
     let sentinel_

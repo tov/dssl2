@@ -5,8 +5,8 @@
 # - cons(AnyC, list?)
 let list? = OrC(cons?, nil?)
 
-defstruct nil()
-defstruct cons(car: AnyC, cdr: list?)
+struct nil()
+struct cons(car: AnyC, cdr: list?)
 
 # Creates a contract that copies a list while applying the given contract
 # to each element.

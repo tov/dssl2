@@ -8,7 +8,7 @@ assert 2 != 3
 assert 2 == 2.0
 assert [2] == [2.0]
 
-defstruct posn(x, y)
+struct posn(x, y)
 
 assert posn(3, 4) == posn(3, 4)
 assert posn(3, 4) != posn(3, 5)

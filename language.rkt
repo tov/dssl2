@@ -23,7 +23,6 @@
            [dssl-class          class]
            [dssl-continue       continue]
            [dssl-def            def]
-           [dssl-defstruct      defstruct]
            [dssl-elif           elif]
            [dssl-error          error]
            [dssl-for            for]
@@ -37,6 +36,7 @@
            [dssl-import         import]
            [dssl-return         return]
            [dssl-=              =]
+           [dssl-struct         struct]
            [dssl-struct-ref     struct-ref]
            [dssl-test           test]
            [dssl-time           time]
@@ -366,9 +366,9 @@
 (define (dssl-vec-ref v i)
   (vector-ref v i))
 
-(define-syntax (dssl-defstruct/early stx)
+(define-syntax (dssl-struct/early stx)
   (syntax-parse stx
-    #:context 'defstruct
+    #:context 'struct
     [(_ (name:id internal-name:id) fields:unique-identifiers)
      #`(begin
          (define-struct (internal-name struct-base) (fields.var ...)
@@ -383,7 +383,7 @@
 
 (define-syntax (dssl-begin/acc stx)
   (syntax-parse stx
-    #:literals (dssl-defstruct begin)
+    #:literals (dssl-struct begin)
     ; Done, splice together the early and late defns
     [(_ (early-defns ...) (late-defns ...))
      #'(begin
@@ -395,18 +395,18 @@
         rest ...)
      #'(dssl-begin/acc (early-defns ...) (late-defns ...)
                        firsts ... rest ...)]
-    ; Interpret defstructs
+    ; Interpret structs
     [(_ (early-defns ...) (late-defns ...)
-        (dssl-defstruct name:id (:var&contract ...))
+        (dssl-struct name:id (:var&contract ...))
         rest ...)
      (with-syntax ([s:cons (format-id #f "s:~a" #'name)])
        #`(dssl-begin/acc
            (early-defns
              ...
-             (dssl-defstruct/early (name s:cons) (var ...)))
+             (dssl-struct/early (name s:cons) (var ...)))
            (late-defns
              ...
-             (dssl-defstruct/late (name s:cons) ((var contract) ...)))
+             (dssl-struct/late (name s:cons) ((var contract) ...)))
            rest ...))]
     ; Pass everything else through
     [(_ (early-defns ...) (late-defns ...)
@@ -435,14 +435,14 @@
     [(_ name:id field:id)
      (format-id #'name "set-~a-~a!" #'name #'field)]))
 
-(define-syntax (dssl-defstruct stx)
+(define-syntax (dssl-struct stx)
   (raise-syntax-error
     #f
-    (string-append "Saw dssl-defstruct, which should be changed to "
-                   "dssl-defstruct/late by #%module-begin")
+    (string-append "Saw dssl-struct, which should be changed to "
+                   "dssl-struct/late by #%module-begin")
     stx))
 
-(define-syntax (dssl-defstruct/late stx)
+(define-syntax (dssl-struct/late stx)
   (syntax-parse stx
     [(_ (name:id internal-name:id) ((formal-field:id contract:expr) ...))
      (with-syntax ([s:cons #'internal-name]
@@ -454,7 +454,7 @@
                     (generate-temporaries
                       (syntax->list #'(formal-field ...)))])
        #`(begin
-           (define contract-name (ensure-contract 'defstruct contract))
+           (define contract-name (ensure-contract 'struct contract))
            ...
            (define struct-info
              (make-struct-info
@@ -516,7 +516,7 @@
                  "duplicate field name"
      #`(let ()
          (dssl-begin
-           (dssl-defstruct name ((field AnyC) ...))
+           (dssl-struct name ((field AnyC) ...))
            (name expr ...)))]))
 
 (define (get-field-info #:srclocs [srclocs '()] struct field)

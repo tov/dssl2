@@ -243,8 +243,8 @@
          (loc/1 `(let ,$2))]
         [(LET <contract-formal> EQUALS <expr>)
          (loc/1 `(let ,$2 ,$4))]
-        [(DEFSTRUCT <ident> LPAREN <contract-formals> RPAREN)
-         (loc/1 `(defstruct ,$2 ,$4))]
+        [(STRUCT <ident> LPAREN <contract-formals> RPAREN)
+         (loc/1 `(struct ,$2 ,$4))]
         [(BREAK)
          (loc/1 `(break))]
         [(CONTINUE)

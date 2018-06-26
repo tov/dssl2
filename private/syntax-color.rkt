@@ -28,7 +28,7 @@
     [(:or "λ" "lambda" "let" "assert" "assert_eq" "assert_error"
           "if" "elif" "else"
           "class" "interface"
-          "while" "for" "in" "return" "pass" "def" "defstruct" "test"
+          "while" "for" "in" "return" "pass" "def" "struct" "test"
           "time" "object" "import")
                                 (token keyword)]
     [comment                    (token comment)]

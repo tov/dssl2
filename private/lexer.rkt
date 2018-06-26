@@ -47,7 +47,7 @@
    TEST
    TIME
    DEF
-   DEFSTRUCT
+   STRUCT
    INTERFACE
    CLASS))
 
@@ -218,7 +218,7 @@
       ["True"                   (token-LITERAL #t)]
       ["False"                  (token-LITERAL #f)]
       ["def"                    (token-DEF)]
-      ["defstruct"              (token-DEFSTRUCT)]
+      ["struct"                 (token-STRUCT)]
       ["interface"              (token-INTERFACE)]
       ["class"                  (token-CLASS)]
       ["test"                   (token-TEST)]

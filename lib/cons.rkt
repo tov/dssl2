@@ -5,8 +5,10 @@
 # - cons(AnyC, list?)
 let list? = OrC(cons?, nil?)
 
-struct nil()
-struct cons(car: AnyC, cdr: list?)
+struct nil: pass
+struct cons:
+  let car: AnyC
+  let cdr: list?
 
 # Creates a contract that copies a list while applying the given contract
 # to each element.
@@ -19,20 +21,24 @@ def ListOfC(element: contract?) -> contract?:
 #
 #   - get_head() -> ListC     returns the list
 #   - cons!(AnycC) -> VoidC   adds an element to the end of the list
-def new_cons_builder():
-    let head = nil()
-    let tail = nil()
-    def cons!(x):
-        if cons?(tail):
-            tail.cdr = cons(x, nil())
-            tail = tail.cdr
+class Cons_builder:
+    let head
+    let tail
+
+    def __init__(self):
+        self.head = nil()
+        self.tail = nil()
+
+    def cons!(self, x):
+        if cons?(self.tail):
+            self.tail.cdr = cons(x, nil())
+            self.tail = self.tail.cdr
         else:
-            head = cons(x, nil())
-            tail = head
-    object ListBuilder {
-        get_head: lambda: head,
-        cons!:    cons!,
-    }
+            self.head = cons(x, nil())
+            self.tail = self.head
+
+    def get_head(self):
+        self.head
 
 # Reverses `before`, appending it onto `acc`. O(before) time and space.
 def rev_app_cons(before: list?, acc: list?) -> list?:
@@ -87,7 +93,7 @@ def cons_to_vec(lst: list?) -> vec?:
 
 # Creates a list from the elements of a vector. O(vec) time and space.
 def cons_from_vec(vec: vec?) -> list?:
-    let builder = new_cons_builder()
+    let builder = Cons_builder()
     for element in vec: builder.cons!(element)
     builder.get_head()
 
@@ -114,14 +120,14 @@ def foldl_cons[Y](f: FunC(Y, AnyC, Y), z: Y, lst: list?) -> Y:
 # Maps a list by applying a function to each element. O(lst) time and O(lst)
 # space (to allocate the new list).
 def map_cons(f: FunC(AnyC, AnyC), lst: list?) -> list?:
-    let builder = new_cons_builder()
+    let builder = Cons_builder()
     foreach_cons(λ element: builder.cons!(f(element)), lst)
     builder.get_head()
 
 # Filters a list by applying a predicate to each element. O(lst) time and O(lst)
 # space (or more precisely, O(result) space).
 def filter_cons(f: FunC(AnyC, AnyC), lst: list?) -> list?:
-    let builder = new_cons_builder()
+    let builder = Cons_builder()
     def each(element):
         if f(element): builder.cons!(element)
     foreach_cons(each, lst)

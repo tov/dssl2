@@ -1,13 +1,16 @@
 #lang dssl2
 
 # A PromiseOf[A] is promise(InnerOf[A])
-struct promise(inner)
+struct promise:
+  let inner
 
 # An InnerOf[A] is one of:
 #  - incomplete(FunC(A))
 #  - complete(A)
-struct incomplete(thunk)
-struct complete(value)
+struct incomplete:
+  let thunk
+struct complete:
+  let value
 
 # delay : FunC(A) -> PromiseOf[A]
 # Creates a promise that will be computed by the given thunk.

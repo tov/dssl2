@@ -6,7 +6,9 @@ import promise
 # where the functions are memoized.
 #
 # Don't use this directly; use `scons`.
-struct StreamCons(first, rest)
+struct StreamCons:
+    let first
+    let rest
 
 # stream? : Any -> Boolean
 # Shorter predicate for recognizing streams.

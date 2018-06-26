@@ -126,6 +126,8 @@
          (loc/1 `(def (,$2 ,@$3 ,@$5) ,@$7 ,@$9))]
         [(CLASS <ident> <foralls> <optional-interface> COLON <class-suite>)
          (loc/1 `(class ,$2 ,@$3 ,@$4 ,@$6))]
+        [(INTERFACE <ident> <foralls> COLON <interface-suite>)
+         (loc/1 `(interface ,$2 ,@$3 ,@$5))]
         [(TEST <expr> COLON <suite>)
          (loc/1 `(test ,$2 ,@$4))]
         [(TEST COLON <suite>)
@@ -158,7 +160,7 @@
          `()])
 
       (<optional-interface>
-        [(LPAREN <ident> RPAREN) (loc/2 `(#:implements ,$2))]
+        [(LPAREN <ident> RPAREN) `(#:implements ,$2)]
         [()                      `()])
 
       (<suite>
@@ -205,6 +207,20 @@
          (list $1)]
         [(IDENT COMMA <contract-formals>)
          (cons $1 $3)])
+
+      (<interface-suite>
+        [(NEWLINE INDENT <interface-methods> DEDENT)
+         $3])
+
+      (<interface-methods>
+        [(<interface-method> <newlines>)
+         (list $1)]
+        [(<interface-method> <newlines> <interface-methods>)
+         (cons $1 $3)])
+
+      (<interface-method>
+        [(DEF IDENT <foralls> LPAREN <method-formals> RPAREN <result> NEWLINE)
+         (loc/1 `(def (,$2 ,@$3 ,@$5) ,@$7))])
 
       (<simple-statement>
         [(<single-line-statement> NEWLINE)

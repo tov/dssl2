@@ -78,8 +78,10 @@
            [println (-> str? AnyC ... VoidC)]
            [sleep (-> num? VoidC)])
          ; * other functions
+         dir
          identity)
 (require "errors.rkt"
+         "object.rkt"
          (only-in racket/list
                   first
                   rest)
@@ -275,7 +277,6 @@
     [(low high) (r:random low high)]))
 
 (define (random_bits n)
-  (define *RADIX* 16)
   (cond
     [(zero? n)      0]
     [else           (+ (* 2 (random_bits (sub1 n)))
@@ -288,3 +289,8 @@
   (cond
     [(< x 0) (error "sqrt: cannot handle a negative")]
     [else    (r:sqrt x)]))
+
+(define (dir obj)
+  (cond
+    [(object-base? obj) (get-method-vector obj)]
+    [else               (error "dir: only works on objects")]))

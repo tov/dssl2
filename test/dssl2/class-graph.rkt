@@ -2,6 +2,10 @@
 
 (import cons)
 
+(let Vertex nat?)
+(let Weight num?)
+(let MaybeWeight (OrC False Weight))
+
 (interface WU_GRAPH
   (def (get_size self) #:-> nat?)
   (def (get_edge self [u Vertex] [v Vertex]) #:-> MaybeWeight)

@@ -106,6 +106,10 @@
         [(NEWLINE <newlines>)
          #true])
 
+      (<newlines+>
+        [(NEWLINE <newlines>)
+         #true])
+
       (<statement>
         [(<simple-statement>)
          $1]
@@ -181,7 +185,7 @@
         [() '()]
         [(<class-field> SEMICOLON <class-fields>)
          (cons $1 $3)]
-        [(<class-field> <newlines> <class-fields>)
+        [(<class-field> <newlines+> <class-fields>)
          (cons $1 $3)])
 
       (<class-field>
@@ -215,11 +219,13 @@
       (<interface-methods>
         [(<interface-method> <newlines>)
          (list $1)]
-        [(<interface-method> <newlines> <interface-methods>)
+        [(<interface-method> SEMICOLON <interface-methods>)
+         (cons $1 $3)]
+        [(<interface-method> <newlines+> <interface-methods>)
          (cons $1 $3)])
 
       (<interface-method>
-        [(DEF IDENT <foralls> LPAREN <method-formals> RPAREN <result> NEWLINE)
+        [(DEF IDENT <foralls> LPAREN <method-formals> RPAREN <result>)
          (loc/1 `(def (,$2 ,@$3 ,@$5) ,@$7))])
 
       (<simple-statement>

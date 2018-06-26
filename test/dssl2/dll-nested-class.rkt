@@ -179,11 +179,6 @@ class Dll[X]:
 
 def dll(): Dll(AnyC)
 
-def dll_from_vec(v: vec?) -> Dll?:
-    let result = dll()
-    for element in v:
-        result.push_back(element)
-    
 
 test "detach and splice":
     let l = dll()

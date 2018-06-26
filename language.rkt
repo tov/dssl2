@@ -96,7 +96,8 @@
         (module* configure-runtime racket/base
           (require dssl2/private/rte)
           (setup-rte))
-        (#%provide #,(datum->syntax stx '(all-defined)))
+        (#%provide
+         (#,(datum->syntax stx 'all-defined-except) passed-tests total-tests))
         (define passed-tests 0)
         (define total-tests 0)
         (module+ test-info

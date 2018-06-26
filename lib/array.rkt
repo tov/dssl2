@@ -8,107 +8,72 @@
 # Precondition:
 #  - size_ <= len(data_)
 #  - The first size_ elements of data_ are initialized to Xs, not False
-def Array_from_parts(size_, data_):
-    assert int?(size_) and !negative?(size_)
-    assert size_ <= len(data_)
+class Array[T]:
+    let size_: nat?
+    let data_: vec?
+    
+    def __init__(self, capacity: nat?):
+        self.size_ = 0
+        self.data_ = [False; capacity]
 
-    # : Self -> Boolean
-    def empty?(): size_ == 0
+    def empty?(self) -> bool?:
+        self.size_ == 0
 
-    # : Self -> Natural
-    def size(): size_
+    def size(self) -> nat?:
+        self.size_
 
-    # : Self -> Natural
-    def capacity(): len(data_)
+    def capacity(self) -> nat?:
+        len(self.data_)
 
-    # : Self Natural -> Void
-    def ensure_capacity(req_cap):
-        if req_cap > capacity():
-            let new_cap = max(req_cap, 2 * capacity())
-            data_ = [ data_[i] if i < size_ else False for i in new_cap ]
+    def ensure_capacity(self, req_cap: nat?) -> VoidC:
+        if req_cap > self.capacity():
+            let new_cap = max(req_cap, 2 * self.capacity())
+            self.data_ = [ self.data_[i] if i < self.size_ else False
+                               for i in new_cap ]
 
-    def check_index_(index):
-        if index >= size_:
-            error("Array index out of bounds: ~a >= ~a", index, size_)
+    def _check_index(self, index):
+        if index >= self.size_:
+            error("Array index out of bounds: ~a >= ~a", index, self.size_)
 
-    # : Self Natural -> X
-    def get(index):
-        check_index_(index)
-        data_[index]
+    def get(self, index: nat?):
+        self._check_index(index)
+        self.data_[index]
 
-    # : Self Natural X -> Void
-    def set(index, value):
-        check_index_(index)
-        data_[index] = value
+    def set(self, index: nat?, value: T) -> VoidC:
+        self._check_index(index)
+        self.data_[index] = value
 
-    # : Self X -> Void
-    def push(value):
-        ensure_capacity(size_ + 1)
-        data_[size_] = value
-        size_ = size_ + 1
+    def push(self, value: T) -> VoidC:
+        self.ensure_capacity(self.size_ + 1)
+        self.data_[self.size_] = value
+        self.size_ = self.size_ + 1
 
-    # : Self -> X or False
-    def pop():
-        if size_ == 0: return False
-        size_ = size_ - 1
-        let result = data_[size_]
-        data_[size_] = False
+    def pop(self) -> OrC(False, T):
+        if self.size_ == 0: return False
+        self.size_ = self.size_ - 1
+        let result = self.data_[self.size_]
+        self.data_[self.size_] = False
         result
 
-    # : Self -> Void
-    def shrink_to_fit():
-        if len(data_) > size_:
-            data_ = [ data_[i] for i in size_ ]
+    def shrink_to_fit(self) -> VoidC:
+        if len(self.data_) > self.size_:
+            self.data_ = [ self.data_[i] for i in self.size_ ]
 
-    # : Self -> Self
-    def clone():
-        Array_from_parts(size_, [ v for v in data_ ])
+    def clone(self) -> Array?:
+        let result = Array(T, self.size_)
+        for i in self.size_:
+            result.push(self.get(i))
+        result
+    
+    def to_vec(self) -> vec?:
+        [ self.data_[i] for i in self.size_ ]
 
-    # : Self -> VectorOf[X]
-    def as_vector():
-        [ data_[i] for i in size_ ]
-
-    # : Self ArrayOf[Y] [X Y -> Boolean] -> Boolean
-    def equals_with?(other, pred?):
-        if size() != other.size(): return False
-        for i in size_:
-            if !pred?(get(i), other.get(i)):
+    def equals_with?(self, other, pred?) -> bool?:
+        if self.size_ != other.size(): return False
+        for i in self.size_:
+            if !pred?(self.get(i), other.get(i)):
                 return False
         return True
 
-    # : Self ArrayOf[X] -> Boolean
-    def equals?(other):
-        equals_with?(other, lambda x, y: x == y)
-
-    object Array {
-        empty?,
-        size,
-        capacity,
-        ensure_capacity,
-        shrink_to_fit,
-        get,
-        set,
-        push,
-        pop,
-        push_back: push,
-        pop_back: pop,
-        clone,
-        as_vector,
-        equals_with?,
-        equals?,
-    }
-
-# : Natural -> ArrayOf[X]
-# Creates a new, empty dynamic array with the given capacity.
-def Array_with_capacity(capacity):
-    Array_from_parts(0, [False; capacity])
-
-# : X Natural -> ArrayOf[X]
-# Creates a new dynamic array of the given `value` repeated `size` times.
-def Array_fill(value, size):
-    Array_from_parts(size, [value; size])
-
-# : -> ArrayOf[X]
-# Creates a new, empty dynamic array with a small capacity.
-def Array():
-    Array_with_capacity(8)
+    def equals?(self, other) -> bool?:
+        self.equals_with?(other, lambda x, y: x == y)

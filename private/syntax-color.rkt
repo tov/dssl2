@@ -29,7 +29,7 @@
           "if" "elif" "else"
           "class" "interface"
           "while" "for" "in" "return" "pass" "def" "struct" "test"
-          "time" "object" "import")
+          "time" "import")
                                 (token keyword)]
     [comment                    (token comment)]
     [(:or float hexadecimal octal binary natural "inf" "nan")

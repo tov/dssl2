@@ -40,7 +40,6 @@
    IN
    BREAK
    CONTINUE
-   OBJECT
    IMPORT
    RETURN
    PASS
@@ -209,7 +208,6 @@
       ["in"                     (token-IN)]
       ["break"                  (token-BREAK)]
       ["continue"               (token-CONTINUE)]
-      ["object"                 (token-OBJECT)]
       ["import"                 (token-IMPORT)]
       ["return"                 (token-RETURN)]
       ["pass"                   (token-PASS)]

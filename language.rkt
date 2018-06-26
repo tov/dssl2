@@ -32,7 +32,6 @@
            [dssl-lambda         lambda]
            [dssl-let            let]
            [dssl-make-vec       make-vec]
-           [dssl-object         object]
            [dssl-import         import]
            [dssl-return         return]
            [dssl-=              =]
@@ -507,17 +506,6 @@
                                 'name field)
                         field)))
                   #`(name #,@exprs))]))))]))
-
-(define-syntax (dssl-object stx)
-  (syntax-parse stx
-    [(_ name:id [field:id expr:expr] ...)
-     #:fail-when (check-duplicate-identifier
-                   (syntax->list #'(field ...)))
-                 "duplicate field name"
-     #`(let ()
-         (dssl-begin
-           (dssl-struct name (field AnyC) ...)
-           (name expr ...)))]))
 
 (define (get-field-info #:srclocs [srclocs '()] struct field)
   (let/ec return

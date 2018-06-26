@@ -351,8 +351,6 @@
          (loc `(for/vec [(,$4 ,$6) ,$8] #:when ,$10 ,$2))]
         [(<ident> LBRACE <fields> RBRACE)
          (loc `(,(format-id #f "m:~a" $1 #:source $1) ,@$3))]
-        [(OBJECT <ident> LBRACE <fields> RBRACE)
-         (loc/1 `(object ,$2 ,@$4))]
         [(LPAREN <expr> RPAREN)
          (loc $2)])
 

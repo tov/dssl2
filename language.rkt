@@ -566,31 +566,6 @@
                                 "Value ‘~e’ is not a struct or object"
                                 value)]))])]))
 
-#;
-(define-syntax (dssl-struct-ref stx0)
-  (define stx (local-expand stx0 'expression (list #'dssl-self)))
-  (syntax-parse stx #:literals (dssl-self)
-    [(_ dssl-self property:id)
-     #'(dssl-self property)]
-    [(_ target:expr property:id)
-     #'(let ([value target])
-         (cond
-           [(struct-base? value)
-            ((field-info-getter (get-field-info
-                                  #:srclocs (get-srclocs expr)
-                                  value 'property))
-             value)]
-           [(object-base? value)
-            ((method-info-getter (get-method-info
-                                   #:srclocs (get-srclocs expr)
-                                   value 'property))
-             value)]
-           [else
-             (runtime-error #:srclocs (get-srclocs target)
-                            "Value ‘~e’ is not a struct or object"
-                            value)]))]))
-
-
 (define-syntax (dssl-struct-set! stx)
   (syntax-parse stx
     [(_ target:expr property:id rhs:expr)

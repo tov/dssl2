@@ -13,6 +13,9 @@
   (def (x self)
     (struct-ref self x_))
 
+  (def (_x! it nx)
+    (= (struct-ref it x_) nx))
+
   (def (y! self ny)
     (= (struct-ref self y_) ny))
 
@@ -39,5 +42,6 @@
 
 (test "can't assign x"
   (let p (Posn 3 4))
-  (assert_error (= (struct-ref p x!) 5))
-  (assert_error (= (struct-ref p x) 5)))
+  (assert_error (struct-ref p x!))
+  (assert_error ((struct-ref p x) 5))
+  (assert_error (struct-ref p _x!)))

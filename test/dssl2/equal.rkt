@@ -8,7 +8,9 @@ assert 2 != 3
 assert 2 == 2.0
 assert [2] == [2.0]
 
-struct posn(x, y)
+struct posn:
+    let x
+    let y
 
 assert posn(3, 4) == posn(3, 4)
 assert posn(3, 4) != posn(3, 5)

@@ -1,7 +1,10 @@
 #lang dssl2
 
-struct cons(car, cdr)
-struct nil()
+struct cons:
+    let car
+    let cdr
+struct nil:
+    pass
 
 let x = cons(2, cons(3, cons(4, nil())))
 let y = cons {

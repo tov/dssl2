@@ -68,8 +68,8 @@
                 (= c d))
   (check-parse? "let x"
                 (let x))
-  (check-parse? "struct posn(x, y)"
-                (struct posn (x y)))
+  (check-parse? "struct posn:\n    let x\n    let y"
+                (struct posn (let x) (let y)))
   (check-parse? "a.b.c = e[f]"
                 (= (struct-ref (struct-ref a b) c)
                    (vec-ref e f)))

@@ -1,6 +1,8 @@
 #lang dssl2
 
-struct posn(x, y)
+struct posn:
+    let x
+    let y
 
 let p = posn { x: 3, y: 4 }
 

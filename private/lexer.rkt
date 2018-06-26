@@ -47,7 +47,9 @@
    TEST
    TIME
    DEF
-   DEFSTRUCT))
+   DEFSTRUCT
+   INTERFACE
+   CLASS))
 
 (define-tokens dssl2-tokens
   (IDENT
@@ -217,6 +219,8 @@
       ["False"                  (token-LITERAL #f)]
       ["def"                    (token-DEF)]
       ["defstruct"              (token-DEFSTRUCT)]
+      ["interface"              (token-INTERFACE)]
+      ["class"                  (token-CLASS)]
       ["test"                   (token-TEST)]
       ["time"                   (token-TIME)]
       ["or"                     (token-OP0 (string->symbol lexeme))]

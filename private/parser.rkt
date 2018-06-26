@@ -124,6 +124,8 @@
         [(DEF <ident> <foralls> LPAREN <contract-formals> RPAREN <result>
               COLON <suite>)
          (loc/1 `(def (,$2 ,@$3 ,@$5) ,@$7 ,@$9))]
+        [(CLASS <ident> <foralls> <optional-interface> COLON <class-suite>)
+         (loc/1 `(class ,$2 ,@$3 ,@$4 ,@$6))]
         [(TEST <expr> COLON <suite>)
          (loc/1 `(test ,$2 ,@$4))]
         [(TEST COLON <suite>)
@@ -155,11 +157,54 @@
         [()
          `()])
 
+      (<optional-interface>
+        [(LPAREN <ident> RPAREN) (loc/2 `(#:implements ,$2))]
+        [()                      `()])
+
       (<suite>
         [(<simple-statement>)
          $1]
         [(NEWLINE INDENT <statements> DEDENT)
          $3])
+
+      (<class-suite>
+        [(NEWLINE INDENT <class-statements> DEDENT)
+         $3])
+
+      (<class-statements>
+        [(<class-fields> <class-constructor> <class-methods>)
+         (append $1 (cons $2 $3))])
+
+      (<class-fields>
+        [() '()]
+        [(<class-field> SEMICOLON <class-fields>)
+         (cons $1 $3)]
+        [(<class-field> <newlines> <class-fields>)
+         (cons $1 $3)])
+
+      (<class-field>
+        [(LET <contract-formal>)
+         (loc/1 `(let ,$2))])
+
+      (<class-constructor>
+        [(DEF IDENT LPAREN <method-formals> RPAREN COLON <suite>)
+         (loc/1 `(def (,$2 ,@$4) ,@$7))])
+
+      (<class-methods>
+        [() '()]
+        [(<class-method> <newlines> <class-methods>)
+         (cons $1 $3)])
+
+      (<class-method>
+        [(DEF IDENT <foralls> LPAREN <method-formals> RPAREN <result> COLON
+              <suite>)
+         (loc/1 `(def (,$2 ,@$3 ,@$5) ,@$7 ,@$9))])
+
+      (<method-formals>
+        [(IDENT)
+         (list $1)]
+        [(IDENT COMMA <contract-formals>)
+         (cons $1 $3)])
 
       (<simple-statement>
         [(<single-line-statement> NEWLINE)

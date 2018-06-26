@@ -73,6 +73,7 @@
 (require (for-syntax racket/base
                      syntax/parse
                      (only-in racket/syntax format-id)
+                     (only-in racket/string string-prefix?)
                      "private/errors.rkt"
                      "private/find-lib.rkt"))
 
@@ -721,8 +722,8 @@
        (format-id #'name "~a.~a" #'name property))
      (define (is-public? id)
        (define name (symbol->string (syntax->datum id)))
-       (or (= (string-length name) 0)
-           (not (char=? (string-ref name 0) #\_))))
+       (or (not (string-prefix? name "_"))
+           (string-prefix? name "__")))
      (with-syntax
        ([actual-self (format-id #f "self")]
         [internal-name (format-id #f "c:~a" #'name)]

@@ -20,7 +20,7 @@
            [dssl-assert-eq      assert_eq]
            [dssl-assert-error   assert_error]
            [dssl-break          break]
-           [dssl-if             if]
+           [dssl-class          class]
            [dssl-continue       continue]
            [dssl-def            def]
            [dssl-defstruct      defstruct]
@@ -28,6 +28,8 @@
            [dssl-error          error]
            [dssl-for            for]
            [dssl-for/vec        for/vec]
+           [dssl-if             if]
+           [dssl-interface      interface]
            [dssl-lambda         lambda]
            [dssl-let            let]
            [dssl-make-vec       make-vec]
@@ -48,6 +50,7 @@
          "private/prims.rkt"
          "private/operators.rkt"
          "private/struct.rkt"
+         "private/object.rkt"
          racket/stxparam
          racket/splicing
          racket/contract/region
@@ -71,6 +74,7 @@
 (require (for-syntax racket/base
                      syntax/parse
                      (only-in racket/syntax format-id)
+                     (only-in racket/string string-prefix?)
                      "private/errors.rkt"
                      "private/find-lib.rkt"))
 
@@ -179,6 +183,12 @@
     (pattern (~seq #:-> result:expr))
     (pattern (~seq)
              #:with result #'AnyC))
+
+  (define-splicing-syntax-class
+    optional-implements
+    #:description "optional #:implements clause"
+    (pattern (~seq #:implements interface:id))
+    (pattern (~seq)))
 
   (define-splicing-syntax-class
     optional-contract-vars
@@ -350,7 +360,7 @@
     [(_ (dssl-vec-ref v:expr i:expr) rhs:expr)
      #'(vector-set! v i rhs)]
     [(_ (dssl-struct-ref s:expr f:id) rhs:expr)
-     #'(dssl-struct-set! s 'f rhs)]
+     #'(dssl-struct-set! s f rhs)]
     [(_ i:id rhs:expr)
      #'(set! i rhs)]))
 
@@ -405,6 +415,16 @@
      #'(dssl-begin/acc (early-defns ...)
                        (late-defns ... first)
                        rest ...)]))
+
+(define-syntax (struct-predicate-name stx)
+  (syntax-parse stx
+    [(_ name:id)
+     (format-id #'name "~a?" #'name)]))
+
+(define-syntax (struct-constructor-name stx)
+  (syntax-parse stx
+    [(_ name:id)
+     (format-id #'name "make-~a" #'name)]))
 
 (define-syntax (struct-getter-name stx)
   (syntax-parse stx
@@ -502,9 +522,6 @@
 
 (define (get-field-info #:srclocs [srclocs '()] struct field)
   (let/ec return
-    (unless (struct-base? struct)
-      (runtime-error #:srclocs srclocs
-                     "Value ‘~e’ is not a struct" struct))
     (define info-vector (struct-info-field-infos
                           (struct-base-struct-info struct)))
     (for ([info (in-vector info-vector)])
@@ -514,16 +531,89 @@
                    "Struct ~e does not have field ~a"
                    struct field)))
 
-(define-syntax-rule (dssl-struct-ref expr field)
-  (let ([value expr])
-    ((field-info-getter (get-field-info #:srclocs (get-srclocs expr)
-                                        value 'field))
-     value)))
+(define (get-method-info #:srclocs [srclocs '()] object method)
+  (let/ec return
+    (define info-vector (object-info-method-infos
+                          (object-base-object-info object)))
+    (for ([info (in-vector info-vector)])
+      (when (eq? method (method-info-name info))
+        (return info)))
+    (runtime-error #:srclocs srclocs
+                   "Object ~e does not have method ~a"
+                   object method)))
 
-(define-syntax-rule (dssl-struct-set! struct field rhs)
-  ((field-info-setter (get-field-info #:srclocs (get-srclocs struct)
-                                      struct field))
-   struct rhs))
+(define-syntax (dssl-struct-ref stx)
+  (syntax-parse stx
+    [(_ target0:expr property:id)
+     (syntax-parse (local-expand #'target0 'expression (list #'dssl-self))
+       #:literals (dssl-self)
+       [dssl-self
+         #'(dssl-self property)]
+       [target:expr
+         #'(let ([value target])
+             (cond
+               [(struct-base? value)
+                ((field-info-getter (get-field-info
+                                      #:srclocs (get-srclocs expr)
+                                      value 'property))
+                 value)]
+               [(object-base? value)
+                ((method-info-getter (get-method-info
+                                       #:srclocs (get-srclocs expr)
+                                       value 'property))
+                 value)]
+               [else
+                 (runtime-error #:srclocs (get-srclocs target)
+                                "Value ‘~e’ is not a struct or object"
+                                value)]))])]))
+
+#;
+(define-syntax (dssl-struct-ref stx0)
+  (define stx (local-expand stx0 'expression (list #'dssl-self)))
+  (syntax-parse stx #:literals (dssl-self)
+    [(_ dssl-self property:id)
+     #'(dssl-self property)]
+    [(_ target:expr property:id)
+     #'(let ([value target])
+         (cond
+           [(struct-base? value)
+            ((field-info-getter (get-field-info
+                                  #:srclocs (get-srclocs expr)
+                                  value 'property))
+             value)]
+           [(object-base? value)
+            ((method-info-getter (get-method-info
+                                   #:srclocs (get-srclocs expr)
+                                   value 'property))
+             value)]
+           [else
+             (runtime-error #:srclocs (get-srclocs target)
+                            "Value ‘~e’ is not a struct or object"
+                            value)]))]))
+
+
+(define-syntax (dssl-struct-set! stx)
+  (syntax-parse stx
+    [(_ target:expr property:id rhs:expr)
+     (syntax-parse (local-expand #'target 'expression (list #'dssl-self))
+       #:literals (dssl-self)
+       [dssl-self
+         #'(dssl-self property rhs)]
+       [struct
+         #'(let ([value struct])
+             (cond
+               [(struct-base? value)
+                ((field-info-setter
+                   (get-field-info #:srclocs (get-srclocs struct)
+                                   value 'field))
+                 value rhs)]
+               [(object-base? value)
+                (runtime-error #:srclocs (get-srclocs struct)
+                               "Cannot assign to object methods")]
+               [else
+                 (runtime-error #:srclocs (get-srclocs struct)
+                                "Value ‘~e’ is not a struct"
+                                struct)]))])]))
 
 (define-syntax (dssl-test stx)
   (syntax-parse stx
@@ -580,3 +670,163 @@
      #`(dssl-assert-error/thunk (get-srclocs code) (λ () code) expected)]
     [(_ code:expr)
      #`(dssl-assert-error/thunk (get-srclocs code) (λ () code) "")]))
+
+; This is so that the documentation will consider elif a keyword.
+(define-syntax-parameter
+  dssl-self
+  (lambda (stx)
+    (raise-syntax-error #f "use of self outside of method" stx)))
+
+(define-syntax (dssl-interface stx)
+  (syntax-parse stx
+    #:literals (dssl-def)
+    [(_ name:id cvs:optional-contract-vars
+        (dssl-def (method-name:id
+                    method-cvs:optional-contract-vars
+                    method-self:id
+                    method-params:var&contract ...)
+                  result-contract:optional-return-contract) ...)
+     #`(begin
+         (printf "interface ~a:\n" 'name)
+         (printf "\tdef ~a(~a, ...)\n" 'method-name 'method-self) ...)]))
+
+(define-syntax (define-field stx)
+  (syntax-parse stx
+    [(_ external-name:id internal-name:id actual-name:id contract:expr)
+     #`(begin
+         (define actual-name unsafe-undefined)
+         (define-syntax internal-name
+           (make-set!-transformer
+             (λ (stx)
+                (syntax-parse stx #:literals (set!)
+                  [(set! _:id e:expr)
+                   (quasisyntax/loc #'contract
+                     (set! actual-name
+                       #,(quasisyntax/loc #'e
+                           (racket:contract
+                             contract e
+                             (format "field assignment at ~a"
+                                     (srcloc->string (get-srcloc e)))
+                             'external-name
+                             'external-name
+                             (get-srcloc contract)))))]
+                  [_:id
+                    #'(check-not-unsafe-undefined
+                        actual-name
+                        'external-name)]
+                  [(_:id . args)
+                   (with-syntax ([app (datum->syntax stx '#%app)])
+                     #'(app
+                         (check-not-unsafe-undefined
+                           actual-name
+                           'external-name)
+                         . args))])))))]))
+
+(define-simple-macro (bind-self class:id self:id actual-self:id body:expr ...)
+  (syntax-parameterize
+    ([dssl-self
+       (syntax-parser
+         [(_ property:id) (format-id #'class "~a.~a" #'class #'property)]
+         [(_ property:id rhs:expr)
+          #`(set! #,(format-id #'class "~a.~a" #'class #'property) rhs)]
+         [_:id            #'actual-self])])
+    (begin
+      (define-syntax (self stx)
+        (syntax-parse stx
+          [_ #'dssl-self]))
+      body ...)))
+
+(define-syntax (dssl-class stx)
+  (syntax-parse stx
+    #:literals (dssl-let dssl-def)
+    #:datum-literals (__init__)
+    [(_ name:id
+        cvs:optional-contract-vars
+        implements:optional-implements
+        (dssl-let field:var&contract) ...
+        (dssl-def (__init__
+                    ctor-self:id
+                    ctor-params:var&contract ...)
+                  ctor-body:expr ...)
+        (dssl-def (method-name:id
+                    method-cvs:optional-contract-vars
+                    method-self:id
+                    method-params:var&contract ...)
+                  method-result:optional-return-contract
+                  body:expr ...) ...)
+     (define (self. property)
+       (format-id #'name "~a.~a" #'name property))
+     (define (is-public? id)
+       (not (string-prefix? (format "~a" id) "_")))
+     (with-syntax
+       ([actual-self (format-id #f "self")]
+        [internal-name (format-id #f "c:~a" #'name)]
+        [(actual-field-name ...)
+           (map (λ (id) (format-id #'name "actual-~a" id))
+                (syntax->list #'(field.var ...)))]
+        [(self.field-name ...)
+         (map self. (syntax->list #'(field.var ...)))]
+        [(self.method-name ...)
+         (map self. (syntax->list #'(method-name ...)))]
+        [(public-method-name ...)
+         (filter is-public? (syntax->list #'(method-name ...)))]
+        [(self.public-method-name ...)
+         (map self. (filter is-public?
+                            (syntax->list #'(method-name ...))))])
+       #`(begin
+           (define-struct (internal-name object-base)
+                          (public-method-name ...)
+                          #:transparent)
+           (define internal-object-info
+             (make-object-info
+               'name
+               (vector (make-method-info
+                         'public-method-name
+                         (struct-getter-name internal-name public-method-name))
+                       ...)))
+           (define (#,(format-id #'name "~a?" #'name) value)
+             (#,(format-id #'internal-name "~a?" #'internal-name) value))
+           (define/contract
+             name
+             (-> (ensure-contract 'class ctor-params.contract)
+                 ...
+                 AnyC)
+             (lambda (ctor-params.var ...)
+               (define-field field.var
+                             self.field-name
+                             actual-field-name
+                             field.contract)
+               ...
+               (define actual-self unsafe-undefined)
+               (define/contract
+                 self.method-name
+                 (maybe-parametric->/c
+                   [method-cvs.var ...]
+                   (-> (ensure-contract 'def method-params.contract)
+                       ...
+                       (ensure-contract 'def method-result.result)))
+                 (lambda (method-params.var ...)
+                   (let/ec return-f
+                           (syntax-parameterize
+                             ([dssl-return
+                                (syntax-rules ()
+                                  [(_)        (return-f (void))]
+                                  [(_ result) (return-f result)])])
+                             (bind-self name method-self actual-self
+                               (dssl-begin body ...))))))
+               ...
+               (set! actual-self
+                 ((struct-constructor-name internal-name)
+                  internal-object-info
+                  self.public-method-name ...))
+               (bind-self name ctor-self actual-self
+                 ctor-body
+                 ...)
+               (when (eq? unsafe-undefined actual-field-name)
+                 (runtime-error
+                   #:srclocs name
+                   "Constructor for class ~a did not assign field ~a"
+                   'name 'field.var))
+               ...
+               actual-self))))]))
+

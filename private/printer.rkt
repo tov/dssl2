@@ -2,6 +2,7 @@
 
 (provide dssl-print)
 (require "struct.rkt")
+(require "object.rkt")
 (require (only-in racket/set
                   mutable-seteq
                   set-member?
@@ -69,6 +70,9 @@
            (fprintf port "~a: " (field-info-name field-info))
            (visit ((field-info-getter field-info) value)))
          (display "}" port))]
+      [(object-base? value)
+       (fprintf port "#<object:~a>"
+                (object-info-name (object-base-object-info value)))]
       [(and (contract? value)
             (not (string=? "???" (format "~a" (contract-name value)))))
        (display (contract-name value) port)]

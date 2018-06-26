@@ -1,13 +1,5 @@
 #lang dssl2
 
-# An ArrayOf[X] is an object with the methods listed below.
-
-# : Natural VectorOf[OrC(X, False)] -> ArrayOf[X]
-# Creates a new dynamic array with the given size and elements.
-#
-# Precondition:
-#  - size_ <= len(data_)
-#  - The first size_ elements of data_ are initialized to Xs, not False
 class Array[T]:
     let size_: nat?
     let data_: vec?
@@ -77,3 +69,13 @@ class Array[T]:
 
     def equals?(self, other) -> bool?:
         self.equals_with?(other, lambda x, y: x == y)
+
+def array() -> Array?:
+    Array(AnyC, 8)
+    
+test "array":
+    let a = array()
+    a.push(5)
+    a.push('hello')
+    assert_eq a.size(), 2
+    assert_eq a.to_vec(), [5, 'hello']

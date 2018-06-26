@@ -72,7 +72,7 @@ by a newline, or a compound statement.
 
 @racketgrammar*[
 #:literals (def defstruct let lambda λ else if elif while for in test
-            time object break continue : True False =
+            time break continue : True False =
             assert assert_eq assert_error pass return NEWLINE INDENT DEDENT)
 [program (code:line @#,m["{"] statement @#,m["}*"])]
 [statement   (code:line simple @#,q{NEWLINE})
@@ -114,7 +114,6 @@ by a newline, or a compound statement.
       (code:line @#,q{λ} @#,m["{"] var_name @#,m["},*"] @#,q{:} simple)
       (code:line expr @#,q{if} expr @#,q{else} expr)
       (code:line struct_name @#,q["{"] @#,m["{"] field_name : expr @#,m["},*"] @#,q[" }"])
-      (code:line object struct_name @#,q["{"] @#,m["{"] field_name : expr @#,m["},*"] @#,q[" }"])
       (code:line @#,q{[} @#,m["{"] expr @#,m["},*"] @#,q{]})
       (code:line @#,q{[} expr @#,q{;} expr @#,q{]})
       (code:line @#,q{[} expr @#,q{for} @#,m{[} var_name @#,q{,} @#,m{]} var_name @#,q{in} expr @#,m{[} @#,q{if} expr @#,m{]} @#,q{]})
@@ -780,24 +779,6 @@ let bar = 4
 let baz = 5
 
 assert_eq Foo { bar, baz: 9 }, Foo(4, 9)
-}|
-
-@defexpform{@defidform/inline[object] @syn[struct_name] { @syn[field_name]₁: @syn[expr]₁, ..., @syn[field_name]@subscript{k}: @syn[expr]@subscript{k} }}
-
-Creates a struct value without declaring the struct type with
-@racket[defstruct]. In particular, creates a struct with the given name
-@syn[struct_name] and the given fields and values, regardless of what
-structs might be declared. The field names cannot have any repeats.
-
-This is useful for one-off objects. For example, a simple 2-D point
-object might be defined as:
-
-@dssl2block|{
-def Posn(x_, y_):
-    def get_x(): x_
-    def get_y(): y_
-    def fmt(): format("(~e, ~e)", x_, y_)
-    object Posn { get_x: get_x, get_y: get_y, fmt: fmt, }
 }|
 
 @defexpform{[ @syn[expr]@subscript{0}, ..., @syn[expr]@subscript{k - 1} ]}

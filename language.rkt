@@ -604,7 +604,7 @@
                [(struct-base? value)
                 ((field-info-setter
                    (get-field-info #:srclocs (get-srclocs struct)
-                                   value 'field))
+                                   value 'property))
                  value rhs)]
                [(object-base? value)
                 (runtime-error #:srclocs (get-srclocs struct)

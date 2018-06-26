@@ -25,6 +25,6 @@ def force(promise):
     if forced?(promise): promise.inner.value
     else:
         let value = promise.inner.thunk()
-        promise.inner= complete(value)
+        promise.inner = complete(value)
         value
 

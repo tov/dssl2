@@ -2,7 +2,7 @@
 
 import array
 
-let a = Array()
+let a = array()
 
 assert a.empty?()
 assert_eq a.size(), 0

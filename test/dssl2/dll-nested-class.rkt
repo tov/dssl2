@@ -28,8 +28,7 @@ class Dll[X]:
             def data!(self, data): self.data_ = data
             def next!(self, next): self.next_ = next
             
-        self.Node_  = Node
-
+        self.Node_     = Node
         self.sentinel_ = self.Node_(False, False, False)
         self.size_     = 0
 

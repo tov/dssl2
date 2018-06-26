@@ -12,7 +12,7 @@ class Dll[X]:
             let prev_
             let data_
             let next_
-            
+
             def __init__(self, prev, data, next):
                 self.data_ = data
                 if prev and next:
@@ -27,7 +27,7 @@ class Dll[X]:
             def prev!(self, prev): self.prev_ = prev
             def data!(self, data): self.data_ = data
             def next!(self, next): self.next_ = next
-            
+
         self.Node_     = Node
         self.sentinel_ = self.Node_(False, False, False)
         self.size_     = 0

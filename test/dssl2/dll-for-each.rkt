@@ -2,17 +2,10 @@
 
 import dll
 
-let IntDll = MakeDll(int?)
-
-let x = IntDll.empty()
+let x = Dll(int?)
 
 x.push_back(2)
 x.push_back(3)
 x.push_back(4)
 
-def to_vec(dll: IntDll.Dll?) -> vec?:
-    let result = [False; dll.size()]
-    dll.each_with_index(lambda i, x: result[i] = x)
-    result
-
-assert_eq to_vec(x), [2, 3, 4]
+assert_eq [2, 3, 4], x.to_vec()

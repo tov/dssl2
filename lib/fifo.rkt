@@ -2,38 +2,29 @@
 
 import dll
 
-def MakeFifo(X: contract?):
-    let Dll = MakeDll(X)
+def MaybeC(X): OrC(False, X)
 
-    # A MaybeC(X) is one of:
-    # - X
-    # - False
-    def MaybeC(X): OrC(X, False)
+class Fifo[X]:
+    let repr_
 
-    defstruct Fifo (
-        ElementC,               # contract?
-        empty?,                 # -> bool?
-        size,                   # -> int?
-        peek,                   # -> MaybeC(X)
-        enqueue,                # X -> VoidC
-        dequeue,                # -> MaybeC(X)
-    )
+    def __init__(self):
+        self.repr_ = Dll(X)
 
-    def empty():
-        let repr = Dll.empty()
-        Fifo {
-            ElementC:   X,
-            empty?:     repr.empty?,
-            size:       repr.size,
-            peek:       repr.front,
-            enqueue:    repr.push_back,
-            dequeue:    repr.pop_front,
-        }
+    def ElementC(self) -> contract?:
+        X
 
-    object FifoFactory {
-        Fifo?,                  # predicate
-        empty,                  # -> Fifo?
-    }
+    def empty?(self) -> bool?:
+        self.repr_.empty?()
 
-let Fifo = MakeFifo(AnyC)
+    def size(self) -> nat?:
+        self.repr_.size()
+
+    def peek(self) -> MaybeC(X):
+        self.repr_.front()
+
+    def enqueue(self, value: X) -> VoidC:
+        self.repr_.push_back(value)
+
+    def dequeue(self) -> MaybeC(X):
+        self.repr_.pop_front()
 

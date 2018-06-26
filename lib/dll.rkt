@@ -161,20 +161,3 @@ class Dll[X]:
 
 def dll(): Dll(AnyC)
 
-
-test "detach and splice":
-    let l = dll()
-    l.push_back(3)
-    l.push_back(4)
-    l.push_front(2)
-    assert_eq [2, 3, 4], l.to_vec()
-    let m = dll()
-    m.push_front(1)
-    let n = l.detach_front(2)
-    assert_eq [4], l.to_vec()
-    assert_eq [1], m.to_vec()
-    assert_eq [2, 3], n.to_vec()
-    m.splice(n)
-    assert_eq [4], l.to_vec()
-    assert_eq [1, 2, 3], m.to_vec()
-    assert_eq [], n.to_vec()

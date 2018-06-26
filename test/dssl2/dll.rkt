@@ -2,9 +2,7 @@
 
 import dll
 
-let IntDll = MakeDll(int?)
-
-let lst = IntDll.empty()
+let lst = Dll(int?)
 
 lst.push_back(3)
 lst.push_back(4)

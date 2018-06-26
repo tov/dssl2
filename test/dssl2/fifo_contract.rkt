@@ -2,9 +2,7 @@
 
 import fifo
 
-let IntFifo = MakeFifo(int?)
-
-let q = IntFifo.empty()
+let q = Fifo(int?)
 
 assert q.empty?()
 assert_eq q.size(), 0

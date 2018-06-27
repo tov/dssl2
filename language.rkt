@@ -416,11 +416,6 @@
                        (late-defns ... first)
                        rest ...)]))
 
-(define-syntax (struct-predicate-name stx)
-  (syntax-parse stx
-    [(_ name:id)
-     (format-id #'name "~a?" #'name)]))
-
 (define-syntax (struct-constructor-name stx)
   (syntax-parse stx
     [(_ name:id)
@@ -564,7 +559,8 @@
        [dssl-self
          #'(dssl-self property rhs)]
        [struct
-         #'(let ([value struct])
+         (quasisyntax/loc #'property
+           (let ([value struct])
              (cond
                [(struct-base? value)
                 ((field-info-setter
@@ -577,7 +573,7 @@
                [else
                  (runtime-error #:srclocs (get-srclocs struct)
                                 "Value ‘~e’ is not a struct"
-                                struct)]))])]))
+                                struct)])))])]))
 
 (define-syntax (dssl-test stx)
   (syntax-parse stx
@@ -686,18 +682,24 @@
                            'external-name)
                          . args))])))))]))
 
+(define-for-syntax (qualify qualifier property)
+  (format-id qualifier "~a.~a" qualifier property))
+
 (define-simple-macro (bind-self class:id self:id actual-self:id body:expr ...)
   (syntax-parameterize
     ([dssl-self
        (syntax-parser
-         [(_ property:id) (format-id #'class "~a.~a" #'class #'property)]
-         [(_ property:id rhs:expr)
-          #`(set! #,(format-id #'class "~a.~a" #'class #'property) rhs)]
-         [_:id            #'actual-self])])
+         [(_ property:id)           (qualify #'class #'property)]
+         [(_ property:id rhs:expr)  #`(set! #,(qualify #'class #'property) rhs)]
+         [_:id                      #'actual-self])])
     (begin
       (define-syntax (self stx)
         (syntax-parse stx
-          [_ #'dssl-self]))
+          [_:id #'dssl-self]
+          [_ (raise-syntax-error
+               #f
+               "self parameter is not a function"
+               stx)]))
       body ...)))
 
 (define-syntax (dssl-class stx)
@@ -718,8 +720,7 @@
                     method-params:var&contract ...)
                   method-result:optional-return-contract
                   body:expr ...) ...)
-     (define (self. property)
-       (format-id #'name "~a.~a" #'name property))
+     (define (self. property) (qualify #'name property))
      (define (is-public? id)
        (define name (symbol->string (syntax->datum id)))
        (or (not (string-prefix? name "_"))
@@ -741,12 +742,21 @@
                             (syntax->list #'(method-name ...))))])
        #`(begin
            (define-struct (internal-name object-base)
-                          (public-method-name ...)
+                          (__class__
+                           __contract_params__
+                           public-method-name
+                           ...)
                           #:transparent)
            (define internal-object-info
              (make-object-info
                'name
                (vector (make-method-info
+                         '__class__
+                         (struct-getter-name internal-name __class__))
+                       (make-method-info
+                         '__contract_params__
+                         (struct-getter-name internal-name __contract_params__))
+                       (make-method-info
                          'public-method-name
                          (struct-getter-name internal-name public-method-name))
                        ...)))
@@ -783,9 +793,15 @@
                              (bind-self name method-self actual-self
                                (dssl-begin body ...))))))
                ...
+               (define __class__
+                 name)
+               (define (__contract_params__)
+                 (vector cvs.var ...))
                (set! actual-self
                  ((struct-constructor-name internal-name)
                   internal-object-info
+                  __class__
+                  __contract_params__
                   self.public-method-name ...))
                (bind-self name ctor-self actual-self
                  ctor-body

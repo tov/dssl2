@@ -750,16 +750,17 @@
            (define internal-object-info
              (make-object-info
                'name
-               (vector (make-method-info
-                         '__class__
-                         (struct-getter-name internal-name __class__))
-                       (make-method-info
-                         '__contract_params__
-                         (struct-getter-name internal-name __contract_params__))
-                       (make-method-info
-                         'public-method-name
-                         (struct-getter-name internal-name public-method-name))
-                       ...)))
+               (vector-immutable
+                 (make-method-info
+                   '__class__
+                   (struct-getter-name internal-name __class__))
+                 (make-method-info
+                   '__contract_params__
+                   (struct-getter-name internal-name __contract_params__))
+                 (make-method-info
+                   'public-method-name
+                   (struct-getter-name internal-name public-method-name))
+                 ...)))
            (define (#,(format-id #'name "~a?" #'name) value)
              (#,(format-id #'internal-name "~a?" #'internal-name) value))
            (define/contract

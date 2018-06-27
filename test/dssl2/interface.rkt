@@ -6,12 +6,12 @@ interface I:
 
 class C(I):
     let x
+    def m1(self, boo: int?):
+        self.x
     def __init__(self, x):
         self.x = x
-    def m1(self, boo):
-        self.x
-    def m2(self, boo):
-        self.m1()
+    def m2(self, boo) -> str?:
+        self.m1(5)
     def m3(self):
         self.x = λ: 10
 
@@ -26,9 +26,15 @@ interface Container[X]:
     
 class IntCell(Container):
     let val: int?
+    def __init__(self, x):
+        self.val = x
     def add(self, x: int?) -> VoidC:
         self.val = x
-    def get(self) -> int?:
-        self.val
+    def get(self):
+        'a'
 
 def g(x: Container(int?)): x
+def h(x: Container(AnyC)): x
+
+let o = g(IntCell(5))
+# o.add('hi')

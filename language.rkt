@@ -377,8 +377,8 @@
          (define-struct (internal-name struct-base) (fields.var ...)
                         #:mutable
                         #:transparent)
-         (define (#,(format-id #'name "~a?" #'name) value)
-           (#,(format-id #'internal-name "~a?" #'internal-name) value)))]))
+         (define (#,(struct-predicate-name #'name) value)
+           (#,(struct-predicate-name #'internal-name) value)))]))
 
 (define-syntax dssl-begin
   (syntax-rules ()
@@ -422,6 +422,9 @@
   (syntax-parse stx
     [(_ name:id)
      (format-id #'name "make-~a" #'name)]))
+
+(define-for-syntax (struct-predicate-name name)
+  (format-id name "~a?" name))
 
 (define-syntax (struct-getter-name stx)
   (syntax-parse stx
@@ -684,20 +687,18 @@
            (and (object-base? obj)
                 (eq? interface-token (object-info-interface
                                        (object-base-object-info obj)))))
-         (define (actual-class-name obj)
-           (and (object-base? obj)
-                (object-info-name (object-base-object-info obj))))
-         (define (project-method object method contract)
+         (define (project-method object method contract srcloc)
            (define method-value
              ((method-info-getter (get-method-info object method))
               object))
            (racket:contract
              contract method-value
-             (actual-class-name object) "method caller"))
+             'name "method caller"
+             (format "~a.~a" 'name method) srcloc))
          (define (((projection cvs.var ...) blame) val neg-party)
            (define contract-parameters (vector-immutable cvs.var ...))
            (cond
-             [(#,(format-id #'name "~a?" #'name) val)
+             [(#,(struct-predicate-name #'name) val)
               (if (contract-parameters-match?
                     (object-base-contract-params val)
                     contract-parameters)
@@ -718,13 +719,15 @@
                     [method-cvs.var ...]
                     (-> (ensure-contract 'def method-params.contract)
                         ...
-                        (ensure-contract 'def method-result.result))))
+                        (ensure-contract 'def method-result.result)))
+                  (get-srcloc method-name))
                 ...)]
              [(object-base? val)
                (racket:raise-blame-error
                  blame #:missing-party neg-party val
                  "Class ~a does not implement interface ~a"
-                 (actual-class-name val) 'name)]
+                 (object-info-name (object-base-object-info val))
+                 'name)]
              [else
                (racket:raise-blame-error
                  blame #:missing-party neg-party val
@@ -741,7 +744,7 @@
                    #:name 'name
                    #:first-order first-order?
                    #:late-neg-projection (projection cvs.var ...))))
-         (define (#,(format-id #'name "~a?" #'name) value)
+         (define (#,(struct-predicate-name #'name) value)
            (interface-struct? value)))]))
 
 (define-syntax (define-field stx)
@@ -804,7 +807,8 @@
         (racket:contract
           contract name
           (format "method ~a at ~a" 'name (srcloc->string (get-srcloc name)))
-          "method caller")))
+          "method caller"
+          'name (get-srcloc ctc))))
     (define-syntax name
       (make-set!-transformer
         (syntax-parser
@@ -905,8 +909,8 @@
                    'public-method-name
                    (struct-getter-name internal-name public-method-name))
                  ...)))
-           (define (#,(format-id #'name "~a?" #'name) value)
-             (#,(format-id #'internal-name "~a?" #'internal-name) value))
+           (define (#,(struct-predicate-name #'name) value)
+             (#,(struct-predicate-name #'internal-name) value))
            (define (name cvs.var ... . rest)
              (define-field field.var
                            self.field-name

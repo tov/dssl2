@@ -645,10 +645,10 @@
             [c2 (in-vector cs2)])
     (eq? c1 c2)))
 
-(define-for-syntax (public-method-name? name)
-  (define str (symbol->string name))
-  (or (not (string-prefix? str "_"))
-      (string-prefix? str "__")))
+(define-for-syntax (public-method-name? stx)
+  (define name (symbol->string (syntax-e stx)))
+  (or (not (string-prefix? name "_"))
+      (string-prefix? name "__")))
 
 (define-syntax (dssl-interface stx)
   (syntax-parse stx
@@ -660,7 +660,7 @@
                     method-params:var&contract ...)
                   method-result:optional-return-contract) ...)
      (for ([method-name (syntax->list #'(method-name ...))])
-       (unless (public-method-name? (syntax->datum method-name))
+       (unless (public-method-name? method-name)
          (syntax-error method-name "interface methods cannot be private")))
      #`(begin
          (define interface-token (gensym))
@@ -821,6 +821,41 @@
         (return method-name)))
     (syntax-error stx "class must have a constructor")))
 
+(define-for-syntax (lookup-interface interface)
+  (define interface-name (syntax-e interface))
+  (define interface-info
+    (if interface-name (syntax-local-eval interface-name) '(#f)))
+  (values interface-name
+          (car interface-info)
+          (cdr interface-info)))
+
+(define-for-syntax (check-class-against-interface
+                     interface-name
+                     interface-methods
+                     class-methods
+                     class-method-paramses)
+  (define class-method-names (map syntax-e class-methods))
+  (for ([method-info (in-list interface-methods)])
+    (unless (memq (car method-info) class-method-names)
+      (syntax-error
+        #'implements.interface
+        "Class ~a missing method ~a, required by interface"
+        interface-name (car method-info))))
+  (for ([method-stx    (in-list class-methods)]
+        [method-name   (in-list class-method-names)]
+        [method-params (in-list class-method-paramses)])
+    (cond
+      [(assq method-name interface-methods)
+       =>
+       (lambda (method-info)
+         (define actual-arity (length (syntax->list method-params)))
+         (unless (= actual-arity (cadr method-info))
+           (syntax-error
+             method-stx
+             "Method ~a takes ~a params, but interface ~a specifies ~a"
+             method-name (add1 actual-arity)
+             interface-name (add1 (cadr method-info)))))])))
+
 (define-syntax (dssl-class stx)
   (syntax-parse stx
     #:literals (dssl-let dssl-def)
@@ -836,50 +871,25 @@
                   method-body:expr ...) ...)
      (define constructor
        (find-constructor (syntax->list #'(method-name ...)) #'name))
-     (define interface-name (syntax-e #'implements.interface))
-     (define interface-info
-       (if interface-name (syntax-local-eval interface-name) '(#f)))
-     (define interface-token (car interface-info))
-     (define interface-methods (cdr interface-info))
-     (define method-names
-       (map syntax-e (syntax->list #'(method-name ...))))
-     (for ([method-info interface-methods])
-       (unless (memq (car method-info) method-names)
-         (syntax-error
-           #'implements.interface
-           "Class ~a missing method ~a, required by interface"
-           (syntax-e #'name) (car method-info))))
-     (for ([method-name (syntax->list #'(method-name ...))]
-           [method-params (syntax->list #'((method-params ...) ...))])
-       (cond
-         [(assq (syntax-e method-name) interface-methods)
-          =>
-          (lambda (method-info)
-            (define actual-arity (length (syntax->list method-params)))
-            (unless (= actual-arity (cadr method-info))
-              (syntax-error
-                method-name
-                "Method ~a takes ~a params, but interface ~a specifies ~a"
-                (syntax-e method-name) (add1 actual-arity)
-                interface-name (add1 (cadr method-info)))))]))
+     (define-values (interface-name interface-token interface-methods)
+       (lookup-interface #'implements.interface))
+     (define field-names (syntax->list #'(field.var ...)))
+     (define method-names (syntax->list #'(method-name ...)))
+     (check-class-against-interface
+       interface-name interface-methods method-names
+       (syntax->list #'((method-params ...) ...)))
      (define (self. property) (qualify #'name property))
-     (define (is-public? id)
-       (public-method-name? (syntax->datum id)))
      (with-syntax
-       ([actual-self (format-id #f "self")]
-        [internal-name (format-id #f "c:~a" #'name)]
-        [(actual-field-name ...)
-           (map (λ (id) (format-id #'name "actual-~a" id))
-                (syntax->list #'(field.var ...)))]
+       ([(actual-field-name ...)
+         (generate-temporaries field-names)]
         [(self.field-name ...)
-         (map self. (syntax->list #'(field.var ...)))]
+         (map self. field-names)]
         [(self.method-name ...)
-         (map self. (syntax->list #'(method-name ...)))]
+         (map self. method-names)]
         [(public-method-name ...)
-         (filter is-public? (syntax->list #'(method-name ...)))]
+         (filter public-method-name? method-names)]
         [(self.public-method-name ...)
-         (map self. (filter is-public?
-                            (syntax->list #'(method-name ...))))])
+         (map self. (filter public-method-name? method-names))])
        #`(begin
            (define-struct (internal-name object-base)
                           (__class__
@@ -899,7 +909,7 @@
                    (struct-getter-name internal-name public-method-name))
                  ...)))
            (define (#,(struct-predicate-name #'name) value)
-             (#,(struct-predicate-name #'internal-name) value))
+             (internal-name? value))
            (define (name cvs.var ... . rest)
              (define-field field.var
                            self.field-name
@@ -920,7 +930,7 @@
              ...
              (define self.__class__ name)
              (set! actual-self
-               ((struct-constructor-name internal-name)
+               (make-internal-name
                 internal-object-info
                 (vector-immutable cvs.var ...)
                 self.__class__

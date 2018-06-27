@@ -6,4 +6,4 @@ assert num?(-5)
 assert num?(inf)
 assert num?(nan)
 
-assert !num?('hello')
+assert not num?('hello')

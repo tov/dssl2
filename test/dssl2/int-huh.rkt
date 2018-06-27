@@ -1,5 +1,5 @@
 #lang dssl2
 
 assert int?(6)
-assert !int?(6.5)
-assert !int?('hello')
+assert not int?(6.5)
+assert not int?('hello')

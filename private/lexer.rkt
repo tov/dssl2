@@ -54,15 +54,16 @@
   (IDENT
    OP0  ; or
    OP1  ; and
-   OP2  ; == <= >= != < > === !==
-   OP3  ; (|)
-   OP4  ; ^
-   OP5  ; &
-   OP6  ; << >>
-   OP7  ; (+ -)
-   OP8  ; * / %
-   OP9  ; (unary) ~ ! (+ -)
-   OP10 ; **
+   OP2  ; not
+   OP3  ; == <= >= != < > === !==
+   OP4  ; (|)
+   OP5  ; ^
+   OP6  ; &
+   OP7  ; << >>
+   OP8  ; (+ -)
+   OP9  ; * / %
+   OP10 ; (unary) ~ (+ -)
+   OP11 ; **
    LITERAL
    STRING-LITERAL))
 
@@ -223,15 +224,16 @@
       ["time"                   (token-TIME)]
       ["or"                     (token-OP0 (string->symbol lexeme))]
       ["and"                    (token-OP1 (string->symbol lexeme))]
+      ["not"                    (token-OP2 (string->symbol lexeme))]
       [(:or "==" #\< #\> "<=" ">=" "!=" "===" "!==")
-                                (token-OP2 (string->symbol lexeme))]
-      [#\|                      (token-OP3 (string->symbol lexeme))]
-      [#\^                      (token-OP4 (string->symbol lexeme))]
-      [#\&                      (token-OP5 (string->symbol lexeme))]
-      [(:or "<<" ">>")          (token-OP6 (string->symbol lexeme))]
-      [(:or #\* #\/ #\%)        (token-OP8 (string->symbol lexeme))]
-      [(:or #\! #\~)            (token-OP9 (string->symbol lexeme))]
-      ["**"                     (token-OP10 (string->symbol lexeme))]
+                                (token-OP3 (string->symbol lexeme))]
+      [#\|                      (token-OP4 (string->symbol lexeme))]
+      [#\^                      (token-OP5 (string->symbol lexeme))]
+      [#\&                      (token-OP6 (string->symbol lexeme))]
+      [(:or "<<" ">>")          (token-OP7 (string->symbol lexeme))]
+      [(:or #\* #\/ #\%)        (token-OP9 (string->symbol lexeme))]
+      [#\~                      (token-OP10 (string->symbol lexeme))]
+      ["**"                     (token-OP11 (string->symbol lexeme))]
       [(:: #\" (:* dq-str-char) #\")
        (token-STRING-LITERAL
          (interpret-string (remove-first-and-last lexeme)))]

@@ -1,4 +1,4 @@
 #lang dssl2
 
 assert even?(4)
-assert !even?(5)
+assert not even?(5)

@@ -9,7 +9,6 @@
          !=
          ===
          !==
-         !
          (contract-out
            [& (-> int? int? int?)]
            [\| (-> int? int? int?)]
@@ -28,6 +27,7 @@
            [>> (-> int? int? int?)]
            [<< (-> int? int? int?)])
          ; syntax
+         not            ; from Racket
          and            ; from Racket
          or)            ; from Racket
 
@@ -43,9 +43,6 @@
 
 (define (** a b)
   (expt a b))
-
-(define (! a)
-  (not a))
 
 (define (& a b)
   (bitwise-and a b))

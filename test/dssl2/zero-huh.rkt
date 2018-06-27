@@ -2,4 +2,4 @@
 
 assert zero?(0)
 assert zero?(0.0)
-assert !zero?(1)
+assert not zero?(1)

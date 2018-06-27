@@ -2,4 +2,4 @@
 
 assert str?('ehlo')
 assert str?("ehlo")
-assert !str?(str?)
+assert not str?(str?)

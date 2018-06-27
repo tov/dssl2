@@ -71,7 +71,7 @@ more statements, where a statement is either a simple statement followed
 by a newline, or a compound statement.
 
 @racketgrammar*[
-#:literals (def defstruct let lambda λ else if elif while for in test
+#:literals (def struct let lambda λ else if elif while for in test
             time break continue : True False =
             assert assert_eq assert_error pass return NEWLINE INDENT DEDENT)
 [program (code:line @#,m["{"] statement @#,m["}*"])]
@@ -83,7 +83,6 @@ by a newline, or a compound statement.
             (code:line assert_error expr @#,m["["] @#,q{,} string_expr @#,m["]"])
             break
             continue
-            (code:line defstruct struct_name @#,q{(} @#,m["{"] field_name @#,m["["] @#,q{:} contract_expr @#,m["]"] @#,m["},*"] @#,q{)})
             (code:line lvalue = expr)
             expr
             (code:line let var_name @#,m["["] @#,q{:} contract_expr @#,m["]"] @#,m["["] @#,q{=} expr @#,m["]"])
@@ -97,6 +96,7 @@ by a newline, or a compound statement.
             (code:line def name @#,q{(} name @#,m["["] @#,q{:} ctc_expr @#,m["]"] @#,q{,} @#,m{...} @#,q{)} @#,m["["] @#,q{->} ctc_expr @#,m["]"] @#,q{:} block)
             (code:line if expr @#,q{:} block @#,m["{"] elif expr @#,q{:} block @#,m["}*"] @#,m["["] else @#,q{:} block @#,m["]"])
             (code:line for @#,m{[} var_name @#,q{,} @#,m{]} var_name @#,q{in} expr @#,q{:} block)
+            (code:line struct struct_name @#,q{:} fields_block)
             (code:line test @#,m{[} expr @#,m{]} @#,q{:} block)
             (code:line time @#,m{[} expr @#,m{]} @#,q{:} block)
             (code:line while expr @#,q{:} block)
@@ -104,6 +104,9 @@ by a newline, or a compound statement.
 [block
         (code:line simple @#,q{NEWLINE})
         (code:line @#,q{NEWLINE} @#,q{INDENT} @#,m["{"] statement @#,m["}⁺"] @#,q{DEDENT})]
+[fields_block
+        (code:line pass)
+        (code:line @#,q{NEWLINE} @#,q{INDENT} @#,m["{"] let field_name @#,m["["] @#,q{:} ctc_expr @#,m["]"] @#,q{NEWLINE} @#,m["}⁺"] @#,q{DEDENT})]
 [expr lvalue
       number
       string
@@ -138,7 +141,7 @@ by a newline, or a compound statement.
  @item{@racket[or]}
 ]
 
-@italic{UNOP}s are @racket[!], @racket[~], @racket[+], @racket[-].
+@italic{UNOP}s are @racket[~], @racket[+], @racket[-], @racket[not].
 
 @subsection{Lexical Syntax}
 
@@ -217,7 +220,7 @@ expression evaluates false, signals an error.
 @dssl2block|{
 test "sch_member? finds 'hello'":
     let h = sch_new_sbox(10)
-    assert !sch_member?(h, 'hello')
+    assert not sch_member?(h, 'hello')
     sch_insert!(h, 'hello', 5)
     assert sch_member?(h, 'hello')
 }|
@@ -311,57 +314,6 @@ def rbt_insert!(key, tree):
     search!(tree.root, set_root!)
 }|
 
-@defsmplform{@defidform/inline[defstruct] @syn[struct_name](@syn[field_name]₁, ..., @syn[field_name]@subscript{k})}
-
-Defines a new structure type @syn[struct_name] with fields given by
-@syn[field_name]₁, @c{...}, @syn[field_name]@subscript{k}. For example,
-to define a struct @racket[posn] with fields @racket[x] and @racket[y],
-we write:
-
-@dssl2block|{
-defstruct posn(x, y)
-}|
-
-Then we can create a @racket[posn] using struct construction syntax and
-select out the fields using dotted selection syntax:
-
-@dssl2block|{
-let p = posn { x: 3, y: 4 }
-}|
-
-@dssl2block|{
-def magnitude(q):
-    sqrt(q.x * q.x + q.y * q.y)
-}|
-
-It also possible to construct the struct by giving the fields in order
-using function syntax:
-
-@dssl2block|{
-assert_eq magnitude(posn(3, 4)), 5
-}|
-
-Another example:
-
-@dssl2block|{
-# A RndBstOf[X] is one of:
-# - False
-# - Node(X, nat?, RndBstOf[X], RndBstOf[X])
-defstruct Node(key, size, left, right)
-
-# singleton : X -> RndBstOf[X]
-def singleton(key):
-    Node(key, 1, False, False)
-
-# size : RndBstOf[X] -> nat?
-def size(tree):
-    tree.size if Node?(tree) else 0
-
-# fix_size! : Node? -> Void
-def fix_size!(node):
-    node.size = 1 + size(node.left) + size(node.right)
-}|
-
 @defsmplform{@syn[lvalue] @defidform/inline[=] @syn[expr]}
 
 Assignment. The assigned @syn[lvalue] can be in one of three forms:
@@ -442,7 +394,7 @@ Or we can have several @racket[elif] parts:
 @dssl2block|{
 def rebalance_left_(key, balance, left0, right):
     let left = left0.node
-    if !left0.grew?:
+    if not left0.grew?:
         insert_result(node(key, balance, left, right), False)
     elif balance == 1:
         insert_result(node(key, 0, left, right), False)
@@ -543,6 +495,68 @@ for ix, person in people_to_greet:
     println("~e: Hello, ~a!", ix, person)
 }|
 
+@defcmpdforms[
+    [@list{@defidform/inline[struct] @syn[name] : NEWLINE INDENT}]
+    [@list{@~ @~ @redefidform/inline[let] @syn_[field_name]{1} NEWLINE}]
+    [@list{@~ @~ ...}]
+    [@list{@~ @~ @redefidform/inline[let] @syn_[field_name]{k} NEWLINE DEDENT}]
+]
+
+Defines a new structure type @syn[struct_name] with fields given by
+@syn[field_name]₁, @c{...}, @syn[field_name]@subscript{k}. For example,
+to define a struct @racket[posn] with fields @racket[x] and @racket[y],
+we write:
+
+@dssl2block|{
+struct posn:
+    let x
+    let y
+}|
+
+Then we can create a @racket[posn] using struct construction syntax and
+select out the fields using dotted selection syntax:
+
+@dssl2block|{
+let p = posn { x: 3, y: 4 }
+}|
+
+@dssl2block|{
+def magnitude(q):
+    sqrt(q.x * q.x + q.y * q.y)
+}|
+
+It also possible to construct the struct by giving the fields in order
+using function syntax:
+
+@dssl2block|{
+assert_eq magnitude(posn(3, 4)), 5
+}|
+
+Another example:
+
+@dssl2block|{
+# A RndBstOf[X] is one of:
+# - False
+# - Node(X, nat?, RndBstOf[X], RndBstOf[X])
+struct Node:
+    let key
+    let size
+    let left
+    let right
+
+# singleton : X -> RndBstOf[X]
+def singleton(key):
+    Node(key, 1, False, False)
+
+# size : RndBstOf[X] -> nat?
+def size(tree):
+    tree.size if Node?(tree) else 0
+
+# fix_size! : Node? -> Void
+def fix_size!(node):
+    node.size = 1 + size(node.left) + size(node.right)
+}|
+
 @defsmplform{@defidform/inline[pass]}
 
 Does nothing.
@@ -580,7 +594,7 @@ could be omitted.
 def bloom_check?(b, s):
     for hash in b.hashes:
         let index = hash(s) % b.bv.size
-        if !bv_ref(b.bv, index): return False
+        if not bv_ref(b.bv, index): return False
     return True
 }|
 
@@ -610,23 +624,23 @@ long sequence of preparation and checks:
 @dssl2block|{
 test 'single-chaining hash table':
     let h = sch_new_1(10)
-    assert !sch_member?(h, 'hello')
+    assert not sch_member?(h, 'hello')
 
     sch_insert!(h, 'hello', 5)
     assert sch_member?(h, 'hello')
     assert_eq sch_lookup(h, 'hello'), 5
-    assert !sch_member?(h, 'goodbye')
-    assert !sch_member?(h, 'helo')
+    assert not sch_member?(h, 'goodbye')
+    assert not sch_member?(h, 'helo')
 
     sch_insert!(h, 'helo', 4)
     assert_eq sch_lookup(h, 'hello'), 5
     assert_eq sch_lookup(h, 'helo'), 4
-    assert !sch_member?(h, 'hel')
+    assert not sch_member?(h, 'hel')
 
     sch_insert!(h, 'hello', 10)
     assert_eq sch_lookup(h, 'hello'), 10
     assert_eq sch_lookup(h, 'helo'), 4
-    assert !sch_member?(h, 'hel')
+    assert not sch_member?(h, 'hel')
     assert_eq sch_keys(h), cons('hello', cons('helo', nil()))
 }|
 
@@ -658,7 +672,7 @@ Iterates the @tech{block} while the @syn[expr] evaluates to non-false.
 For example:
 
 @dssl2block|{
-while !is_empty(queue):
+while not is_empty(queue):
     explore(dequeue(queue))
 }|
 
@@ -767,13 +781,15 @@ def parent(link):
 
 Constructs a struct with the given name and the values of the given
 expressions for its fields. The struct must have been declared with
-those fields using @racket[defstruct].
+those fields using @racket[struct].
 
 If a variable with the same name as a field is in scope, omitting the
 field value will use that variable:
 
 @dssl2block|{
-defstruct Foo(bar, baz)
+struct Foo:
+    let bar
+    let baz
 
 let bar = 4
 let baz = 5
@@ -881,7 +897,7 @@ Raises the value of @syn[expr]₁ to the power of the value of
 The @racket[**] operator is right-associative.
 
 @defexpforms[
-  @list{@defidform/inline[!]@syn[expr]}
+  @list{@defidform/inline[not] @syn[expr]}
   @list{@defidform/inline[~]@syn[expr]}
   @list{-@syn[expr]}
   @list{+@syn[expr]}
@@ -889,7 +905,7 @@ The @racket[**] operator is right-associative.
 
 Logical negation, bitwise negation, numerical negation, and numerical identity.
 
-@c{!}@syn[expr] evaluates @syn[expr], then returns @racket[True] if
+@c{not} @syn[expr] evaluates @syn[expr], then returns @racket[True] if
 the result was @racket[False], and @racket[False] for any other result.
 
 @c{~}@syn[expr], @c{-}@syn[expr], and @c{+}@syn[expr] require
@@ -1276,15 +1292,22 @@ let x : int?
 x = 5
 }|
 
-@defsmplform{@redefidform/inline[defstruct] @syn[name](@syn_[name]{1}: @syn_[expr]{1}, ..., @syn_[name]{k}: @syn_[expr]{k})}
+@defcmpdforms[
+    [@list{@redefidform/inline[struct] @syn[name] : NEWLINE INDENT}]
+    [@list{@~ @~ @redefidform/inline[let] @syn_[field_name]{1}: @syn_[ctc_expr]{1} NEWLINE}]
+    [@list{@~ @~ ...}]
+    [@list{@~ @~ @redefidform/inline[let] @syn_[field_name]{k}: @syn_[ctc_expr]{k} NEWLINE DEDENT}]
+]
 
-Defines a structure @syn[name] with the given contracts @syn_[expr]{i}
-applied to the fields @syn_[name]{i}. This means that the contracts will
+Defines a structure @syn[name] with the given contracts @syn_[ctc_expr]{i}
+applied to the fields @syn_[field_name]{i}. This means that the contracts will
 be applied both when constructing the structure and when mutating it.
 For example:
 
 @dssl2block|{
-defstruct posn(x: float?, y: float?)
+struct posn:
+    let x: float?
+    let y: float?
 }|
 
 Now constructing a @code{posn} will require both parameters to satisfy

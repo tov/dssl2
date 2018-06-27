@@ -397,13 +397,13 @@
          $1])
 
       (<expr2>
-        [(<expr3> OP2 <expr3>)
-         (loc/2 `(,$2 ,$1 ,$3))]
+        [(OP2 <expr2>)
+         (loc/1 `(,$1 ,$2))]
         [(<expr3>)
-         $1])
+          $1])
 
       (<expr3>
-        [(<expr3> OP3 <expr4>)
+        [(<expr4> OP3 <expr4>)
          (loc/2 `(,$2 ,$1 ,$3))]
         [(<expr4>)
          $1])
@@ -427,33 +427,39 @@
          $1])
 
       (<expr7>
-        [(<expr7> PLUS <expr8>)
-         (loc/2 `(+ ,$1 ,$3))]
-        [(<expr7> MINUS <expr8>)
-         (loc/2 `(- ,$1 ,$3))]
         [(<expr7> OP7 <expr8>)
          (loc/2 `(,$2 ,$1 ,$3))]
         [(<expr8>)
          $1])
 
       (<expr8>
+        [(<expr8> PLUS <expr9>)
+         (loc/2 `(+ ,$1 ,$3))]
+        [(<expr8> MINUS <expr9>)
+         (loc/2 `(- ,$1 ,$3))]
         [(<expr8> OP8 <expr9>)
          (loc/2 `(,$2 ,$1 ,$3))]
         [(<expr9>)
          $1])
 
       (<expr9>
-        [(OP9 <expr9>)
-         (loc/1 `(,$1 ,$2))]
-        [(PLUS <expr9>)
-         (loc/1 `(+ ,$2))]
-        [(MINUS <expr9>)
-         (loc/1 `(- ,$2))]
+        [(<expr9> OP9 <expr10>)
+         (loc/2 `(,$2 ,$1 ,$3))]
         [(<expr10>)
          $1])
 
       (<expr10>
-        [(<atom> OP10 <expr10>)
+        [(OP10 <expr10>)
+         (loc/1 `(,$1 ,$2))]
+        [(PLUS <expr10>)
+         (loc/1 `(+ ,$2))]
+        [(MINUS <expr10>)
+         (loc/1 `(- ,$2))]
+        [(<expr11>)
+         $1])
+
+      (<expr11>
+        [(<atom> OP11 <expr11>)
          (loc/2 `(,$2 ,$1 ,$3))]
         [(<atom>)
          $1]))))

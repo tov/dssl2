@@ -63,7 +63,7 @@ class Array[T]:
     def equals_with?(self, other, pred?) -> bool?:
         if self.size_ != other.size(): return False
         for i in self.size_:
-            if !pred?(self.get(i), other.get(i)):
+            if not pred?(self.get(i), other.get(i)):
                 return False
         return True
 

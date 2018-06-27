@@ -7,7 +7,7 @@
                   ~a)
          (for-syntax racket/base))
 
-(provide defexpform defexpforms defsmplform defcmpdform
+(provide defexpform defexpforms defsmplform defcmpdform defcmpdforms
          defconstform
          defprocform defprocforms
          redefidform/inline
@@ -46,6 +46,9 @@
 
 (define-syntax-rule (defcmpdform chunk ...)
   (*defforms "compound" (list (list chunk ...))))
+
+(define-syntax-rule (defcmpdforms (chunk ...) ...)
+  (*defforms "compound" (list (list chunk ...) ...)))
 
 (define-syntax-rule (defconstform name chunk ...)
   (*defforms "constant" (list (list (defidform/inline name) ": " chunk ...))))

@@ -2,5 +2,5 @@
 
 assert positive?(5)
 assert positive?(5.5)
-assert !positive?(0)
-assert !positive?(-4)
+assert not positive?(0)
+assert not positive?(-4)

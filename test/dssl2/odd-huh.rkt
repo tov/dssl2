@@ -2,4 +2,4 @@
 
 assert odd?(5)
 assert odd?(-5)
-assert !odd?(-4)
+assert not odd?(-4)

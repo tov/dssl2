@@ -293,4 +293,4 @@
 (define (dir obj)
   (cond
     [(object-base? obj) (get-method-vector obj)]
-    [else               (error "dir: only works on objects")]))
+    [else               (type-error 'dir obj "an object")]))

@@ -685,7 +685,7 @@
 (define-for-syntax (qualify qualifier property)
   (format-id qualifier "~a.~a" qualifier property))
 
-(define-simple-macro (bind-self class:id self:id actual-self:id body:expr ...)
+(define-simple-macro (bind-self class:id self:id actual-self:id body:expr)
   (syntax-parameterize
     ([dssl-self
        (syntax-parser
@@ -700,7 +700,7 @@
                #f
                "self parameter is not a function"
                stx)]))
-      body ...)))
+      body)))
 
 (define-syntax (dssl-class stx)
   (syntax-parse stx
@@ -804,8 +804,7 @@
                   __contract_params__
                   self.public-method-name ...))
                (bind-self name ctor-self actual-self
-                 ctor-body
-                 ...)
+                 (dssl-begin ctor-body ...))
                (when (eq? unsafe-undefined actual-field-name)
                  (runtime-error
                    #:srclocs (get-srclocs #'(ctor-body ...))

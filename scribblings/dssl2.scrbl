@@ -136,7 +136,8 @@ by a newline, or a compound statement.
  @item{@racket[^]}
  @item{@racket[\|] (not written with the backslash)}
  @item{@racket[==], @racket[<], @racket[>], @racket[<=], @racket[>=],
- @racket[!=], @racket[===], and @racket[!==]}
+ @racket[!=], @racket[is], and @racket[|is not|] (not written
+ with the vertical bars)}
  @item{@racket[and]}
  @item{@racket[or]}
 ]
@@ -300,7 +301,7 @@ def rbt_insert!(key, tree):
     def sibling(link):
         let p = parent(link)
         if rbn?(p):
-            if link === p.left: p.right
+            if link is p.left: p.right
             else: p.left
         else: False
 
@@ -959,8 +960,8 @@ Bitwise or. (Not written with the backslash.)
 @defexpforms[
   @list{@syn[expr]₁ @defidform/inline[==] @syn[expr]₂}
   @list{@syn[expr]₁ @defidform/inline[!=] @syn[expr]₂}
-  @list{@syn[expr]₁ @defidform/inline[===] @syn[expr]₂}
-  @list{@syn[expr]₁ @defidform/inline[!==] @syn[expr]₂}
+  @list{@syn[expr]₁ @defidform/inline[is] @syn[expr]₂}
+  @list{@syn[expr]₁ @defidform/inline[|is not|] @syn[expr]₂}
   @list{@syn[expr]₁ @defidform/inline[<] @syn[expr]₂}
   @list{@syn[expr]₁ @defidform/inline[<=] @syn[expr]₂}
   @list{@syn[expr]₁ @defidform/inline[>] @syn[expr]₂}
@@ -968,7 +969,8 @@ Bitwise or. (Not written with the backslash.)
 ]
 
 Operator @racket[==] is structural equality, and @racket[!=] is its
-negation. Operator @racket[===] is physical equality, and @racket[!==]
+negation. Operator @racket[is] is physical equality, and @racket[|is not|]
+(not written with the vertical bars)
 is its negation. To understand the difference, suppose that we create
 two different vectors with the same contents. Those vectors are
 structurally equal but not physically equal.

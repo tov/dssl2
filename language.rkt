@@ -813,6 +813,13 @@
           [_:id #'real-name]
           [(_:id . args) #'(real-name . args)])))))
 
+(define-for-syntax (find-constructor method-names stx)
+  (let/ec return
+    (for ([method-name (in-list method-names)])
+      (when (eq? '__init__ (syntax-e method-name))
+        (return method-name)))
+    (raise-syntax-error #f "class must have a constructor" stx)))
+
 (define-syntax (dssl-class stx)
   (syntax-parse stx
     #:literals (dssl-let dssl-def)
@@ -821,16 +828,14 @@
         cvs:optional-contract-vars
         implements:optional-implements
         (dssl-let field:var&contract) ...
-        (dssl-def (__init__
-                    ctor-self:id
-                    ctor-params:var&contract ...)
-                  ctor-body:expr ...)
         (dssl-def (method-name:id
                     method-cvs:optional-contract-vars
                     method-self:id
                     method-params:var&contract ...)
                   method-result:optional-return-contract
-                  body:expr ...) ...)
+                  method-body:expr ...) ...)
+     (define constructor
+       (find-constructor (syntax->list #'(method-name ...)) #'name))
      (define interface-name (syntax-e #'implements.interface))
      (define interface-info
        (if interface-name (syntax-local-eval interface-name) '(#f)))
@@ -902,55 +907,47 @@
                  ...)))
            (define (#,(format-id #'name "~a?" #'name) value)
              (#,(format-id #'internal-name "~a?" #'internal-name) value))
-           (define/contract
-             name
-             (-> #,@(map (λ (_) #'contract?)
-                         (syntax->list #'(cvs.var ...)))
-                 (ensure-contract 'class ctor-params.contract)
-                 ...
-                 AnyC)
-             (lambda (cvs.var ... ctor-params.var ...)
-               (define-field field.var
-                             self.field-name
-                             actual-field-name
-                             field.contract)
-               ...
-               (define actual-self unsafe-undefined)
-               (define/contract/immutable
-                 self.method-name
-                 (maybe-parametric->/c
-                   [method-cvs.var ...]
-                   (-> (ensure-contract 'def method-params.contract)
-                       ...
-                       (ensure-contract 'def method-result.result)))
-                 (lambda (method-params.var ...)
-                   (let/ec return-f
-                           (syntax-parameterize
-                             ([dssl-return
-                                (syntax-rules ()
-                                  [(_)        (return-f (void))]
-                                  [(_ result) (return-f result)])])
-                             (bind-self name method-self actual-self
-                               (dssl-begin body ...))))))
-               ...
-               (define __class__
-                 name)
-               (define (__contract_params__)
-                 (vector cvs.var ...))
-               (set! actual-self
-                 ((struct-constructor-name internal-name)
-                  internal-object-info
-                  (vector-immutable cvs.var ...)
-                  __class__
-                  __contract_params__
-                  self.public-method-name ...))
-               (bind-self name ctor-self actual-self
-                 (dssl-begin ctor-body ...))
-               (when (eq? unsafe-undefined actual-field-name)
-                 (runtime-error
-                   #:srclocs (get-srclocs #'(ctor-body ...))
-                   "Constructor for class ~a did not assign field ~a"
-                   'name 'field.var))
-               ...
-               actual-self))))]))
+           (define (name cvs.var ... . rest)
+             (define-field field.var
+                           self.field-name
+                           actual-field-name
+                           field.contract)
+             ...
+             (define actual-self unsafe-undefined)
+             (define/contract/immutable
+               self.method-name
+               (maybe-parametric->/c
+                 [method-cvs.var ...]
+                 (-> (ensure-contract 'def method-params.contract)
+                     ...
+                     (ensure-contract 'def method-result.result)))
+               (lambda (method-params.var ...)
+                 (let/ec return-f
+                         (syntax-parameterize
+                           ([dssl-return
+                              (syntax-rules ()
+                                [(_)        (return-f (void))]
+                                [(_ result) (return-f result)])])
+                           (bind-self name method-self actual-self
+                             (dssl-begin method-body ...))))))
+             ...
+             (define __class__
+               name)
+             (define (__contract_params__)
+               (vector cvs.var ...))
+             (set! actual-self
+               ((struct-constructor-name internal-name)
+                internal-object-info
+                (vector-immutable cvs.var ...)
+                __class__
+                __contract_params__
+                self.public-method-name ...))
+             (apply #,(self. constructor) rest)
+             (when (eq? unsafe-undefined actual-field-name)
+               (runtime-error
+                 #:srclocs (get-srclocs constructor)
+                 "Constructor for class ~a did not assign field ~a"
+                 'name 'field.var))
+             ...
+             actual-self)))]))
 

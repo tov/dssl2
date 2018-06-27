@@ -188,8 +188,8 @@
          $3])
 
       (<class-statements>
-        [(<class-or-struct-fields> <class-constructor> <class-methods>)
-         (append $1 (cons $2 $3))])
+        [(<class-or-struct-fields> <class-methods>)
+         (append $1 $2)])
 
       (<class-or-struct-fields>
         [() '()]
@@ -202,12 +202,9 @@
         [(LET <contract-formal>)
          (loc/1 `(let ,$2))])
 
-      (<class-constructor>
-        [(DEF IDENT LPAREN <method-formals> RPAREN COLON <suite>)
-         (loc/1 `(def (,$2 ,@$4) ,@$7))])
-
       (<class-methods>
-        [() '()]
+        [(<class-method>)
+         (list $1)]
         [(<class-method> <newlines> <class-methods>)
          (cons $1 $3)])
 

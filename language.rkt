@@ -890,7 +890,6 @@
        #`(begin
            (define-struct (internal-name object-base)
                           (__class__
-                           __contract_params__
                            public-method-name
                            ...)
                           #:transparent)
@@ -902,9 +901,6 @@
                  (make-method-info
                    '__class__
                    (struct-getter-name internal-name __class__))
-                 (make-method-info
-                   '__contract_params__
-                   (struct-getter-name internal-name __contract_params__))
                  (make-method-info
                    'public-method-name
                    (struct-getter-name internal-name public-method-name))
@@ -937,14 +933,11 @@
              ...
              (define __class__
                name)
-             (define (__contract_params__)
-               (vector cvs.var ...))
              (set! actual-self
                ((struct-constructor-name internal-name)
                 internal-object-info
                 (vector-immutable cvs.var ...)
                 __class__
-                __contract_params__
                 self.public-method-name ...))
              (apply #,(self. constructor) rest)
              (when (eq? unsafe-undefined actual-field-name)

@@ -692,55 +692,58 @@
              contract method-value
              'name "method caller"
              (format "~a.~a" 'name method) srcloc))
-         (define (((projection cvs.var ...) blame) val neg-party)
+         (define (make-projection cvs.var ...)
            (define contract-parameters (vector-immutable cvs.var ...))
-           (cond
-             [(#,(struct-predicate-name #'name) val)
-              (if (contract-parameters-match?
-                    (object-base-contract-params val)
-                    contract-parameters)
-                val
-                (racket:raise-blame-error
-                  blame #:missing-party neg-party val
-                  (string-append "Value ~e already implements "
-                                 "interface ~a with contract parameters ~e")
-                  val 'name (object-base-contract-params val)))]
-             [(first-order? val)
-              (make-interface-struct
-                interface-info
-                contract-parameters
-                (project-method
-                  val
-                  'method-name
-                  (maybe-parametric->/c
-                    [method-cvs.var ...]
-                    (-> (ensure-contract 'def method-params.contract)
-                        ...
-                        (ensure-contract 'def method-result.result)))
-                  (get-srcloc method-name))
-                ...)]
-             [(object-base? val)
-               (racket:raise-blame-error
-                 blame #:missing-party neg-party val
-                 "Class ~a does not implement interface ~a"
-                 (object-info-name (object-base-object-info val))
-                 'name)]
-             [else
-               (racket:raise-blame-error
-                 blame #:missing-party neg-party val
-                 "Value ~e does not implement interface ~a"
-                 val 'name)]))
+           (λ (blame)
+              (λ (val neg-party)
+                 (cond
+                   [(#,(struct-predicate-name #'name) val)
+                    (if (contract-parameters-match?
+                          (object-base-contract-params val)
+                          contract-parameters)
+                      val
+                      (racket:raise-blame-error
+                        blame #:missing-party neg-party val
+                        (string-append
+                          "Value ~e already implements "
+                          "interface ~a with contract parameters ~e")
+                        val 'name (object-base-contract-params val)))]
+                   [(first-order? val)
+                    (make-interface-struct
+                      interface-info
+                      contract-parameters
+                      (project-method
+                        val
+                        'method-name
+                        (maybe-parametric->/c
+                          [method-cvs.var ...]
+                          (-> (ensure-contract 'def method-params.contract)
+                              ...
+                              (ensure-contract 'def method-result.result)))
+                        (get-srcloc method-name))
+                      ...)]
+                   [(object-base? val)
+                    (racket:raise-blame-error
+                      blame #:missing-party neg-party val
+                      "Class ~a does not implement interface ~a"
+                      (object-info-name (object-base-object-info val))
+                      'name)]
+                   [else
+                     (racket:raise-blame-error
+                       blame #:missing-party neg-party val
+                       "Value ~e does not implement interface ~a"
+                       val 'name)]))))
          #,(if (null? (syntax->list #'cvs))
              #'(define name
                  (racket:make-contract
                    #:name 'name
                    #:first-order first-order?
-                   #:late-neg-projection (projection)))
+                   #:late-neg-projection (make-projection)))
              #'(define (name cvs.var ...)
                  (racket:make-contract
                    #:name 'name
                    #:first-order first-order?
-                   #:late-neg-projection (projection cvs.var ...))))
+                   #:late-neg-projection (make-projection cvs.var ...))))
          (define (#,(struct-predicate-name #'name) value)
            (interface-struct? value)))]))
 

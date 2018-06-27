@@ -73,6 +73,7 @@
 
 (require (for-syntax racket/base
                      syntax/parse
+                     (only-in racket/sequence in-syntax)
                      (only-in racket/syntax format-id syntax-local-eval)
                      (only-in racket/string string-prefix?)
                      "private/errors.rkt"
@@ -485,22 +486,23 @@
                 "duplicate field name"
                 (begin
                   (define actual-fields
-                    (map syntax->datum (syntax->list #'(field (... ...)))))
+                    (syntax->datum #'(field (... ...))))
                   (define actual-exprs
                     (syntax->list #'(expr (... ...))))
                   (define field-exprs
                     (map cons actual-fields actual-exprs))
-                  (define formal-fields (syntax->list #'(formal-field ...)))
+                  (define formal-fields
+                    (syntax->datum #'(formal-field ...)))
                   (define exprs
-                    (for/list ([field formal-fields])
+                    (for/list ([field (in-list formal-fields)])
                       (cond
-                        [(assq (syntax->datum field) field-exprs) => cdr]
+                        [(assq field field-exprs) => cdr]
                         [else
                           (syntax-error
                             stx "Struct ~e requires field ~a"
-                            'name (syntax->datum field))])))
-                  (for ([field actual-fields])
-                    (unless (memq field (map syntax->datum formal-fields))
+                            'name field)])))
+                  (for ([field (in-list actual-fields)])
+                    (unless (memq field formal-fields)
                       (syntax-error
                         field
                         "Struct ~e does not have field ~a"
@@ -659,7 +661,7 @@
                     method-self:id
                     method-params:var&contract ...)
                   method-result:optional-return-contract) ...)
-     (for ([method-name (syntax->list #'(method-name ...))])
+     (for ([method-name (in-syntax #'(method-name ...))])
        (unless (public-method-name? method-name)
          (syntax-error method-name "interface methods cannot be private")))
      #`(begin

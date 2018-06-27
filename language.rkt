@@ -702,6 +702,23 @@
                stx)]))
       body)))
 
+(define-simple-macro (define/contract/immutable name:id ctc:expr rhs:expr)
+  (begin
+    (define real-name
+      (let ([contract ctc]
+            [name     rhs])
+        (racket:contract
+          contract name
+          (format "method ~a at ~a" 'name (srcloc->string (get-srcloc name)))
+          "caller")))
+    (define-syntax name
+      (make-set!-transformer
+        (syntax-parser
+          [(set! method _)
+           (raise-syntax-error #f "cannot assign to method" #'method)]
+          [_:id #'real-name]
+          [(_:id . args) #'(real-name . args)])))))
+
 (define-syntax (dssl-class stx)
   (syntax-parse stx
     #:literals (dssl-let dssl-def)
@@ -777,7 +794,7 @@
                              field.contract)
                ...
                (define actual-self unsafe-undefined)
-               (define/contract
+               (define/contract/immutable
                  self.method-name
                  (maybe-parametric->/c
                    [method-cvs.var ...]

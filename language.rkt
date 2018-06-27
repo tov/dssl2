@@ -84,12 +84,12 @@
 (define-syntax-parameter
   inc-passed-tests!
   (lambda (stx)
-    (raise-syntax-error #f "use of inc-passed-tests!" stx)))
+    (syntax-error stx "use of inc-passed-tests!")))
 
 (define-syntax-parameter
   inc-total-tests!
   (lambda (stx)
-    (raise-syntax-error #f "use of inc-total-tests!" stx)))
+    (syntax-error stx "use of inc-total-tests!")))
 
 (define-syntax (dssl-module-begin stx)
   (syntax-case stx ()
@@ -133,14 +133,14 @@
 (define-syntax-parameter
   dssl-elif
   (lambda (stx)
-    (raise-syntax-error #f "use of elif keyword" stx)))
+    (syntax-error stx "use of elif keyword")))
 
 ; We define return (for lambda) as a syntax parameter, and then
 ; syntax-parameterize it inside dssl-lambda.
 (define-syntax-parameter
   dssl-return
   (lambda (stx)
-    (raise-syntax-error #f "use of return keyword not in a function" stx)))
+    (syntax-error stx "use of return keyword not in a function")))
 
 (define-simple-macro (make-set!able f)
   (unless (zero? (random 1))
@@ -210,6 +210,14 @@
                    "~a: expected a contract\n got: ~e"
                    who contract)))
 
+(define-simple-macro (with-return expr:expr ...)
+  (let/ec return-f
+    (syntax-parameterize
+      ([dssl-return (syntax-rules ()
+                      [(_)        (return-f (void))]
+                      [(_ result) (return-f result)])])
+      (dssl-begin expr ...))))
+
 (define-simple-macro
   (dssl-def (f:id cvs:optional-contract-vars bs:var&contract ...)
             result-contract:optional-return-contract
@@ -225,12 +233,7 @@
                                 ...
                                 (ensure-contract 'def result-contract.result)))
       (lambda (bs.var ...)
-        (let/ec return-f
-                (syntax-parameterize
-                  ([dssl-return (syntax-rules ()
-                                  [(_)        (return-f (void))]
-                                  [(_ result) (return-f result)])])
-                  (dssl-begin expr ...)))))
+        (with-return expr ...)))
     (make-set!able f)))
 
 (define-syntax (maybe-parametric->/c stx)
@@ -277,12 +280,12 @@
 (define-syntax-parameter
   dssl-break
   (lambda (stx)
-    (raise-syntax-error #f "use of break keyword not in a loop" stx)))
+    (syntax-error stx "use of break keyword not in a loop")))
 
 (define-syntax-parameter
   dssl-continue
   (lambda (stx)
-    (raise-syntax-error #f "use of continue keyword not in a loop" stx)))
+    (syntax-error stx "use of continue keyword not in a loop")))
 
 (define-syntax-rule (dssl-while test expr ...)
   (let/ec break-f
@@ -437,11 +440,10 @@
      (format-id #'name "set-~a-~a!" #'name #'field)]))
 
 (define-syntax (dssl-struct stx)
-  (raise-syntax-error
-    #f
+  (syntax-error
+    stx
     (string-append "Saw dssl-struct, which should be changed to "
-                   "dssl-struct/late by #%module-begin")
-    stx))
+                   "dssl-struct/late by #%module-begin")))
 
 (define-syntax (dssl-struct/late stx)
   (syntax-parse stx
@@ -494,18 +496,15 @@
                       (cond
                         [(assq (syntax->datum field) field-exprs) => cdr]
                         [else
-                          (raise-syntax-error
-                            #f
-                            (format "Struct ~e requires field ~a"
-                                    'name (syntax->datum field))
-                            stx)])))
+                          (syntax-error
+                            stx "Struct ~e requires field ~a"
+                            'name (syntax->datum field))])))
                   (for ([field actual-fields])
                     (unless (memq field (map syntax->datum formal-fields))
-                      (raise-syntax-error
-                        #f
-                        (format "Struct ~e does not have field ~a"
-                                'name field)
-                        field)))
+                      (syntax-error
+                        field
+                        "Struct ~e does not have field ~a"
+                        'name field)))
                   #`(name #,@exprs))]))))]))
 
 (define (get-field-info #:srclocs [srclocs '()] struct field)
@@ -639,7 +638,7 @@
 (define-syntax-parameter
   dssl-self
   (lambda (stx)
-    (raise-syntax-error #f "use of self outside of method" stx)))
+    (syntax-error stx "use of self outside of method")))
 
 (define (contract-parameters-match? cs1 cs2)
   (for/and ([c1 (in-vector cs1)]
@@ -662,8 +661,7 @@
                   method-result:optional-return-contract) ...)
      (for ([method-name (syntax->list #'(method-name ...))])
        (unless (public-method-name? (syntax->datum method-name))
-         (raise-syntax-error #f "interface methods cannot be private"
-                             method-name)))
+         (syntax-error method-name "interface methods cannot be private")))
      #`(begin
          (define interface-token (gensym))
          (define-struct (interface-struct object-base)
@@ -792,10 +790,7 @@
       (define-syntax (self stx)
         (syntax-parse stx
           [_:id #'dssl-self]
-          [_ (raise-syntax-error
-               #f
-               "self parameter is not a function"
-               stx)]))
+          [_ (syntax-error stx "self parameter is not a function")]))
       body)))
 
 (define-simple-macro (define/contract/immutable name:id ctc:expr rhs:expr)
@@ -812,7 +807,7 @@
       (make-set!-transformer
         (syntax-parser
           [(set! method _)
-           (raise-syntax-error #f "cannot assign to method" #'method)]
+           (syntax-error #'method "cannot assign to method")]
           [_:id #'real-name]
           [(_:id . args) #'(real-name . args)])))))
 
@@ -821,7 +816,7 @@
     (for ([method-name (in-list method-names)])
       (when (eq? '__init__ (syntax-e method-name))
         (return method-name)))
-    (raise-syntax-error #f "class must have a constructor" stx)))
+    (syntax-error stx "class must have a constructor")))
 
 (define-syntax (dssl-class stx)
   (syntax-parse stx
@@ -848,11 +843,10 @@
        (map syntax-e (syntax->list #'(method-name ...))))
      (for ([method-info interface-methods])
        (unless (memq (car method-info) method-names)
-         (raise-syntax-error
-           #f
-           (format "Class ~a missing method ~a, required by interface"
-                   (syntax-e #'name) (car method-info))
-           #'implements.interface)))
+         (syntax-error
+           #'implements.interface
+           "Class ~a missing method ~a, required by interface"
+           (syntax-e #'name) (car method-info))))
      (for ([method-name (syntax->list #'(method-name ...))]
            [method-params (syntax->list #'((method-params ...) ...))])
        (cond
@@ -861,13 +855,11 @@
           (lambda (method-info)
             (define actual-arity (length (syntax->list method-params)))
             (unless (= actual-arity (cadr method-info))
-              (raise-syntax-error
-                #f
-                (format
-                  "Method ~a takes ~a params, but interface ~a specifies ~a"
-                  (syntax-e method-name) (add1 actual-arity)
-                  interface-name (add1 (cadr method-info)))
-                method-name)))]))
+              (syntax-error
+                method-name
+                "Method ~a takes ~a params, but interface ~a specifies ~a"
+                (syntax-e method-name) (add1 actual-arity)
+                interface-name (add1 (cadr method-info)))))]))
      (define (self. property) (qualify #'name property))
      (define (is-public? id)
        (public-method-name? (syntax->datum id)))
@@ -921,22 +913,15 @@
                      ...
                      (ensure-contract 'def method-result.result)))
                (lambda (method-params.var ...)
-                 (let/ec return-f
-                         (syntax-parameterize
-                           ([dssl-return
-                              (syntax-rules ()
-                                [(_)        (return-f (void))]
-                                [(_ result) (return-f result)])])
-                           (bind-self name method-self actual-self
-                             (dssl-begin method-body ...))))))
+                 (bind-self name method-self actual-self
+                   (with-return method-body ...))))
              ...
-             (define __class__
-               name)
+             (define self.__class__ name)
              (set! actual-self
                ((struct-constructor-name internal-name)
                 internal-object-info
                 (vector-immutable cvs.var ...)
-                __class__
+                self.__class__
                 self.public-method-name ...))
              (apply #,(self. constructor) rest)
              (when (eq? unsafe-undefined actual-field-name)

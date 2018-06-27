@@ -6,7 +6,8 @@
          dssl-error
          runtime-error
          type-error
-         assertion-error)
+         assertion-error
+         syntax-error)
 
 (require
   (only-in racket/format ~a)
@@ -56,3 +57,5 @@
          (string-append "Assertion failed: " (~a who) ";\n " fmt)
          args))
 
+(define (syntax-error stx fmt . args)
+  (raise-syntax-error #f (apply format fmt args) stx))

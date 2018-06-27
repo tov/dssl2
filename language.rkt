@@ -824,7 +824,6 @@
 (define-syntax (dssl-class stx)
   (syntax-parse stx
     #:literals (dssl-let dssl-def)
-    #:datum-literals (__init__)
     [(_ name:id
         cvs:optional-contract-vars
         implements:optional-implements

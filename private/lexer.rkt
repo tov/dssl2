@@ -24,6 +24,8 @@
    COLON
    SEMICOLON
    EQUALS
+   IS
+   NOT
    PLUS         ; two different precedences
    MINUS        ; two different precedences
    ARROW
@@ -55,7 +57,7 @@
    OP0  ; or
    OP1  ; and
    OP2  ; not
-   OP3  ; == <= >= != < > === !==
+   OP3  ; == <= >= != < > is "is not"
    OP4  ; (|)
    OP5  ; ^
    OP6  ; &
@@ -194,6 +196,8 @@
       [#\:                      (token-COLON)]
       [#\;                      (token-SEMICOLON)]
       [#\=                      (token-EQUALS)]
+      ["is"                     (token-IS)]
+      ["not"                    (token-NOT)]
       [#\+                      (token-PLUS)]
       [#\-                      (token-MINUS)]
       ["->"                     (token-ARROW)]
@@ -224,8 +228,7 @@
       ["time"                   (token-TIME)]
       ["or"                     (token-OP0 (string->symbol lexeme))]
       ["and"                    (token-OP1 (string->symbol lexeme))]
-      ["not"                    (token-OP2 (string->symbol lexeme))]
-      [(:or "==" #\< #\> "<=" ">=" "!=" "===" "!==")
+      [(:or "==" #\< #\> "<=" ">=" "!=")
                                 (token-OP3 (string->symbol lexeme))]
       [#\|                      (token-OP4 (string->symbol lexeme))]
       [#\^                      (token-OP5 (string->symbol lexeme))]

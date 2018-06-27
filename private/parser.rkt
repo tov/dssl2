@@ -397,12 +397,18 @@
          $1])
 
       (<expr2>
+        [(NOT <expr2>)
+         (loc/1 `(not ,$2))]
         [(OP2 <expr2>)
          (loc/1 `(,$1 ,$2))]
         [(<expr3>)
           $1])
 
       (<expr3>
+        [(<expr4> IS <expr4>)
+         (loc/2 `(is ,$1 ,$3))]
+        [(<expr4> IS NOT <expr4>)
+         (loc/2 `(|is not| ,$1 ,$4))]
         [(<expr4> OP3 <expr4>)
          (loc/2 `(,$2 ,$1 ,$3))]
         [(<expr4>)

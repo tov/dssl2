@@ -3,7 +3,7 @@
 let a = [2, 3, 4]
 let b = [2, 3, 4]
 
-assert a === a
-assert b === b
-assert a !== b
-assert b !== a
+assert a is a
+assert b is b
+assert a is not b
+assert b is not a

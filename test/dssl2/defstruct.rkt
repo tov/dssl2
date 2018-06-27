@@ -19,5 +19,5 @@ let y = cons {
         }
 
 assert x == y
-assert x !== y
-assert x === x
+assert x is not y
+assert x is x

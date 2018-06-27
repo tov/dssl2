@@ -7,8 +7,8 @@
            [** (-> num? num? num?)])
          ==
          !=
-         ===
-         !==
+         is
+         |is not|
          (contract-out
            [& (-> int? int? int?)]
            [\| (-> int? int? int?)]
@@ -26,8 +26,8 @@
          (contract-out
            [>> (-> int? int? int?)]
            [<< (-> int? int? int?)])
-         ; syntax
          not            ; from Racket
+         ; syntax
          and            ; from Racket
          or)            ; from Racket
 
@@ -94,11 +94,11 @@
 (define (!= a b)
   (not (== a b)))
 
-(define (=== a b)
+(define (is a b)
   (eq? a b))
 
-(define (!== a b)
-  (not (=== a b)))
+(define (|is not| a b)
+  (not (is a b)))
 
 (define-syntax-rule (make-comparison name string-cmp number-cmp)
   (define (name a b)

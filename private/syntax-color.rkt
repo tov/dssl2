@@ -44,8 +44,9 @@
     [#\]                        (token parenthesis |]|)]
     [#\{                        (token parenthesis |{|)]
     [#\}                        (token parenthesis |}|)]
+    ["is"                       (token keyword)]
     [(:or "or" "and" "not")     (token keyword)]
-    [(:or "==" #\< #\> "<=" ">=" "!=" "===" "!--" #\| #\^ #\&
+    [(:or "==" #\< #\> "<=" ">=" "!=" #\| #\^ #\&
           "<<" ">>" #\* #\/ #\% #\~ "**" #\+ #\-)
                                 (token hash-colon-keyword)]
     [(:or #\, #\: #\; #\=)      (token parenthesis)]

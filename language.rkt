@@ -464,13 +464,12 @@
                  (make-field-info
                    'formal-field
                    (struct-getter-name s:cons formal-field)
-                   (let ()
-                     (define/contract setter-name
-                       (rename-contract
-                         (-> AnyC contract-name AnyC)
-                         'assignment)
-                       (struct-setter-name s:cons formal-field))
-                     setter-name))
+                   (racket:contract
+                     (-> AnyC contract-name AnyC)
+                     (struct-setter-name s:cons formal-field)
+                     (format "field ~a of struct ~a" 'formal-field 'name)
+                     "client performing assignment"
+                     'name (get-srcloc contract)))
                  ...)))
            (define/contract (name formal-field ...)
              (-> contract-name ... AnyC)

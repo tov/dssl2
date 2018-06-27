@@ -68,11 +68,12 @@
                   natural?)
          (only-in syntax/location quote-srcloc))
 (require (prefix-in racket: racket/base)
-         (prefix-in racket: racket/contract/base))
+         (prefix-in racket: racket/contract/base)
+         (prefix-in racket: racket/contract/combinator))
 
 (require (for-syntax racket/base
                      syntax/parse
-                     (only-in racket/syntax format-id)
+                     (only-in racket/syntax format-id syntax-local-eval)
                      (only-in racket/string string-prefix?)
                      "private/errors.rkt"
                      "private/find-lib.rkt"))
@@ -188,7 +189,8 @@
     optional-implements
     #:description "optional #:implements clause"
     (pattern (~seq #:implements interface:id))
-    (pattern (~seq)))
+    (pattern (~seq)
+             #:with interface #f))
 
   (define-splicing-syntax-class
     optional-contract-vars
@@ -637,6 +639,16 @@
   (lambda (stx)
     (raise-syntax-error #f "use of self outside of method" stx)))
 
+(define (contract-parameters-match? cs1 cs2)
+  (for/and ([c1 (in-vector cs1)]
+            [c2 (in-vector cs2)])
+    (eq? c1 c2)))
+
+(define-for-syntax (public-method-name? name)
+  (define str (symbol->string name))
+  (or (not (string-prefix? str "_"))
+      (string-prefix? str "__")))
+
 (define-syntax (dssl-interface stx)
   (syntax-parse stx
     #:literals (dssl-def)
@@ -645,10 +657,92 @@
                     method-cvs:optional-contract-vars
                     method-self:id
                     method-params:var&contract ...)
-                  result-contract:optional-return-contract) ...)
+                  method-result:optional-return-contract) ...)
+     (for ([method-name (syntax->list #'(method-name ...))])
+       (unless (public-method-name? (syntax->datum method-name))
+         (raise-syntax-error #f "interface methods cannot be private"
+                             method-name)))
      #`(begin
-         (printf "interface ~a:\n" 'name)
-         (printf "\tdef ~a(~a, ...)\n" 'method-name 'method-self) ...)]))
+         (define interface-token (gensym))
+         (define-struct (interface-struct object-base)
+           [method-name ...])
+         (define interface-info
+           (make-object-info 'name interface-token
+                             (vector-immutable
+                               (make-method-info
+                                 'method-name
+                                 (struct-getter-name interface-struct
+                                                     method-name))
+                               ...)))
+         (define-for-syntax name
+           (list
+             #'interface-token
+             (list 'method-name
+                   (length (syntax->list #'(method-params ...))))
+             ...))
+         (define (first-order? obj)
+           (and (object-base? obj)
+                (eq? interface-token (object-info-interface
+                                       (object-base-object-info obj)))))
+         (define (actual-class-name obj)
+           (and (object-base? obj)
+                (object-info-name (object-base-object-info obj))))
+         (define (project-method object method contract)
+           (define method-value
+             ((method-info-getter (get-method-info object method))
+              object))
+           (racket:contract
+             contract method-value
+             (actual-class-name object) "method caller"))
+         (define (((projection cvs.var ...) blame) val neg-party)
+           (define contract-parameters (vector-immutable cvs.var ...))
+           (cond
+             [(#,(format-id #'name "~a?" #'name) val)
+              (if (contract-parameters-match?
+                    (object-base-contract-params val)
+                    contract-parameters)
+                val
+                (racket:raise-blame-error
+                  blame #:missing-party neg-party val
+                  (string-append "Value ~e already implements "
+                                 "interface ~a with contract parameters ~e")
+                  val 'name (object-base-contract-params val)))]
+             [(first-order? val)
+              (make-interface-struct
+                interface-info
+                contract-parameters
+                (project-method
+                  val
+                  'method-name
+                  (maybe-parametric->/c
+                    [method-cvs.var ...]
+                    (-> (ensure-contract 'def method-params.contract)
+                        ...
+                        (ensure-contract 'def method-result.result))))
+                ...)]
+             [(object-base? val)
+               (racket:raise-blame-error
+                 blame #:missing-party neg-party val
+                 "Class ~a does not implement interface ~a"
+                 (actual-class-name val) 'name)]
+             [else
+               (racket:raise-blame-error
+                 blame #:missing-party neg-party val
+                 "Value ~e does not implement interface ~a"
+                 val 'name)]))
+         #,(if (null? (syntax->list #'cvs))
+             #'(define name
+                 (racket:make-contract
+                   #:name 'name
+                   #:first-order first-order?
+                   #:late-neg-projection (projection)))
+             #'(define (name cvs.var ...)
+                 (racket:make-contract
+                   #:name 'name
+                   #:first-order first-order?
+                   #:late-neg-projection (projection cvs.var ...))))
+         (define (#,(format-id #'name "~a?" #'name) value)
+           (interface-struct? value)))]))
 
 (define-syntax (define-field stx)
   (syntax-parse stx
@@ -710,7 +804,7 @@
         (racket:contract
           contract name
           (format "method ~a at ~a" 'name (srcloc->string (get-srcloc name)))
-          "caller")))
+          "method caller")))
     (define-syntax name
       (make-set!-transformer
         (syntax-parser
@@ -737,11 +831,38 @@
                     method-params:var&contract ...)
                   method-result:optional-return-contract
                   body:expr ...) ...)
+     (define interface-name (syntax-e #'implements.interface))
+     (define interface-info
+       (if interface-name (syntax-local-eval interface-name) '(#f)))
+     (define interface-token (car interface-info))
+     (define interface-methods (cdr interface-info))
+     (define method-names
+       (map syntax-e (syntax->list #'(method-name ...))))
+     (for ([method-info interface-methods])
+       (unless (memq (car method-info) method-names)
+         (raise-syntax-error
+           #f
+           (format "Class ~a missing method ~a, required by interface"
+                   (syntax-e #'name) (car method-info))
+           #'implements.interface)))
+     (for ([method-name (syntax->list #'(method-name ...))]
+           [method-params (syntax->list #'((method-params ...) ...))])
+       (cond
+         [(assq (syntax-e method-name) interface-methods)
+          =>
+          (lambda (method-info)
+            (define actual-arity (length (syntax->list method-params)))
+            (unless (= actual-arity (cadr method-info))
+              (raise-syntax-error
+                #f
+                (format
+                  "Method ~a takes ~a params, but interface ~a specifies ~a"
+                  (syntax-e method-name) (add1 actual-arity)
+                  interface-name (add1 (cadr method-info)))
+                method-name)))]))
      (define (self. property) (qualify #'name property))
      (define (is-public? id)
-       (define name (symbol->string (syntax->datum id)))
-       (or (not (string-prefix? name "_"))
-           (string-prefix? name "__")))
+       (public-method-name? (syntax->datum id)))
      (with-syntax
        ([actual-self (format-id #f "self")]
         [internal-name (format-id #f "c:~a" #'name)]
@@ -767,6 +888,7 @@
            (define internal-object-info
              (make-object-info
                'name
+               #,interface-token
                (vector-immutable
                  (make-method-info
                    '__class__
@@ -818,6 +940,7 @@
                (set! actual-self
                  ((struct-constructor-name internal-name)
                   internal-object-info
+                  (vector-immutable cvs.var ...)
                   __class__
                   __contract_params__
                   self.public-method-name ...))

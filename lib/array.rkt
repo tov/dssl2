@@ -72,7 +72,7 @@ class Array[T]:
 
 def array() -> Array?:
     Array(AnyC, 8)
-    
+
 test "array":
     let a = array()
     a.push(5)

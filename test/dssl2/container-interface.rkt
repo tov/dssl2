@@ -6,12 +6,24 @@ interface CONTAINER:
     def add(self, value)
     def remove(self)
     
+interface STACK:
+    def empty?(self)
+    def full?(self)
+    def push(self, value)
+    def pop(self)
+
+interface QUEUE:
+    def empty?(self)
+    def full?(self)
+    def enqueue(self, value)
+    def dequeue(self)
+
 class VectorStack (CONTAINER):
     let _size
     let _data
     
     def __init__(self, capacity):
-        self._size = 0
+        #self._size = 0
         self._data = [False; capacity]
 
     def capacity(self): len(self._data)

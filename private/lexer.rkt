@@ -2,7 +2,9 @@
 
 (provide dssl2-empty-tokens dssl2-tokens new-dssl2-lexer
          natural float hexadecimal octal binary
-         comment sq-str-char dq-str-char identifier)
+         comment identifier
+         sq-str-char dq-str-char
+         lsq-str-contents ldq-str-contents)
 (require parser-tools/lex
          (prefix-in : parser-tools/lex-sre)
          racket/list
@@ -87,6 +89,22 @@
                     (:: #\\ any-char))]
   [dq-str-char (:or (:- any-char (:or #\\ #\" #\newline))
                     (:: #\\ any-char))]
+  [lsq-str-contents
+               (:- (:* (:or (:- any-char #\\)
+                            (:: #\\ any-char)))
+                   (:: (:* any-char)
+                       #\' #\' #\'
+                       (:* any-char))
+                   (:: (:* any-char)
+                       #\'))]
+  [ldq-str-contents
+               (:- (:* (:or (:- any-char #\\)
+                            (:: #\\ any-char)))
+                   (:: (:* any-char)
+                       #\" #\" #\"
+                       (:* any-char))
+                   (:: (:* any-char)
+                       #\"))]
   [identifier  (:: (:or alphabetic #\_)
                    (:* (:or alphabetic numeric #\_))
                    (:? (:or #\! #\?)))])
@@ -237,12 +255,22 @@
       [(:or #\* #\/ #\%)        (token-OP9 (string->symbol lexeme))]
       [#\~                      (token-OP10 (string->symbol lexeme))]
       ["**"                     (token-OP11 (string->symbol lexeme))]
+      [(:: "'''" lsq-str-contents "'''")
+       (token-STRING-LITERAL
+         (interpret-string (remove-first-and-last 3 lexeme)))]
+      [(:: "\"\"\"" ldq-str-contents "\"\"\"")
+       (token-STRING-LITERAL
+         (interpret-string (remove-first-and-last 3 lexeme)))]
+      [(:: "'''" lsq-str-contents)
+       (lexical-error start-pos "Unterminated long string")]
+      [(:: "\"\"\"" ldq-str-contents)
+       (lexical-error start-pos "Unterminated long string")]
       [(:: #\" (:* dq-str-char) #\")
        (token-STRING-LITERAL
-         (interpret-string (remove-first-and-last lexeme)))]
+         (interpret-string (remove-first-and-last 1 lexeme)))]
       [(:: #\' (:* sq-str-char) #\')
        (token-STRING-LITERAL
-         (interpret-string (remove-first-and-last lexeme)))]
+         (interpret-string (remove-first-and-last 1 lexeme)))]
       [(:: #\" (:* dq-str-char))
        (lexical-error start-pos "Unterminated string")]
       [(:: #\' (:* sq-str-char))
@@ -286,9 +314,9 @@
      result))
 
 ; string? -> string?
-; Removes the first and last characters of a string.
-(define (remove-first-and-last str)
-  (substring str 1 (sub1 (string-length str))))
+; Removes the first `n` and last `n` characters of a string.
+(define (remove-first-and-last n str)
+  (substring str n (- (string-length str) n)))
 
 ; string? -> string?
 ; Interprets the escapes in a string literal.

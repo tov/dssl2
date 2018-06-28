@@ -2,58 +2,69 @@
 
 import promise
 
-# A StreamOf[A] is StreamCons(FunC(A), FunC(StreamOf[A]))
-# where the functions are memoized.
-#
-# Don't use this directly; use `scons`.
-struct StreamCons:
-    let first
-    let rest
+# Stream[T] is an abstract data type.
+class Stream[T]:
+    let _first
+    let _rest
+    
+    # Stream: (T: contract?) T (-> Stream[T]) -> Stream[T]
+    def __init__(self, first: T, rest: FunC(Stream?)):
+        self._first = first
+        self._rest  = Promise(Stream?, rest)
 
-# stream? : Any -> Boolean
-# Shorter predicate for recognizing streams.
-let stream? = StreamCons?
+    # first: -> T
+    def first(self): self._first
+    # rest: -> Stream[T]
+    def rest(self): self._rest.force()
+    
+    def take_into_at(self, start: nat?, len: nat?, dst: vec?):
+        let src = self
+        while len > 0:
+            dst[start] = src.first()
+            src        = src.rest()
+            start      = start + 1
+            len        = len - 1
+        
+    def take(self, len: nat?) -> vec?:
+        let result = [False; len]
+        self.take_into_at(0, len, result)
+        result
+        
+    def skip(self, count: nat?) -> Stream?:
+        let result = self
+        while count > 0:
+            result = result.rest()
+            count  = count - 1
+        result
+    
+    def map_of(self, U: contract?, f: FunC(AnyC, AnyC)) -> Stream?:
+        Stream(U, f(self.first()), λ: self.rest().map_of(U, f))
+        
+    def map(self, f): self.map_of(AnyC, f)
 
-# scons : A FunC(StreamOf[A]) -> StreamOf[A]
+# scons : AnyC (-> Stream?) -> Stream?
 # Creates a memoizing stream from the first element and a thunk producing
 # the rest.
-def scons(first, rest) -> stream?:
-    let promise = delay(rest)
-    StreamCons {
-        first: λ: first,
-        rest:  λ: force(promise)
-    }
+def scons(first, rest: FunC(Stream?)):
+    Stream(AnyC, first, rest)
 
-# smap : FunC(A, B) StreamOf[A] -> StreamOf[B]
-# Maps a function over the elements of a stream.
-def smap(f: FunC(AnyC, AnyC), stream: stream?):
-    scons(f(stream.first()), λ: smap(f, stream.rest()))
-
-# take_into_at : nat? nat? VectorOf[A] StreamOf[A] -> VoidC
-# Takes `len` elements from the stream and places them into the vector
-# starting at `start`.
-def take_into_at(start: nat?, len: nat?, dst: vec?, stream: stream?):
-    if len > 0:
-        dst[start] = stream.first()
-        take_into_at(start + 1, len - 1, dst, stream.rest())
-
-# take : nat? StreamOf[A] -> VectorOf[A]
-# Takes the first `n` elements of the given stream as a vector.
-def take(n: nat?, stream: stream?):
-    let result = [False; n]
-    take_into_at(0, n, result, stream)
-    result
-
-# ones : StreamOf[nat?]
+# ones : Stream[1]
 # A stream of 1s, forever.
-let ones = scons(1, λ: ones)
+let ones = Stream(1, 1, λ: ones)
 
-# nats : StreamOf[nat?]
+# nats : Stream[nat?]
 # The natural numbers starting with 1.
-let nats = scons(0, λ: smap(λ x: x + 1, nats))
+let nats = Stream(nat?, 0, λ: nats.map(λ x: x + 1))
 
-# unfold_stream : A FunC(A, A) -> StreamOf[A]
+# unfold_stream_of : (T: contract?) -> (T (T -> T) -> Stream[T])
+# Produces the stream by iterating `get_next` on the starting value `start`:
+#   start, get_next(start), get_next(get_next(start)), ...
+def unfold_stream_of(T: contract?, start, get_next) -> Stream?:
+    let get_next_c: FunC(T, T) = get_next
+    def loop(start): Stream(T, start, λ: loop(get_next(start)))
+    loop(start)
+
+# unfold_stream : AnyC (AnyC -> AnyC) -> Stream?
 # Produces the stream by iterating `get_next` on the starting value `start`:
 #   start, get_next(start), get_next(get_next(start)), …
-def unfold_stream(start, get_next) -> stream?:
-    scons(start, λ: unfold_stream(get_next(start), get_next))
+def unfold_stream(start, get_next): unfold_stream_of(AnyC, start, get_next)

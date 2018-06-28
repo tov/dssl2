@@ -23,7 +23,7 @@ class VectorStack (CONTAINER):
     let _data
     
     def __init__(self, capacity):
-        #self._size = 0
+        self._size = 0
         self._data = [False; capacity]
 
     def capacity(self): len(self._data)

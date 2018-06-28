@@ -3,7 +3,7 @@
 import promise
 
 let prom = delay(λ: 5)
-assert_eq force(prom), 5
+assert_eq prom.force(), 5
 
 let counter = 0
 def up!():
@@ -13,7 +13,9 @@ def up!():
 assert_eq counter, 0
 prom = delay(up!)
 assert_eq counter, 0
-assert_eq force(prom), 1
+assert not prom.forced?()
+assert_eq prom.force(), 1
+assert prom.forced?()
 assert_eq counter, 1
-assert_eq force(prom), 1
+assert_eq prom.force(), 1
 assert_eq counter, 1

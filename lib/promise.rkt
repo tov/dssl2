@@ -1,33 +1,27 @@
 #lang dssl2
 
-# A PromiseOf[A] is promise(InnerOf[A])
-struct promise:
-    let inner
+# A Promise[T] is an abstract data type.
+class Promise[T]:
+    let _ready
+    let _data
 
-# An InnerOf[A] is one of:
-#  - incomplete(FunC(A))
-#  - complete(A)
-struct incomplete:
-    let thunk
-struct complete:
-    let value
+    # Promise: (T: contract?) (-> T) -> Promise[T]
+    def __init__(self, thunk: FunC(T)):
+        self._ready = False
+        self._data  = thunk
+    
+    # forced?: -> bool?
+    def forced?(self):
+        self._ready
 
-# delay : FunC(A) -> PromiseOf[A]
+    # force: -> T
+    def force(self) -> T:
+        if not self._ready:
+            self._data  = self._data()
+            self._ready = True
+        self._data
+
+# delay : (-> AnyC) -> Promise[AnyC]
 # Creates a promise that will be computed by the given thunk.
 def delay(thunk):
-    promise(incomplete(thunk))
-
-# forced? : PromiseOf[A] -> Boolean
-# Has the promise been forced yet?
-def forced?(promise):
-    complete?(promise.inner)
-
-# force : PromiseOf[A] -> A
-# Gets the value of the promise, forcing if necessary (and remembering).
-def force(promise):
-    if forced?(promise): promise.inner.value
-    else:
-        let value = promise.inner.thunk()
-        promise.inner = complete(value)
-        value
-
+    Promise(AnyC, thunk)

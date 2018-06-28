@@ -2,5 +2,5 @@
 
 import stream
 
-assert_eq take(5, ones), [1; 5]
-assert_eq take(5, nats), [0, 1, 2, 3, 4]
+assert_eq ones.take(5), [1; 5]
+assert_eq nats.take(5), [0, 1, 2, 3, 4]

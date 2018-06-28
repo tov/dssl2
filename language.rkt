@@ -370,7 +370,23 @@
     [(_ (dssl-struct-ref s:expr f:id) rhs:expr)
      #'(dssl-struct-set! s f rhs)]
     [(_ i:id rhs:expr)
-     #'(set! i rhs)]))
+     (cond
+       [(identifer-set!-error #'i)
+        =>
+        (λ (msg) (syntax-error #'i msg))]
+       [else
+         #'(set! i rhs)])]))
+
+(define-for-syntax (identifer-set!-error id)
+  (define id-info (identifier-binding id 0))
+  (cond
+    [(eq? id-info 'lexical) #f]
+    [(pair? id-info)
+      (define-values (mod-path _base-path)
+        (module-path-index-split (car id-info)))
+      (and mod-path "Cannot assign variable imported from another module")]
+    [else
+      "Variable must be defined with ‘let’ before it can be assigned"]))
 
 (define (dssl-vec-ref v i)
   (vector-ref v i))

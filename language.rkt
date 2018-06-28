@@ -100,17 +100,16 @@
           (require dssl2/private/rte)
           (setup-rte))
         (#%provide #,(datum->syntax stx '(all-defined)))
-        (define passed-tests 0)
-        (define total-tests 0)
-        (module+ test-info
-          (provide get-test-info)
-          (define (get-test-info)
-            (values passed-tests total-tests)))
+        (module test-info racket/base
+          (provide passed-tests total-tests inc-passed! inc-total!)
+          (define passed-tests 0)
+          (define total-tests 0)
+          (define (inc-passed!) (set! passed-tests (add1 passed-tests)))
+          (define (inc-total!) (set! total-tests (add1 total-tests))))
+        (require 'test-info)
         (splicing-syntax-parameterize
-          ([inc-passed-tests!  (syntax-rules ()
-                                 [(_) (set! passed-tests (add1 passed-tests))])]
-           [inc-total-tests!   (syntax-rules ()
-                                 [(_) (set! total-tests (add1 total-tests))])])
+          ([inc-passed-tests! (syntax-rules () [(_) (inc-passed!)])]
+           [inc-total-tests!  (syntax-rules () [(_) (inc-total!)])])
           (dssl-begin expr ...))
         (print-test-results passed-tests total-tests))]))
 

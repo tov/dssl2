@@ -36,11 +36,13 @@
                    ; from being reordered.
                    [sandbox-error-output current-output-port])
       ((make-evaluator 'racket/base
-                       `(require (submod (file ,(~a subject)) test-info))
+                       `(require (file ,(~a subject))
+                                 (submod (file ,(~a subject)) test-info))
                        #:allow-read (list
                                       "/Applications/Racket"
+                                      "/Applications/Racket v6.12"
                                       (current-directory)))
-       '(get-test-info)))))
+       '(values passed-tests total-tests)))))
 
 (define (grade-file subject)
   (define-values (passed total) (grade-file/values subject))

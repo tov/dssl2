@@ -325,10 +325,16 @@
         [(<atom> LBRACK <expr> RBRACK)
          (loc `(vec-ref ,$1 ,$3))])
 
+      (<string-literal>
+        [(STRING-LITERAL)
+           $1]
+        [(STRING-LITERAL <string-literal>)
+           (string-append $1 $2)])
+
       (<atom>
         [(<lvalue>)
          $1]
-        [(STRING-LITERAL)
+        [(<string-literal>)
          (loc $1)]
         [(LITERAL)
          (loc $1)]

@@ -181,6 +181,13 @@
              "duplicate identifier name"))
 
   (define-splicing-syntax-class
+    optional-implements
+    #:description "optional implements clause"
+    (pattern (~seq #:implements (interface:id ...)))
+    (pattern (~seq)
+             #:with (interface:id ...) #'()))
+
+  (define-splicing-syntax-class
     optional-return-contract
     #:description "optional return contract"
     (pattern (~seq #:-> result:expr))
@@ -223,10 +230,11 @@
   (begin
     (define/contract
       f
-      (maybe-parametric->/c [cvs.var ...]
-                            (-> (ensure-contract 'def bs.contract)
-                                ...
-                                (ensure-contract 'def result-contract.result)))
+      (maybe-parametric->/c
+        [cvs.var ...]
+        (-> (ensure-contract 'def bs.contract)
+            ...
+            (ensure-contract 'def result-contract.result)))
       (lambda (bs.var ...)
         (with-return expr ...)))
     (make-set!able f)))
@@ -865,7 +873,7 @@
     #:literals (dssl-let dssl-def)
     [(_ name:id
         cvs:optional-contract-vars
-        (interface:id ...)
+        interfaces:optional-implements
         (dssl-let field:var&contract) ...
         (dssl-def (method-name:id
                     method-cvs:optional-contract-vars
@@ -879,7 +887,7 @@
      (define constructor  (find-constructor method-names #'name))
      ; Lookup and check interfaces:
      (define-values (interface-names interface-tokens interface-methodses)
-       (lookup-interfaces #'(interface ...)))
+       (lookup-interfaces #'(interfaces.interface ...)))
      (for ([interface-name    interface-names]
            [interface-methods interface-methodses])
        (check-class-against-interface

@@ -561,8 +561,9 @@
              (cond
                [(struct-base? value)
                 ((field-info-setter
-                   (get-field-info #:srclocs (get-srclocs struct)
-                                   value 'property))
+                   (get-field-info/or-else
+                     #:srclocs (get-srclocs struct)
+                     value 'property))
                  value rhs)]
                [(object-base? value)
                 (runtime-error

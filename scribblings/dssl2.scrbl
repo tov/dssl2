@@ -1182,6 +1182,11 @@ code point. Inverse to @racket[chr].
 assert_eq ord('a'), 97
 }|
 
+@defprocform[str]{(AnyC) -> str?}
+
+Converts any type to a string. Equivalent to @racket[format]
+with @racket["~e"] as the format string.
+
 @defprocform[strlen]{(str?) -> nat?}
 
 Returns the length of a string in characters.

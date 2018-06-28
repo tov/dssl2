@@ -65,6 +65,7 @@
            [format (-> str? AnyC ... str?)]
            [implode (-> vec? str?)]
            [ord (-> char? nat?)]
+           [str (-> AnyC str?)]
            [strlen (-> str? nat?)])
          ; * vector operations
          (contract-out
@@ -231,6 +232,11 @@
 
 (define (ord c)
   (char->integer (string-ref c 0)))
+
+(define (str value)
+  (cond
+    [(string? value) value]
+    [else            (format "~e" value)]))
 
 (define (strlen str)
   (string-length str))

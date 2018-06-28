@@ -18,7 +18,7 @@ interface QUEUE:
     def enqueue(self, value)
     def dequeue(self)
 
-class VectorStack (CONTAINER):
+class VectorStack (CONTAINER, STACK):
     let _size
     let _data
     
@@ -49,7 +49,7 @@ class VectorStack (CONTAINER):
     def add(self, value): self.push(value)
     def remove(self): self.pop()
 
-class RingBuffer (CONTAINER):
+class RingBuffer (CONTAINER, QUEUE):
     let _start
     let _size
     let _data

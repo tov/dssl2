@@ -66,7 +66,10 @@
                   parametric->/c)
          (only-in racket/math
                   natural?)
-         (only-in syntax/location quote-srcloc))
+         (only-in racket/vector
+                  vector-memq)
+         (only-in syntax/location
+                  quote-srcloc))
 (require (prefix-in racket: racket/base)
          (prefix-in racket: racket/contract/base)
          (prefix-in racket: racket/contract/combinator))
@@ -183,13 +186,6 @@
     (pattern (~seq #:-> result:expr))
     (pattern (~seq)
              #:with result #'AnyC))
-
-  (define-splicing-syntax-class
-    optional-implements
-    #:description "optional #:implements clause"
-    (pattern (~seq #:implements interface:id))
-    (pattern (~seq)
-             #:with interface #f))
 
   (define-splicing-syntax-class
     optional-contract-vars
@@ -634,7 +630,6 @@
     [(_ code:expr)
      #`(dssl-assert-error/thunk (get-srclocs code) (λ () code) "")]))
 
-; This is so that the documentation will consider elif a keyword.
 (define-syntax-parameter
   dssl-self
   (lambda (stx)
@@ -667,7 +662,8 @@
          (define-struct (interface-struct object-base)
            [method-name ...])
          (define interface-info
-           (make-object-info 'name interface-token
+           (make-object-info 'name
+                             (vector-immutable interface-token)
                              (vector-immutable
                                (make-method-info
                                  'method-name
@@ -682,8 +678,9 @@
              ...))
          (define (first-order? obj)
            (and (object-base? obj)
-                (eq? interface-token (object-info-interface
-                                       (object-base-object-info obj)))))
+                (vector-memq interface-token
+                             (object-info-interfaces
+                               (object-base-object-info obj)))))
          (define (project-method object method contract srcloc)
            (define method-value
              ((method-info-getter (get-method-info object method))
@@ -825,13 +822,16 @@
         (return method-name)))
     (syntax-error stx "class must have a constructor")))
 
-(define-for-syntax (lookup-interface interface)
-  (define interface-name (syntax-e interface))
-  (define interface-info
-    (if interface-name (syntax-local-eval interface-name) '(#f)))
-  (values interface-name
-          (car interface-info)
-          (cdr interface-info)))
+(define-for-syntax (lookup-interfaces interfaces)
+  (for/fold ([names     '()]
+             [tokens    '()]
+             [methodses '()])
+            ([interface (in-syntax interfaces)])
+    (define interface-name (syntax-e interface))
+    (define interface-info (syntax-local-eval interface-name))
+    (values (cons interface-name names)
+            (cons (car interface-info) tokens)
+            (cons (cdr interface-info) methodses))))
 
 (define-for-syntax (check-class-against-interface
                      interface-name
@@ -865,7 +865,7 @@
     #:literals (dssl-let dssl-def)
     [(_ name:id
         cvs:optional-contract-vars
-        implements:optional-implements
+        (interface:id ...)
         (dssl-let field:var&contract) ...
         (dssl-def (method-name:id
                     method-cvs:optional-contract-vars
@@ -873,14 +873,19 @@
                     method-params:var&contract ...)
                   method-result:optional-return-contract
                   method-body:expr ...) ...)
+     ; Extract the defined names:
      (define field-names  (syntax->list #'(field.var ...)))
      (define method-names (syntax->list #'(method-name ...)))
      (define constructor  (find-constructor method-names #'name))
-     (define-values (interface-name interface-token interface-methods)
-       (lookup-interface #'implements.interface))
-     (check-class-against-interface
-       interface-name interface-methods method-names
-       (syntax->list #'((method-params ...) ...)))
+     ; Lookup and check interfaces:
+     (define-values (interface-names interface-tokens interface-methodses)
+       (lookup-interfaces #'(interface ...)))
+     (for ([interface-name    interface-names]
+           [interface-methods interface-methodses])
+       (check-class-against-interface
+         interface-name interface-methods method-names
+         (syntax->list #'((method-params ...) ...))))
+     ; Generate new names:
      (define (self. property) (qualify #'name property))
      (with-syntax
        ([(actual-field-name ...)
@@ -902,7 +907,7 @@
            (define internal-object-info
              (make-object-info
                'name
-               #,interface-token
+               (vector-immutable #,@interface-tokens)
                (vector-immutable
                  (make-method-info
                    '__class__

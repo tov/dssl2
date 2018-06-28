@@ -1,17 +1,25 @@
 #lang racket/base
 
 (provide object-base object-base?
-         object-base-object-info object-base-contract-params
+         object-base-object-info
+         object-base-contract-params
+         object-base-reflect
          make-object-info
-         object-info-name object-info-interfaces object-info-method-infos
-         make-method-info method-info?
-         method-info-name method-info-getter
-         get-method-vector get-method-info get-method-value)
+         object-info-name
+         object-info-interfaces
+         object-info-method-infos
+         make-method-info
+         method-info?
+         method-info-name
+         method-info-getter
+         get-method-vector
+         get-method-info
+         get-method-value)
 
 (define-struct method-info (name getter))
 (define-struct object-info (name interfaces method-infos))
 
-(define-struct object-base (object-info contract-params)
+(define-struct object-base (object-info contract-params reflect)
                #:transparent)
 
 (define (get-method-vector obj)

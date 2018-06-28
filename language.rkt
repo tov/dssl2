@@ -940,6 +940,9 @@
                (make-internal-name
                 internal-object-info
                 (vector-immutable cvs.var ...)
+                (λ () (vector-immutable
+                         (cons 'field.var self.field-name) ...))
+                ; methods:
                 self.__class__
                 self.public-method-name ...))
              (apply #,(self. constructor) rest)

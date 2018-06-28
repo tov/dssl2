@@ -71,8 +71,20 @@
            (visit ((field-info-getter field-info) value)))
          (display "}" port))]
       [(object-base? value)
-       (fprintf port "#<object:~a>"
-                (object-info-name (object-base-object-info value)))]
+       (unless (seen!? value)
+         (cond
+           [(get-method-value value '__print__)
+            =>
+            (λ (object-print)
+               (object-print (λ (str) (display str port)) visit))]
+           [else
+             (fprintf port "#<object:~a"
+                      (object-info-name
+                        (object-base-object-info value)))
+             (for ([field-pair (in-vector ((object-base-reflect value)))])
+               (fprintf port " ~a=" (car field-pair))
+               (visit (cdr field-pair)))
+             (display ">" port)]))]
       [(and (contract? value)
             (not (string=? "???" (format "~a" (contract-name value)))))
        (display (contract-name value) port)]
@@ -108,7 +120,11 @@
        (unless (seen!? value)
          (define info (struct-base-struct-info value))
          (for ([field (in-vector (struct-info-field-infos info))])
-           (visit ((field-info-getter field) value))))]))
+           (visit ((field-info-getter field) value))))]
+      [(object-base? value)
+       (unless (seen!? value)
+         (for ([field-pair (in-vector ((object-base-reflect value)))])
+           (visit (cdr field-pair))))]))
   (visit value0)
   table)
 

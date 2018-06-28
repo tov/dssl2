@@ -14,22 +14,26 @@ class Stream[T]:
 
     # first: -> T
     def first(self): self._first
+    
     # rest: -> Stream[T]
     def rest(self): self._rest.force()
     
-    def take_into_at(self, start: nat?, len: nat?, dst: vec?):
+    # take_into_at: nat? nat? VectorOf[T] -> VoidC
+    def take_into_at(self, start: nat?, len: nat?, dst: vec?) -> VoidC:
         let src = self
         while len > 0:
             dst[start] = src.first()
             src        = src.rest()
             start      = start + 1
             len        = len - 1
-        
+    
+    # take: nat? -> VectorOf[T]
     def take(self, len: nat?) -> vec?:
         let result = [False; len]
         self.take_into_at(0, len, result)
         result
-        
+    
+    # skip: nat? -> Stream[T]
     def skip(self, count: nat?) -> Stream?:
         let result = self
         while count > 0:
@@ -37,9 +41,11 @@ class Stream[T]:
             count  = count - 1
         result
     
+    # map_of: (U: contract?) (U -> U) -> Stream[U]
     def map_of(self, U: contract?, f: FunC(AnyC, AnyC)) -> Stream?:
         Stream(U, f(self.first()), λ: self.rest().map_of(U, f))
-        
+    
+    # map: (T -> AnyC) -> Stream?
     def map(self, f): self.map_of(AnyC, f)
 
 # scons : AnyC (-> Stream?) -> Stream?

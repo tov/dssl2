@@ -2,6 +2,7 @@
 
 (provide grade-file
          grade-file/values
+         grader-read-directories
          grader-memory-limit
          grader-time-limit)
 
@@ -14,6 +15,9 @@
                   sandbox-output
                   sandbox-error-output))
 
+(define grader-read-directories
+  (make-parameter '("/Applications/Racket"
+                    "/Applications/Racket v6.12")))
 (define grader-time-limit (make-parameter 30))
 (define grader-memory-limit (make-parameter 256))
 
@@ -38,10 +42,9 @@
       ((make-evaluator 'racket/base
                        `(require (file ,(~a subject))
                                  (submod (file ,(~a subject)) test-info))
-                       #:allow-read (list
-                                      "/Applications/Racket"
-                                      "/Applications/Racket v6.12"
-                                      (current-directory)))
+                       #:allow-read (cons
+                                      (current-directory)
+                                      (grader-read-directories)))
        '(values passed-tests total-tests)))))
 
 (define (grade-file subject)

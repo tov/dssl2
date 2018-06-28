@@ -871,12 +871,11 @@
                     method-params:var&contract ...)
                   method-result:optional-return-contract
                   method-body:expr ...) ...)
-     (define constructor
-       (find-constructor (syntax->list #'(method-name ...)) #'name))
+     (define field-names  (syntax->list #'(field.var ...)))
+     (define method-names (syntax->list #'(method-name ...)))
+     (define constructor  (find-constructor method-names #'name))
      (define-values (interface-name interface-token interface-methods)
        (lookup-interface #'implements.interface))
-     (define field-names (syntax->list #'(field.var ...)))
-     (define method-names (syntax->list #'(method-name ...)))
      (check-class-against-interface
        interface-name interface-methods method-names
        (syntax->list #'((method-params ...) ...)))
@@ -940,7 +939,7 @@
              (apply #,(self. constructor) rest)
              (when (eq? unsafe-undefined actual-field-name)
                (runtime-error
-                 #:srclocs (get-srclocs constructor)
+                 #:srclocs (get-srclocs #,constructor)
                  "Constructor for class ~a did not assign field ~a"
                  'name 'field.var))
              ...

@@ -511,27 +511,17 @@
                         'name field)))
                   #`(name #,@exprs))]))))]))
 
-(define (get-field-info #:srclocs [srclocs '()] struct field)
-  (let/ec return
-    (define info-vector (struct-info-field-infos
-                          (struct-base-struct-info struct)))
-    (for ([info (in-vector info-vector)])
-      (when (eq? field (field-info-name info))
-        (return info)))
-    (runtime-error #:srclocs srclocs
-                   "Struct ~e does not have field ~a"
-                   struct field)))
+(define (get-field-info/or-else #:srclocs [srclocs '()] struct field)
+  (or (get-field-info struct field)
+      (runtime-error #:srclocs srclocs
+                     "Struct ~e does not have field ~a"
+                     struct field)))
 
-(define (get-method-info #:srclocs [srclocs '()] object method)
-  (let/ec return
-    (define info-vector (object-info-method-infos
-                          (object-base-object-info object)))
-    (for ([info (in-vector info-vector)])
-      (when (eq? method (method-info-name info))
-        (return info)))
-    (runtime-error #:srclocs srclocs
-                   "Object ~e does not have method ~a"
-                   object method)))
+(define (get-method-info/or-else #:srclocs [srclocs '()] object method)
+  (or (get-method-info object method)
+      (runtime-error #:srclocs srclocs
+                     "Object ~e does not have method ~a"
+                     object method)))
 
 (define-syntax (dssl-struct-ref stx)
   (syntax-parse stx
@@ -544,12 +534,12 @@
          #'(let ([value target])
              (cond
                [(struct-base? value)
-                ((field-info-getter (get-field-info
+                ((field-info-getter (get-field-info/or-else
                                       #:srclocs (get-srclocs expr)
                                       value 'property))
                  value)]
                [(object-base? value)
-                ((method-info-getter (get-method-info
+                ((method-info-getter (get-method-info/or-else
                                        #:srclocs (get-srclocs expr)
                                        value 'property))
                  value)]
@@ -575,8 +565,9 @@
                                    value 'property))
                  value rhs)]
                [(object-base? value)
-                (runtime-error #:srclocs (get-srclocs struct)
-                               "Cannot assign to object methods")]
+                (runtime-error
+                  #:srclocs (get-srclocs struct)
+                  "Cannot assign to object properties from outside")]
                [else
                  (runtime-error #:srclocs (get-srclocs struct)
                                 "Value ‘~e’ is not a struct"

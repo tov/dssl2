@@ -60,16 +60,7 @@
            (display "]" port))]
       [(struct-base? value)
        (unless (seen!? value)
-         (define info (struct-base-struct-info value))
-         (define first #true)
-         (fprintf port "~a {" (struct-info-name info))
-         (for ([field-info (in-vector (struct-info-field-infos info))])
-           (if first
-             (set! first #f)
-             (display ", " port))
-           (fprintf port "~a: " (field-info-name field-info))
-           (visit ((field-info-getter field-info) value)))
-         (display "}" port))]
+         (write-struct value port visit))]
       [(object-base? value)
        (unless (seen!? value)
          (cond
@@ -77,14 +68,7 @@
             =>
             (λ (object-print)
                (object-print (λ (str) (display str port)) visit))]
-           [else
-             (fprintf port "#<object:~a"
-                      (object-info-name
-                        (object-base-object-info value)))
-             (for ([field-pair (in-vector ((object-base-reflect value)))])
-               (fprintf port " ~a=" (car field-pair))
-               (visit (cdr field-pair)))
-             (display ">" port)]))]
+           [else (write-object value port visit)]))]
       [(and (contract? value)
             (not (string=? "???" (format "~a" (contract-name value)))))
        (display (contract-name value) port)]

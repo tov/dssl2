@@ -12,6 +12,7 @@
          method-info?
          method-info-name
          method-info-getter
+         write-object
          get-method-vector
          get-method-info
          get-method-value)
@@ -20,7 +21,21 @@
 (define-struct object-info (name interfaces method-infos))
 
 (define-struct object-base (object-info contract-params reflect)
-               #:transparent)
+               #:transparent
+               #:methods gen:custom-write
+               [(define write-proc
+                  (λ (obj port mode)
+                     (if (eq? #t mode)
+                       (write-object obj port)
+                       (fprintf port "~e" obj))))])
+
+(define (write-object obj port [recur (λ (v) (fprintf port "~e" v))])
+  (fprintf port "#<object:~a"
+           (object-info-name (object-base-object-info obj)))
+  (for ([field-pair (in-vector ((object-base-reflect obj)))])
+    (fprintf port " ~a=" (car field-pair))
+    (recur (cdr field-pair)))
+  (display ">" port))
 
 (define (get-method-vector obj)
   (for/vector ([method-info (object-info-method-infos

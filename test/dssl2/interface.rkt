@@ -37,4 +37,5 @@ def g(x: Container(int?)): x
 def h(x: Container(AnyC)): x
 
 let o = g(IntCell(5))
-# o.add('hi')
+o.add(7)
+assert_error o.add('hi')

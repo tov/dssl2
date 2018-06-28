@@ -25,3 +25,4 @@ assert_eq format("~e", a), "(3, 4)"
 a.x!(a)
 assert_eq format("~e", a), "#0=(#0#, 4)"
 
+struct Foo: pass

@@ -708,6 +708,7 @@
                     (make-interface-struct
                       interface-info
                       contract-parameters
+                      (object-base-reflect val)
                       (project-method
                         val
                         'method-name

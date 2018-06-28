@@ -788,17 +788,21 @@
   (syntax-parameterize
     ([dssl-self
        (syntax-parser
-         [(_ property:id)           (qualify #'class #'property)]
-         [(_ property:id rhs:expr)  #`(set! #,(qualify #'class #'property) rhs)]
-         [_:id                      #'actual-self])])
+         [(_ prop)          (qualify #'class #'prop)]
+         [(_ prop rhs:expr) #`(set! #,(qualify #'class #'prop) rhs)]
+         [_:id              #'actual-self])])
     (begin
-      (define-syntax (self stx)
-        (syntax-parse stx
-          [_:id #'dssl-self]
-          [_ (syntax-error stx "self parameter is not a function")]))
+      (define-syntax self
+        (make-set!-transformer
+          (syntax-parser
+            [_:id #'dssl-self]
+            [(set! lhs:id _)
+             (syntax-error #'lhs "cannot assign to self parameter")]
+            [(op . _)
+             (syntax-error #'op "self parameter is not a function")])))
       body)))
 
-(define-simple-macro (define/contract/immutable name:id ctc:expr rhs:expr)
+(define-simple-macro (define-method name:id ctc:expr rhs:expr)
   (begin
     (define real-name
       (let ([contract ctc]
@@ -918,7 +922,7 @@
                            field.contract)
              ...
              (define actual-self unsafe-undefined)
-             (define/contract/immutable
+             (define-method
                self.method-name
                (maybe-parametric->/c
                  [method-cvs.var ...]

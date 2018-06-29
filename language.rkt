@@ -533,17 +533,18 @@
            (dssl-provide #,(format-id #'name "~a{}" #'name))
            (define-syntax (#,(format-id #'name "~a{}" #'name) stx)
              (syntax-parse stx
-               [(_ [field:id expr:expr] (... ...))
+               [(ctor:id [field:id expr:expr] (... ...))
                 #:fail-when (check-duplicate-identifier
                               (syntax->list #'(field (... ...))))
                 "duplicate field name"
                 (begin
                   (define actual-fields
-                    (syntax->datum #'(field (... ...))))
+                    (syntax->list #'(field (... ...))))
                   (define actual-exprs
                     (syntax->list #'(expr (... ...))))
                   (define field-exprs
-                    (map cons actual-fields actual-exprs))
+                    (map (λ (f e) (cons (syntax-e f) e))
+                         actual-fields actual-exprs))
                   (define formal-fields
                     (syntax->datum #'(formal-field ...)))
                   (define exprs
@@ -552,14 +553,15 @@
                         [(assq field field-exprs) => cdr]
                         [else
                           (syntax-error
-                            stx "struct ~e requires field ~a"
-                            'name field)])))
+                            #'ctor
+                            "struct requires field ~a"
+                            field)])))
                   (for ([field (in-list actual-fields)])
-                    (unless (memq field formal-fields)
+                    (unless (memq (syntax-e field) formal-fields)
                       (syntax-error
-                        field
-                        "struct ~e does not have field ~a"
-                        'name field)))
+                        #'ctor
+                        "struct does not have field ~a"
+                        (syntax-e field))))
                   #`(name #,@exprs))]))))]))
 
 (define (get-field-info/or-else #:srclocs [srclocs '()] struct field)

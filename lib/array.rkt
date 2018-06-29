@@ -15,7 +15,7 @@ class Array[T]:
         self.size_
 
     def capacity(self) -> nat?:
-        len(self.data_)
+        self.data_.len()
 
     def ensure_capacity(self, req_cap: nat?) -> VoidC:
         if req_cap > self.capacity():
@@ -48,7 +48,7 @@ class Array[T]:
         result
 
     def shrink_to_fit(self) -> VoidC:
-        if len(self.data_) > self.size_:
+        if self.data_.len() > self.size_:
             self.data_ = [ self.data_[i] for i in self.size_ ]
 
     def clone(self) -> Array?:

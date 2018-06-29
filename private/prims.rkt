@@ -1,6 +1,7 @@
 #lang racket/base
 
 (require (only-in racket/contract/base contract-out))
+(require "equal.rkt")
 
 (provide ; values
          ; * type predicates
@@ -67,12 +68,12 @@
            [ord (-> char? nat?)]
            [str (-> AnyC str?)]
            [strlen (-> str? nat?)])
-         ; * vector operations
-         (contract-out
-           [build_vector (-> nat? (-> nat? AnyC) vec?)]
-           [len (-> vec? nat?)]
-           [map (-> (-> AnyC AnyC) vec? vec?)]
-           [filter (-> (-> AnyC AnyC) vec? vec?)])
+         raw-explode
+         ; * vector class
+         vec
+         vec?
+         raw-vec->vec
+         vec->raw-vec
          ; * I/O operations
          (contract-out
            [print (-> str? AnyC ... VoidC)]
@@ -128,8 +129,6 @@
 (define (bool? x) (boolean? x))
 
 (define (proc? x) (procedure? x))
-
-(define (vec? x) (vector? x))
 
 (define AnyC (flat-named-contract 'AnyC any/c))
 
@@ -197,19 +196,6 @@
                                                message))
                          value)))))
 
-(define (build_vector n f)
-  (r:build-vector n f))
-
-(define (len v)
-  (vector-length v))
-
-(define (map f vec)
-  (build-vector (vector-length vec)
-                (λ (i) (f (vector-ref vec i)))))
-
-(define (filter f vec)
-  (list->vector (r:filter f (vector->list vec))))
-
 (define (print fmt . values)
   (cond
     [(string? fmt) (display (apply format fmt values))]
@@ -223,12 +209,15 @@
   (~a (integer->char i)))
 
 (define (explode s)
+  (raw-vec->vec (raw-explode s)))
+
+(define (raw-explode s)
   (list->vector
     (r:map (λ (c) (list->string (list c)))
-                (string->list s))))
+           (string->list s))))
 
 (define (implode vec)
-  (apply string-append (vector->list vec)))
+  (apply string-append (vector->list (vec->raw-vec vec))))
 
 (define (ord c)
   (char->integer (string-ref c 0)))
@@ -298,5 +287,59 @@
 
 (define (dir obj)
   (cond
-    [(object-base? obj) (get-method-vector obj)]
+    [(object-base? obj) (raw-vec->vec (get-method-vector obj))]
     [else               (type-error 'dir obj "an object")]))
+
+(define-primitive-class
+  vec
+  (raw-vec->vec raw-vec)
+  ([__index_ref__ (FunC nat? AnyC)
+                  (λ (n) (vector-ref raw-vec n))]
+   [__index_set__ (FunC nat? AnyC AnyC)
+                  (λ (n v) (vector-set! raw-vec n v))]
+   [__eq__        (FunC vec? AnyC)
+                  (λ (other)
+                     (define o-len (get-method-value other 'len))
+                     (define o-ref (get-method-value other '__index_ref__))
+                     (and (eq? (len) (o-len))
+                          (for/and ([i (len)])
+                            (dssl-equal? (__index_ref__ i) (o-ref i)))))]
+   [__print__     (FunC (FunC str? VoidC) (FunC AnyC VoidC) AnyC)
+                  (λ (display visit)
+                     (define first #t)
+                     (display "[")
+                     (for ([element (in-vector raw-vec)])
+                        (if first
+                          (set! first #f)
+                          (display ", "))
+                        (visit element))
+                     (display "]"))]
+   [__get_raw__   (FunC AnyC)
+                  (λ () raw-vec)]
+   [len           AnyC
+                  (λ () (vector-length raw-vec))]
+   [map           (FunC (FunC AnyC AnyC) AnyC)
+                  (λ (f)
+                     (raw-vec->vec
+                       (build-vector
+                         (vector-length raw-vec)
+                         (λ (i) (f (vector-ref raw-vec i))))))]
+   [filter        (FunC (FunC AnyC AnyC) AnyC)
+                  (λ (pred)
+                     (raw-vec->vec
+                       (list->vector
+                         (r:filter pred (vector->list raw-vec)))))]))
+
+(define vec
+  (case-lambda
+    [() (raw-vec->vec (vector))]
+    [(size) (raw-vec->vec (make-vector size #false))]
+    [(size init) (raw-vec->vec (build-vector size init))]))
+
+(define (vec->raw-vec v)
+  (cond
+    [(and (vec? v) (get-method-value v '__get_raw__))
+     =>
+     (λ (get-raw) (get-raw))]
+    [else #f]))
+

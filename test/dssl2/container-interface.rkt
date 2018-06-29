@@ -26,7 +26,7 @@ class VectorStack (CONTAINER, STACK):
         self._size = 0
         self._data = [False; capacity]
 
-    def capacity(self): len(self._data)
+    def capacity(self): self._data.len()
 
     def size(self): self._size
 
@@ -59,7 +59,7 @@ class RingBuffer (CONTAINER, QUEUE):
         self._size  = 0
         self._data  = [False; capacity]
     
-    def capacity(self): len(self._data)
+    def capacity(self): self._data.len()
     
     def size(self): self._size
     

@@ -2,12 +2,12 @@
 
 (provide parse-dssl2)
 (require "lexer.rkt"
+         "names.rkt"
          (only-in parser-tools/lex
                   position-line
                   position-col
                   position-offset)
-         (only-in racket/syntax
-                  format-id)
+         (only-in racket/syntax)
          parser-tools/yacc
          syntax/readerr)
 (require (for-syntax racket/base))
@@ -353,7 +353,7 @@
         [(LBRACK <expr> FOR <ident> COMMA <ident> IN <expr0> IF <expr> RBRACK)
          (loc `(for/vec [(,$4 ,$6) ,$8] #:when ,$10 ,$2))]
         [(<ident> LBRACE <fields> RBRACE)
-         (loc `(,(format-id #f "~a{}" $1 #:source $1) ,@$3))]
+         (loc `(,(struct-special-name/located $1) ,@$3))]
         [(LPAREN <expr> RPAREN)
          (loc $2)])
 

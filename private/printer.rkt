@@ -54,16 +54,6 @@
          (if (and contains-sq (not contains-dq))
            (print-dssl-string #\" value port)
            (print-dssl-string #\' value port))]
-        [(vector? value)
-         (unless (seen!? value)
-           (display "[" port)
-           (define first #t)
-           (for ([element (in-vector value)])
-             (if first
-               (set! first #f)
-               (display ", " port))
-             (visit element))
-           (display "]" port))]
         [(struct-base? value)
          (unless (seen!? value)
            (write-struct value port visit))]

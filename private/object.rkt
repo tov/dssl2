@@ -16,7 +16,14 @@
          write-object
          get-method-vector
          get-method-info
-         get-method-value)
+         get-method-value
+         define-primitive-class)
+
+(require "names.rkt")
+(require syntax/parse/define)
+(require racket/contract/region)
+(require (for-syntax racket/base
+                     "names.rkt"))
 
 (define-struct method-info (name getter))
 (define-struct object-info (name interfaces method-infos))
@@ -58,3 +65,38 @@
      =>
      (λ (method-info) ((method-info-getter method-info) obj))]
     [else #f]))
+
+(define-syntax (define-primitive-class stx)
+  (syntax-parse stx
+    [(_ class-name:id (prim-ctor:id field:id ...)
+        ([method-name:id method-ctc:expr method-val:expr]
+         ...))
+     #`(begin
+         (define-struct (internal-name object-base)
+            [__class__ method-name ...])
+         (define (#,(struct-predicate-name #'class-name) value)
+           (internal-name? value))
+         (define object-info
+           (make-object-info 'class-name
+                             (vector-immutable)
+                             (vector-immutable
+                               (make-method-info
+                                 '__class__
+                                 (struct-getter-name internal-name
+                                                     __class__))
+                               (make-method-info
+                                 'method-name
+                                 (struct-getter-name internal-name
+                                                     method-name))
+                               ...)))
+         (define contract-parameters (vector-immutable))
+         (define (prim-ctor field ...)
+           (define/contract method-name method-ctc method-val)
+           ...
+           (make-internal-name
+             object-info
+             contract-parameters
+             (λ () (vector-immutable (cons 'field field) ...))
+             class-name
+             method-name
+             ...)))]))

@@ -353,7 +353,7 @@
         [(LBRACK <expr> FOR <ident> COMMA <ident> IN <expr0> IF <expr> RBRACK)
          (loc `(for/vec [(,$4 ,$6) ,$8] #:when ,$10 ,$2))]
         [(<ident> LBRACE <fields> RBRACE)
-         (loc `(,(format-id #f "m:~a" $1 #:source $1) ,@$3))]
+         (loc `(,(format-id #f "~a{}" $1 #:source $1) ,@$3))]
         [(LPAREN <expr> RPAREN)
          (loc $2)])
 

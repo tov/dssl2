@@ -29,7 +29,7 @@
   (check-parse? "[0; 10]"
                 (make-vec 10 0))
   (check-parse? "posn { x: 3, y: 4 }"
-                (m:posn [x 3] [y 4]))
+                (|posn{}| [x 3] [y 4]))
   (check-parse? "a == 4"
                 (== a 4))
   (check-parse? "lambda x, y: x == y"

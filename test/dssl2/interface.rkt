@@ -20,11 +20,11 @@ class D:
     
 def f(x: I): x
 
-interface Container[X]:
+interface CONTAINER[X]:
     def add(self, x: X) -> VoidC
     def get(self) -> X
     
-class IntCell(Container):
+class IntCell (CONTAINER):
     let val: int?
     def __init__(self, x):
         self.val = x
@@ -33,9 +33,14 @@ class IntCell(Container):
     def get(self):
         'a'
 
-def g(x: Container(int?)): x
-def h(x: Container(AnyC)): x
+def g(x: CONTAINER_OF(int?)): x
+def h(x: CONTAINER): x
 
-let o = g(IntCell(5))
+let c = IntCell(5)
+c.add(6)
+assert_error c.add('hi'), 'IntCell.add'
+
+let o = g(c)
 o.add(7)
-assert_error o.add('hi')
+assert_error o.add('hi'), 'CONTAINER.add'
+

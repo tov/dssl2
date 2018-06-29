@@ -958,7 +958,6 @@
                            actual-field-name
                            field.contract)
              ...
-             (define actual-self unsafe-undefined)
              (define-method
                self.method-name
                (maybe-parametric->/c
@@ -971,7 +970,7 @@
                    (with-return method-body ...))))
              ...
              (define self.__class__ name)
-             (set! actual-self
+             (define actual-self
                ((struct-constructor-name internal-name)
                 internal-object-info
                 (vector-immutable cvs.var ...)

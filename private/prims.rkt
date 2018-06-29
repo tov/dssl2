@@ -281,15 +281,15 @@
   (raw-char->char repr)
   ([__eq__        (FunC char? AnyC)
                   (λ (c) (char=? repr (char->raw-char c)))]
-   [__print__     (FunC (FunC str? VoidC) (FunC AnyC VoidC) AnyC)
-                  (λ (display visit)
-                     (display (format "char(~a)" (char->integer repr))))]
+   [__print__     AnyC
+                  (λ (print)
+                     (print "char(~a)" (char->integer repr)))]
    [__get_raw__   AnyC
                   (λ () repr)]
    [to_int        AnyC
                   (λ () (char->integer repr))]))
 
-(define ((char/internal who) val)
+(define (char/internal who val)
   (cond
     [(char? val) val]
     [(integer? val) (raw-char->char (integer->char val))]
@@ -298,7 +298,10 @@
     [else
       (type-error who val "int code point or singleton string")]))
 
-(define char (char/internal 'char))
+(define char
+  (case-lambda
+    [() (char 0)]
+    [(val) (char/internal 'char val)]))
 
 (define (char->raw-char c)
   (and (char? c) (get-raw c)))
@@ -318,7 +321,7 @@
        [else          (raw-str->str (format "~e" val))])]
     [(len c)
      (raw-str->str
-       (make-string len (char->raw-char ((char/internal 'str) c))))]))
+       (make-string len (char->raw-char (char/internal 'str c))))]))
 
 (define-primitive-class
   vec
@@ -334,16 +337,16 @@
                      (and (eq? (len) (o-len))
                           (for/and ([i (len)])
                             (dssl-equal? (__index_ref__ i) (o-ref i)))))]
-   [__print__     (FunC (FunC str? VoidC) (FunC AnyC VoidC) AnyC)
-                  (λ (display visit)
+   [__print__     AnyC
+                  (λ (print)
                      (define first #t)
-                     (display "[")
+                     (print "[")
                      (for ([element (in-vector repr)])
                         (if first
                           (set! first #f)
-                          (display ", "))
-                        (visit element))
-                     (display "]"))]
+                          (print ", "))
+                        (print "~e" element))
+                     (print "]"))]
    [__get_raw__   (FunC AnyC)
                   (λ () repr)]
    [len           AnyC

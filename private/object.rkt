@@ -1,6 +1,7 @@
 #lang racket/base
 
-(provide object-base object-base?
+(provide object-base
+         object-base?
          object-base-object-info
          object-base-contract-params
          object-base-reflect

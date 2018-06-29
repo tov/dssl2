@@ -37,7 +37,7 @@ class Dll[X]:
         self.size_ = size
 
     # Swaps the elements of this list with another in constant time.
-    def swap(self, other: Dll?) -> VoidC:
+    def swap(self, other: DllOf(X)) -> VoidC:
         let sentinel = other.get_sentinel!()
         let size = other.size()
         other.set_sentinel_and_size!(self.sentinel_, self.size_)
@@ -78,7 +78,7 @@ class Dll[X]:
 
     # Moves the elements from another list to the end of this list
     # in constant time. The other list is left empty.
-    def splice(self, other: Dll?) -> VoidC:
+    def splice(self, other: DllOf(X)) -> VoidC:
         let other_sentinel = other.get_sentinel!()
         self.sentinel_.prev.next = other_sentinel.next
         other_sentinel.next.prev = self.sentinel_.prev

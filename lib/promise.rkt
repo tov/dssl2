@@ -25,3 +25,4 @@ class Promise[T]:
 # Creates a promise that will be computed by the given thunk.
 def delay(thunk):
     Promise(AnyC, thunk)
+

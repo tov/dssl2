@@ -60,7 +60,7 @@ let ones = Stream(1, 1, λ: ones)
 
 # nats : Stream[nat?]
 # The natural numbers starting with 1.
-let nats = Stream(nat?, 0, λ: nats.map(λ x: x + 1))
+let nats = Stream(nat?, 0, λ: nats.map_of(nat?, λ x: x + 1))
 
 # unfold_stream_of : (T: contract?) T (T -> T) -> Stream[T]
 # Produces the stream by iterating `get_next` on the starting value `start`:

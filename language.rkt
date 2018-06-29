@@ -79,6 +79,7 @@
                      (only-in racket/sequence in-syntax)
                      (only-in racket/syntax format-id syntax-local-eval)
                      (only-in racket/string string-prefix?)
+                     (only-in racket/list make-list)
                      "private/errors.rkt"
                      "private/find-lib.rkt"))
 
@@ -663,6 +664,17 @@
   (or (not (string-prefix? name "_"))
       (string-prefix? name "__")))
 
+(define-for-syntax (contract-name-format-string nparams)
+  (if (zero? nparams)
+    "~a"
+    (apply string-append
+           "~a~a(~e"
+           (append (make-list (sub1 nparams) ", ~e")
+                   (list ")")))))
+
+(define (format-symbol fmt . args)
+  (string->symbol (apply format fmt args)))
+
 (define-syntax (dssl-interface stx)
   (syntax-parse stx
     #:literals (dssl-def)
@@ -752,17 +764,27 @@
                        blame #:missing-party neg-party val
                        "value ~e does not implement interface ~a"
                        val 'name)]))))
-         #,(if (null? (syntax->list #'cvs))
-             #'(define name
-                 (racket:make-contract
-                   #:name 'name
-                   #:first-order first-order?
-                   #:late-neg-projection (make-projection)))
-             #'(define (name cvs.var ...)
-                 (racket:make-contract
-                   #:name 'name
-                   #:first-order first-order?
-                   #:late-neg-projection (make-projection cvs.var ...))))
+         #,(let ([cvs-list (syntax->list #'(cvs.var ...))])
+             (if (null? cvs-list)
+               #'(define name
+                   (racket:make-contract
+                     #:name 'name
+                     #:first-order first-order?
+                     #:late-neg-projection (make-projection)))
+               (let
+                 ([format-string
+                    (contract-name-format-string (length cvs-list))])
+                 #`(begin
+                     (define (#,(format-id #'name "~a_OF" #'name)
+                              cvs.var ...)
+                       (racket:make-contract
+                         #:name (format-symbol
+                                  #,format-string 'name "_OF" cvs.var ...)
+                      #:first-order first-order?
+                      #:late-neg-projection (make-projection cvs.var ...)))
+                     (define name
+                       (#,(format-id #'name "~a_OF" #'name)
+                        #,@(map (λ (_) #'AnyC) cvs-list)))))))
          (define (#,(struct-predicate-name #'name) value)
            (interface-struct? value)))]))
 
@@ -885,6 +907,23 @@
              (syntax-e interface-name)
              (add1 (cadr method-info)))))])))
 
+(define-syntax (maybe-define-generic-predicate stx)
+  (syntax-parse stx
+    [(_ name:id [])
+     #'(begin)]
+    [(_ name:id [cv0:id cvs:id ...])
+     (define format-string
+       (contract-name-format-string (length (syntax->list #'(cvs ...)))))
+     #`(define (#,(format-id #'name "~aOf" #'name) cv0 cvs ...)
+         (define contract-params (vector-immutable cv0 cvs ...))
+         (procedure-rename
+           (λ (value)
+              (and (#,(struct-predicate-name #'name) value)
+                   (contract-parameters-match?
+                     contract-params
+                     (object-base-contract-params value))))
+           (format-symbol #,format-string 'name "Of" cv0 cvs ...)))]))
+
 (define-syntax (dssl-class stx)
   (syntax-parse stx
     #:literals (dssl-let dssl-def)
@@ -952,6 +991,7 @@
                  ...)))
            (define (#,(struct-predicate-name #'name) value)
              (#,(struct-predicate-name #'internal-name) value))
+           (maybe-define-generic-predicate name [cvs.var ...])
            (define (name cvs.var ... . rest)
              (define-field field.var
                            self.field-name

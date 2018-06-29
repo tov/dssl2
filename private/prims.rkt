@@ -10,7 +10,6 @@
          nat?
          float?
          str?
-         char?
          bool?
          proc?
          vec?
@@ -61,18 +60,16 @@
            [nan? (-> num? bool?)])
          ; * string operations
          (contract-out
-           [chr (-> nat? char?)]
            [explode (-> str? vec?)]
            [format (-> str? AnyC ... str?)]
-           [ord (-> char? nat?)]
            [str (-> AnyC str?)]
            [strlen (-> str? nat?)])
-         raw-explode
-         ; * vector class
-         vec
-         vec?
-         raw-vec->vec
-         vec->raw-vec
+         raw-explode ; helper for language.rkt, should be removed
+         ; * primitive classes
+         ; ** vector
+         vec vec? raw-vec->vec vec->raw-vec
+         ; ** character
+         char char? raw-char->char char->raw-char
          ; * I/O operations
          (contract-out
            [print (-> str? AnyC ... VoidC)]
@@ -121,9 +118,6 @@
 (define (float? x) (flonum? x))
 
 (define (str? x) (string? x))
-
-(define (char? x)
-  (and (string? x) (= 1 (string-length x))))
 
 (define (bool? x) (boolean? x))
 
@@ -204,19 +198,12 @@
   (apply print fmt values)
   (newline))
 
-(define (chr i)
-  (~a (integer->char i)))
-
 (define (explode s)
   (raw-vec->vec (raw-explode s)))
 
 (define (raw-explode s)
   (list->vector
-    (r:map (λ (c) (list->string (list c)))
-           (string->list s))))
-
-(define (ord c)
-  (char->integer (string-ref c 0)))
+    (r:map raw-char->char (string->list s))))
 
 (define (str value)
   (cond
@@ -287,6 +274,30 @@
     [else               (type-error 'dir obj "an object")]))
 
 (define-primitive-class
+  char
+  (raw-char->char repr)
+  ([__eq__        (FunC char? AnyC)
+                  (λ (c) (char=? repr (char->raw-char c)))]
+   [__print__     (FunC (FunC str? VoidC) (FunC AnyC VoidC) AnyC)
+                  (λ (display visit)
+                     (display (format "char(~a)" (char->integer repr))))]
+   [__get_raw__   AnyC
+                  (λ () repr)]
+   [to_int        AnyC
+                  (λ () (char->integer repr))]))
+
+(define (char code)
+  (raw-char->char (integer->char code)))
+
+(define (char->raw-char c)
+  (and (char? c) (get-raw c)))
+
+#| (define-primitive-class |#
+#|   str |#
+#|   (raw-str->str repr) |#
+#|   ([__index_ref__ (FunC nat? |#
+
+(define-primitive-class
   vec
   (raw-vec->vec repr)
   ([__index_ref__ (FunC nat? AnyC)
@@ -315,7 +326,15 @@
    [len           AnyC
                   (λ () (vector-length repr))]
    [implode       AnyC
-                  (λ () (apply string-append (vector->list repr)))]
+                  (λ ()
+                     (define (convert c)
+                       (cond
+                         [(char->raw-char c) => identity]
+                         [(integer? c)          (integer->char c)]
+                         [else (type-error
+                                 'vec.implode c "char or int code point")]))
+                     (list->string
+                       (r:map convert (vector->list repr))))]
    [map           (FunC (FunC AnyC AnyC) AnyC)
                   (λ (f)
                      (raw-vec->vec
@@ -334,10 +353,12 @@
     [(size) (raw-vec->vec (make-vector size #false))]
     [(size init) (raw-vec->vec (build-vector size init))]))
 
-(define (vec->raw-vec v)
+(define (get-raw v)
   (cond
-    [(and (vec? v) (get-method-value v '__get_raw__))
+    [(get-method-value v '__get_raw__)
      =>
      (λ (get-raw) (get-raw))]
     [else #f]))
 
+(define (vec->raw-vec v)
+  (and (vec? v) (get-raw v)))

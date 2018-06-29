@@ -70,6 +70,8 @@
          vec vec? raw-vec->vec vec->raw-vec
          ; ** character
          char char? raw-char->char char->raw-char
+         ; ** string
+         String String? raw-str->str
          ; * I/O operations
          (contract-out
            [print (-> str? AnyC ... VoidC)]
@@ -78,6 +80,7 @@
          ; * other functions
          dir
          identity)
+
 (require "errors.rkt"
          "object.rkt"
          (only-in racket/list
@@ -286,16 +289,36 @@
    [to_int        AnyC
                   (λ () (char->integer repr))]))
 
-(define (char code)
-  (raw-char->char (integer->char code)))
+(define ((char/internal who) val)
+  (cond
+    [(char? val) val]
+    [(integer? val) (raw-char->char (integer->char val))]
+    [(and (string? val) (= 1 (string-length val)))
+     (raw-char->char (string-ref val 0))]
+    [else
+      (type-error who val "int code point or singleton string")]))
+
+(define char (char/internal 'char))
 
 (define (char->raw-char c)
   (and (char? c) (get-raw c)))
 
-#| (define-primitive-class |#
-#|   str |#
-#|   (raw-str->str repr) |#
-#|   ([__index_ref__ (FunC nat? |#
+(define-primitive-class
+  String
+  (raw-str->str repr)
+  ([__index_ref__ (FunC nat? AnyC)
+                  (λ (i) (raw-char->char (string-ref repr i)))]))
+
+(define String
+  (case-lambda
+    [() (raw-str->str "")]
+    [(val)
+     (cond
+       [(String? val) val]
+       [else          (raw-str->str (format "~e" val))])]
+    [(len c)
+     (raw-str->str
+       (make-string len (char->raw-char ((char/internal 'str) c))))]))
 
 (define-primitive-class
   vec

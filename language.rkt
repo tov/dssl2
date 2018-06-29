@@ -384,9 +384,11 @@
     [(pair? id-info)
       (define-values (mod-path _base-path)
         (module-path-index-split (car id-info)))
-      (and mod-path "Cannot assign variable imported from another module")]
+      (and mod-path
+           (not (equal? '(quote anonymous-module) mod-path))
+           "cannot assign variable imported from another module")]
     [else
-      "Variable must be defined with ‘let’ before it can be assigned"]))
+      "variable must be defined with ‘let’ before it can be assigned"]))
 
 (define (dssl-vec-ref v i)
   (vector-ref v i))
@@ -461,7 +463,7 @@
 (define-syntax (dssl-struct stx)
   (syntax-error
     stx
-    (string-append "Saw dssl-struct, which should be changed to "
+    (string-append "saw dssl-struct, which should be changed to "
                    "dssl-struct/late by #%module-begin")))
 
 (define-syntax (dssl-struct/late stx)
@@ -517,26 +519,26 @@
                         [(assq field field-exprs) => cdr]
                         [else
                           (syntax-error
-                            stx "Struct ~e requires field ~a"
+                            stx "struct ~e requires field ~a"
                             'name field)])))
                   (for ([field (in-list actual-fields)])
                     (unless (memq field formal-fields)
                       (syntax-error
                         field
-                        "Struct ~e does not have field ~a"
+                        "struct ~e does not have field ~a"
                         'name field)))
                   #`(name #,@exprs))]))))]))
 
 (define (get-field-info/or-else #:srclocs [srclocs '()] struct field)
   (or (get-field-info struct field)
       (runtime-error #:srclocs srclocs
-                     "Struct ~e does not have field ~a"
+                     "struct ~e does not have field ~a"
                      struct field)))
 
 (define (get-method-info/or-else #:srclocs [srclocs '()] object method)
   (or (get-method-info object method)
       (runtime-error #:srclocs srclocs
-                     "Object ~e does not have method ~a"
+                     "object ~e does not have method ~a"
                      object method)))
 
 (define-syntax (dssl-struct-ref stx)
@@ -561,7 +563,7 @@
                  value)]
                [else
                  (runtime-error #:srclocs (get-srclocs target)
-                                "Value ‘~e’ is not a struct or object"
+                                "value ‘~e’ is not a struct or object"
                                 value)]))])]))
 
 (define-syntax (dssl-struct-set! stx)
@@ -584,10 +586,10 @@
                [(object-base? value)
                 (runtime-error
                   #:srclocs (get-srclocs struct)
-                  "Cannot assign to object properties from outside")]
+                  "cannot assign to object properties from outside")]
                [else
                  (runtime-error #:srclocs (get-srclocs struct)
-                                "Value ‘~e’ is not a struct"
+                                "value ‘~e’ is not a struct"
                                 struct)])))])]))
 
 (define-syntax (dssl-test stx)
@@ -670,6 +672,9 @@
                     method-self:id
                     method-params:var&contract ...)
                   method-result:optional-return-contract) ...)
+     #:fail-when (check-duplicate-identifier
+                   (syntax->list #'(method-name ...)))
+                 "duplicate method name"
      (for ([method-name (in-syntax #'(method-name ...))])
        (unless (public-method-name? method-name)
          (syntax-error method-name "interface methods cannot be private")))
@@ -718,14 +723,14 @@
                       (racket:raise-blame-error
                         blame #:missing-party neg-party val
                         (string-append
-                          "Value ~e already implements "
+                          "value ~e already implements "
                           "interface ~a with contract parameters ~e")
                         val 'name (object-base-contract-params val)))]
                    [(first-order? val)
                     (make-interface-struct
                       interface-info
                       contract-parameters
-                      (object-base-reflect val)
+                      (λ () (vector-immutable (cons '_repr val)))
                       (project-method
                         val
                         'method-name
@@ -739,13 +744,13 @@
                    [(object-base? val)
                     (racket:raise-blame-error
                       blame #:missing-party neg-party val
-                      "Class ~a does not implement interface ~a"
+                      "class ~a does not implement interface ~a"
                       (object-info-name (object-base-object-info val))
                       'name)]
                    [else
                      (racket:raise-blame-error
                        blame #:missing-party neg-party val
-                       "Value ~e does not implement interface ~a"
+                       "value ~e does not implement interface ~a"
                        val 'name)]))))
          #,(if (null? (syntax->list #'cvs))
              #'(define name
@@ -844,24 +849,25 @@
              [tokens    '()]
              [methodses '()])
             ([interface (in-syntax interfaces)])
-    (define interface-name (syntax-e interface))
-    (define interface-info (syntax-local-eval interface-name))
-    (values (cons interface-name names)
+    (define interface-info (syntax-local-eval (syntax-e interface)))
+    (values (cons interface names)
             (cons (car interface-info) tokens)
             (cons (cdr interface-info) methodses))))
 
 (define-for-syntax (check-class-against-interface
                      interface-name
                      interface-methods
+                     class-name
                      class-methods
                      class-method-paramses)
   (define class-method-names (map syntax-e class-methods))
   (for ([method-info (in-list interface-methods)])
     (unless (memq (car method-info) class-method-names)
       (syntax-error
-        #'implements.interface
-        "Class ~a missing method ~a, required by interface"
-        interface-name (car method-info))))
+        class-name
+        "class missing method ~a, required by interface ~a"
+        (car method-info)
+        (syntax-e interface-name))))
   (for ([method-stx    (in-list class-methods)]
         [method-name   (in-list class-method-names)]
         [method-params (in-list class-method-paramses)])
@@ -872,10 +878,12 @@
          (define actual-arity (length (syntax->list method-params)))
          (unless (= actual-arity (cadr method-info))
            (syntax-error
-             method-stx
-             "Method ~a takes ~a params, but interface ~a specifies ~a"
-             method-name (add1 actual-arity)
-             interface-name (add1 (cadr method-info)))))])))
+             class-name
+             "method ~a takes ~a params, but interface ~a specifies ~a"
+             method-name
+             (add1 actual-arity)
+             (syntax-e interface-name)
+             (add1 (cadr method-info)))))])))
 
 (define-syntax (dssl-class stx)
   (syntax-parse stx
@@ -890,6 +898,10 @@
                     method-params:var&contract ...)
                   method-result:optional-return-contract
                   method-body:expr ...) ...)
+     #:fail-when (check-duplicate-identifier
+                   (cons (datum->syntax #'name '__class__)
+                         (syntax->list #'(method-name ...))))
+                 "duplicate method name"
      ; Extract the defined names:
      (define field-names  (syntax->list #'(field.var ...)))
      (define method-names (syntax->list #'(method-name ...)))
@@ -900,12 +912,17 @@
      (for ([interface-name    interface-names]
            [interface-methods interface-methodses])
        (check-class-against-interface
-         interface-name interface-methods method-names
+         interface-name
+         interface-methods
+         #'name
+         method-names
          (syntax->list #'((method-params ...) ...))))
      ; Generate new names:
      (define (self. property) (qualify #'name property))
      (with-syntax
-       ([(actual-field-name ...)
+       ([internal-name
+          (format-id #f "~a-internal" #'name)]
+        [(actual-field-name ...)
          (generate-temporaries field-names)]
         [(self.field-name ...)
          (map self. field-names)]
@@ -934,7 +951,7 @@
                    (struct-getter-name internal-name public-method-name))
                  ...)))
            (define (#,(struct-predicate-name #'name) value)
-             (internal-name? value))
+             (#,(struct-predicate-name #'internal-name) value))
            (define (name cvs.var ... . rest)
              (define-field field.var
                            self.field-name
@@ -955,7 +972,7 @@
              ...
              (define self.__class__ name)
              (set! actual-self
-               (make-internal-name
+               ((struct-constructor-name internal-name)
                 internal-object-info
                 (vector-immutable cvs.var ...)
                 (λ () (vector-immutable
@@ -967,7 +984,7 @@
              (when (eq? unsafe-undefined actual-field-name)
                (runtime-error
                  #:srclocs (get-srclocs #,constructor)
-                 "Constructor for class ~a did not assign field ~a"
+                 "constructor for class ~a did not assign field ~a"
                  'name 'field.var))
              ...
              actual-self)))]))

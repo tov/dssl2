@@ -36,7 +36,7 @@ class Posn2:
     def x!(self, x): self._x = x
     
     def __eq__(self, other):
-        Posn2?(other) and self._x == other.x()
+        self._x == other.x()
         
 assert Posn2(3, 4) == Posn2(3, 4)
 assert Posn2(3, 5) == Posn2(3, 4)

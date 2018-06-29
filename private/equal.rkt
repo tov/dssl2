@@ -79,33 +79,39 @@
         [(eq? a b)              #true]
         [(string? a)            (and (string? b) (string=? a b))]
         [(vector? a)
-         (and (vector? b)
-              (= (vector-length a) (vector-length b))
-              (or (seen!? a b)
+         (or (seen!? a b)
+             (and (vector? b)
+                  (= (vector-length a) (vector-length b))
                   (for/and ([x (in-vector a)]
                             [y (in-vector b)])
                     (compare x y))))]
         [(struct-base? a)
-         (and (struct-base? b)
-              (let ([info (struct-base-struct-info a)])
-                (and (eq? info (struct-base-struct-info b))
-                     (or (seen!? a b)
-                         (for/and ([field-info
-                                     (struct-info-field-infos info)])
-                           (define getter (field-info-getter field-info))
-                           (compare (getter a) (getter b)))))))]
+         (or (seen!? a b)
+             (and (struct-base? b)
+                  (struct-equal? a b compare)))]
         [(object-base? a)
          (or (seen!? a b)
-             (cond
-               [(get-method-value a '__eq__) => (λ (eq) (eq b))]
-               [else (object-equal? a b compare)]))]
+             (and (object-base? b)
+                  (object-equal? a b compare)))]
         [else #false]))))
 
+(define (struct-equal? a b compare)
+  (define info (struct-base-struct-info a))
+  (and (eq? info (struct-base-struct-info b))
+       (for/and ([field-info (struct-info-field-infos info)])
+         (define getter (field-info-getter field-info))
+         (compare (getter a) (getter b)))))
+
 (define (object-equal? a b compare)
+  (and (same-class? a b)
+       (cond
+         [(get-method-value a '__eq__) => (λ (eq) (eq b))]
+         [else
+           (for/and ([a-pair (in-vector ((object-base-reflect a)))]
+                     [b-pair (in-vector ((object-base-reflect b)))])
+             (compare (cdr a-pair) (cdr b-pair)))])))
+
+(define (same-class? a b)
   (define class-a (get-method-value a '__class__))
   (and class-a
-       (object-base? b)
-       (eq? class-a (get-method-value b '__class__))
-       (for/and ([a-pair (in-vector ((object-base-reflect a)))]
-                 [b-pair (in-vector ((object-base-reflect b)))])
-         (compare (cdr a-pair) (cdr b-pair)))))
+       (eq? class-a (get-method-value b '__class__))))

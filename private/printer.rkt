@@ -13,71 +13,78 @@
          (only-in racket/math nan?)
          (only-in racket/string string-contains?))
 
+(define current-printer-state (make-parameter #f))
+
 ; Dssl2Value OutputPort -> Void
 (define (dssl-print value0 [port (current-output-port)])
-  (define seen (mutable-seteq))
-  (define cycle-info (find-cycles value0))
-  (define (seen!? value)
-    (define info (hash-ref cycle-info value #false))
-    (cond
-      [(set-member? seen value)
-       (fprintf port "#~a#" info)
-       #true]
-      [(number? info)
-        (set-add! seen value)
-        (fprintf port "#~a=" info)
-        #false]
-      [else
-        #false]))
-  (let visit ([value value0])
-    (cond
-      [(real? value)
-       (cond
-         [(= +inf.0 value)        (display "inf" port)]
-         [(= -inf.0 value)        (display "-inf" port)]
-         [(nan? value)            (display "nan" port)]
-         [else                    (display value port)])]
-      [(integer? value)           (display value port)]
-      [(boolean? value)
-       (cond
-         [value                   (display "True" port)]
-         [else                    (display "False" port)])]
-      [(string? value)
-       (define contains-sq (string-contains? value "'"))
-       (define contains-dq (string-contains? value "\""))
-       (if (and contains-sq (not contains-dq))
-         (print-dssl-string #\" value port)
-         (print-dssl-string #\' value port))]
-      [(vector? value)
-       (unless (seen!? value)
-         (display "[" port)
-         (define first #t)
+  (parameterize
+    ([current-printer-state (or (current-printer-state)
+                                (cons (mutable-seteq)
+                                      (find-cycles value0)))])
+    (define seen (car (current-printer-state)))
+    (define cycle-info (cdr (current-printer-state)))
+    (define (seen!? value)
+      (define info (hash-ref cycle-info value #false))
+      (cond
+        [(set-member? seen value)
+         (fprintf port "#~a#" info)
+         #true]
+        [(number? info)
+         (set-add! seen value)
+         (fprintf port "#~a=" info)
+         #false]
+        [else
+          #false]))
+    (let visit ([value value0])
+      (cond
+        [(real? value)
+         (cond
+           [(= +inf.0 value)        (display "inf" port)]
+           [(= -inf.0 value)        (display "-inf" port)]
+           [(nan? value)            (display "nan" port)]
+           [else                    (display value port)])]
+        [(integer? value)           (display value port)]
+        [(boolean? value)
+         (cond
+           [value                   (display "True" port)]
+           [else                    (display "False" port)])]
+        [(string? value)
+         (define contains-sq (string-contains? value "'"))
+         (define contains-dq (string-contains? value "\""))
+         (if (and contains-sq (not contains-dq))
+           (print-dssl-string #\" value port)
+           (print-dssl-string #\' value port))]
+        [(vector? value)
+         (unless (seen!? value)
+           (display "[" port)
+           (define first #t)
            (for ([element (in-vector value)])
              (if first
                (set! first #f)
                (display ", " port))
              (visit element))
            (display "]" port))]
-      [(struct-base? value)
-       (unless (seen!? value)
-         (write-struct value port visit))]
-      [(object-base? value)
-       (unless (seen!? value)
-         (cond
-           [(get-method-value value '__print__)
-            =>
-            (λ (object-print)
-               (object-print (λ (str) (display str port)) visit))]
-           [else (write-object value port visit)]))]
-      [(and (contract? value)
-            (not (string=? "???" (format "~a" (contract-name value)))))
-       (display (contract-name value) port)]
-      [(procedure? value)
-       (if (object-name value)
-         (fprintf port "#<proc:~a>" (object-name value))
-         (fprintf port "#<proc>"))]
-      [(void? value)              (display "#<void>" port)]
-      [else                       (display "#<unknown-value>" port)])))
+        [(struct-base? value)
+         (unless (seen!? value)
+           (write-struct value port visit))]
+        [(object-base? value)
+         (unless (seen!? value)
+           (cond
+             [(get-method-value value '__print__)
+              =>
+              (λ (object-print)
+                 (object-print
+                   (λ args (apply fprintf port args))))]
+             [else (write-object value port visit)]))]
+        [(and (contract? value)
+              (not (string=? "???" (format "~a" (contract-name value)))))
+         (display (contract-name value) port)]
+        [(procedure? value)
+         (if (object-name value)
+           (fprintf port "#<proc:~a>" (object-name value))
+           (fprintf port "#<proc>"))]
+        [(void? value)              (display "#<void>" port)]
+        [else                       (display "#<unknown-value>" port)]))))
 
 ; Dssl2Value -> [HashEq Dssl2Value [Or #true Natural]]
 (define (find-cycles value0)

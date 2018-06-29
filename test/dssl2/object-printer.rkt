@@ -12,12 +12,8 @@ class Posn:
     def y(self): self._y
     def x!(self, x): self._x = x
     
-    def __print__(self, display, visit):
-        display("(")
-        visit(self._x)
-        display(", ")
-        visit(self._y)
-        display(")")
+    def __print__(self, print):
+        print("(~e, ~e)", self._x, self._y)
 
 let a = Posn(3, 4)
 assert_eq format("~e", a), "(3, 4)"

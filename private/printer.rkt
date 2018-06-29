@@ -3,14 +3,12 @@
 (provide dssl-print)
 (require "struct.rkt")
 (require "object.rkt")
+(require "prims.rkt")
 (require (only-in racket/set
                   mutable-seteq
                   set-member?
                   set-add!)
-         (only-in racket/contract/base
-                  contract?
-                  contract-name)
-         (only-in racket/math nan?)
+         (only-in racket/contract/base contract-name)
          (only-in racket/string string-contains?))
 
 (define current-printer-state (make-parameter #f))
@@ -48,12 +46,13 @@
          (cond
            [value                   (display "True" port)]
            [else                    (display "False" port)])]
-        [(string? value)
-         (define contains-sq (string-contains? value "'"))
-         (define contains-dq (string-contains? value "\""))
+        [(str? value)
+         (define raw-str (str->raw-str value))
+         (define contains-sq (string-contains? raw-str "'"))
+         (define contains-dq (string-contains? raw-str "\""))
          (if (and contains-sq (not contains-dq))
-           (print-dssl-string #\" value port)
-           (print-dssl-string #\' value port))]
+           (print-dssl-string #\" raw-str port)
+           (print-dssl-string #\' raw-str port))]
         [(struct-base? value)
          (unless (seen!? value)
            (write-struct value port visit))]
@@ -64,7 +63,9 @@
               =>
               (λ (object-print)
                  (object-print
-                   (λ args (apply fprintf port args))))]
+                   (λ (fmt . args)
+                      (apply fprintf port (ensure-string 'dssl-printer fmt)
+                             args))))]
              [else (write-object value port visit)]))]
         [(and (contract? value)
               (not (string=? "???" (format "~a" (contract-name value)))))

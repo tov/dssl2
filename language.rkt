@@ -1,13 +1,13 @@
 #lang racket/base
 
 (provide #%app
-         #%datum
          #%top
          #%require)
 (provide (rename-out
            ; special syntax
            [dssl-module-begin           #%module-begin]
            [dssl-top-interaction        #%top-interaction]
+           [dssl-datum                  #%datum]
            ; syntax
            [begin               begin]
            [if                  if-e]
@@ -134,6 +134,11 @@
 (define-syntax-rule (dssl-top-interaction . expr)
   (dssl-begin expr))
 
+(define-syntax (dssl-datum stx)
+  (syntax-parse stx
+    [(_ . str:str) #'(raw-str->str (#%datum . str))]
+    [(_ . other)   #'(#%datum . other)]))
+
 (define-syntax (dssl-provide stx)
   (define (each-spec spec)
     (syntax-parse spec #:literals (for-syntax)
@@ -223,13 +228,6 @@
 
 (define-syntax-rule (ensure-contract who contract)
   (ensure-contract/fn (get-srclocs contract) who contract))
-
-(define (ensure-contract/fn srclocs who contract)
-  (if (contract? contract)
-    contract
-    (runtime-error #:srclocs srclocs
-                   "~a: expected a contract\n got: ~e"
-                   who contract)))
 
 (define-simple-macro (with-return expr:expr ...)
   (let/ec return-f
@@ -365,7 +363,7 @@
   (cond
     [(vec->raw-vec v) => in-vector]
     [(natural? v)  (in-range v)]
-    [(string? v)   (in-vector (raw-explode v))]
+    [(str? v)      (in-vector (raw-explode (str->raw-str v)))]
     [else          (type-error #:srclocs srclocs
                                'for v "something iterable")]))
 
@@ -657,7 +655,9 @@
                        'assert_eq "~e ≠ ~e" v1 v2))))
 
 (define (dssl-assert-error/thunk srclocs thunk string-pattern)
-  (define pattern (regexp (regexp-quote string-pattern #false)))
+  (define pattern
+    (regexp
+      (regexp-quote (ensure-string 'assert_error string-pattern) #false)))
   (define (handler exception)
     (if (regexp-match? pattern (exn-message exception))
       #false

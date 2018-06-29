@@ -1,10 +1,11 @@
 #lang dssl2
 
-assert format("a~eb", 5) == "a5b"
-assert format("a~ab", "hello") == "ahellob"
-assert format("a~eb", "hello") == "a'hello'b"
+assert "a~eb".format(5) == "a5b"
+assert "a~ab".format("hello") == "ahellob"
+assert "a~eb".format("hello") == "a'hello'b"
 
-assert format("~e + ~e = ~e", 3, 4, 7) == "3 + 4 = 7"
+assert "~e + ~e = ~e".format(3, 4, 7) == "3 + 4 = 7"
 
-assert format("~e", inf) == 'inf'
-assert format("~e", nan) == 'nan'
+assert "~e".format(inf) == 'inf'
+assert "~e".format(nan) == 'nan'
+

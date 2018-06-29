@@ -33,9 +33,17 @@
                #:methods gen:custom-write
                [(define write-proc
                   (λ (obj port mode)
-                     (if (eq? #t mode)
-                       (write-object obj port)
-                       (fprintf port "~e" obj))))])
+                     (cond
+                       [(eq? #t mode) (write-object obj port)]
+                       [(and (eq? #f mode)
+                             ((get-method-value obj '__get_raw__)))
+                        =>
+                        (λ (raw)
+                           (cond
+                             [(or (char? raw) (string? raw))
+                              (display raw port)]
+                             [else (fprintf port "~e" obj)]))]
+                       [else       (fprintf port "~e" obj)])))])
 
 (define (write-object obj port [recur (λ (v) (fprintf port "~e" v))])
   (fprintf port "#<object:~a"

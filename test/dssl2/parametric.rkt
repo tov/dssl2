@@ -2,7 +2,7 @@
 
 # Check that parametric contracts don't mess up non-parametric function names:
 def foo_bar(): 5
-assert_eq format('~e', foo_bar), '#<proc:foo_bar>'
+assert_eq str(foo_bar), '#<proc:foo_bar>'
 
 def id[A](x: A) -> A: x
 

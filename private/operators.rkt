@@ -70,12 +70,13 @@
      (cond
        [(and (number? a) (number? b))
         (racket:+ a b)]
-       [(string? a)
+       [(str? a)
         (cond
-          [(string? b) (string-append a b)]
-          [else        (format "~a~e" a b)])]
-       [(string? b)
-        (format "~e~a" a b)]
+          [(str? b) (raw-str->str (string-append (str->raw-str a)
+                                                 (str->raw-str b)))]
+          [else     (raw-str->str (format "~a~e" a b))])]
+       [(str? b)
+        (raw-str->str (format "~e~a" a b))]
        [else
          (runtime-error
            "+ expects 2 numbers or at least 1 string\n  given: ~e\n  and: ~e"
@@ -103,8 +104,8 @@
 (define-syntax-rule (make-comparison name string-cmp number-cmp)
   (define (name a b)
     (cond
-      [(and (string? a) (string? b))
-       (string-cmp a b)]
+      [(and (str? a) (str? b))
+       (string-cmp (str->raw-str a) (str->raw-str b))]
       [(and (number? a) (number? b))
        (number-cmp a b)]
       [else

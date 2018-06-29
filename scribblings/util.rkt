@@ -12,8 +12,9 @@
          defprocform defprocforms
          redefidform/inline
          c syn syn_
-         q m
-         dssl2block code)
+         q m t
+         dssl2block code
+         indent)
 (require scribble/manual
          scribble/racket
          scribble/struct
@@ -23,8 +24,11 @@
 (define (q x)
   (elem (racketvalfont x)))
 
+(define (t x)
+  (elem #:style 'italic (racketvalfont x)))
+
 (define (m x)
-  (elem (larger x)))
+  (elem (larger (larger x))))
 
 (define (c . codes)
   (elem #:style 'tt codes))
@@ -89,3 +93,7 @@
 
 (define-syntax-rule (code str-expr ...)
   (scribble:code #:lang "dssl2" str-expr ...))
+
+(define (indent . chunks)
+  (cons ~ (cons ~ (cons ~ (cons ~ chunks)))))
+

@@ -72,7 +72,7 @@ by a newline, or a compound statement.
 
 @racketgrammar*[
 #:literals (def struct let lambda λ else if elif while for in test
-            time break continue : True False =
+            time break continue : True False = interface class
             assert assert_eq assert_error pass return NEWLINE INDENT DEDENT)
 [program (code:line @#,m["{"] statement @#,m["}*"])]
 [statement   (code:line simple @#,q{NEWLINE})
@@ -80,23 +80,25 @@ by a newline, or a compound statement.
 [simple
             (code:line assert expr)
             (code:line assert_eq expr @#,q{,} expr)
-            (code:line assert_error expr @#,m["["] @#,q{,} string_expr @#,m["]"])
+            (code:line assert_error expr @#,m["["] @#,q{,} expr @#,m["]"])
             break
             continue
             (code:line lvalue = expr)
             expr
-            (code:line let var_name @#,m["["] @#,q{:} contract_expr @#,m["]"] @#,m["["] @#,q{=} expr @#,m["]"])
+            (code:line let @#,t{name} opt-ctc @#,m["["] @#,q{=} expr @#,m["]"])
             (code:line pass)
             (code:line return @#,m["["] expr @#,m["]"])
             (code:line simple @#,q{;} simple)]
-[lvalue var_name
-        (code:line struct_expr @#,q{.} field_name)
+[lvalue @#,t{name}
+        (code:line struct_expr @#,q{.} @#,t{name})
         (code:line vec_expr @#,q["["] index_expr @#,q["]"])]
 [compound
-            (code:line def name @#,q{(} name @#,m["["] @#,q{:} ctc_expr @#,m["]"] @#,q{,} @#,m{...} @#,q{)} @#,m["["] @#,q{->} ctc_expr @#,m["]"] @#,q{:} block)
+            (code:line class @#,t{name} opt_ctc_params opt_implements @#,q{:} class_block)
+            (code:line def @#,t{name} opt_ctc_params @#,q{(} @#,m["{"] @#,t{name} opt_ctc @#,m["},*"] @#,q{)} opt_res_ctc @#,q{:} block)
             (code:line if expr @#,q{:} block @#,m["{"] elif expr @#,q{:} block @#,m["}*"] @#,m["["] else @#,q{:} block @#,m["]"])
-            (code:line for @#,m{[} var_name @#,q{,} @#,m{]} var_name @#,q{in} expr @#,q{:} block)
-            (code:line struct struct_name @#,q{:} fields_block)
+            (code:line interface @#,t{name} opt_ctc_params @#,q{:} interface_block)
+            (code:line for @#,m{[} @#,t{name} @#,q{,} @#,m{]} @#,t{name} @#,q{in} expr @#,q{:} block)
+            (code:line struct @#,t{name} @#,q{:} struct_block)
             (code:line test @#,m{[} expr @#,m{]} @#,q{:} block)
             (code:line time @#,m{[} expr @#,m{]} @#,q{:} block)
             (code:line while expr @#,q{:} block)
@@ -104,28 +106,55 @@ by a newline, or a compound statement.
 [block
         (code:line simple @#,q{NEWLINE})
         (code:line @#,q{NEWLINE} @#,q{INDENT} @#,m["{"] statement @#,m["}⁺"] @#,q{DEDENT})]
-[fields_block
+[class_block
+        (code:line @#,q{NEWLINE} @#,q{INDENT} class_fields class_methods @#,q{DEDENT})]
+[class_fields
+        (code:line @#,m["{"] field_def @#,q{NEWLINE} @#,m["}*"])]
+[class_methods
+        (code:line @#,m["{"] method_def @#,q{NEWLINE} @#,m["}⁺"])]
+[interface_block
         (code:line pass)
-        (code:line @#,q{NEWLINE} @#,q{INDENT} @#,m["{"] let field_name @#,m["["] @#,q{:} ctc_expr @#,m["]"] @#,q{NEWLINE} @#,m["}⁺"] @#,q{DEDENT})]
+        (code:line @#,q{NEWLINE} @#,q{INDENT} @#,m["{"] method_proto @#,q{NEWLINE} @#,m["}⁺"] @#,q{DEDENT})]
+[struct_block
+        (code:line pass)
+        (code:line @#,q{NEWLINE} @#,q{INDENT} @#,m["{"] field_def @#,q{NEWLINE} @#,m["}⁺"] @#,q{DEDENT})]
+[field_def
+        (code:line let @#,t{name} opt_ctc)]
+[method_def
+        (code:line method_proto @#,q{:} block)]
+[method_proto
+        (code:line def @#,t{name} opt_ctc_params @#,q["("] @#,t{name} @#,m["{"] @#,q{,} @#,t{name} opt_ctc @#,m["}*"] @#,q[")"] opt_res_ctc)]
+[opt_implements
+        (code:line)
+        (code:line @#,q["("] @#,m["{"] @#,t{name} @#,m["},*"] @#,q[")"])]
+[opt_ctc
+        (code:line)
+        (code:line @#,q{:} expr)]
+[opt_res_ctc
+        (code:line)
+        (code:line @#,q{->} expr)]
+[opt_ctc_params
+        (code:line)
+        (code:line @#,q{[} @#,m["{"] @#,t{name} @#,m["},*"] @#,q{]})]
 [expr lvalue
-      number
-      string
+      @#,q{number}
+      @#,q{string}
       True
       False
       (code:line expr @#,q{(} @#,m["{"] expr @#,m["},*"] @#,q{)})
-      (code:line lambda @#,m["{"] var_name @#,m["},*"] @#,q{:} simple)
-      (code:line @#,q{λ} @#,m["{"] var_name @#,m["},*"] @#,q{:} simple)
+      (code:line lambda @#,m["{"] @#,t{name} @#,m["},*"] @#,q{:} simple)
+      (code:line @#,q{λ} @#,m["{"] @#,t{name} @#,m["},*"] @#,q{:} simple)
       (code:line expr @#,q{if} expr @#,q{else} expr)
-      (code:line struct_name @#,q["{"] @#,m["{"] field_name : expr @#,m["},*"] @#,q[" }"])
+      (code:line @#,t{name} @#,q["{"] @#,m["{"] @#,t{name} : expr @#,m["},*"] @#,q["}"])
       (code:line @#,q{[} @#,m["{"] expr @#,m["},*"] @#,q{]})
       (code:line @#,q{[} expr @#,q{;} expr @#,q{]})
-      (code:line @#,q{[} expr @#,q{for} @#,m{[} var_name @#,q{,} @#,m{]} var_name @#,q{in} expr @#,m{[} @#,q{if} expr @#,m{]} @#,q{]})
-      (code:line expr BINOP expr)
-      (code:line UNOP expr)
+      (code:line @#,q{[} expr @#,q{for} @#,m{[} @#,t{name} @#,q{,} @#,m{]} @#,t{name} @#,q{in} expr @#,m{[} @#,q{if} expr @#,m{]} @#,q{]})
+      (code:line expr @#,t{binop} expr)
+      (code:line @#,t{unop} expr)
       ]
 ]
 
-@italic{BINOP}s are, from tightest to loosest precedence:
+@t{binop}s are, from tightest to loosest precedence:
 
 @itemlist[
  @item{@racket[**]}
@@ -142,7 +171,7 @@ by a newline, or a compound statement.
  @item{@racket[or]}
 ]
 
-@italic{UNOP}s are @racket[~], @racket[+], @racket[-], @racket[not].
+@t{unop}s are @racket[~], @racket[+], @racket[-], @racket[not].
 
 @subsection{Lexical Syntax}
 
@@ -497,10 +526,10 @@ for ix, person in people_to_greet:
 }|
 
 @defcmpdforms[
-    [@list{@defidform/inline[struct] @syn[name] : NEWLINE INDENT}]
-    [@list{@~ @~ @redefidform/inline[let] @syn_[field_name]{1} NEWLINE}]
-    [@list{@~ @~ ...}]
-    [@list{@~ @~ @redefidform/inline[let] @syn_[field_name]{k} NEWLINE DEDENT}]
+    [@list{@defidform/inline[struct] @syn[name]:}]
+    [@indent{@redefidform/inline[let] @syn_[field_name]{1}}]
+    [@indent{...}]
+    [@indent{@redefidform/inline[let] @syn_[field_name]{k}}]
 ]
 
 Defines a new structure type @syn[struct_name] with fields given by
@@ -557,6 +586,27 @@ def size(tree):
 def fix_size!(node):
     node.size = 1 + size(node.left) + size(node.right)
 }|
+
+@defcmpdforms[
+    [@list{@defidform/inline[class] @syn[name] @m{[} ( @m["{"] @syn[interface_name] @m["},*"] ) @m{]}:}]
+    [@indent{@redefidform/inline[let] @syn_[field_name]{1}}]
+    [@indent{...}]
+    [@indent{@redefidform/inline[let] @syn_[field_name]{k}}]
+    [@indent{@redefidform/inline[def] @syn_[method_name]{0}(@syn_[self]{0} @m["{"] , @syn_[param_name]{0} @m["}*"]): @syn_[block]{0}}]
+    [@indent{...}]
+    [@indent{@redefidform/inline[def] @syn_[method_name]{n}(@syn_[self]{n} @m["{"] , @syn_[param_name]{n} @m["}*"]): @syn_[block]{n}}]
+]
+
+Defines a class.
+
+@defcmpdforms[
+    [@list{@defidform/inline[interface] @syn[name]:}]
+    [@indent{@redefidform/inline[def] @syn_[method_name]{1}(@syn_[self]{1} @m["{"] , @syn_[param_name]{1} @m["}*"])}]
+    [@indent{...}]
+    [@indent{@redefidform/inline[def] @syn_[method_name]{k}(@syn_[self]{k} @m["{"] , @syn_[param_name]{k} @m["}*"])}]
+]
+
+Defines an interface.
 
 @defsmplform{@defidform/inline[pass]}
 
@@ -1300,10 +1350,10 @@ x = 5
 }|
 
 @defcmpdforms[
-    [@list{@redefidform/inline[struct] @syn[name] : NEWLINE INDENT}]
-    [@list{@~ @~ @redefidform/inline[let] @syn_[field_name]{1}: @syn_[ctc_expr]{1} NEWLINE}]
-    [@list{@~ @~ ...}]
-    [@list{@~ @~ @redefidform/inline[let] @syn_[field_name]{k}: @syn_[ctc_expr]{k} NEWLINE DEDENT}]
+    [@list{@redefidform/inline[struct] @syn[name]:}]
+    [@indent{@redefidform/inline[let] @syn_[field_name]{1}: @syn_[ctc_expr]{1}}]
+    [@indent{...}]
+    [@indent{@redefidform/inline[let] @syn_[field_name]{k}: @syn_[ctc_expr]{k}}]
 ]
 
 Defines a structure @syn[name] with the given contracts @syn_[ctc_expr]{i}
@@ -1323,6 +1373,27 @@ the @racket[float?] predicate, as will assigning to either field.
 It’s possible to include contracts on some fields without including them
 on all, and the fields with omitted contracts default to @racket[AnyC].
 
+@defcmpdforms[
+    [@list{@redefidform/inline[class] @syn[name] @m["["] [ @m["{"] @syn[ctc_param] @m["},*"] ] @m["]"] @m{[} ( @m["{"] @syn[interface_name] @m["},*"] ) @m{]}:}]
+    [@indent{@redefidform/inline[let] @syn_[field_name]{1}: @syn_[field_ctc]{1}}]
+    [@indent{...}]
+    [@indent{@redefidform/inline[let] @syn_[field_name]{k}: @syn_[field_ctc]{k}}]
+    [@indent{@redefidform/inline[def] @syn_[method_name]{0}(@syn_[self]{0} @m["{"] , @syn_[arg_name]{0}: @syn_[param_ctc]{0} @m["}*"]) -> @syn_[res_ctc]{0}: @syn_[block]{0}}]
+    [@indent{...}]
+    [@indent{@redefidform/inline[def] @syn_[method_name]{n}(@syn_[self]{n} @m["{"] , @syn_[arg_name]{n}: @syn_[param_ctc]{n} @m["}*"]) -> @syn_[res_ctc]{n}: @syn_[block]{n}}]
+]
+
+Defines a class.
+
+@defcmpdforms[
+    [@list{@redefidform/inline[interface] @syn[name] @m["["] [ @m["{"] @syn[ctc_param] @m["},*"] ] @m["]"]:}]
+    [@indent{@redefidform/inline[def] @syn_[method_name]{1}(@syn_[self]{1} @m["{"] , @syn_[arg_name]{1}: @syn_[param_ctc]{1} @m["}*"]) -> @syn_[res_ctc]{1}}]
+    [@indent{...}]
+    [@indent{@redefidform/inline[def] @syn_[method_name]{k}(@syn_[self]{n} @m["{"] , @syn_[arg_name]{k}: @syn_[param_ctc]{n} @m["}*"]) -> @syn_[res_ctc]{k}}]
+]
+
+Defines an interface.
+
 @subsection{Contract combinators}
 
 @defconstform[AnyC]{contract?}
@@ -1334,13 +1405,13 @@ A flat contract that accepts any value.
 A flat contract that accepts the result of @racket[pass] and other
 statements that return no value (such as assignment and loops).
 
-@defprocform[OrC]{(contract?, contract, ...) -> contract?}
+@defprocform[OrC]{(contract?, contract?, ...) -> contract?}
 
 Creates a contract that accepts a value if any of the arguments does.
 For the details of how this works for higher-order contracts, see
 @racket[racket:or/c].
 
-@defprocform[AndC]{(contract?, contract, ...) -> contract?}
+@defprocform[AndC]{(contract?, contract?, ...) -> contract?}
 
 Creates a contract that accepts a value if all of the arguments do.
 For the details of how this works for higher-order contracts, see

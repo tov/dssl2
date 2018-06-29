@@ -64,7 +64,6 @@
            [chr (-> nat? char?)]
            [explode (-> str? vec?)]
            [format (-> str? AnyC ... str?)]
-           [implode (-> vec? str?)]
            [ord (-> char? nat?)]
            [str (-> AnyC str?)]
            [strlen (-> str? nat?)])
@@ -216,9 +215,6 @@
     (r:map (λ (c) (list->string (list c)))
            (string->list s))))
 
-(define (implode vec)
-  (apply string-append (vector->list (vec->raw-vec vec))))
-
 (define (ord c)
   (char->integer (string-ref c 0)))
 
@@ -292,11 +288,11 @@
 
 (define-primitive-class
   vec
-  (raw-vec->vec raw-vec)
+  (raw-vec->vec repr)
   ([__index_ref__ (FunC nat? AnyC)
-                  (λ (n) (vector-ref raw-vec n))]
+                  (λ (n) (vector-ref repr n))]
    [__index_set__ (FunC nat? AnyC AnyC)
-                  (λ (n v) (vector-set! raw-vec n v))]
+                  (λ (n v) (vector-set! repr n v))]
    [__eq__        (FunC vec? AnyC)
                   (λ (other)
                      (define o-len (get-method-value other 'len))
@@ -308,27 +304,29 @@
                   (λ (display visit)
                      (define first #t)
                      (display "[")
-                     (for ([element (in-vector raw-vec)])
+                     (for ([element (in-vector repr)])
                         (if first
                           (set! first #f)
                           (display ", "))
                         (visit element))
                      (display "]"))]
    [__get_raw__   (FunC AnyC)
-                  (λ () raw-vec)]
+                  (λ () repr)]
    [len           AnyC
-                  (λ () (vector-length raw-vec))]
+                  (λ () (vector-length repr))]
+   [implode       AnyC
+                  (λ () (apply string-append (vector->list repr)))]
    [map           (FunC (FunC AnyC AnyC) AnyC)
                   (λ (f)
                      (raw-vec->vec
                        (build-vector
-                         (vector-length raw-vec)
-                         (λ (i) (f (vector-ref raw-vec i))))))]
+                         (vector-length repr)
+                         (λ (i) (f (vector-ref repr i))))))]
    [filter        (FunC (FunC AnyC AnyC) AnyC)
                   (λ (pred)
                      (raw-vec->vec
                        (list->vector
-                         (r:filter pred (vector->list raw-vec)))))]))
+                         (r:filter pred (vector->list repr)))))]))
 
 (define vec
   (case-lambda

@@ -101,8 +101,10 @@
       [(_ class-name:id pred:id
           ([sel:id method:expr] ...))
        #`(cons
-           (list #'pred #''sel ...)
+           (list #'pred #''__class__ #''sel ...)
            (λ (method-table)
+              (register-method method-table '__class__ #'pred
+                               #'(λ (self) class-name))
               (for ([sel-v    (in-syntax #'(sel ...))]
                     [method-v (in-syntax #'(method ...))])
                 (define method-name

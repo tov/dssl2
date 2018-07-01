@@ -55,11 +55,13 @@
          int int?
          ; ** float
          float float?
-         ; ** vector
-         vec vec? raw-vec->vec vec->raw-vec
+         ; ** proc
+         proc proc?
          ; ** string
          str str? ensure-string
          raw-explode
+         ; ** vector
+         vec vec? raw-vec->vec vec->raw-vec
          ; * I/O operations
          (contract-out
            [print (-> str? AnyC ... VoidC)]
@@ -234,8 +236,7 @@
 
 (define-for-syntax int-class
   (make-unwrapped-class int int?
-    ([__class__   (λ (self . rest) (apply int rest))]
-     ; conversions
+    (; conversions
      [__int__     (λ (self) self)]
      [__float__   (λ (self) (exact->inexact self))]
      [__num__     (λ (self) self)]
@@ -285,8 +286,7 @@
 
 (define-for-syntax float-class
   (make-unwrapped-class float float?
-    ([__class__   (λ (self . rest) (apply float rest))]
-     ; conversions
+    (; conversions
      [__float__   (λ (self) self)]
      [__num__     (λ (self) self)]
      [__int__     (λ (self) (inexact->exact (truncate self)))]
@@ -324,8 +324,7 @@
 
 (define-for-syntax bool-class
   (make-unwrapped-class bool bool?
-    ([__class__   (λ (self . rest) (apply bool rest))]
-     ; conversions
+    (; conversions
      [__float__   (λ (self) (if self 1.0 0.0))]
      [__num__     (λ (self) (if self 1 0))]
      [__int__     (λ (self) (if self 1 0))]
@@ -342,13 +341,19 @@
      [__xor__     prim:xor]
      [__rxor__    prim:xor])))
 
+(define char
+  (case-lambda
+    [() (char 0)]
+    [(val) (char/internal 'char val)]))
+
 (define-for-syntax char-class
   (make-unwrapped-class char char?
-    ([__class__   (λ (self . rest) (apply char rest))]
-     [__eq__      (λ (self other) (char=? self other))]
+    (; conversions
+     [__int__     (λ (self) (char->integer self))]
      [__print__   (λ (self print)
                     (print "char(~a)" (char->integer self)))]
-     [__int__     (λ (self) (char->integer self))])))
+     ; binary methods
+     [__eq__      (λ (self other) (char=? self other))])))
 
 (define (char/internal who val)
   (cond
@@ -359,15 +364,29 @@
     [else
       (type-error who val "int code point or singleton string")]))
 
-(define char
+(define-for-syntax proc-class
+  (make-unwrapped-class proc proc?
+    ([compose           (λ (self other)
+                           (λ args
+                              (self (apply other args))))]
+     [vec_apply         (λ (self v)
+                           (apply self (vector->list (vec->raw-vec v))))])))
+
+(define proc
   (case-lambda
-    [() (char 0)]
-    [(val) (char/internal 'char val)]))
+    [()    identity]
+    [(val)
+     (cond
+       [(proc? val) val]
+       [(dssl-send val '__proc__ #:and-then box #:or-else #f)
+        => unbox]
+       [else
+         (type-error 'proc val
+                     "proc or object responding to __proc__ method")])]))
 
 (define-for-syntax str-class
   (make-unwrapped-class str str?
-    ([__class__     (λ (self . rest) (apply str rest))]
-     ; conversions
+    (; conversions
      [__int__       (λ (self)
                        (cond
                          [(string->number self)
@@ -433,6 +452,7 @@
     char-class
     int-class
     float-class
+    proc-class
     str-class))
 
 (define-syntax (int-binrop stx)
@@ -693,7 +713,9 @@
      (λ (methods)
         (raw-vec->vec
           (list->vector methods)))]
-    [else               (type-error 'dir obj "an object")]))
+    [(struct-base? obj)
+     (raw-vec->vec (list->vector (get-field-list obj)))]
+    [else               (type-error 'dir obj "a struct or object")]))
 
 ; A Chain is one of:
 ;  - [Box Natural]

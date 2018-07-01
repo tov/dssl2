@@ -12,6 +12,7 @@
          field-info-getter
          field-info-setter
          get-field-info
+         get-field-list
          write-struct)
 
 (define-struct field-info (name getter setter))
@@ -43,3 +44,8 @@
       (when (eq? sym (field-info-name info))
         (return info)))
     #false))
+
+(define (get-field-list struct)
+  (for/list ([field-info (in-vector (struct-info-field-infos
+                                      (struct-base-struct-info struct)))])
+    (symbol->string (field-info-name field-info))))

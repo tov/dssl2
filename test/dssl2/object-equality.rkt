@@ -48,3 +48,4 @@ let q2 = Posn2(3, 4)
 p2.x!(p2)
 q2.x!(q2)
 assert p2 == q2
+

@@ -14,15 +14,18 @@
          method-info-name
          method-info-getter
          write-object
-         get-method-vector
          get-method-info
-         get-method-value
-         define-primitive-class)
+         define-primitive-class
+         (for-syntax make-unwrapped-class
+                     make-unwrapped-class-table))
 
 (require "names.rkt")
+(require "errors.rkt")
 (require syntax/parse/define)
 (require racket/contract/region)
 (require (for-syntax racket/base
+                     (only-in racket/sequence in-syntax)
+                     (only-in racket/syntax format-id syntax-local-eval)
                      "names.rkt"))
 
 (define-struct method-info (name getter))
@@ -35,15 +38,7 @@
                   (λ (obj port mode)
                      (cond
                        [(eq? #t mode) (write-object obj port)]
-                       [(and (eq? #f mode)
-                             ((get-method-value obj '__get_raw__)))
-                        =>
-                        (λ (raw)
-                           (cond
-                             [(or (char? raw) (string? raw))
-                              (display raw port)]
-                             [else (fprintf port "~e" obj)]))]
-                       [else       (fprintf port "~e" obj)])))])
+                       [else          (fprintf port "~e" obj)])))])
 
 (define (write-object obj port [recur (λ (v) (fprintf port "~e" v))])
   (fprintf port "#<object:~a"
@@ -52,27 +47,6 @@
     (fprintf port " ~a=" (car field-pair))
     (recur (cdr field-pair)))
   (display ">" port))
-
-(define (get-method-vector obj)
-  (for/vector ([method-info (object-info-method-infos
-                              (object-base-object-info obj))])
-    (symbol->string (method-info-name method-info))))
-
-(define (get-method-info obj sym)
-  (let/ec return
-    (define info-vector (object-info-method-infos
-                          (object-base-object-info obj)))
-    (for ([info (in-vector info-vector)])
-      (when (eq? sym (method-info-name info))
-        (return info)))
-    #false))
-
-(define (get-method-value obj sym)
-  (cond
-    [(get-method-info obj sym)
-     =>
-     (λ (method-info) ((method-info-getter method-info) obj))]
-    [else #f]))
 
 (define-syntax (define-primitive-class stx)
   (syntax-parse stx
@@ -108,3 +82,58 @@
              class-name
              method-name
              ...)))]))
+
+(begin-for-syntax
+  (define *method-table* (make-hasheq))
+  (define *class-table*  (make-hasheq '((directory . ()))))
+
+  (require (for-syntax racket/base))
+  (require syntax/parse/define)
+
+  (define (register-method method-table selector-symbol type-pred method-value)
+    (define old-methods-for-selector
+      (hash-ref method-table selector-symbol '()))
+    (hash-set! method-table selector-symbol
+               (cons (cons type-pred method-value) old-methods-for-selector)))
+
+  (define-syntax (make-unwrapped-class stx)
+    (syntax-parse stx
+      [(_ class-name:id pred:id
+          ([sel:id method:expr] ...))
+       #`(cons
+           (list #'pred #''sel ...)
+           (λ (method-table)
+              (for ([sel-v    (in-syntax #'(sel ...))]
+                    [method-v (in-syntax #'(method ...))])
+                (define method-name
+                  (string->symbol
+                    (format "~a.~a" 'class-name (syntax-e sel-v))))
+                (register-method
+                  method-table
+                  (syntax-e sel-v)
+                  #'pred
+                  #`(λ (self)
+                       (procedure-rename
+                         (λ args (apply #,method-v self args))
+                         '#,method-name))))))]))
+
+  (define-simple-macro
+    (make-unwrapped-class-table class:id ...)
+    (let ([dir-table    '()]
+          [method-table (make-hasheq)])
+      (set! dir-table (cons (car (syntax-local-eval #'class))
+                            dir-table))
+      ...
+      ((cdr (syntax-local-eval #'class)) method-table)
+      ...
+      (values dir-table method-table))))
+
+(define (get-method-info obj sym)
+  (let/ec return
+    (define info-vector (object-info-method-infos
+                          (object-base-object-info obj)))
+    (for ([info (in-vector info-vector)])
+      (when (eq? sym (method-info-name info))
+        (return info)))
+    #false))
+

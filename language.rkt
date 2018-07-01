@@ -1,13 +1,13 @@
 #lang racket/base
 
 (provide #%app
+         #%datum
          #%top
          #%require)
 (provide (rename-out
            ; special syntax
            [dssl-module-begin           #%module-begin]
            [dssl-top-interaction        #%top-interaction]
-           [dssl-datum                  #%datum]
            ; syntax
            [begin               begin]
            [if                  if-e]
@@ -46,11 +46,10 @@
 
 (require "private/names.rkt"
          "private/errors.rkt"
-         "private/equal.rkt"
-         "private/prims.rkt"
          "private/operators.rkt"
          "private/struct.rkt"
          "private/object.rkt"
+         "private/prims.rkt"
          racket/stxparam
          racket/splicing
          racket/contract/region
@@ -133,11 +132,6 @@
 
 (define-syntax-rule (dssl-top-interaction . expr)
   (dssl-begin expr))
-
-(define-syntax (dssl-datum stx)
-  (syntax-parse stx
-    [(_ . str:str) #'(raw-str->str (#%datum . str))]
-    [(_ . other)   #'(#%datum . other)]))
 
 (define-syntax (dssl-provide stx)
   (define (each-spec spec)
@@ -363,7 +357,7 @@
   (cond
     [(vec->raw-vec v) => in-vector]
     [(natural? v)  (in-range v)]
-    [(str? v)      (in-vector (raw-explode (str->raw-str v)))]
+    [(str? v)      (in-vector (raw-explode v))]
     [else          (type-error #:srclocs srclocs
                                'for v "something iterable")]))
 
@@ -413,24 +407,20 @@
       "variable must be defined with ‘let’ before it can be assigned"]))
 
 (define (dssl-vec-ref v i)
-  (define (fail)
-    (runtime-error "not a vector or indexable object: ~e" v))
   (cond
-    [(not (object-base? v)) (fail)]
     [(get-method-value v '__index_ref__)
      =>
      (λ (index) (index i))]
-    [else (fail)]))
+    [else
+      (runtime-error "not a vector or indexable object: ~e" v)]))
 
 (define (dssl-vec-set! v i a)
-  (define (fail)
-    (runtime-error "not a vector or indexable object: ~e" v))
   (cond
-    [(not (object-base? v)) (fail)]
     [(get-method-value v '__index_set__)
      =>
      (λ (set) (set i a))]
-    [else (fail)]))
+    [else
+      (runtime-error "not a vector or indexable object: ~e" v)]))
 
 (define-syntax (dssl-struct/early stx)
   (syntax-parse stx
@@ -561,11 +551,16 @@
                      "struct ~e does not have field ~a"
                      struct field)))
 
-(define (get-method-info/or-else #:srclocs [srclocs '()] object method)
-  (or (get-method-info object method)
-      (runtime-error #:srclocs srclocs
-                     "object ~e does not have method ~a"
-                     object method)))
+(define-syntax (get-method-value/or-else stx)
+  (syntax-parse stx #:literals (quote)
+    [(_ #:srclocs srclocs:expr object:expr (quote method:id))
+     #'(let ([value object])
+         (or (get-method-value value 'method)
+             (runtime-error #:srclocs srclocs
+                            "object ~e does not have method ~a"
+                            object 'method)))]
+    [(_ object:expr (quote method:id))
+     #'(get-method-value/or-else #:srclocs '() object 'method)]))
 
 (define-syntax (dssl-struct-ref stx)
   (syntax-parse stx
@@ -582,15 +577,9 @@
                                       #:srclocs (get-srclocs expr)
                                       value 'property))
                  value)]
-               [(object-base? value)
-                ((method-info-getter (get-method-info/or-else
-                                       #:srclocs (get-srclocs expr)
-                                       value 'property))
-                 value)]
                [else
-                 (runtime-error #:srclocs (get-srclocs target)
-                                "value ‘~e’ is not a struct or object"
-                                value)]))])]))
+                (get-method-value/or-else #:srclocs (get-srclocs expr)
+                                          value 'property)]))])]))
 
 (define-syntax (dssl-struct-set! stx)
   (syntax-parse stx
@@ -742,14 +731,14 @@
                 (vector-memq interface-token
                              (object-info-interfaces
                                (object-base-object-info obj)))))
-         (define (project-method object method contract srcloc)
-           (define method-value
-             ((method-info-getter (get-method-info object method))
-              object))
-           (racket:contract
-             contract method-value
-             'name "method caller"
-             (format "~a.~a" 'name method) srcloc))
+         (define-syntax (project-method stx)
+           (syntax-parse stx #:literals (quote)
+             [(_ object:expr (quote method:id) contract:expr srcloc:expr)
+              #'(let ([method-value (get-method-value object 'method)])
+                  (racket:contract
+                    contract method-value
+                    'name "method caller"
+                    (format "~a.~a" 'name 'method) srcloc))]))
          (define (make-projection cvs.var ...)
            (define contract-parameters (vector-immutable cvs.var ...))
            (λ (blame)

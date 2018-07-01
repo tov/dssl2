@@ -1,3 +1,3 @@
 #lang dssl2
 
-odd?(4.5)
+(4.5).odd?()

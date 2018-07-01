@@ -1,3 +1,3 @@
 #lang dssl2
 
-positive?('hi')
+('hi').positive?()

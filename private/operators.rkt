@@ -1,93 +1,90 @@
 #lang racket/base
 
-(require (only-in racket/contract/base contract-out))
-
-(provide (contract-out
-           [% (-> int? int? int?)]
-           [** (-> num? num? num?)])
+(provide %
+         **
          ==
          !=
          is
          |is not|
-         (contract-out
-           [& (-> int? int? int?)]
-           [\| (-> int? int? int?)]
-           [^ (-> int? int? int?)]
-           [~ (-> int? int?)])
+         &
+         \|
+         ^
+         ~
          +
-         -              ; from Racket
-         *              ; from Racket
-         (contract-out
-           [/ (-> num? num? num?)])
+         -
+         *
+         /
          <
          >
          <=
          >=
-         (contract-out
-           [>> (-> int? int? int?)]
-           [<< (-> int? int? int?)])
+         <<
+         >>
          not            ; from Racket
          ; syntax
          and            ; from Racket
          or)            ; from Racket
 
 (require "prims.rkt"
-         "errors.rkt"
-         "equal.rkt")
+         "errors.rkt")
 (require (prefix-in racket: racket/base))
-(require (only-in racket/contract/region define/contract)
-         (only-in racket/contract/base ->))
+(require syntax/parse/define)
+(require (for-syntax racket/base))
 
-(define (% a b)
-  (modulo a b))
+(define-syntax (define-generic-binop stx)
+  (syntax-parse stx #:literals (quote)
+    [(_ name:id (quote lop:id) (quote rop:id) msg:str)
+     #'(define (name a b)
+         (cond
+           [(dssl-send a 'lop b #:and-then box #:or-else #f)
+            => unbox]
+           [(dssl-send b 'rop a #:and-then box #:or-else #f)
+            => unbox]
+           [else
+             (type-error 'name (raw-vec->vec (vector a b))
+                         (format "~a or object responding to ~a method"
+                                 msg 'lop))]))]))
 
-(define (** a b)
-  (expt a b))
+(define-syntax (define-generic-unop stx)
+  (syntax-parse stx #:literals (quote)
+    [(_ name:id (quote op:id) msg:str)
+     #'(define (name a)
+         (cond
+           [(dssl-send a 'op #:and-then box #:or-else #f)
+            => unbox]
+           [else
+             (type-error 'name a
+                         (format "~a or object responding to ~a method"
+                                 msg 'op))]))]))
 
-(define (& a b)
-  (bitwise-and a b))
+(define-syntax (define-generic-un/binop stx)
+  (syntax-parse stx #:literals (quote)
+    [(_ name:id [(quote op:id) msg1:str]
+                [(quote lop:id) (quote rop:id) msg2:str])
+     #'(begin
+         (define-generic-unop unop 'op msg1)
+         (define-generic-binop binop 'lop 'rop msg2)
+         (define name
+           (case-lambda
+             [(a) (unop a)]
+             [(a b) (binop a b)])))]))
 
-(define (\| a b)
-  (bitwise-ior a b))
+(define-generic-binop %  '__mod__ '__rmod__ "ints")
+(define-generic-binop ** '__pow__ '__rpow__ "nums")
+(define-generic-binop &  '__and__ '__rand__ "ints")
+(define-generic-binop \| '__or__  '__ror__  "ints")
+(define-generic-binop ^  '__xor__ '__rxor__ "ints")
+(define-generic-binop << '__lshift__ '__rlshift__ "ints")
+(define-generic-binop >> '__rshift__ '__rrshift__ "ints")
 
-(define (^ a b)
-  (bitwise-xor a b))
+(define-generic-unop  ~  '__invert__ "int or bool")
 
-(define (~ a)
-  (bitwise-not a))
-
-(define +
-  (case-lambda
-    [(a)
-     (cond
-       [(number? a)
-        a]
-       [else
-         (runtime-error
-           "unary + expects a number\n  given: ~e"
-           a)])]
-    [(a b)
-     (cond
-       [(and (number? a) (number? b))
-        (racket:+ a b)]
-       [(str? a)
-        (cond
-          [(str? b) (raw-str->str (string-append (str->raw-str a)
-                                                 (str->raw-str b)))]
-          [else     (raw-str->str (format "~a~e" a b))])]
-       [(str? b)
-        (raw-str->str (format "~e~a" a b))]
-       [else
-         (runtime-error
-           "+ expects 2 numbers or at least 1 string\n  given: ~e\n  and: ~e"
-           a b)])]))
-
-(define (/ a b)
-  (cond
-    [(and (int? a) (int? b))
-     (quotient a b)]
-    [else
-     (racket:/ a b)]))
+(define-generic-un/binop + ['__pos__ "num"]
+                           ['__add__ '__radd__ "nums"])
+(define-generic-un/binop - ['__neg__ "num"]
+                           ['__sub__ '__rsub__ "nums"])
+(define-generic-binop *  '__mul__ '__rmul__ "nums")
+(define-generic-binop /  '__div__ '__rdiv__ "nums")
 
 (define (== a b)
   (dssl-equal? a b))
@@ -101,26 +98,29 @@
 (define (|is not| a b)
   (not (is a b)))
 
-(define-syntax-rule (make-comparison name string-cmp number-cmp)
-  (define (name a b)
-    (cond
-      [(and (str? a) (str? b))
-       (string-cmp (str->raw-str a) (str->raw-str b))]
-      [(and (number? a) (number? b))
-       (number-cmp a b)]
-      [else
-        (runtime-error
-          "Comparator ~a only applies to 2 strings or 2 numbers"
-          'name)])))
+(define (< a b)
+  (cond
+    [(dssl-send a '__cmp__ b #:or-else #f)
+     =>
+     (λ (order) (racket:< order 0))]
+    [(dssl-send b '__cmp__ a #:or-else #f)
+     =>
+     (λ (order) (racket:> order 0))]
+    [else #f]))
 
-(make-comparison < string<? racket:<)
-(make-comparison > string>? racket:>)
-(make-comparison <= string<=? racket:<=)
-(make-comparison >= string>=? racket:>=)
+(define (<= a b)
+  (cond
+    [(dssl-send a '__cmp__ b #:or-else #f)
+     =>
+     (λ (order) (racket:<= order 0))]
+    [(dssl-send b '__cmp__ a #:or-else #f)
+     =>
+     (λ (order) (racket:>= order 0))]
+    [else #f]))
 
-(define (<< n m)
-  (arithmetic-shift n m))
+(define (> a b)
+  (< b a))
 
-(define (>> n m)
-  (arithmetic-shift n (- m)))
+(define (>= a b)
+  (<= b a))
 

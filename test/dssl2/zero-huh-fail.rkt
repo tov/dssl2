@@ -1,3 +1,3 @@
 #lang dssl2
 
-zero?('hello')
+('hello').zero?()

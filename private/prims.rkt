@@ -1,9 +1,13 @@
 #lang racket/base
 
 (require (only-in racket/contract/base contract-out))
-(require "equal.rkt")
 
-(provide ; values
+(provide ; helpers for other modules
+         get-method-list
+         get-method-value
+         dssl-send
+         dssl-equal?
+         ; values
          ; * type predicates
          num?
          int?
@@ -32,40 +36,30 @@
                               (OrC #f (-> AnyC AnyC))
                               (OrC #f (-> (-> str? VoidC) AnyC AnyC))
                               contract?)])
-         ; * numeric operations
+         ; * additional numeric operations
          (contract-out
-           [abs (-> num? num?)]
-           [floor (-> num? int?)]
-           [ceiling (-> num? int?)]
-           [int (-> (OrC num? str? bool?) int?)]
-           [float (-> (OrC num? str? bool?) float?)]
            [max (-> num? num? ... num?)]
            [min (-> num? num? ... num?)]
-           [quotient (-> int? int? int?)]
            [random (case->
                      (-> float?)
                      (-> (IntInC 1 RAND_MAX) nat?)
                      (-> int? int? int?))]
            [random_bits (-> nat? nat?)]
-           [RAND_MAX nat?]
-           [remainder (-> int? int? int?)]
-           [sqrt (-> num? num?)])
-         ; ** predicates
-         (contract-out
-           [zero? (-> num? bool?)]
-           [positive? (-> num? bool?)]
-           [negative? (-> num? bool?)]
-           [even? (-> int? bool?)]
-           [odd? (-> int? bool?)]
-           [nan? (-> num? bool?)])
+           [RAND_MAX nat?])
          ; * primitive classes
+         ; ** boolean
+         bool bool?
+         ; ** character
+         char char?
+         ; ** integer
+         int int?
+         ; ** float
+         float float?
          ; ** vector
          vec vec? raw-vec->vec vec->raw-vec
-         ; ** character
-         char char? raw-char->char char->raw-char
          ; ** string
-         str str? raw-str->str str->raw-str ensure-string
-         raw-explode str->contract
+         str str? ensure-string
+         raw-explode
          ; * I/O operations
          (contract-out
            [print (-> str? AnyC ... VoidC)]
@@ -77,6 +71,8 @@
 
 (require "errors.rkt"
          "object.rkt"
+         "struct.rkt"
+         syntax/parse/define
          (only-in racket/list
                   first
                   rest)
@@ -102,10 +98,15 @@
                   identity)
          (prefix-in r: racket/base)
          (prefix-in r: racket/contract/base))
+(require (for-syntax racket/base
+                     (only-in racket/syntax syntax-local-eval)
+                     syntax/parse))
 
 (define (num? x) (number? x))
 
 (define (int? x) (exact-integer? x))
+
+(define (str? x) (string? x))
 
 (define (nat? x) (and (int? x) (not (negative? x))))
 
@@ -116,9 +117,7 @@
 (define (proc? x) (procedure? x))
 
 (define (contract? x)
-  (or (and (r:contract? x)
-           (not (string? x)))
-      (str? x)))
+  (r:contract? x))
 
 (define AnyC (flat-named-contract 'AnyC any/c))
 
@@ -134,9 +133,7 @@
 
 (define (ensure-contract/fn srclocs who contract)
   (if (contract? contract)
-    (if (str? contract)
-      (str->contract contract)
-      contract)
+    contract
     (runtime-error #:srclocs srclocs
                    "~a: expected a contract\n got: ~e"
                    who contract)))
@@ -183,10 +180,10 @@
     [(contract value pos)
      (apply_contract contract value
                      (ensure-string 'apply_contract pos)
-                     (raw-str->str "the context"))]
+                     "the context")]
     [(contract value)
      (apply_contract contract value
-                     (raw-str->str "the contracted value"))]))
+                     "the contracted value")]))
 
 (define (make_contract name first-order? projection)
   (make-contract #:name (ensure-string 'make_contract name)
@@ -204,7 +201,7 @@
                          value)))))
 
 (define (print fmt . values)
-  (apply printf (str->raw-str fmt) values))
+  (apply printf fmt values))
 
 (define (println fmt . values)
   (apply print fmt values)
@@ -212,39 +209,10 @@
 
 (define (raw-explode s)
   (list->vector
-    (r:map raw-char->char (string->list s))))
+    (string->list s)))
 
-(define (floor n)
-  (inexact->exact (r:floor n)))
-
-(define (ceiling n)
-  (inexact->exact (r:ceiling n)))
-
-(define (int x)
-  (cond
-    [(number? x) (inexact->exact (truncate x))]
-    [(str? x)
-     (define n (string->number (str->raw-str x)))
-     (cond
-       [(int? n)  n]
-       [(real? n) (inexact->exact (truncate n))]
-       [else (runtime-error "int: could not convsrt to integer: ~e" x)])]
-    [(eq? #t x)  1]
-    [(eq? #f x)  0]
-    [else (type-error 'int x "number, string, or Boolean")]))
-
-(define (float x)
-  (cond
-    [(number? x) (exact->inexact x)]
-    [(str? x)
-     (define n (string->number (str->raw-str x)))
-     (cond
-       [(flonum? n) n]
-       [(real? n)   (exact->inexact n)]
-       [else (runtime-error "float: could not convert to float: ~e" x)])]
-    [(eq? #t x)  1.0]
-    [(eq? #f x)  0.0]
-    [else (type-error 'int x "number, string, or Boolean")]))
+(define (bool x)
+  (not (not x)))
 
 ; This is the largest argument that `random` can take.
 (define RAND_MAX 4294967087)
@@ -264,39 +232,130 @@
 (define (sleep sec)
   (r:sleep sec))
 
-(define (sqrt x)
-  (cond
-    [(< x 0) (error "sqrt: cannot handle a negative")]
-    [else    (r:sqrt x)]))
+(define-for-syntax int-class
+  (make-unwrapped-class int int?
+    ([__class__   (λ (self . rest) (apply int rest))]
+     ; conversions
+     [__int__     (λ (self) self)]
+     [__float__   (λ (self) (exact->inexact self))]
+     [__num__     (λ (self) self)]
+     [__print__   (λ (self print) (print "~a" self))]
+     ; unary operators
+     [__neg__     (λ (self) (- self))]
+     [__pos__     (λ (self) self)]
+     [__invert__  (λ (self) (bitwise-not self))]
+     ; binary operators
+     [__cmp__     prim:num-cmp]
+     [__add__     (num-binop __add__ r:+ '__radd__)]
+     [__radd__    (num-binrop __radd__ r:+)]
+     [__sub__     (num-binop __sub__ r:- '__rsub__)]
+     [__rsub__    (num-binrop __rsub__ r:-)]
+     [__mul__     (num-binop __mul__ r:* '__rmul__)]
+     [__rmul__    (num-binrop __rmul__ r:*)]
+     [__div__     (num-binop __div__ prim:div '__rdiv__)]
+     [__rdiv__    (num-binrop __rdiv__ prim:div)]
+     [__pow__     (num-binop __pow__ expt '__rpow__)]
+     [__rpow__    (num-binrop __rpow__ expt)]
+     [__mod__     (int-binop __mod__ modulo '__rmod__)]
+     [__rmod__    (int-binrop __rmod__ modulo)]
+     [__and__     (int-binop __and__ bitwise-and '__rand__)]
+     [__rand__    (int-binrop __rand__ bitwise-and)]
+     [__or__      (int-binop __or__ bitwise-ior '__ror__)]
+     [__ror__     (int-binrop __ror__ bitwise-ior)]
+     [__xor__     (int-binop __xor__ bitwise-xor '__rxor__)]
+     [__rxor__    (int-binrop __rxor__ bitwise-xor)]
+     [__lshift__  (int-binop __lshift__ arithmetic-shift '__rlshift__)]
+     [__rlshift__ (int-binrop __rlshift__ arithmetic-shift)]
+     [__rshift__  (int-binop __lshift__ right-shift '__rrshift__)]
+     [__rrshift__ (int-binrop __rrshift__ right-shift)]
+     ; public methods
+     [abs         (λ (self) (r:abs self))]
+     [floor       (λ (self) self)]
+     [ceiling     (λ (self) self)]
+     [zero?       (λ (self) (zero? self))]
+     [positive?   (λ (self) (positive? self))]
+     [negative?   (λ (self) (negative? self))]
+     [nan?        (λ (self) #f)]
+     [even?       (λ (self) (even? self))]
+     [odd?        (λ (self) (odd? self))]
+     [sqrt        (λ (self)
+                     (if (< x 0)
+                       (dssl-error "sqrt: cannot handle a negative")
+                       (sqrt self)))])))
 
-(define (dir obj)
-  (cond
-    [(object-base? obj) (raw-vec->vec (get-method-vector obj))]
-    [else               (type-error 'dir obj "an object")]))
+(define-for-syntax float-class
+  (make-unwrapped-class float float?
+    ([__class__   (λ (self . rest) (apply float rest))]
+     ; conversions
+     [__float__   (λ (self) self)]
+     [__num__     (λ (self) self)]
+     [__int__     (λ (self) (inexact->exact (truncate self)))]
+     [__print__   (λ (self print)
+                     (cond
+                       [(= +inf.0 self) (print "inf")]
+                       [(= -inf.0 self) (print "-inf")]
+                       [(nan? self)     (print "nan")]
+                       [else            (print "~a" self)]))]
+     ; unary operators
+     [__neg__     (λ (self) (- self))]
+     [__pos__     (λ (self) self)]
+     [__invert__  (λ (self) (bitwise-not self))]
+     ; binary operators
+     [__cmp__     prim:num-cmp]
+     [__add__     (num-binop __add__ r:+ '__radd__)]
+     [__radd__    (num-binrop __radd__ r:+)]
+     [__sub__     (num-binop __sub__ r:- '__rsub__)]
+     [__rsub__    (num-binrop __rsub__ r:-)]
+     [__mul__     (num-binop __mul__ r:* '__rmul__)]
+     [__rmul__    (num-binrop __rmul__ r:*)]
+     [__div__     (num-binop __div__ r:/ '__rdiv__)]
+     [__rdiv__    (num-binrop __rdiv__ r:/)]
+     [__pow__     (num-binop __pow__ expt '__rpow__)]
+     [__rpow__    (num-binrop __rpow__ expt)]
+     ; public methods
+     [abs         (λ (self) (r:abs self))]
+     [floor       (λ (self) (inexact->exact (r:floor self)))]
+     [ceiling     (λ (self) (inexact->exact (r:ceiling self)))]
+     [zero?       (λ (self) (zero? self))]
+     [positive?   (λ (self) (positive? self))]
+     [negative?   (λ (self) (negative? self))]
+     [nan?        (λ (self) (nan? self))]
+     [sqrt        (λ (self) (sqrt self))])))
 
-(define-primitive-class
-  char
-  (raw-char->char repr)
-  ([__eq__        (FunC char? AnyC)
-                  (λ (c) (char=? repr (char->raw-char c)))]
-   [__print__     AnyC
-                  (λ (print)
-                     (print "char(~a)" (char->integer repr)))]
-   [__get_raw__   AnyC
-                  (λ () repr)]
-   [to_int        AnyC
-                  (λ () (char->integer repr))]))
+(define-for-syntax bool-class
+  (make-unwrapped-class bool bool?
+    ([__class__   (λ (self . rest) (apply bool rest))]
+     ; conversions
+     [__float__   (λ (self) (if self 1.0 0.0))]
+     [__num__     (λ (self) (if self 1 0))]
+     [__int__     (λ (self) (if self 1 0))]
+     [__print__   (λ (self print)
+                     (print (if self "True" "False")))]
+     ; unary operators
+     [__invert__  (λ (self) (not self))]
+     ; binary operators
+     [__cmp__     prim:bool-cmp]
+     [__and__     prim:and]
+     [__rand__    prim:and]
+     [__or__      prim:or]
+     [__ror__     prim:or]
+     [__xor__     prim:xor]
+     [__rxor__    prim:xor])))
+
+(define-for-syntax char-class
+  (make-unwrapped-class char char?
+    ([__class__   (λ (self . rest) (apply char rest))]
+     [__eq__      (λ (self other) (char=? self other))]
+     [__print__   (λ (self print)
+                    (print "char(~a)" (char->integer self)))]
+     [__int__     (λ (self) (char->integer self))])))
 
 (define (char/internal who val)
   (cond
     [(char? val) val]
-    [(integer? val) (raw-char->char (integer->char val))]
-    [(str->raw-str val)
-     =>
-     (λ (raw-str)
-        (if (= 1 (string-length raw-str))
-          (raw-char->char (string-ref raw-str 0))
-          (type-error who val "int code point or singleton string")))]
+    [(int? val) (integer->char val)]
+    [(and (str? val) (= 1 (string-length val)))
+     (string-ref val 0)]
     [else
       (type-error who val "int code point or singleton string")]))
 
@@ -305,54 +364,186 @@
     [() (char 0)]
     [(val) (char/internal 'char val)]))
 
-(define (char->raw-char c)
-  (and (char? c) (get-raw c)))
-
-(define-primitive-class
-  str
-  (raw-str->str repr)
-  ([__index_ref__ (FunC nat? AnyC)
-                  (λ (i) (raw-char->char (string-ref repr i)))]
-   [__eq__        (FunC str? AnyC)
-                  (λ (other) (string=? repr (str->raw-str other)))]
-   [__get_raw__   AnyC
-                  (λ () repr)]
-   [len           AnyC
-                  (λ () (string-length repr))]
-   [explode       AnyC
-                  (λ () (raw-vec->vec (raw-explode repr)))]
-   [format        AnyC
-                  (λ args (raw-str->str (apply r:format repr args)))]))
+(define-for-syntax str-class
+  (make-unwrapped-class str str?
+    ([__class__     (λ (self . rest) (apply str rest))]
+     ; conversions
+     [__int__       (λ (self)
+                       (cond
+                         [(string->number self)
+                          =>
+                          (λ (self) (inexact->exact (truncate self)))]
+                         [else
+                           (runtime-error
+                             "str.__int__: bad int format in ~s" self)]))]
+     [__float__     (λ (self)
+                       (cond
+                         [(string->number self)
+                          =>
+                          exact->inexact]
+                         [else
+                           (runtime-error
+                             "str.__float__: bad float format in ~s" self)]))]
+     ; binary methods
+     [__eq__        (λ (self other) (string=? self other))]
+     [__cmp__       (λ (self other)
+                       (cond
+                         [(str? other)
+                          (cond
+                            [(string=? self other) 0]
+                            [(string<? self other) -1]
+                            [else                       1])]
+                         [else
+                           #f]))]
+     [__add__       (λ (self other)
+                       (if (str? other)
+                         (string-append self other)
+                         (r:format "~a~e" self other)))]
+     [__radd__      (λ (self other)
+                       (if (str? other)
+                         (string-append other self)
+                         (r:format "~e~a" other self)))]
+     ; char indexing
+     [__index_ref__ (λ (self i) (string-ref self i))]
+     ; public methods
+     [len           (λ (self) (string-length self))]
+     [explode       (λ (self) (raw-vec->vec (raw-explode self)))]
+     [format        (λ (self . args)
+                       (apply r:format self args))])))
 
 (define str
   (case-lambda
-    [() (raw-str->str "")]
+    [() ""]
     [(val)
      (cond
        [(str? val) val]
-       [else          (raw-str->str (format "~e" val))])]
+       [else       (format "~e" val)])]
     [(len c)
-     (raw-str->str
-       (make-string len (char->raw-char (char/internal 'str c))))]))
-
-(define (str->raw-str s)
-  (and (str? s) (get-raw s)))
+     (make-string len (char/internal 'str c))]))
 
 (define (ensure-string who value)
   (cond
     [(string? value) value]
-    [(and (object-base? value) (get-raw value))
-     =>
-     (λ (raw) (ensure-string who raw))]
     [else
-      (type-error who value "format string")]))
+      (type-error who value "string")]))
 
-(define (str->contract str)
-  (rename-contract
-    (λ (value)
-       (and (str? value)
-            ((get-method-value str '__eq__) value)))
-    ((get-method-value str '__get_raw__))))
+(define-values-for-syntax (*dir-table* *method-table*)
+  (make-unwrapped-class-table
+    bool-class
+    char-class
+    int-class
+    float-class
+    str-class))
+
+(define-syntax (int-binrop stx)
+  (syntax-parse stx
+    [(_ name:id op:expr)
+     #'(λ (a b)
+          (cond
+            [(and (int? a) (int? b))
+             (op b a)]
+            [else
+              (type-error 'name
+                          (if (int? a) b a)
+                          "int")]))]))
+
+(define-syntax (int-binop stx)
+  (syntax-parse stx #:literals (quote)
+    [(_ name:id op:expr (quote rop:id))
+     #'(λ (a b)
+          (cond
+            [(int? b) (op a b)]
+            [(dssl-send b 'rop a #:and-then box #:or-else #f)
+             => unbox]
+            [else
+              (type-error 'name b
+                          (format "int or object responding to ~a method"
+                                  'rop))]))]))
+
+(define-syntax (num-binrop stx)
+  (syntax-parse stx
+    [(_ name:id op:expr)
+     #'(λ (a b)
+          (cond
+            [(and (num? a) (num? b))
+             (op b a)]
+            [else
+              (type-error 'name
+                          (if (num? a) b a)
+                          "num")]))]))
+
+(define-syntax (num-binop stx)
+  (syntax-parse stx #:literals (quote)
+    [(_ name:id op:expr (quote rop:id))
+     #'(λ (a b)
+          (cond
+            [(num? b) (op a b)]
+            [(dssl-send b 'rop a #:and-then box #:or-else #f)
+             => unbox]
+            [else
+              (type-error 'name b
+                          (format "num or object responding to ~a method"
+                                  'rop))]))]))
+
+(define (right-shift a b)
+  (arithmetic-shift a (- b)))
+
+(define-simple-macro (logical-binop name:id bool-op:expr int-op:expr)
+  (λ (a b)
+     (cond
+       [(and (bool? a) (bool? b))
+        (bool-op a b)]
+       [(and (int? a) (int? b))
+        (int-op a b)]
+       [(and (int? a) (bool? b))
+        (int-op a (if b 1 0))]
+       [(and (bool? a) (int? b))
+        (int-op (if a 1 0) b)]
+       [else
+         (type-error 'name
+                     (if (bool? a) b a)
+                     "bool or int")])))
+
+(define prim:and (logical-binop __and__ and bitwise-and))
+(define prim:or (logical-binop __or__ or bitwise-ior))
+(define prim:xor (logical-binop __xor__ (λ (a b) (not (eq? a b))) bitwise-xor))
+
+(define (prim:num-cmp a b)
+  (and (num? b)
+       (cond
+         [(< a b) -1]
+         [(> a b) 1]
+         [else    0])))
+
+(define (prim:bool-cmp a b)
+  (and (bool? b)
+       (cond
+         [(eq? a b) 0]
+         [b         -1]
+         [else      1])))
+
+(define (prim:div a b)
+  (cond
+    [(and (int? a) (int? b)) (quotient a b)]
+    [else                    (r:/ a b)]))
+
+(define (int x)
+  (cond
+    [(int? x) x]
+    [(dssl-send x '__int__ #:and-then box #:or-else #f)
+     => unbox]
+    [else (type-error
+            'int x
+            "number, string, Boolean, or object responding to __int__")]))
+
+(define (float x)
+  (cond
+    [(float? x) x]
+    [(dssl-send x '__float__ #:and-then box #:or-else #f)
+     => unbox]
+    [else (type-error
+            'float x
+            "number, string, Boolean, or object responding to __float__")]))
 
 (define-primitive-class
   vec
@@ -363,21 +554,20 @@
                   (λ (n v) (vector-set! repr n v))]
    [__eq__        (FunC vec? AnyC)
                   (λ (other)
-                     (define o-len (get-method-value other 'len))
                      (define o-ref (get-method-value other '__index_ref__))
-                     (and (eq? (len) (o-len))
+                     (and (eq? (len) (dssl-send other 'len))
                           (for/and ([i (len)])
                             (dssl-equal? (__index_ref__ i) (o-ref i)))))]
    [__print__     AnyC
                   (λ (print)
                      (define first #t)
-                     (print (raw-str->str "["))
+                     (print "[")
                      (for ([element (in-vector repr)])
                         (if first
                           (set! first #f)
-                          (print (raw-str->str ", ")))
-                        (print (raw-str->str "~e") element))
-                     (print (raw-str->str "]")))]
+                          (print ", "))
+                        (print "~e" element))
+                     (print "]"))]
    [__get_raw__   (FunC AnyC)
                   (λ () repr)]
    [len           AnyC
@@ -386,13 +576,12 @@
                   (λ ()
                      (define (convert c)
                        (cond
-                         [(char->raw-char c) => identity]
-                         [(integer? c)          (integer->char c)]
+                         [(char? c)    c]
+                         [(integer? c) (integer->char c)]
                          [else (type-error
                                  'vec.implode c "char or int code point")]))
-                     (raw-str->str
-                       (list->string
-                         (r:map convert (vector->list repr)))))]
+                     (list->string
+                       (r:map convert (vector->list repr))))]
    [map           (FunC (FunC AnyC AnyC) AnyC)
                   (λ (f)
                      (raw-vec->vec
@@ -420,3 +609,195 @@
 
 (define (vec->raw-vec v)
   (and (vec? v) (get-raw v)))
+
+(define-syntax (get-method-list stx)
+  (define dir-table (syntax-local-eval #'*dir-table*))
+  (syntax-parse #`(#,stx #,dir-table) #:literals (quote)
+    [((_ obj:expr) ((pred:expr sel:expr ...) ...))
+     #'(let ([value obj])
+         (cond
+           [(object-base? value)
+            (for/list ([method-info
+                         (in-vector (object-info-method-infos
+                                      (object-base-object-info value)))])
+              (symbol->string (method-info-name method-info)))]
+           [(pred value)
+            (list (symbol->string sel) ...)]
+           ...
+           [else #f]))]))
+
+(define-syntax (get-method-value stx)
+  (syntax-parse stx #:literals (quote)
+    [(_ receiver:expr (quote sel:id))
+     (define method-table (syntax-local-eval *method-table*))
+     (define candidates (hash-ref method-table (syntax-e #'sel) '()))
+     (syntax-parse candidates
+       [((pred . method) ...)
+        #`(let ([value receiver])
+            (cond
+              [(and (object-base? value)
+                    (get-method-info value 'sel))
+               =>
+               (λ (method-info) ((method-info-getter method-info) value))]
+              [(pred value)
+               (method value)]
+              ...
+              [else #f]))])]))
+
+(begin-for-syntax
+  (define-splicing-syntax-class
+    optional-and-then
+    (pattern (~seq #:and-then expr:expr))
+    (pattern (~seq)
+             #:with expr #'identity))
+
+  (define-splicing-syntax-class
+    optional-or-else
+    (pattern (~seq #:or-else expr:expr))
+    (pattern (~seq)
+             #:with expr #f)))
+
+(define-syntax (dssl-send stx)
+  (syntax-parse stx #:literals (quote)
+    [(_ obj:id (quote sel:id) arg:expr ...
+        and-then:optional-and-then
+        or-else:optional-or-else)
+     (with-syntax
+       ([or-else-expr
+          (syntax-parse #'or-else
+            [(#:or-else expr:expr) #'expr]
+            [() #'(type-error
+                    'send obj
+                    (format "object with method ~a" 'sel))])])
+       #'(cond
+           [(get-method-value obj 'sel)
+            =>
+            (λ (method) (and-then.expr (method arg ...)))]
+           [else or-else-expr]))]))
+
+(define-syntax (method-or stx)
+  (syntax-parse stx
+    #:literals (quote else)
+    #:datum-literals (send)
+    [(_ [else body:expr ...])
+     #'(begin body ...)]
+    [(_ [(send obj:id (quote sel:id) arg:expr ...)]
+        rest ...)
+     #'(send obj 'sel arg ...
+             #:or-else (method-or rest ...))]))
+
+(define (dir obj)
+  (cond
+    [(get-method-list obj)
+     =>
+     (λ (methods)
+        (raw-vec->vec
+          (list->vector methods)))]
+    [else               (type-error 'dir obj "an object")]))
+
+; A Chain is one of:
+;  - [Box Natural]
+;  - [Box Chain]
+
+; union-find!? : [EqHashTbl Any Chain] Any Any -> Boolean
+; Associates `a` and `b` in the hash table, and returns whether they
+; were associated already.
+(define (union-find!? h x y)
+  (define (find b)
+    (define n (unbox b))
+    (if (box? n)
+        (let loop ([b b] [n n])
+          (define nn (unbox n))
+          (if (box? nn)
+              (begin
+                (set-box! b nn)
+                (loop n nn))
+              n))
+        b))
+  (define bx (hash-ref h x #f))
+  (define by (hash-ref h y #f))
+  (cond
+    [(and bx by)
+     (define rx (find bx))
+     (define ry (find by))
+     (cond
+       [(eq? rx ry) #t]
+       [else
+         (define nx (unbox bx))
+         (define ny (unbox by))
+         (cond
+           [(> nx ny)
+            (set-box! ry rx)
+            (set-box! rx (+ nx ny))]
+           [else
+            (set-box! rx ry)
+            (set-box! ry (+ nx ny))])
+         #f])]
+    [bx
+     (define rx (find bx))
+     (hash-set! h y rx)
+     #f]
+    [by
+     (define ry (find by))
+     (hash-set! h x ry)
+     #f]
+    [else
+     (define b (box 1))
+     (hash-set! h x b)
+     (hash-set! h y b)
+     #f]))
+
+(define current-equal-table (make-parameter #f))
+
+(define-simple-macro (with-equal-table body:expr ...)
+  (parameterize ([current-equal-table (or (current-equal-table)
+                                          (make-hasheq))])
+    body ...))
+
+(define (seen!? a b)
+  (union-find!? (current-equal-table) a b))
+
+(define (dssl-equal? a0 b0)
+  (with-equal-table
+    (let compare ([a a0] [b b0])
+      (cond
+        ; We try number? before eq?, to get correct treatement of nan.
+        [(number? a)            (and (number? b) (= a b))]
+        ; This case covers equality for booleans, contracts, and
+        ; procedures as well as physically equal pointers.
+        [(eq? a b)              #true]
+        [else
+          (define a.__eq__    (get-method-value a '__eq__))
+          (define a.__class__ (get-method-value a '__class__))
+          (define (zero?->box order) (box (eq? 0 order)))
+          (cond
+            [(and a.__eq__ a.__class__
+                  (eq? a.__class__ (get-method-value b '__class__)))
+             (or (seen!? a b)
+                 (a.__eq__ b))]
+            [(or (dssl-send a '__cmp__ b #:and-then zero?->box #:or-else #f)
+                 (dssl-send b '__cmp__ a #:and-then zero?->box #:or-else #f))
+             => unbox]
+            [(struct-base? a)
+             (or (seen!? a b)
+                 (and (struct-base? b)
+                      (struct-equal? a b compare)))]
+            [(object-base? a)
+             (or (seen!? a b)
+                 (and (object-base? b)
+                      a.__class__
+                      (eq? a.__class__ (get-method-value b '__class__))
+                      (object-equal? a b compare)))]
+            [else #false])]))))
+
+(define (struct-equal? a b compare)
+  (define info (struct-base-struct-info a))
+  (and (eq? info (struct-base-struct-info b))
+       (for/and ([field-info (struct-info-field-infos info)])
+         (define getter (field-info-getter field-info))
+         (compare (getter a) (getter b)))))
+
+(define (object-equal? a b compare)
+  (for/and ([a-pair (in-vector ((object-base-reflect a)))]
+            [b-pair (in-vector ((object-base-reflect b)))])
+    (compare (cdr a-pair) (cdr b-pair))))

@@ -1,5 +1,5 @@
 #lang dssl2
 
-assert odd?(5)
-assert odd?(-5)
-assert not odd?(-4)
+assert (5).odd?()
+assert (-5).odd?()
+assert not (-4).odd?()

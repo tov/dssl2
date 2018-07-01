@@ -1,3 +1,3 @@
 #lang dssl2
 
-even?(4.5)
+(4.5).even?()

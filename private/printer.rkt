@@ -9,7 +9,8 @@
                   set-member?
                   set-add!)
          (only-in racket/contract/base contract-name)
-         (only-in racket/string string-contains?))
+         (only-in racket/string string-contains?)
+         (only-in racket/math nan?))
 
 (define current-printer-state (make-parameter #f))
 
@@ -46,13 +47,14 @@
          (cond
            [value                   (display "True" port)]
            [else                    (display "False" port)])]
+        [(char? value)
+         (fprintf port "char(~a)" (char->integer value))]
         [(str? value)
-         (define raw-str (str->raw-str value))
-         (define contains-sq (string-contains? raw-str "'"))
-         (define contains-dq (string-contains? raw-str "\""))
+         (define contains-sq (string-contains? value "'"))
+         (define contains-dq (string-contains? value "\""))
          (if (and contains-sq (not contains-dq))
-           (print-dssl-string #\" raw-str port)
-           (print-dssl-string #\' raw-str port))]
+           (print-dssl-string #\" value port)
+           (print-dssl-string #\' value port))]
         [(struct-base? value)
          (unless (seen!? value)
            (write-struct value port visit))]

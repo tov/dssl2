@@ -1,3 +1,3 @@
 #lang dssl2
 
-negative?('hi')
+'hi'.negative?()

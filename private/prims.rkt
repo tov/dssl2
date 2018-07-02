@@ -20,7 +20,7 @@
          ; ** proc
          proc proc?
          ; ** string
-         str str? ensure-string
+         str str?
          raw-explode
          ; ** vector
          vec vec?
@@ -140,9 +140,7 @@
 
 (define (OrC c . cs)
   (rename-contract
-    (apply or/c
-           (map (λ (c) (ensure-contract/fn '() 'OrC c))
-                (cons c cs)))
+    (apply or/c c cs)
     (format-fun 'OrC c cs)))
 
 (define (AndC c . cs)
@@ -153,20 +151,18 @@
 (define (FunC c . cs)
   (define all (cons c cs))
   (define rev-all (reverse all))
-  (define args
-    (map (λ (c) (ensure-contract/fn '() 'FunC c))
-         (reverse (rest rev-all))))
-  (define res (ensure-contract/fn '() 'FunC (first rev-all)))
+  (define args (reverse (rest rev-all)))
+  (define res (first rev-all))
   (rename-contract
     (dynamic->* #:mandatory-domain-contracts args
                 #:range-contracts (list res))
     (format-fun 'FunC c cs)))
 
 (define (NewForallC name)
-  (new-∀/c (string->symbol (ensure-string 'NewForallC name))))
+  (new-∀/c (string->symbol name)))
 
 (define (NewExistsC name)
-  (new-∃/c (string->symbol (ensure-string 'NewExistsC name))))
+  (new-∃/c (string->symbol name)))
 
 (define (IntInC low high)
   (rename-contract
@@ -178,15 +174,13 @@
     [(contract value pos neg)
      (r:contract contract value pos neg)]
     [(contract value pos)
-     (apply_contract contract value
-                     (ensure-string 'apply_contract pos)
-                     "the context")]
+     (apply_contract contract value pos "the context")]
     [(contract value)
      (apply_contract contract value
                      "the contracted value")]))
 
 (define (make_contract name first-order? projection)
-  (make-contract #:name (ensure-string 'make_contract name)
+  (make-contract #:name name
                  #:first-order first-order?
                  #:late-neg-projection
                  (λ (blame)
@@ -197,7 +191,7 @@
                               blame
                               #:missing-party party
                               value
-                              (ensure-string 'raise-blame-error message)))
+                              message))
                          value)))))
 
 (define (print fmt . values)
@@ -211,8 +205,10 @@
   (list->vector
     (string->list s)))
 
-(define (bool x)
-  (not (not x)))
+(define bool
+  (case-lambda
+    [() #f]
+    [(x) (not (not x))]))
 
 ; This is the largest argument that `random` can take.
 (define RAND_MAX 4294967087)
@@ -232,115 +228,111 @@
 (define (sleep sec)
   (r:sleep sec))
 
-(define-for-syntax int-class
-  (make-unwrapped-class int int?
-    (; conversions
-     [__int__     (λ (self) self)]
-     [__float__   (λ (self) (exact->inexact self))]
-     [__num__     (λ (self) self)]
-     ; unary operators
-     [__neg__     (λ (self) (- self))]
-     [__pos__     (λ (self) self)]
-     [__invert__  (λ (self) (bitwise-not self))]
-     ; binary operators
-     [__cmp__     prim:num-cmp]
-     [__add__     (num-binop __add__ r:+ '__radd__)]
-     [__radd__    (num-binrop __radd__ r:+)]
-     [__sub__     (num-binop __sub__ r:- '__rsub__)]
-     [__rsub__    (num-binrop __rsub__ r:-)]
-     [__mul__     (num-binop __mul__ r:* '__rmul__)]
-     [__rmul__    (num-binrop __rmul__ r:*)]
-     [__div__     (num-binop __div__ prim:div '__rdiv__)]
-     [__rdiv__    (num-binrop __rdiv__ prim:div)]
-     [__pow__     (num-binop __pow__ expt '__rpow__)]
-     [__rpow__    (num-binrop __rpow__ expt)]
-     [__mod__     (int-binop __mod__ modulo '__rmod__)]
-     [__rmod__    (int-binrop __rmod__ modulo)]
-     [__and__     (int-binop __and__ bitwise-and '__rand__)]
-     [__rand__    (int-binrop __rand__ bitwise-and)]
-     [__or__      (int-binop __or__ bitwise-ior '__ror__)]
-     [__ror__     (int-binrop __ror__ bitwise-ior)]
-     [__xor__     (int-binop __xor__ bitwise-xor '__rxor__)]
-     [__rxor__    (int-binrop __rxor__ bitwise-xor)]
-     [__lshift__  (int-binop __lshift__ arithmetic-shift '__rlshift__)]
-     [__rlshift__ (int-binrop __rlshift__ arithmetic-shift)]
-     [__rshift__  (int-binop __lshift__ right-shift '__rrshift__)]
-     [__rrshift__ (int-binrop __rrshift__ right-shift)]
-     ; public methods
-     [abs         (λ (self) (r:abs self))]
-     [floor       (λ (self) self)]
-     [ceiling     (λ (self) self)]
-     [zero?       (λ (self) (zero? self))]
-     [positive?   (λ (self) (positive? self))]
-     [negative?   (λ (self) (negative? self))]
-     [nan?        (λ (self) #f)]
-     [even?       (λ (self) (even? self))]
-     [odd?        (λ (self) (odd? self))]
-     [sqrt        (λ (self)
-                     (if (< x 0)
-                       (dssl-error "sqrt: cannot handle a negative")
-                       (sqrt self)))])))
+(define-unwrapped-class int-class int int?
+  (; conversions
+   [__int__     (λ (self) self)]
+   [__float__   (λ (self) (exact->inexact self))]
+   [__num__     (λ (self) self)]
+   ; unary operators
+   [__neg__     (λ (self) (- self))]
+   [__pos__     (λ (self) self)]
+   [__invert__  (λ (self) (bitwise-not self))]
+   ; binary operators
+   [__cmp__     prim:num-cmp]
+   [__add__     (num-binop __add__ r:+ '__radd__)]
+   [__radd__    (num-binrop __radd__ r:+)]
+   [__sub__     (num-binop __sub__ r:- '__rsub__)]
+   [__rsub__    (num-binrop __rsub__ r:-)]
+   [__mul__     (num-binop __mul__ r:* '__rmul__)]
+   [__rmul__    (num-binrop __rmul__ r:*)]
+   [__div__     (num-binop __div__ prim:div '__rdiv__)]
+   [__rdiv__    (num-binrop __rdiv__ prim:div)]
+   [__pow__     (num-binop __pow__ expt '__rpow__)]
+   [__rpow__    (num-binrop __rpow__ expt)]
+   [__mod__     (int-binop __mod__ modulo '__rmod__)]
+   [__rmod__    (int-binrop __rmod__ modulo)]
+   [__and__     (int-binop __and__ bitwise-and '__rand__)]
+   [__rand__    (int-binrop __rand__ bitwise-and)]
+   [__or__      (int-binop __or__ bitwise-ior '__ror__)]
+   [__ror__     (int-binrop __ror__ bitwise-ior)]
+   [__xor__     (int-binop __xor__ bitwise-xor '__rxor__)]
+   [__rxor__    (int-binrop __rxor__ bitwise-xor)]
+   [__lshift__  (int-binop __lshift__ arithmetic-shift '__rlshift__)]
+   [__rlshift__ (int-binrop __rlshift__ arithmetic-shift)]
+   [__rshift__  (int-binop __lshift__ right-shift '__rrshift__)]
+   [__rrshift__ (int-binrop __rrshift__ right-shift)]
+   ; public methods
+   [abs         (λ (self) (r:abs self))]
+   [floor       (λ (self) self)]
+   [ceiling     (λ (self) self)]
+   [zero?       (λ (self) (zero? self))]
+   [positive?   (λ (self) (positive? self))]
+   [negative?   (λ (self) (negative? self))]
+   [nan?        (λ (self) #f)]
+   [even?       (λ (self) (even? self))]
+   [odd?        (λ (self) (odd? self))]
+   [sqrt        (λ (self)
+                   (if (< self 0)
+                     (dssl-error "sqrt: cannot handle a negative")
+                     (sqrt self)))]))
 
-(define-for-syntax float-class
-  (make-unwrapped-class float float?
-    (; conversions
-     [__float__   (λ (self) self)]
-     [__num__     (λ (self) self)]
-     [__int__     (λ (self) (inexact->exact (truncate self)))]
-     ; unary operators
-     [__neg__     (λ (self) (- self))]
-     [__pos__     (λ (self) self)]
-     [__invert__  (λ (self) (bitwise-not self))]
-     ; binary operators
-     [__cmp__     prim:num-cmp]
-     [__add__     (num-binop __add__ r:+ '__radd__)]
-     [__radd__    (num-binrop __radd__ r:+)]
-     [__sub__     (num-binop __sub__ r:- '__rsub__)]
-     [__rsub__    (num-binrop __rsub__ r:-)]
-     [__mul__     (num-binop __mul__ r:* '__rmul__)]
-     [__rmul__    (num-binrop __rmul__ r:*)]
-     [__div__     (num-binop __div__ r:/ '__rdiv__)]
-     [__rdiv__    (num-binrop __rdiv__ r:/)]
-     [__pow__     (num-binop __pow__ expt '__rpow__)]
-     [__rpow__    (num-binrop __rpow__ expt)]
-     ; public methods
-     [abs         (λ (self) (r:abs self))]
-     [floor       (λ (self) (inexact->exact (r:floor self)))]
-     [ceiling     (λ (self) (inexact->exact (r:ceiling self)))]
-     [zero?       (λ (self) (zero? self))]
-     [positive?   (λ (self) (positive? self))]
-     [negative?   (λ (self) (negative? self))]
-     [nan?        (λ (self) (nan? self))]
-     [sqrt        (λ (self) (sqrt self))])))
+(define-unwrapped-class float-class float float?
+  (; conversions
+   [__float__   (λ (self) self)]
+   [__num__     (λ (self) self)]
+   [__int__     (λ (self) (inexact->exact (truncate self)))]
+   ; unary operators
+   [__neg__     (λ (self) (- self))]
+   [__pos__     (λ (self) self)]
+   [__invert__  (λ (self) (bitwise-not self))]
+   ; binary operators
+   [__cmp__     prim:num-cmp]
+   [__add__     (num-binop __add__ r:+ '__radd__)]
+   [__radd__    (num-binrop __radd__ r:+)]
+   [__sub__     (num-binop __sub__ r:- '__rsub__)]
+   [__rsub__    (num-binrop __rsub__ r:-)]
+   [__mul__     (num-binop __mul__ r:* '__rmul__)]
+   [__rmul__    (num-binrop __rmul__ r:*)]
+   [__div__     (num-binop __div__ r:/ '__rdiv__)]
+   [__rdiv__    (num-binrop __rdiv__ r:/)]
+   [__pow__     (num-binop __pow__ expt '__rpow__)]
+   [__rpow__    (num-binrop __rpow__ expt)]
+   ; public methods
+   [abs         (λ (self) (r:abs self))]
+   [floor       (λ (self) (inexact->exact (r:floor self)))]
+   [ceiling     (λ (self) (inexact->exact (r:ceiling self)))]
+   [zero?       (λ (self) (zero? self))]
+   [positive?   (λ (self) (positive? self))]
+   [negative?   (λ (self) (negative? self))]
+   [nan?        (λ (self) (nan? self))]
+   [sqrt        (λ (self) (sqrt self))]))
 
-(define-for-syntax bool-class
-  (make-unwrapped-class bool bool?
-    (; conversions
-     [__float__   (λ (self) (if self 1.0 0.0))]
-     [__num__     (λ (self) (if self 1 0))]
-     [__int__     (λ (self) (if self 1 0))]
-     ; unary operators
-     [__invert__  (λ (self) (not self))]
-     ; binary operators
-     [__cmp__     prim:bool-cmp]
-     [__and__     prim:and]
-     [__rand__    prim:and]
-     [__or__      prim:or]
-     [__ror__     prim:or]
-     [__xor__     prim:xor]
-     [__rxor__    prim:xor])))
+(define-unwrapped-class bool-class bool bool?
+  (; conversions
+   [__float__   (λ (self) (if self 1.0 0.0))]
+   [__num__     (λ (self) (if self 1 0))]
+   [__int__     (λ (self) (if self 1 0))]
+   ; unary operators
+   [__invert__  (λ (self) (not self))]
+   ; binary operators
+   [__cmp__     prim:bool-cmp]
+   [__and__     prim:and]
+   [__rand__    prim:and]
+   [__or__      prim:or]
+   [__ror__     prim:or]
+   [__xor__     prim:xor]
+   [__rxor__    prim:xor]))
 
 (define char
   (case-lambda
     [() (char 0)]
     [(val) (char/internal 'char val)]))
 
-(define-for-syntax char-class
-  (make-unwrapped-class char char?
-    (; conversions
-     [__int__     (λ (self) (char->integer self))]
-     ; binary methods
-     [__eq__      (λ (self other) (char=? self other))])))
+(define-unwrapped-class char-class char char?
+  (; conversions
+   [__int__     (λ (self) (char->integer self))]
+   ; binary methods
+   [__eq__      (λ (self other) (char=? self other))]))
 
 (define (char/internal who val)
   (cond
@@ -351,13 +343,12 @@
     [else
       (type-error who val "int code point or singleton string")]))
 
-(define-for-syntax proc-class
-  (make-unwrapped-class proc proc?
-    ([compose           (λ (self other)
-                           (λ args
-                              (self (apply other args))))]
-     [vec_apply         (λ (self v)
-                           (apply self (vector->list v)))])))
+(define-unwrapped-class proc-class proc proc?
+  ([compose           (λ (self other)
+                         (λ args
+                            (self (apply other args))))]
+   [vec_apply         (λ (self v)
+                         (apply self (vector->list v)))]))
 
 (define proc
   (case-lambda
@@ -371,51 +362,52 @@
          (type-error 'proc val
                      "proc or object responding to __proc__ method")])]))
 
-(define-for-syntax str-class
-  (make-unwrapped-class str str?
-    (; conversions
-     [__int__       (λ (self)
-                       (cond
-                         [(string->number self)
-                          =>
-                          (λ (self) (inexact->exact (truncate self)))]
-                         [else
-                           (runtime-error
-                             "str.__int__: bad int format in ~s" self)]))]
-     [__float__     (λ (self)
-                       (cond
-                         [(string->number self)
-                          =>
-                          exact->inexact]
-                         [else
-                           (runtime-error
-                             "str.__float__: bad float format in ~s" self)]))]
-     ; binary methods
-     [__eq__        (λ (self other) (string=? self other))]
-     [__cmp__       (λ (self other)
-                       (cond
-                         [(str? other)
-                          (cond
-                            [(string=? self other) 0]
-                            [(string<? self other) -1]
-                            [else                       1])]
-                         [else
-                           #f]))]
-     [__add__       (λ (self other)
-                       (if (str? other)
-                         (string-append self other)
-                         (dssl-format "%p%d" self other)))]
-     [__radd__      (λ (self other)
-                       (if (str? other)
-                         (string-append other self)
-                         (dssl-format "%d%p" other self)))]
-     ; char indexing
-     [__index_ref__ (λ (self i) (string-ref self i))]
-     ; public methods
-     [len           (λ (self) (string-length self))]
-     [explode       (λ (self) (raw-explode self))]
-     [format        (λ (self . args)
-                       (apply dssl-format self args))])))
+(define-unwrapped-class str-class str str?
+  (; conversions
+   [__int__       (λ (self)
+                     (cond
+                       [(string->number self)
+                        =>
+                        (λ (self) (inexact->exact (truncate self)))]
+                       [else
+                         (runtime-error
+                           "str.__int__: bad int format in ~s" self)]))]
+   [__float__     (λ (self)
+                     (cond
+                       [(string->number self)
+                        =>
+                        exact->inexact]
+                       [else
+                         (runtime-error
+                           "str.__float__: bad float format in ~s" self)]))]
+   ; binary methods
+   [__eq__        (FunC str? AnyC)
+                  (λ (self other) (string=? self other))]
+   [__cmp__       (λ (self other)
+                     (cond
+                       [(str? other)
+                        (cond
+                          [(string=? self other) 0]
+                          [(string<? self other) -1]
+                          [else                       1])]
+                       [else
+                         #f]))]
+   [__add__       (λ (self other)
+                     (if (str? other)
+                       (string-append self other)
+                       (dssl-format "%p%d" self other)))]
+   [__radd__      (λ (self other)
+                     (if (str? other)
+                       (string-append other self)
+                       (dssl-format "%d%p" other self)))]
+   ; char indexing
+   [__index_ref__ (FunC nat? AnyC)
+                  (λ (self i) (string-ref self i))]
+   ; public methods
+   [len           (λ (self) (string-length self))]
+   [explode       (λ (self) (raw-explode self))]
+   [format        (λ (self . args)
+                     (apply dssl-format self args))]))
 
 (define str
   (case-lambda
@@ -427,38 +419,44 @@
     [(len c)
      (make-string len (char/internal 'str c))]))
 
-(define (ensure-string who value)
-  (cond
-    [(string? value) value]
-    [else
-      (type-error who value "string")]))
+(define-unwrapped-class vec-class vec vec?
+  ([__index_ref__ (FunC nat? AnyC)
+                  vector-ref]
+   [__index_set__ (FunC nat? AnyC AnyC)
+                  vector-set!]
+   [__eq__        (FunC vec? AnyC)
+                  prim:vec.__eq__]
+   [len           vector-length]
+   [implode       prim:vec.implode]
+   [map           (FunC (FunC AnyC AnyC) AnyC)
+                  prim:vec.map]
+   [filter        (FunC (FunC AnyC AnyC) AnyC)
+                  prim:vec.filter]))
 
-(define-for-syntax vec-class
-  (make-unwrapped-class vec vec?
-    ([__index_ref__ (λ (self n) (vector-ref self n))]
-     [__index_set__ (λ (self n v) (vector-set! self n v))]
-     [__eq__        (λ (self other)
-                       (define o-ref (get-method-value other '__index_ref__))
-                       (and (eq? (vector-length self) (dssl-send other 'len))
-                            (for/and ([i (vector-length self)])
-                              (dssl-equal? (vector-ref self i) (o-ref i)))))]
-     [len           (λ (self) (vector-length self))]
-     [implode       (λ (self)
-                       (define (convert c)
-                         (cond
-                           [(char? c)    c]
-                           [(integer? c) (integer->char c)]
-                           [else (type-error
-                                   'vec.implode c "char or int code point")]))
-                       (list->string
-                         (r:map convert (vector->list self))))]
-     [map           (λ (self f)
-                       (build-vector
-                         (vector-length self)
-                         (λ (i) (f (vector-ref self i)))))]
-     [filter        (λ (self pred)
-                       (list->vector
-                         (r:filter pred (vector->list self))))])))
+(define (prim:vec.__eq__ self other)
+  (define o-ref (get-method-value other '__index_ref__))
+  (and (eq? (vector-length self) (dssl-send other 'len))
+       (for/and ([i (vector-length self)])
+         (dssl-equal? (vector-ref self i) (o-ref i)))))
+
+(define (prim:vec.implode self)
+  (define (convert c)
+    (cond
+      [(char? c)    c]
+      [(integer? c) (integer->char c)]
+      [else (type-error
+              'vec.implode c "char or int code point")]))
+  (list->string
+    (r:map convert (vector->list self))))
+
+(define (prim:vec.map self f)
+  (build-vector
+    (vector-length self)
+    (λ (i) (f (vector-ref self i)))))
+
+(define (prim:vec.filter self pred)
+  (list->vector
+    (r:filter pred (vector->list self))))
 
 (define vec
   (case-lambda

@@ -16,14 +16,13 @@
          write-object
          get-method-info
          get-method-value/fun
-         define-primitive-class
-         (for-syntax make-unwrapped-class
-                     make-unwrapped-class-table))
+         define-unwrapped-class
+         (for-syntax make-unwrapped-class-table))
 
 (require "names.rkt")
 (require "errors.rkt")
 (require syntax/parse/define)
-(require racket/contract/region)
+(require (only-in racket/contract/base any/c -> contract))
 (require (for-syntax racket/base
                      (only-in racket/sequence in-syntax)
                      (only-in racket/syntax format-id syntax-local-eval)
@@ -49,41 +48,6 @@
     (recur (cdr field-pair)))
   (display ">" port))
 
-(define-syntax (define-primitive-class stx)
-  (syntax-parse stx
-    [(_ class-name:id (prim-ctor:id field:id ...)
-        ([method-name:id method-ctc:expr method-val:expr]
-         ...))
-     #`(begin
-         (define-struct (internal-name object-base)
-            [__class__ method-name ...])
-         (define (#,(struct-predicate-name #'class-name) value)
-           (internal-name? value))
-         (define object-info
-           (make-object-info 'class-name
-                             (vector-immutable)
-                             (vector-immutable
-                               (make-method-info
-                                 '__class__
-                                 (struct-getter-name internal-name
-                                                     __class__))
-                               (make-method-info
-                                 'method-name
-                                 (struct-getter-name internal-name
-                                                     method-name))
-                               ...)))
-         (define contract-parameters (vector-immutable))
-         (define (prim-ctor field ...)
-           (define/contract method-name method-ctc method-val)
-           ...
-           (make-internal-name
-             object-info
-             contract-parameters
-             (λ () (vector-immutable (cons 'field field) ...))
-             class-name
-             method-name
-             ...)))]))
-
 (begin-for-syntax
   (define *method-table* (make-hasheq))
   (define *class-table*  (make-hasheq '((directory . ()))))
@@ -100,25 +64,19 @@
   (define-syntax (make-unwrapped-class stx)
     (syntax-parse stx
       [(_ class-name:id pred:id
-          ([sel:id method:expr] ...))
-       #`(cons
+          ([sel:id body:expr] ...))
+       #'(cons
            (list #'pred #''__class__ #''sel ...)
            (λ (method-table)
               (register-method method-table '__class__ #'pred
                                #'(λ (self) class-name))
-              (for ([sel-v    (in-syntax #'(sel ...))]
-                    [method-v (in-syntax #'(method ...))])
-                (define method-name
-                  (string->symbol
-                    (format "~a.~a" 'class-name (syntax-e sel-v))))
+              (for ([sel-v  (in-syntax #'(sel ...))]
+                    [body-v (in-syntax #'(body ...))])
                 (register-method
                   method-table
                   (syntax-e sel-v)
                   #'pred
-                  #`(λ (self)
-                       (procedure-rename
-                         (λ args (apply #,method-v self args))
-                         '#,method-name))))))]))
+                  body-v))))]))
 
   (define-simple-macro
     (make-unwrapped-class-table class:id ...)
@@ -129,7 +87,34 @@
       ...
       ((cdr (syntax-local-eval #'class)) method-table)
       ...
-      (values dir-table method-table))))
+      (values dir-table method-table)))
+
+  (define-syntax-class unwrapped-method
+    (pattern [sel:id ctc:expr body:expr])
+    (pattern [sel:id body:expr] #:with ctc #'any/c)))
+
+(define-syntax (define-unwrapped-class stx)
+  (syntax-parse stx
+    [(_ name:id class-name:id pred:id
+        (method:unwrapped-method ...))
+     (with-syntax
+       ([(visible-method-name ...)
+         (map (λ (sel) (format-id #f "~a.~a" #'class-name sel))
+              (syntax->list #'(method.sel ...)))])
+       #'(begin
+           (define (visible-method-name self)
+             (procedure-rename
+               (contract method.ctc
+                         (λ args (apply method.body self args))
+                         'visible-method-name
+                         "method caller"
+                         'visible-method-name
+                         #f)
+               'visible-method-name))
+           ...
+           (define-for-syntax name
+             (make-unwrapped-class class-name pred
+               ([method.sel visible-method-name] ...)))))]))
 
 (define (get-method-info obj sym)
   (let/ec return

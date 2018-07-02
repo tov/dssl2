@@ -644,7 +644,7 @@
 (define (dssl-assert-error/thunk srclocs thunk string-pattern)
   (define pattern
     (regexp
-      (regexp-quote (ensure-string 'assert_error string-pattern) #false)))
+      (regexp-quote string-pattern #false)))
   (define (handler exception)
     (if (regexp-match? pattern (exn-message exception))
       #false

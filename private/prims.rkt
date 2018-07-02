@@ -401,7 +401,7 @@
 
 (define float
   (case-lambda
-    [() 0]
+    [() 0.0]
     [(x)
      (cond
        [(float? x) x]

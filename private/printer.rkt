@@ -47,19 +47,20 @@
         [(eq? command 'debug)
          (dssl-print (car params) port #t)
          (loop (cdr commands) (cdr params))]
-        [(eq? command 'pretty)
+        [(eq? command 'print)
          (dssl-print (car params) port #f)
          (loop (cdr commands) (cdr params))]
         [else
          (display command port)
          (loop (cdr commands) params)]))))
 
-; String -> (List-of (Or 'debug 'pretty String))
+; String -> (List-of (Or 'debug 'print String))
 (define (parse-format-string s)
   (for/list ([chunk (in-list (regexp-match* #rx"[^%]+|%.|%$" s))])
     (cond
       [(string=? chunk "%d") 'debug]
-      [(string=? chunk "%p") 'pretty]
+      [(string=? chunk "%p") 'print]
+      [(string=? chunk "%s") 'string]
       [(string=? chunk "%%") "%"]
       [(regexp-match? #rx"^%" chunk)
        (dssl-error "dssl-printer: bad format string code ~s" chunk)]

@@ -1405,6 +1405,11 @@ A flat contract that accepts any value.
 A flat contract that accepts the result of @racket[pass] and other
 statements that return no value (such as assignment and loops).
 
+@defprocform[VecC]{(contract?) -> contract?}
+
+Creates a contract that protected a vector to ensure that its elements
+satisfy the given contract.
+
 @defprocform[OrC]{(contract?, contract?, ...) -> contract?}
 
 Creates a contract that accepts a value if any of the arguments does.

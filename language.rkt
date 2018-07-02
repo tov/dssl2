@@ -396,10 +396,9 @@
   (cond
     [(eq? id-info 'lexical) #f]
     [(pair? id-info)
-      (define-values (mod-path _base-path)
+      (define-values (_mod-path base-path)
         (module-path-index-split (car id-info)))
-      (and mod-path
-           (not (equal? '(quote anonymous-module) mod-path))
+      (and base-path
            "cannot assign variable imported from another module")]
     [else
       "variable must be defined with ‘let’ before it can be assigned"]))

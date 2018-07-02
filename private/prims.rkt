@@ -33,6 +33,7 @@
          AnyC
          VoidC
          (contract-out
+           [VecC (-> contract? contract?)]
            [OrC (-> contract? contract? ... contract?)]
            [AndC (-> contract? contract? ... contract?)]
            [FunC (-> contract? contract? ... contract?)]
@@ -143,6 +144,11 @@
     (runtime-error #:srclocs srclocs
                    "~a: expected a contract\n got: ~e"
                    who contract)))
+
+(define (VecC c)
+  (rename-contract
+    (r:vectorof c)
+    (format-fun 'VecC c '())))
 
 (define (OrC c . cs)
   (rename-contract

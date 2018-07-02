@@ -887,11 +887,13 @@
         (return method-name)))
     (syntax-error stx "class must have a constructor")))
 
-(define-for-syntax (lookup-interfaces interfaces)
+(define-for-syntax (lookup-interfaces class-name interfaces)
   (for/fold ([names     '()]
              [tokens    '()]
              [methodses '()])
             ([interface (in-syntax interfaces)])
+    (unless (identifier-binding interface 1)
+      (syntax-error interface "undefined interface"))
     (define interface-info (syntax-local-eval interface))
     (values (cons interface names)
             (cons (car interface-info) tokens)
@@ -970,7 +972,7 @@
      (define constructor  (find-constructor method-names #'name))
      ; Lookup and check interfaces:
      (define-values (interface-names interface-tokens interface-methodses)
-       (lookup-interfaces #'(interfaces.interface ...)))
+       (lookup-interfaces #'name #'(interfaces.interface ...)))
      (for ([interface-name    interface-names]
            [interface-methods interface-methodses])
        (check-class-against-interface

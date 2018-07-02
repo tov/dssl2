@@ -103,22 +103,16 @@
 
 (define (< a b)
   (cond
-    [(dssl-send a '__cmp__ b #:or-else #f)
+    [(cmp a b)
      =>
      (λ (order) (racket:< order 0))]
-    [(dssl-send b '__cmp__ a #:or-else #f)
-     =>
-     (λ (order) (racket:> order 0))]
     [else #f]))
 
 (define (<= a b)
   (cond
-    [(dssl-send a '__cmp__ b #:or-else #f)
+    [(cmp a b)
      =>
      (λ (order) (racket:<= order 0))]
-    [(dssl-send b '__cmp__ a #:or-else #f)
-     =>
-     (λ (order) (racket:>= order 0))]
     [else #f]))
 
 (define (> a b)

@@ -23,6 +23,8 @@
          str str?
          ; ** vector
          vec vec?
+         ; * comparison functions
+         cmp
          ; * type predicates
          num?
          nat?
@@ -115,6 +117,18 @@
 (define (proc? x) (procedure? x))
 
 (define (contract? x) (r:contract? x))
+
+;; Comparison functions
+
+(define (cmp a b)
+  (or (dssl-send a '__cmp__ b #:or-else #f))
+      (flip-order (dssl-send b '__cmp__ a #:or-else #f)))
+
+(define (flip-order order)
+  (and (int? order)
+       (- order)))
+
+; add min and max here
 
 ;; Derived predicates
 
@@ -439,7 +453,7 @@
                         (cond
                           [(string=? self other) 0]
                           [(string<? self other) -1]
-                          [else                       1])]
+                          [else                  1])]
                        [else
                          #f]))]
    [__add__       (λ (self other)
@@ -764,15 +778,13 @@
         [else
           (define a.__eq__    (get-method-value a '__eq__))
           (define a.__class__ (get-method-value a '__class__))
-          (define (zero?->box order) (box (eq? 0 order)))
           (cond
             [(and a.__eq__ a.__class__
                   (eq? a.__class__ (get-method-value b '__class__)))
              (or (seen!? a b)
                  (a.__eq__ b))]
-            [(or (dssl-send a '__cmp__ b #:and-then zero?->box #:or-else #f)
-                 (dssl-send b '__cmp__ a #:and-then zero?->box #:or-else #f))
-             => unbox]
+            [(eq? 0 (cmp a b))
+             #t]
             [(struct-base? a)
              (or (seen!? a b)
                  (and (struct-base? b)

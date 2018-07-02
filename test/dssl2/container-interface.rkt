@@ -141,7 +141,7 @@ def ring_buffer_test():
     assert_eq o.dequeue(), 7
     assert_error o.dequeue(), 'empty'
 
-def container_test(make: FunC(nat?, CONTAINER)):
+def container_test(make: FunC(nat?, CONTAINER!)):
     let o = make(4)
     assert o.empty?()
     assert not o.full?()

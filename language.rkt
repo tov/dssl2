@@ -728,7 +728,10 @@
            (and (object-base? obj)
                 (vector-memq interface-token
                              (object-info-interfaces
-                               (object-base-object-info obj)))))
+                               (object-base-object-info obj)))
+                #t))
+         (define (#,(struct-predicate-name #'name) obj)
+           (first-order? obj))
          (define-syntax (project-method stx)
            (syntax-parse stx #:literals (quote)
              [(_ object:expr (quote method:id) contract:expr srcloc:expr)
@@ -742,7 +745,7 @@
            (λ (blame)
               (λ (val neg-party)
                  (cond
-                   [(#,(struct-predicate-name #'name) val)
+                   [(interface-struct? val)
                     (if (contract-parameters-match?
                           (object-base-contract-params val)
                           contract-parameters)
@@ -779,13 +782,14 @@
                        blame #:missing-party neg-party val
                        "value ~e does not implement interface ~a"
                        val 'name)]))))
-         #,(let ([cvs-list (syntax->list #'(cvs.var ...))])
+         #,(let ([cvs-list (syntax->list #'(cvs.var ...))]
+                 [contract-name (interface-contract-name #'name)])
              (if (null? cvs-list)
-               #'(begin
-                   (dssl-provide name)
-                   (define name
+               #`(begin
+                   (dssl-provide #,contract-name)
+                   (define #,contract-name
                      (racket:make-contract
-                       #:name 'name
+                       #:name '#,contract-name
                        #:first-order first-order?
                        #:late-neg-projection (make-projection))))
                (with-syntax
@@ -795,17 +799,15 @@
                     (generic-interface-contract-name #'name)]
                   [(anycs ...)
                     (map (λ (_) #'AnyC) cvs-list)])
-                 #'(begin
-                     (dssl-provide generic-name name)
+                 #`(begin
+                     (dssl-provide generic-name #,contract-name)
                      (define (generic-name cvs.var ...)
                        (racket:make-contract
                          #:name (format-symbol
-                                  format-string 'name "_OF" cvs.var ...)
+                                  format-string 'name "_OF!" cvs.var ...)
                          #:first-order first-order?
                          #:late-neg-projection (make-projection cvs.var ...)))
-                     (define name (generic-name anycs ...))))))
-         (define (#,(struct-predicate-name #'name) value)
-           (interface-struct? value)))]))
+                     (define #,contract-name (generic-name anycs ...)))))))]))
 
 (define-syntax (define-field stx)
   (syntax-parse stx

@@ -3,6 +3,7 @@
 (provide struct-predicate-name
          struct-special-name
          struct-special-name/located
+         interface-contract-name
          generic-interface-contract-name
          generic-class-contract-name
          struct-constructor-name
@@ -25,8 +26,11 @@
 (define (struct-special-name/located name)
   (format-id #f "~a{}" name #:source name))
 
+(define (interface-contract-name name)
+  (format-id name "~a!" name))
+
 (define (generic-interface-contract-name name)
-  (format-id name "~a_OF" name))
+  (format-id name "~a_OF!" name))
 
 (define (generic-class-contract-name name)
   (format-id name "~aOf" name))

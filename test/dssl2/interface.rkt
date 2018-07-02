@@ -18,7 +18,7 @@ class C(I):
 class D:
     def __init__(s): pass
     
-def f(x: I): x
+def f(x: I!): x
 
 interface CONTAINER[X]:
     def add(self, x: X) -> VoidC
@@ -33,8 +33,8 @@ class IntCell (CONTAINER):
     def get(self):
         'a'
 
-def g(x: CONTAINER_OF(int?)): x
-def h(x: CONTAINER): x
+def g(x: CONTAINER_OF!(int?)): x
+def h(x: CONTAINER!): x
 
 let c = IntCell(5)
 c.add(6)

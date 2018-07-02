@@ -69,9 +69,26 @@ class Array[T]:
 
     def equals?(self, other) -> bool?:
         self.equals_with?(other, lambda x, y: x == y)
+    
+    def __eq__(self, other) -> bool?:
+        self.equals?(other)
+        
+    def __print__(self, print):
+        print("array_of_vec(%p)", self.to_vec())
+        
+    def __index_ref__(self, n):
+        self.get(n)
+        
+    def __index_set__(self, n, v):
+        self.set(n, v)
 
 def array() -> Array?:
     Array(AnyC, 8)
+    
+def array_of_vec(v: vec?) -> Array?:
+    let a = Array(AnyC, v.len())
+    for i in v: a.push(i)
+    a
 
 test "array":
     let a = array()

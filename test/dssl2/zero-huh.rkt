@@ -1,5 +1,5 @@
 #lang dssl2
 
-assert (0).zero?()
-assert (0.0).zero?()
-assert not (1).zero?()
+assert zero?(0)
+assert zero?(0.0)
+assert not zero?(1)

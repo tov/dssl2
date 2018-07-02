@@ -142,7 +142,7 @@
   (if (contract? contract)
     contract
     (runtime-error #:srclocs srclocs
-                   "~a: expected a contract\n got: ~e"
+                   "%s: expected a contract\n got: %p"
                    who contract)))
 
 (define (VecC c)
@@ -421,7 +421,7 @@
                         (λ (self) (inexact->exact (truncate self)))]
                        [else
                          (runtime-error
-                           "str.__int__: bad int format in ~s" self)]))]
+                           "str.__int__: bad int format in %p" self)]))]
    [__float__     (λ (self)
                      (cond
                        [(string->number self)
@@ -429,7 +429,7 @@
                         exact->inexact]
                        [else
                          (runtime-error
-                           "str.__float__: bad float format in ~s" self)]))]
+                           "str.__float__: bad float format in %p" self)]))]
    ; binary methods
    [__eq__        (FunC str? AnyC)
                   (λ (self other) (string=? self other))]
@@ -445,11 +445,11 @@
    [__add__       (λ (self other)
                      (if (str? other)
                        (string-append self other)
-                       (dssl-format "%p%d" self other)))]
+                       (dssl-format "%s%p" self other)))]
    [__radd__      (λ (self other)
                      (if (str? other)
                        (string-append other self)
-                       (dssl-format "%d%p" other self)))]
+                       (dssl-format "%p%s" other self)))]
    ; char indexing
    [__index_ref__ (FunC nat? AnyC)
                   (λ (self i) (string-ref self i))]
@@ -538,8 +538,8 @@
              => unbox]
             [else
               (type-error 'name b
-                          (format "int or object responding to ~a method"
-                                  'rop))]))]))
+                          (r:format "int or object responding to ~a method"
+                                    'rop))]))]))
 
 (define-syntax (num-binrop stx)
   (syntax-parse stx
@@ -563,8 +563,8 @@
              => unbox]
             [else
               (type-error 'name b
-                          (format "num or object responding to ~a method"
-                                  'rop))]))]))
+                          (r:format "num or object responding to ~a method"
+                                    'rop))]))]))
 
 (define (right-shift a b)
   (arithmetic-shift a (- b)))
@@ -670,7 +670,7 @@
             [(#:or-else expr:expr) #'expr]
             [() #'(type-error
                     'send obj
-                    (format "object with method ~a" 'sel))])])
+                    (r:format "object responding to ~a method" 'sel))])])
        #'(cond
            [(get-method-value obj 'sel)
             =>

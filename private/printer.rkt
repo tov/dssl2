@@ -27,6 +27,12 @@
     (apply dssl-fprintf port fmt params)
     (get-output-string port)))
 
+(current-dssl-error-format
+  (λ (fmt . args)
+     (if (string-contains? fmt "~")
+       (apply format fmt args)
+       (apply dssl-format fmt args))))
+
 (define (dssl-fprintf port fmt . params)
   (define parsed-fmt (parse-format-string fmt))
   (define expected-params (length (filter symbol? parsed-fmt)))
@@ -44,6 +50,12 @@
     (unless (null? commands)
       (define command (car commands))
       (cond
+        [(eq? command 'string)
+         (define param (car params))
+         (if (or (string? param) (char? param) (symbol? param))
+           (display param port)
+           (dssl-print param port #f))
+         (loop (cdr commands) (cdr params))]
         [(eq? command 'debug)
          (dssl-print (car params) port #t)
          (loop (cdr commands) (cdr params))]
@@ -99,18 +111,14 @@
            [value                   (display "True" port)]
            [else                    (display "False" port)])]
         [(char? value)
-         (if debug?
-           (fprintf port "char(~a)" (char->integer value))
-           (display value port))]
+         (fprintf port "char(~a)" (char->integer value))]
         [(string? value)
-         (if debug?
-           (let
-             ([contains-sq (string-contains? value "'")]
-              [contains-dq (string-contains? value "\"")])
-             (if (and contains-sq (not contains-dq))
-               (dssl-debug-string #\" value port)
-               (dssl-debug-string #\' value port)))
-           (display value port))]
+         (let
+           ([contains-sq (string-contains? value "'")]
+            [contains-dq (string-contains? value "\"")])
+           (if (and contains-sq (not contains-dq))
+             (dssl-debug-string #\" value port)
+             (dssl-debug-string #\' value port)))]
         [(vector? value)
          (unless (seen!? value)
            (define first #t)

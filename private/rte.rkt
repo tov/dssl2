@@ -8,7 +8,8 @@
          "printer.rkt")
 
 (define (setup-rte)
-  (global-port-print-handler dssl-print)
+  (global-port-print-handler
+    (λ (value port) (dssl-print value port)))
   (current-read-interaction
     (λ (src in)
        (let loop ()

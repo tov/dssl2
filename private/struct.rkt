@@ -19,12 +19,9 @@
 (define-struct struct-info (name field-infos))
 
 (define-struct struct-base (struct-info)
-               #:transparent
-               #:methods gen:custom-write
-               [(define write-proc
-                  (λ (obj port mode) (write-struct obj port)))])
+               #:transparent)
 
-(define (write-struct value port [recur (λ (v) (fprintf port "~e" v))])
+(define (write-struct value port recur)
   (define info (struct-base-struct-info value))
   (define first #true)
   (fprintf port "~a {" (struct-info-name info))

@@ -20,7 +20,6 @@
          (for-syntax make-unwrapped-class-table))
 
 (require "names.rkt")
-(require "errors.rkt")
 (require syntax/parse/define)
 (require (only-in racket/contract/base any/c -> contract))
 (require (for-syntax racket/base
@@ -32,15 +31,9 @@
 (define-struct object-info (name interfaces method-infos))
 
 (define-struct object-base (object-info contract-params reflect)
-               #:transparent
-               #:methods gen:custom-write
-               [(define write-proc
-                  (λ (obj port mode)
-                     (cond
-                       [(eq? #t mode) (write-object obj port)]
-                       [else          (fprintf port "~e" obj)])))])
+               #:transparent)
 
-(define (write-object obj port [recur (λ (v) (fprintf port "~e" v))])
+(define (write-object obj port recur)
   (fprintf port "#<object:~a"
            (object-info-name (object-base-object-info obj)))
   (for ([field-pair (in-vector ((object-base-reflect obj)))])

@@ -29,7 +29,7 @@
          "errors.rkt")
 (require (prefix-in racket: racket/base))
 (require syntax/parse/define)
-(require (for-syntax racket/base))
+(require (for-syntax racket/base (only-in racket/syntax format-id)))
 
 (define-syntax (define-generic-binop stx)
   (syntax-parse stx #:literals (quote)
@@ -61,13 +61,16 @@
   (syntax-parse stx #:literals (quote)
     [(_ name:id [(quote op:id) msg1:str]
                 [(quote lop:id) (quote rop:id) msg2:str])
-     #'(begin
-         (define-generic-unop unop 'op msg1)
-         (define-generic-binop binop 'lop 'rop msg2)
-         (define name
-           (case-lambda
-             [(a) (unop a)]
-             [(a b) (binop a b)])))]))
+     (with-syntax
+       ([unop  (format-id #f "unary ~a" #'name)]
+        [binop (format-id #f "binary ~a" #'name)])
+       #'(begin
+           (define-generic-unop unop 'op msg1)
+           (define-generic-binop binop 'lop 'rop msg2)
+           (define name
+             (case-lambda
+               [(a) (unop a)]
+               [(a b) (binop a b)]))))]))
 
 (define-generic-binop %  '__mod__ '__rmod__ "ints")
 (define-generic-binop ** '__pow__ '__rpow__ "nums")

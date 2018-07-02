@@ -50,6 +50,7 @@
          "private/struct.rkt"
          "private/object.rkt"
          "private/prims.rkt"
+         "private/printer.rkt"
          racket/stxparam
          racket/splicing
          racket/contract/region
@@ -409,7 +410,7 @@
      =>
      (λ (index) (index i))]
     [else
-      (runtime-error "not a vector or indexable object: ~e" v)]))
+      (runtime-error "not a vector or indexable object: %p" v)]))
 
 (define (dssl-vec-set! v i a)
   (cond
@@ -417,7 +418,7 @@
      =>
      (λ (set) (set i a))]
     [else
-      (runtime-error "not a vector or indexable object: ~e" v)]))
+      (runtime-error "not a vector or indexable object: %p" v)]))
 
 (define-syntax (dssl-struct/early stx)
   (syntax-parse stx
@@ -545,7 +546,7 @@
 (define (get-field-info/or-else #:srclocs [srclocs '()] struct field)
   (or (get-field-info struct field)
       (runtime-error #:srclocs srclocs
-                     "struct ~e does not have field ~a"
+                     "struct %p does not have field %s"
                      struct field)))
 
 (define-syntax (get-method-value/or-else stx)
@@ -554,7 +555,7 @@
      #'(let ([value object])
          (or (get-method-value value 'method)
              (runtime-error #:srclocs srclocs
-                            "object ~e does not have method ~a"
+                            "object %p does not have method %s"
                             object 'method)))]
     [(_ object:expr (quote method:id))
      #'(get-method-value/or-else #:srclocs '() object 'method)]))
@@ -601,7 +602,7 @@
                   "cannot assign to object properties from outside")]
                [else
                  (runtime-error #:srclocs (get-srclocs struct)
-                                "value ‘~e’ is not a struct"
+                                "value ‘%p’ is not a struct"
                                 struct)])))])]))
 
 (define-syntax (dssl-test stx)
@@ -638,7 +639,7 @@
     (define v2 e2)
     (unless (dssl-equal? v1 v2)
       (assertion-error #:srclocs (get-srclocs e1 e2)
-                       'assert_eq "~e ≠ ~e" v1 v2))))
+                       'assert_eq "%p ≠ %p" v1 v2))))
 
 (define (dssl-assert-error/thunk srclocs thunk string-pattern)
   (define pattern
@@ -679,14 +680,14 @@
 
 (define-for-syntax (contract-name-format-string nparams)
   (if (zero? nparams)
-    "~a"
+    "%s"
     (apply string-append
-           "~a~a(~e"
-           (append (make-list (sub1 nparams) ", ~e")
+           "%s%s(%p"
+           (append (make-list (sub1 nparams) ", %p")
                    (list ")")))))
 
 (define (format-symbol fmt . args)
-  (string->symbol (apply format fmt args)))
+  (string->symbol (apply dssl-format fmt args)))
 
 (define-syntax (dssl-interface stx)
   (syntax-parse stx
@@ -1045,7 +1046,7 @@
              (when (eq? unsafe-undefined actual-field-name)
                (runtime-error
                  #:srclocs (get-srclocs #,constructor)
-                 "constructor for class ~a did not assign field ~a"
+                 "constructor for class %s did not assign field %s"
                  'name 'field.var))
              ...
              actual-self)))]))

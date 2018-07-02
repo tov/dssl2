@@ -3,6 +3,7 @@
 (provide exn:fail:dssl?
          get-srcloc
          get-srclocs
+         current-dssl-error-format
          dssl-error
          runtime-error
          type-error
@@ -10,7 +11,6 @@
          syntax-error)
 
 (require
-  (only-in racket/format ~a)
   (for-syntax racket/base
               syntax/parse))
 
@@ -34,9 +34,14 @@
   #:property prop:exn:srclocs
   (λ (a-struct) (exn:fail:dssl-srclocs a-struct)))
 
+(define current-dssl-error-format
+  (make-parameter
+    (λ (fmt . args)
+       (format "(apply dssl-format ~s ~s)" fmt args))))
+
 (define (error #:srclocs [srclocs '()] fmt . args)
   (raise (make-exn:fail:dssl
-           (apply format fmt args)
+           (apply (current-dssl-error-format) fmt args)
            (current-continuation-marks)
            srclocs)))
 
@@ -49,12 +54,12 @@
 
 (define (type-error #:srclocs [srclocs '()] who got expected)
   (dssl-error #:srclocs srclocs
-              "~a: type error\n  got: ~e\n  expected: ~a"
+              "%s: type error\n  got: %p\n  expected: %s"
               who got expected))
 
 (define (assertion-error #:srclocs [srclocs '()] who fmt . args)
   (apply dssl-error #:srclocs srclocs
-         (string-append "Assertion failed: " (~a who) ";\n " fmt)
+         (format "Assertion failed: ~a;\n ~a" who fmt)
          args))
 
 (define (syntax-error stx fmt . args)

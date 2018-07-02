@@ -8,14 +8,25 @@
          dssl-send
          dssl-equal?
          ; values
+         ; * primitive classes
+         ; ** boolean
+         bool bool?
+         ; ** character
+         char char?
+         ; ** integer
+         int int?
+         ; ** float
+         float float?
+         ; ** proc
+         proc proc?
+         ; ** string
+         str str? ensure-string
+         raw-explode
+         ; ** vector
+         vec vec?
          ; * type predicates
          num?
-         int?
          nat?
-         float?
-         bool?
-         proc?
-         vec?
          contract?
          ensure-contract/fn
          ; * contracts
@@ -46,22 +57,6 @@
                      (-> int? int? int?))]
            [random_bits (-> nat? nat?)]
            [RAND_MAX nat?])
-         ; * primitive classes
-         ; ** boolean
-         bool bool?
-         ; ** character
-         char char?
-         ; ** integer
-         int int?
-         ; ** float
-         float float?
-         ; ** proc
-         proc proc?
-         ; ** string
-         str str? ensure-string
-         raw-explode
-         ; ** vector
-         vec vec? raw-vec->vec vec->raw-vec
          ; * I/O operations
          (contract-out
            [print (-> str? AnyC ... VoidC)]
@@ -74,6 +69,7 @@
 (require "errors.rkt"
          "object.rkt"
          "struct.rkt"
+         "printer.rkt"
          syntax/parse/define
          (only-in racket/list
                   first
@@ -109,6 +105,8 @@
 (define (int? x) (exact-integer? x))
 
 (define (str? x) (string? x))
+
+(define (vec? x) (vector? x))
 
 (define (nat? x) (and (int? x) (not (negative? x))))
 
@@ -203,10 +201,10 @@
                          value)))))
 
 (define (print fmt . values)
-  (apply printf fmt values))
+  (apply dssl-printf fmt values))
 
 (define (println fmt . values)
-  (apply print fmt values)
+  (apply dssl-printf fmt values)
   (newline))
 
 (define (raw-explode s)
@@ -240,7 +238,6 @@
      [__int__     (λ (self) self)]
      [__float__   (λ (self) (exact->inexact self))]
      [__num__     (λ (self) self)]
-     [__print__   (λ (self print) (print "~a" self))]
      ; unary operators
      [__neg__     (λ (self) (- self))]
      [__pos__     (λ (self) self)]
@@ -290,12 +287,6 @@
      [__float__   (λ (self) self)]
      [__num__     (λ (self) self)]
      [__int__     (λ (self) (inexact->exact (truncate self)))]
-     [__print__   (λ (self print)
-                     (cond
-                       [(= +inf.0 self) (print "inf")]
-                       [(= -inf.0 self) (print "-inf")]
-                       [(nan? self)     (print "nan")]
-                       [else            (print "~a" self)]))]
      ; unary operators
      [__neg__     (λ (self) (- self))]
      [__pos__     (λ (self) self)]
@@ -328,8 +319,6 @@
      [__float__   (λ (self) (if self 1.0 0.0))]
      [__num__     (λ (self) (if self 1 0))]
      [__int__     (λ (self) (if self 1 0))]
-     [__print__   (λ (self print)
-                     (print (if self "True" "False")))]
      ; unary operators
      [__invert__  (λ (self) (not self))]
      ; binary operators
@@ -350,8 +339,6 @@
   (make-unwrapped-class char char?
     (; conversions
      [__int__     (λ (self) (char->integer self))]
-     [__print__   (λ (self print)
-                    (print "char(~a)" (char->integer self)))]
      ; binary methods
      [__eq__      (λ (self other) (char=? self other))])))
 
@@ -370,7 +357,7 @@
                            (λ args
                               (self (apply other args))))]
      [vec_apply         (λ (self v)
-                           (apply self (vector->list (vec->raw-vec v))))])))
+                           (apply self (vector->list v)))])))
 
 (define proc
   (case-lambda
@@ -417,18 +404,18 @@
      [__add__       (λ (self other)
                        (if (str? other)
                          (string-append self other)
-                         (r:format "~a~e" self other)))]
+                         (dssl-format "%p%d" self other)))]
      [__radd__      (λ (self other)
                        (if (str? other)
                          (string-append other self)
-                         (r:format "~e~a" other self)))]
+                         (dssl-format "%d%p" other self)))]
      ; char indexing
      [__index_ref__ (λ (self i) (string-ref self i))]
      ; public methods
      [len           (λ (self) (string-length self))]
-     [explode       (λ (self) (raw-vec->vec (raw-explode self)))]
+     [explode       (λ (self) (raw-explode self))]
      [format        (λ (self . args)
-                       (apply r:format self args))])))
+                       (apply dssl-format self args))])))
 
 (define str
   (case-lambda
@@ -436,7 +423,7 @@
     [(val)
      (cond
        [(str? val) val]
-       [else       (format "~e" val)])]
+       [else       (dssl-format "%p" val)])]
     [(len c)
      (make-string len (char/internal 'str c))]))
 
@@ -446,6 +433,39 @@
     [else
       (type-error who value "string")]))
 
+(define-for-syntax vec-class
+  (make-unwrapped-class vec vec?
+    ([__index_ref__ (λ (self n) (vector-ref self n))]
+     [__index_set__ (λ (self n v) (vector-set! self n v))]
+     [__eq__        (λ (self other)
+                       (define o-ref (get-method-value other '__index_ref__))
+                       (and (eq? (vector-length self) (dssl-send other 'len))
+                            (for/and ([i (vector-length self)])
+                              (dssl-equal? (vector-ref self i) (o-ref i)))))]
+     [len           (λ (self) (vector-length self))]
+     [implode       (λ (self)
+                       (define (convert c)
+                         (cond
+                           [(char? c)    c]
+                           [(integer? c) (integer->char c)]
+                           [else (type-error
+                                   'vec.implode c "char or int code point")]))
+                       (list->string
+                         (r:map convert (vector->list self))))]
+     [map           (λ (self f)
+                       (build-vector
+                         (vector-length self)
+                         (λ (i) (f (vector-ref self i)))))]
+     [filter        (λ (self pred)
+                       (list->vector
+                         (r:filter pred (vector->list self))))])))
+
+(define vec
+  (case-lambda
+    [() (vector)]
+    [(size) (make-vector size #false)]
+    [(size init) (build-vector size init)]))
+
 (define-values-for-syntax (*dir-table* *method-table*)
   (make-unwrapped-class-table
     bool-class
@@ -453,7 +473,8 @@
     int-class
     float-class
     proc-class
-    str-class))
+    str-class
+    vec-class))
 
 (define-syntax (int-binrop stx)
   (syntax-parse stx
@@ -565,71 +586,6 @@
             'float x
             "number, string, Boolean, or object responding to __float__")]))
 
-(define-primitive-class
-  vec
-  (raw-vec->vec repr)
-  ([__index_ref__ (FunC nat? AnyC)
-                  (λ (n) (vector-ref repr n))]
-   [__index_set__ (FunC nat? AnyC AnyC)
-                  (λ (n v) (vector-set! repr n v))]
-   [__eq__        (FunC vec? AnyC)
-                  (λ (other)
-                     (define o-ref (get-method-value other '__index_ref__))
-                     (and (eq? (len) (dssl-send other 'len))
-                          (for/and ([i (len)])
-                            (dssl-equal? (__index_ref__ i) (o-ref i)))))]
-   [__print__     AnyC
-                  (λ (print)
-                     (define first #t)
-                     (print "[")
-                     (for ([element (in-vector repr)])
-                        (if first
-                          (set! first #f)
-                          (print ", "))
-                        (print "~e" element))
-                     (print "]"))]
-   [__get_raw__   (FunC AnyC)
-                  (λ () repr)]
-   [len           AnyC
-                  (λ () (vector-length repr))]
-   [implode       AnyC
-                  (λ ()
-                     (define (convert c)
-                       (cond
-                         [(char? c)    c]
-                         [(integer? c) (integer->char c)]
-                         [else (type-error
-                                 'vec.implode c "char or int code point")]))
-                     (list->string
-                       (r:map convert (vector->list repr))))]
-   [map           (FunC (FunC AnyC AnyC) AnyC)
-                  (λ (f)
-                     (raw-vec->vec
-                       (build-vector
-                         (vector-length repr)
-                         (λ (i) (f (vector-ref repr i))))))]
-   [filter        (FunC (FunC AnyC AnyC) AnyC)
-                  (λ (pred)
-                     (raw-vec->vec
-                       (list->vector
-                         (r:filter pred (vector->list repr)))))]))
-
-(define vec
-  (case-lambda
-    [() (raw-vec->vec (vector))]
-    [(size) (raw-vec->vec (make-vector size #false))]
-    [(size init) (raw-vec->vec (build-vector size init))]))
-
-(define (get-raw v)
-  (cond
-    [(get-method-value v '__get_raw__)
-     =>
-     (λ (get-raw) (get-raw))]
-    [else #f]))
-
-(define (vec->raw-vec v)
-  (and (vec? v) (get-raw v)))
-
 (define-syntax (get-method-list stx)
   (define dir-table (syntax-local-eval #'*dir-table*))
   (syntax-parse #`(#,stx #,dir-table) #:literals (quote)
@@ -655,10 +611,8 @@
        [((pred . method) ...)
         #`(let ([value receiver])
             (cond
-              [(and (object-base? value)
-                    (get-method-info value 'sel))
-               =>
-               (λ (method-info) ((method-info-getter method-info) value))]
+              [(get-method-value/fun value 'sel)
+               => identity]
               [(pred value)
                (method value)]
               ...
@@ -710,12 +664,10 @@
   (cond
     [(get-method-list obj)
      =>
-     (λ (methods)
-        (raw-vec->vec
-          (list->vector methods)))]
+     list->vector]
     [(struct-base? obj)
-     (raw-vec->vec (list->vector (get-field-list obj)))]
-    [else               (type-error 'dir obj "a struct or object")]))
+     (list->vector (get-field-list obj))]
+    [else (type-error 'dir obj "a struct or object")]))
 
 ; A Chain is one of:
 ;  - [Box Natural]

@@ -2,11 +2,11 @@
 
 assert_eq str(3), '3'
 assert_eq str(3.0), '3.0'
-assert_eq '~e ~e'.format(True, False), 'True False'
+assert_eq '%d %d'.format(True, False), 'True False'
 assert_eq str('hello'), "hello"
-assert_eq '~e'.format('hello'), "'hello'"
-assert_eq '~e'.format('"hello"'), '\'"hello"\''
-assert_eq '~e'.format("'hello'"), '"\'hello\'"'
+assert_eq '%d'.format('hello'), "'hello'"
+assert_eq '%d'.format('"hello"'), '\'"hello"\''
+assert_eq '%d'.format("'hello'"), '"\'hello\'"'
 
 struct foo:
     let bar

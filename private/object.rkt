@@ -15,6 +15,7 @@
          method-info-getter
          write-object
          get-method-info
+         get-method-value/fun
          define-primitive-class
          (for-syntax make-unwrapped-class
                      make-unwrapped-class-table))
@@ -139,3 +140,10 @@
         (return info)))
     #false))
 
+(define (get-method-value/fun obj sym)
+  (cond
+    [(and (object-base? obj)
+          (get-method-info obj sym))
+     =>
+     (λ (method-info) ((method-info-getter method-info) obj))]
+    [else #f]))

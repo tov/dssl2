@@ -336,26 +336,24 @@
     [(_ [(i:id j:id) v:expr] expr:expr)
      #:fail-when (and (bound-identifier=? #'i #'j) #'j)
                  "duplicate variable name"
-     #'(raw-vec->vec
-         (for/vector ([i (in-naturals)]
-                      [j (dssl-in-value v)])
-           expr))]
+     #'(for/vector ([i (in-naturals)]
+                    [j (dssl-in-value v)])
+         expr)]
     [(_ [j:id v:expr] expr:expr)
      #'(dssl-for/vec [(_ j) v] expr)]
     [(_ [(i:id j:id) v:expr] #:when when expr:expr)
      #:fail-when (and (bound-identifier=? #'i #'j) #'j)
                  "duplicate variable name"
-     #'(raw-vec->vec
-         (for/vector ([i (in-naturals)]
-                      [j (dssl-in-value v)]
-                      #:when when)
-           expr))]
+     #'(for/vector ([i (in-naturals)]
+                    [j (dssl-in-value v)]
+                    #:when when)
+         expr)]
     [(_ [j:id v:expr] #:when when:expr expr:expr)
      #'(dssl-for/vec [(_ j) v] #:when when expr)]))
 
 (define (dssl-in-value/value srclocs v)
   (cond
-    [(vec->raw-vec v) => in-vector]
+    [(vec? v)      (in-vector v)]
     [(natural? v)  (in-range v)]
     [(str? v)      (in-vector (raw-explode v))]
     [else          (type-error #:srclocs srclocs
@@ -625,10 +623,10 @@
 
 (define/contract (dssl-make-vec a b)
   (-> int? AnyC vec?)
-  (raw-vec->vec (make-vector a b)))
+  (make-vector a b))
 
 (define (vec-lit . elements)
-  (raw-vec->vec (list->vector elements)))
+  (list->vector elements))
 
 (define-syntax-rule (dssl-assert expr)
   (unless expr

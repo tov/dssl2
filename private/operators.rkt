@@ -41,7 +41,7 @@
            [(dssl-send b 'rop a #:and-then box #:or-else #f)
             => unbox]
            [else
-             (type-error 'name (raw-vec->vec (vector a b))
+             (type-error 'name (vector a b)
                          (format "~a or object responding to ~a method"
                                  msg 'lop))]))]))
 

@@ -25,7 +25,7 @@
          ; ** vector
          vec vec?
          ; * comparison functions
-         cmp
+         cmp max min
          ; * numeric predicates
          num?
          nat?
@@ -42,6 +42,7 @@
          VoidC
          (contract-out
            [VecC (-> contract? contract?)]
+           [NotC (-> contract? contract?)]
            [OrC (-> contract? contract? ... contract?)]
            [AndC (-> contract? contract? ... contract?)]
            [FunC (-> contract? contract? ... contract?)]
@@ -55,10 +56,8 @@
                               (OrC #f (-> AnyC AnyC))
                               (OrC #f (-> (-> str? VoidC) AnyC AnyC))
                               contract?)])
-         ; * additional numeric operations
+         ; * Randomness operations
          (contract-out
-           [max (-> num? num? ... num?)]
-           [min (-> num? num? ... num?)]
            [random (case->
                      (-> float?)
                      (-> (IntInC 1 RAND_MAX) nat?)
@@ -96,6 +95,7 @@
                   new-∀/c
                   new-∃/c
                   or/c
+                  not/c
                   raise-blame-error
                   rename-contract)
          (only-in racket/function
@@ -133,7 +133,31 @@
   (and (int? order)
        (- order)))
 
-; add min and max here
+(define (max x . xs)
+  (cond
+    [(null? xs) x]
+    [(cmp x (first xs))
+     =>
+     (λ (order)
+      (apply max
+             (if (eq? -1 order) (first xs) x)
+             (rest xs)))]
+    [else
+      (dssl-error "max: not ordered: %p and %p"
+                  x (first xs))]))
+
+(define (min x . xs)
+  (cond
+    [(null? xs) x]
+    [(cmp x (first xs))
+     =>
+     (λ (order)
+      (apply min
+             (if (eq? 1 order) (first xs) x)
+             (rest xs)))]
+    [else
+      (dssl-error "min: not ordered: %p and %p"
+                  x (first xs))]))
 
 ;; Numeric predicates
 
@@ -186,6 +210,11 @@
   (rename-contract
     (r:vectorof c)
     (format-fun 'VecC c '())))
+
+(define (NotC c)
+  (rename-contract
+    (r:not/c c)
+    (format-fun 'NotC c '())))
 
 (define (OrC c . cs)
   (rename-contract

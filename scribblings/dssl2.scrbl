@@ -1407,8 +1407,12 @@ statements that return no value (such as assignment and loops).
 
 @defprocform[VecC]{(contract?) -> contract?}
 
-Creates a contract that protected a vector to ensure that its elements
+Creates a contract that protects a vector to ensure that its elements
 satisfy the given contract.
+
+@defprocform[NotC]{(contract?) -> contract?}
+
+Creates a contract that inverts the sense of the given (flat) contract.
 
 @defprocform[OrC]{(contract?, contract?, ...) -> contract?}
 

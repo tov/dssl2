@@ -21,7 +21,6 @@
          proc proc?
          ; ** string
          str str?
-         raw-explode
          ; ** vector
          vec vec?
          ; * type predicates
@@ -100,7 +99,7 @@
                      (only-in racket/syntax syntax-local-eval)
                      syntax/parse))
 
-(define (num? x) (number? x))
+;;; Basic type predicates
 
 (define (int? x) (exact-integer? x))
 
@@ -108,16 +107,23 @@
 
 (define (vec? x) (vector? x))
 
-(define (nat? x) (and (int? x) (not (negative? x))))
-
 (define (float? x) (flonum? x))
 
 (define (bool? x) (boolean? x))
 
 (define (proc? x) (procedure? x))
 
-(define (contract? x)
-  (r:contract? x))
+(define (contract? x) (r:contract? x))
+
+;; Derived predicates
+
+(define (num? x)
+  (or (int? x) (float? x)))
+
+(define (nat? x)
+  (and (int? x) (not (negative? x))))
+
+;; Contracts
 
 (define AnyC (flat-named-contract 'AnyC any/c))
 
@@ -194,6 +200,8 @@
                               message))
                          value)))))
 
+;; I/O operations
+
 (define (print fmt . values)
   (apply dssl-printf fmt values))
 
@@ -201,14 +209,10 @@
   (apply dssl-printf fmt values)
   (newline))
 
-(define (raw-explode s)
-  (list->vector
-    (string->list s)))
+(define (sleep sec)
+  (r:sleep sec))
 
-(define bool
-  (case-lambda
-    [() #f]
-    [(x) (not (not x))]))
+;; Randomness
 
 ; This is the largest argument that `random` can take.
 (define RAND_MAX 4294967087)
@@ -225,8 +229,61 @@
     [else           (+ (* 2 (random_bits (sub1 n)))
                        (random 2))]))
 
-(define (sleep sec)
-  (r:sleep sec))
+;; Primitive classes
+
+(define bool
+  (case-lambda
+    [() #f]
+    [(x) (not (not x))]))
+
+(define-unwrapped-class bool-class bool bool?
+  (; conversions
+   [__float__   (λ (self) (if self 1.0 0.0))]
+   [__num__     (λ (self) (if self 1 0))]
+   [__int__     (λ (self) (if self 1 0))]
+   ; unary operators
+   [__invert__  (λ (self) (not self))]
+   ; binary operators
+   [__cmp__     prim:bool-cmp]
+   [__and__     prim:and]
+   [__rand__    prim:and]
+   [__or__      prim:or]
+   [__ror__     prim:or]
+   [__xor__     prim:xor]
+   [__rxor__    prim:xor]))
+
+(define char
+  (case-lambda
+    [() (char 0)]
+    [(val) (char/internal 'char val)]))
+
+(define-unwrapped-class char-class char char?
+  (; conversions
+   [__int__     (λ (self) (char->integer self))]
+   ; binary methods
+   [__eq__      (λ (self other) (char=? self other))]))
+
+(define (char/internal who val)
+  (cond
+    [(char? val) val]
+    [(int? val) (integer->char val)]
+    [(and (str? val) (= 1 (string-length val)))
+     (string-ref val 0)]
+    [else
+      (type-error who val "int code point or singleton string")]))
+
+(define int
+  (case-lambda
+    [() 0]
+    [(x)
+     (cond
+       [(int? x) x]
+       [(dssl-send x '__int__ #:and-then box #:or-else #f)
+        => unbox]
+       [else
+         (type-error
+           'int x
+           "number, string, Boolean, or object responding to __int__")])]))
 
 (define-unwrapped-class int-class int int?
   (; conversions
@@ -276,6 +333,19 @@
                      (dssl-error "sqrt: cannot handle a negative")
                      (sqrt self)))]))
 
+(define float
+  (case-lambda
+    [() 0]
+    [(x)
+     (cond
+       [(float? x) x]
+       [(dssl-send x '__float__ #:and-then box #:or-else #f)
+        => unbox]
+       [else
+         (type-error
+           'float x
+           "number, string, Boolean, or object responding to __float__")])]))
+
 (define-unwrapped-class float-class float float?
   (; conversions
    [__float__   (λ (self) self)]
@@ -307,49 +377,6 @@
    [nan?        (λ (self) (nan? self))]
    [sqrt        (λ (self) (sqrt self))]))
 
-(define-unwrapped-class bool-class bool bool?
-  (; conversions
-   [__float__   (λ (self) (if self 1.0 0.0))]
-   [__num__     (λ (self) (if self 1 0))]
-   [__int__     (λ (self) (if self 1 0))]
-   ; unary operators
-   [__invert__  (λ (self) (not self))]
-   ; binary operators
-   [__cmp__     prim:bool-cmp]
-   [__and__     prim:and]
-   [__rand__    prim:and]
-   [__or__      prim:or]
-   [__ror__     prim:or]
-   [__xor__     prim:xor]
-   [__rxor__    prim:xor]))
-
-(define char
-  (case-lambda
-    [() (char 0)]
-    [(val) (char/internal 'char val)]))
-
-(define-unwrapped-class char-class char char?
-  (; conversions
-   [__int__     (λ (self) (char->integer self))]
-   ; binary methods
-   [__eq__      (λ (self other) (char=? self other))]))
-
-(define (char/internal who val)
-  (cond
-    [(char? val) val]
-    [(int? val) (integer->char val)]
-    [(and (str? val) (= 1 (string-length val)))
-     (string-ref val 0)]
-    [else
-      (type-error who val "int code point or singleton string")]))
-
-(define-unwrapped-class proc-class proc proc?
-  ([compose           (λ (self other)
-                         (λ args
-                            (self (apply other args))))]
-   [vec_apply         (λ (self v)
-                         (apply self (vector->list v)))]))
-
 (define proc
   (case-lambda
     [()    identity]
@@ -361,6 +388,23 @@
        [else
          (type-error 'proc val
                      "proc or object responding to __proc__ method")])]))
+
+(define-unwrapped-class proc-class proc proc?
+  ([compose           (λ (self other)
+                         (λ args
+                            (self (apply other args))))]
+   [vec_apply         (λ (self v)
+                         (apply self (vector->list v)))]))
+
+(define str
+  (case-lambda
+    [() ""]
+    [(val)
+     (cond
+       [(str? val) val]
+       [else       (dssl-format "%p" val)])]
+    [(len c)
+     (make-string len (char/internal 'str c))]))
 
 (define-unwrapped-class str-class str str?
   (; conversions
@@ -405,19 +449,15 @@
                   (λ (self i) (string-ref self i))]
    ; public methods
    [len           (λ (self) (string-length self))]
-   [explode       (λ (self) (raw-explode self))]
+   [explode       (λ (self) (list->vector (string->list self)))]
    [format        (λ (self . args)
                      (apply dssl-format self args))]))
 
-(define str
+(define vec
   (case-lambda
-    [() ""]
-    [(val)
-     (cond
-       [(str? val) val]
-       [else       (dssl-format "%p" val)])]
-    [(len c)
-     (make-string len (char/internal 'str c))]))
+    [() (vector)]
+    [(size) (make-vector size #false)]
+    [(size init) (build-vector size init)]))
 
 (define-unwrapped-class vec-class vec vec?
   ([__index_ref__ (FunC nat? AnyC)
@@ -458,12 +498,6 @@
   (list->vector
     (r:filter pred (vector->list self))))
 
-(define vec
-  (case-lambda
-    [() (vector)]
-    [(size) (make-vector size #false)]
-    [(size init) (build-vector size init)]))
-
 (define-values-for-syntax (*dir-table* *method-table*)
   (make-unwrapped-class-table
     bool-class
@@ -473,6 +507,8 @@
     proc-class
     str-class
     vec-class))
+
+;; Primitive class helpers
 
 (define-syntax (int-binrop stx)
   (syntax-parse stx
@@ -527,6 +563,25 @@
 (define (right-shift a b)
   (arithmetic-shift a (- b)))
 
+(define (prim:num-cmp a b)
+  (and (num? b)
+       (cond
+         [(< a b) -1]
+         [(> a b) 1]
+         [else    0])))
+
+(define (prim:div a b)
+  (cond
+    [(and (int? a) (int? b)) (quotient a b)]
+    [else                    (r:/ a b)]))
+
+(define (prim:bool-cmp a b)
+  (and (bool? b)
+       (cond
+         [(eq? a b) 0]
+         [b         -1]
+         [else      1])))
+
 (define-simple-macro (logical-binop name:id bool-op:expr int-op:expr)
   (λ (a b)
      (cond
@@ -547,42 +602,11 @@
 (define prim:or (logical-binop __or__ or bitwise-ior))
 (define prim:xor (logical-binop __xor__ (λ (a b) (not (eq? a b))) bitwise-xor))
 
-(define (prim:num-cmp a b)
-  (and (num? b)
-       (cond
-         [(< a b) -1]
-         [(> a b) 1]
-         [else    0])))
-
-(define (prim:bool-cmp a b)
-  (and (bool? b)
-       (cond
-         [(eq? a b) 0]
-         [b         -1]
-         [else      1])))
-
-(define (prim:div a b)
-  (cond
-    [(and (int? a) (int? b)) (quotient a b)]
-    [else                    (r:/ a b)]))
-
-(define (int x)
-  (cond
-    [(int? x) x]
-    [(dssl-send x '__int__ #:and-then box #:or-else #f)
-     => unbox]
-    [else (type-error
-            'int x
-            "number, string, Boolean, or object responding to __int__")]))
-
-(define (float x)
-  (cond
-    [(float? x) x]
-    [(dssl-send x '__float__ #:and-then box #:or-else #f)
-     => unbox]
-    [else (type-error
-            'float x
-            "number, string, Boolean, or object responding to __float__")]))
+;; Method fetching
+;;
+;; This all belongs in private/object.rkt, except that we can't
+;; define it until after we defined *dir-table* and *method-table*,
+;; and those happen in this file.
 
 (define-syntax (get-method-list stx)
   (define dir-table (syntax-local-eval #'*dir-table*))
@@ -647,16 +671,7 @@
             (λ (method) (and-then.expr (method arg ...)))]
            [else or-else-expr]))]))
 
-(define-syntax (method-or stx)
-  (syntax-parse stx
-    #:literals (quote else)
-    #:datum-literals (send)
-    [(_ [else body:expr ...])
-     #'(begin body ...)]
-    [(_ [(send obj:id (quote sel:id) arg:expr ...)]
-        rest ...)
-     #'(send obj 'sel arg ...
-             #:or-else (method-or rest ...))]))
+;; Listing the methods of an object.
 
 (define (dir obj)
   (cond
@@ -666,6 +681,8 @@
     [(struct-base? obj)
      (list->vector (get-field-list obj))]
     [else (type-error 'dir obj "a struct or object")]))
+
+;; EQUALITY
 
 ; A Chain is one of:
 ;  - [Box Natural]

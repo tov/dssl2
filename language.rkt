@@ -355,7 +355,7 @@
   (cond
     [(vec? v)      (in-vector v)]
     [(natural? v)  (in-range v)]
-    [(str? v)      (in-vector (raw-explode v))]
+    [(str? v)      (in-string v)]
     [else          (type-error #:srclocs srclocs
                                'for v "something iterable")]))
 

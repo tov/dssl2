@@ -42,8 +42,13 @@
     [(null? (cdr ys)) ys]
     [else (cons (car ys) (cons x (intersperse x (cdr ys))))]))
 
-(define-for-syntax (~nonterminal nt)
-  #`(list "‹" (emph #,(symbol->string (syntax-e nt))) "›"))
+(define-for-syntax (~nonterminal nt [def? #f])
+  (define name   (symbol->string (syntax-e nt)))
+  (define tag    (format "nt:~a" name))
+  (define syntax #`(list "‹" (emph #,name) "›"))
+  (if def?
+    #`(elemtag #,tag #,syntax)
+    #`(elemref #,tag #,syntax #:underline? #f)))
 
 (define-syntax (parse-rhs stx)
   (syntax-parse stx
@@ -74,7 +79,7 @@
   (syntax-parse stx
     [(_ [non-terminal:id production0:expr production:expr ...] ...)
      (define (interpret-nt nt)
-       (or (and nt (~nonterminal nt))
+       (or (and nt (~nonterminal nt #t))
            ""))
      (define (interpret-sym sym)
        (or (and sym #`(m #,sym))

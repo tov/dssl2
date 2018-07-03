@@ -1,6 +1,8 @@
 #lang racket/base
 
-(provide struct-predicate-name
+(provide class-qualify/sym
+         (for-syntax class-qualify)
+         struct-predicate-name
          struct-special-name
          struct-special-name/located
          interface-contract-name
@@ -14,6 +16,12 @@
          (only-in racket/syntax format-id))
 (require (for-syntax racket/base
                      (only-in racket/syntax format-id)))
+
+(define (class-qualify/sym qualifier property)
+  (format "«~a».~a" qualifier property))
+
+(define-for-syntax (class-qualify qualifier property)
+  (format-id qualifier "«~a».~a" qualifier property))
 
 (define (struct-predicate-name name)
   (format-id name "~a?" name))

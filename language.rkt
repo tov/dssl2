@@ -739,7 +739,7 @@
                   (racket:contract
                     contract method-value
                     'name "method caller"
-                    (format "~a#~a" 'name 'method) srcloc))]))
+                    (class-qualify/sym 'name 'method) srcloc))]))
          (define (make-projection cvs.var ...)
            (define contract-parameters (vector-immutable cvs.var ...))
            (λ (blame)
@@ -841,15 +841,12 @@
                            'external-name)
                          . args))])))))]))
 
-(define-for-syntax (qualify qualifier property)
-  (format-id qualifier "~a#~a" qualifier property))
-
 (define-simple-macro (bind-self class:id self:id actual-self:id body:expr)
   (syntax-parameterize
     ([dssl-self
        (syntax-parser
-         [(_ prop)          (qualify #'class #'prop)]
-         [(_ prop rhs:expr) #`(set! #,(qualify #'class #'prop) rhs)]
+         [(_ prop)          (class-qualify #'class #'prop)]
+         [(_ prop rhs:expr) #`(set! #,(class-qualify #'class #'prop) rhs)]
          [_:id              #'actual-self])])
     (begin
       (define-syntax self
@@ -982,7 +979,7 @@
          method-names
          (syntax->list #'((method-params ...) ...))))
      ; Generate new names:
-     (define (self. property) (qualify #'name property))
+     (define (self. property) (class-qualify #'name property))
      (with-syntax
        ([internal-name
           (format-id #f "~a-internal" #'name)]

@@ -1167,19 +1167,19 @@ Given no arguments, returns @racket[0].
 }
 ]
 
-@defmethform[int#abs]{() -> int?}
+@defmethform[int abs]{() -> int?}
 
 Returns the absolute value of the receiving integer.
 
-@defmethform[int#ceiling]{() -> int?}
+@defmethform[int ceiling]{() -> int?}
 
 Returns the same integer.
 
-@defmethform[int#floor]{() -> int?}
+@defmethform[int floor]{() -> int?}
 
 Returns the same integer.
 
-@defmethform[int#sqrt]{() -> float?}
+@defmethform[int sqrt]{() -> float?}
 
 Returns the square root of the receiving integer, as a @racket[float].
 
@@ -1215,21 +1215,21 @@ respectively.
 
 Given no arguments, returns @racket[0.0].
 
-@defmethform[float#abs]{() -> float?}
+@defmethform[float abs]{() -> float?}
 
 Returns the absolute value of the receiving float.
 
-@defmethform[float#ceiling]{() -> int?}
+@defmethform[float ceiling]{() -> int?}
 
 Returns smallest integer that is no less than the receiving float.
 That is, it rounds up to the nearest integer.
 
-@defmethform[float#floor]{() -> int?}
+@defmethform[float floor]{() -> int?}
 
 Returns the largest integer that is no greater than the receiving float.
 That is, it rounds down to the nearest integer.
 
-@defmethform[float#sqrt]{() -> float?}
+@defmethform[float sqrt]{() -> float?}
 
 Returns the square root of the receiving float.
 
@@ -1250,7 +1250,7 @@ The constructor for @linkclass[proc].
 Given one procedure argument, returns it unchanged. Given no arguments,
 returns the identity function.
 
-@defmethform[proc#compose]{(proc?) -> proc?}
+@defmethform[proc compose]{(proc?) -> proc?}
 
 Composes the receiving procedure with the parameter procedure. For example,
 
@@ -1258,7 +1258,7 @@ Composes the receiving procedure with the parameter procedure. For example,
 assert_eq (λ x: x + 1).compose(λ x: x * 2)(5), 11
 }|
 
-@defmethform[proc#vec_apply]{(vec?) -> AnyC}
+@defmethform[proc vec_apply]{(vec?) -> AnyC}
 
 Applies the receiving procedure using the contents of the given vector
 as its arguments.
@@ -1303,11 +1303,11 @@ Given no arguments, returns the empty string.
 }
 ]
 
-@defmethform[str#explode]{() -> VecC(char?)}
+@defmethform[str explode]{() -> VecC(char?)}
 
 Breaks the receiving string into a vector of its characters.
 
-@defmethform[str#format]{(AnyC, ...) -> str?}
+@defmethform[str format]{(AnyC, ...) -> str?}
 
 Formats the given arguments, treating the receiving string
 as a format string in the style of @racket[print].
@@ -1318,7 +1318,7 @@ For example,
 assert_eq '%s or %p'.format('this', 'that'), "this or 'that'"
 }|
 
-@defmethform[str#len]{() -> nat?}
+@defmethform[str len]{() -> nat?}
 
 Returns the length of the receiving string in characters.
 
@@ -1355,7 +1355,7 @@ That is, @code{vec(len, init)} is equivalent to
 }
 ]
 
-@defmethform[vec#filter]{(FunC(AnyC, AnyC)) -> vec?}
+@defmethform[vec filter]{(FunC(AnyC, AnyC)) -> vec?}
 
 Filters the given vector, by returning a vector of only the elements
 satisfying the given predicate.
@@ -1369,16 +1369,16 @@ is equivalent to
 [ x for x in v if pred?(x) ]
 }|
 
-@defmethform[vec#implode]{() -> vec?}
+@defmethform[vec implode]{() -> vec?}
 
 If the receiver is a vector of characters, joins them into a string.
 (Otherwise, an error is reported.)
 
-@defmethform[vec#len]{() -> nat?}
+@defmethform[vec len]{() -> nat?}
 
 Returns the length of the vector.
 
-@defmethform[vec#map]{(FunC(AnyC, AnyC)) -> vec?}
+@defmethform[vec map]{(FunC(AnyC, AnyC)) -> vec?}
 
 Maps a function over a vector, returning a new vector.
 
@@ -1438,7 +1438,7 @@ Determines whether its argument is an instance of @linkclass[vec].
 @defprocform[num?]{(AnyC) -> bool?}
 
 Determines whether its argument is a number. This includes both
-@racket[int]s and @racket[float]s.
+@linkclass[int] and @linkclass[float].
 
 @defprocform[nat?]{(AnyC) -> bool?}
 

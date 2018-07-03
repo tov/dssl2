@@ -1,11 +1,10 @@
 #lang racket/base
 
-(require (only-in racket/list
-                  first
-                  rest)
+(require "../private/names.rkt"
          (only-in racket/format
                   ~a)
-         (for-syntax racket/base))
+         (for-syntax racket/base
+                     (only-in racket/syntax format-id)))
 
 (provide grammar
          defexpform defexpforms defsmplform defcmpdform defcmpdforms
@@ -174,15 +173,21 @@
              (list (list (defidform/inline name) chunk0 ...)
                    (list (redefidform/inline name) chunk ...) ...)))
 
-(define-syntax-rule (defmethform name chunk ...)
-  (*defforms "method"
-             (list (list (defidform/inline name) chunk ...))))
+(define-syntax (defmethform stx)
+  (syntax-parse stx
+    [(_ name:id sel:id chunk ...)
+     (define method-name (class-qualify #'name #'sel))
+     #`(*defforms "method"
+                  (list (list (defidform/inline #,method-name) chunk ...)))]))
 
-(define-syntax-rule (defmethforms name [chunk0 ...] [chunk ...] ...)
-  (*defforms "method"
-             (list (list (defidform/inline name) chunk0 ...)
-                   (link (redefidform/inline name) chunk ...)
-                   ...)))
+(define-syntax (defmethforms stx)
+  (syntax-parse stx
+    [(_ name:id sel:id [chunk0 ...] [chunk ...] ...)
+     (define method-name (class-qualify #'name #'sel))
+     #`(*defforms "method"
+                  (list (list (defidform/inline #,method-name) chunk0 ...)
+                        (link (redefidform/inline #,method-name) chunk ...)
+                        ...))]))
 
 (define (*defforms kind forms)
   (define labeller (add-background-label (or kind "syntax")))
@@ -190,8 +195,8 @@
     (list (make-paragraph (list (to-element (c form))))))
   (define table-content
     (cons
-      (list (labeller (make-cell (first forms))))
-      (map list (map make-cell (rest forms)))))
+      (list (labeller (make-cell (car forms))))
+      (map list (map make-cell (cdr forms)))))
   (define table (make-table boxed-style table-content))
   (make-blockquote
     vertical-inset-style

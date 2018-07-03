@@ -92,7 +92,7 @@
         (method:unwrapped-method ...))
      (with-syntax
        ([(visible-method-name ...)
-         (map (λ (sel) (format-id #'class-name "~a#~a" #'class-name sel))
+         (map (λ (sel) (class-qualify #'class-name sel))
               (syntax->list #'(method.sel ...)))])
        #'(begin
            (#%provide visible-method-name ...)

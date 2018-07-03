@@ -38,9 +38,9 @@ def h(x: CONTAINER!): x
 
 let c = IntCell(5)
 c.add(6)
-assert_error c.add('hi'), 'IntCell#add'
+assert_error c.add('hi'), 'IntCell'
 
 let o = g(c)
 o.add(7)
-assert_error o.add('hi'), 'CONTAINER#add'
+assert_error o.add('hi'), 'CONTAINER'
 

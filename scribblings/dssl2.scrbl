@@ -1059,7 +1059,7 @@ Short-circuiting logical or. First evaluates @nt_[expr]{1}; if the result
 is non-false then the whole disjunction has that result; otherwise the
 result of the conjunction is the result of @nt_[expr]{2}.
 
-@section{Built-in functions, classes, and constants}
+@section{Built-in functions, classes, methods, and constants}
 
 @subsection{Primitive classes}
 

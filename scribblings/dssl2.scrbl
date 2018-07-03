@@ -1,7 +1,7 @@
 #lang scribble/manual
 
 @(require
-        "util.rkt"
+        "helpers.rkt"
         (for-label dssl2)
         (for-label (prefix-in racket: racket)))
 
@@ -989,8 +989,8 @@ The @racket[**] operator is right-associative.
 
 Logical negation, bitwise negation, numerical negation, and numerical identity.
 
-@c{not} @nt[expr] evaluates @nt[expr], then returns @racket[True] if
-the result was @racket[False], and @racket[False] for any other result.
+@c{not} @nt[expr] evaluates @nt[expr], then returns @code{True} if
+the result was @code{False}, and @code{False} for any other result.
 
 @c{~}@nt[expr], @c{-}@nt[expr], and @c{+}@nt[expr] require
 that @nt[expr] evaluate to a number. Then @c{~} flips every bit,
@@ -1065,7 +1065,7 @@ lexicographic order.
 @defexpform{@nt_[expr]{1} @defidform/inline[and] @nt_[expr]{2}}
 
 Short-circuiting logical and. First evaluates @nt_[expr]{1}; if the result
-is @racket[False] then the whole conjunction is @racket[False];
+is @code{False} then the whole conjunction is @code{False};
 otherwise, the result of the conjunction is the result of @nt_[expr]{2}.
 
 @defexpform{@nt_[expr]{1} @defidform/inline[or] @nt_[expr]{2}}
@@ -1098,27 +1098,27 @@ in this subsection.
 
 @defclassform[bool]
 
-The primitive class for Boolean values, @racket[True] and
-@racket[False]. The type predicate for @linkclass[bool] is
+The primitive class for Boolean values, @code{True} and
+@code{False}. The type predicate for @linkclass[bool] is
 @racket[bool?].
 
 Booleans support logical binary operators @racket[&] (and), @racket[\|]
 (or, written without the backslash), and @racket[^] (xor), and logical
 unary negation @racket[~]. They also support comparison with
-@racket[==], @racket[<], @racket[<=], etc. @racket[False] compares less
-than @racket[True].
+@racket[==], @racket[<], @racket[<=], etc. @code{False} compares less
+than @code{True}.
 
 @defprocforms[bool
-    [@list{(AnyC) -> bool?}]
-    [@list{() -> bool?}]
+    [@list{(@code{AnyC}) -> @code{bool?}}]
+    [@list{() -> @code{bool?}}]
 ]
 
 The constructor for @linkclass[bool].
 
 In its one-argument form, converts any type to @racket[bool]. All values but
-@racket[False] convert to @racket[True].
+@code{False} convert to @code{True}.
 
-In its no-argument form, returns @racket[False].
+In its no-argument form, returns @code{False}.
 
 @defclassform[char]
 
@@ -1129,10 +1129,10 @@ A character can be converted to its integer value with the @racket[int]
 constructor.
 
 @defprocforms[char
-    [@list{(char?) -> bool?}]
-    [@list{(int?) -> bool?}]
-    [@list{(str?) -> bool?}]
-    [@list{() -> bool?}]
+    [@proto[char bool?]]
+    [@proto[int? bool?]]
+    [@proto[str? bool?]]
+    [@proto[bool?]]
 ]
 
 The constructor for @linkclass[char].
@@ -1162,11 +1162,11 @@ Integers support binary bitwise operators @racket[&] (bitwise and),
 bitwise negation @racket[~].
 
 @defprocforms[int
-    [@list{(num?) -> int?}]
-    [@list{(char?) -> int?}]
-    [@list{(str?) -> int?}]
-    [@list{(bool?) -> int?}]
-    [@list{() -> int?}]
+    [@proto[num? int?]]
+    [@proto[char? int?]]
+    [@proto[str? int?]]
+    [@proto[bool? int?]]
+    [@proto[int?]]
 ]
 
 The constructor for @linkclass[int].
@@ -1187,7 +1187,7 @@ throwing an error if the conversion fails.
 }
 
 @item{
-Booleans @racket[True] and @racket[False] convert to @racket[1] and
+Booleans @code{True} and @code{False} convert to @racket[1] and
 @racket[0], respectively.
 }
 
@@ -1196,19 +1196,19 @@ Given no arguments, returns @racket[0].
 }
 ]
 
-@defmethform[int abs]{() -> int?}
+@defmethform[int abs]{@proto[int?]}
 
 Returns the absolute value of the receiving integer.
 
-@defmethform[int ceiling]{() -> int?}
+@defmethform[int ceiling]{@proto[int?]}
 
 Returns the same integer.
 
-@defmethform[int floor]{() -> int?}
+@defmethform[int floor]{@proto[int?]}
 
 Returns the same integer.
 
-@defmethform[int sqrt]{() -> float?}
+@defmethform[int sqrt]{@proto[float?]}
 
 Returns the square root of the receiving integer, as a @racket[float].
 
@@ -1228,10 +1228,10 @@ They also support comparison with @racket[==], @racket[<], @racket[<=],
 etc., and they can be compared against ints.
 
 @defprocforms[float
-  [@list{(num?) -> float?}]
-  [@list{(str?) -> float?}]
-  [@list{(bool?) -> float?}]
-  [@list{() -> float?}]
+  [@proto[num? float?]]
+  [@proto[str? float?]]
+  [@proto[bool? float?]]
+  [@proto[float?]]
 ]
 
 The constructor for @linkclass[float].
@@ -1239,26 +1239,26 @@ The constructor for @linkclass[float].
 Converts an exact integer to the nearest
 double-precision floating point value. If given a string, attempt to
 convert to a number, throwing an error if the conversion fails. Booleans
-@racket[True] and @racket[False] convert to @racket[1.0] and @racket[0.0],
+@code{True} and @code{False} convert to @racket[1.0] and @racket[0.0],
 respectively.
 
 Given no arguments, returns @racket[0.0].
 
-@defmethform[float abs]{() -> float?}
+@defmethform[float abs]{@proto[float?]}
 
 Returns the absolute value of the receiving float.
 
-@defmethform[float ceiling]{() -> int?}
+@defmethform[float ceiling]{@proto[int?]}
 
 Returns smallest integer that is no less than the receiving float.
 That is, it rounds up to the nearest integer.
 
-@defmethform[float floor]{() -> int?}
+@defmethform[float floor]{@proto[int?]}
 
 Returns the largest integer that is no greater than the receiving float.
 That is, it rounds down to the nearest integer.
 
-@defmethform[float sqrt]{() -> float?}
+@defmethform[float sqrt]{@proto[float?]}
 
 Returns the square root of the receiving float.
 
@@ -1270,8 +1270,8 @@ The type predicate for @linkclass[proc] is @racket[proc?].
 Procedures can be applied.
 
 @defprocforms[proc
-    [@list{(proc?) -> proc?}]
-    [@list{() -> proc?}]
+    [@proto[proc? proc?]]
+    [@proto[proc?]]
 ]
 
 The constructor for @linkclass[proc].
@@ -1279,7 +1279,7 @@ The constructor for @linkclass[proc].
 Given one procedure argument, returns it unchanged. Given no arguments,
 returns the identity function.
 
-@defmethform[proc compose]{(proc?) -> proc?}
+@defmethform[proc compose]{@proto[proc? proc?]}
 
 Composes the receiving procedure with the parameter procedure. For example,
 
@@ -1287,7 +1287,7 @@ Composes the receiving procedure with the parameter procedure. For example,
 assert_eq (λ x: x + 1).compose(λ x: x * 2)(5), 11
 }|
 
-@defmethform[proc vec_apply]{(vec?) -> AnyC}
+@defmethform[proc vec_apply]{@proto[vec? AnyC]}
 
 Applies the receiving procedure using the contents of the given vector
 as its arguments.
@@ -1303,10 +1303,10 @@ instance of @linkclass{char}. Strings may be concatenated with the
 @racket[+] converts the non-string to a string first.
 
 @defprocforms[str
-    [@list{(str?) -> str?}]
-    [@list{(AnyC) -> str?}]
-    [@list{(len: nat?, c: char?) -> str?}]
-    [@list{() -> str?}]
+    [@proto[str? str?]]
+    [@proto[AnyC str?]]
+    [@proto[len:nat? c:char? str?]]
+    [@proto[str?]]
 ]
 
 The constructor for @linkclass[str].
@@ -1332,11 +1332,11 @@ Given no arguments, returns the empty string.
 }
 ]
 
-@defmethform[str explode]{() -> VecC(char?)}
+@defmethform[str explode]{@proto["VecC(char?)"]}
 
 Breaks the receiving string into a vector of its characters.
 
-@defmethform[str format]{(AnyC, ...) -> str?}
+@defmethform[str format]{@proto[AnyC ... str?]}
 
 Formats the given arguments, treating the receiving string
 as a format string in the style of @racket[print].
@@ -1347,7 +1347,7 @@ For example,
 assert_eq '%s or %p'.format('this', 'that'), "this or 'that'"
 }|
 
-@defmethform[str len]{() -> nat?}
+@defmethform[str len]{@proto[nat?]}
 
 Returns the length of the receiving string in characters.
 
@@ -1359,9 +1359,9 @@ The type predicate for @linkclass[vec] is @racket[vec?].
 A vector can be indexed and assigned with square bracket notation.
 
 @defprocforms[vec
-    [@list{() -> vec?}]
-    [@list{(len: nat?) -> vec?}]
-    [@list{(len: nat?, init: FunC(nat?, AnyC)) -> vec?}]
+    [@proto[vec?]]
+    [@proto[len:nat?  vec?]]
+    [@proto[len:nat? "init:FunC(nat?, AnyC)" vec?]]
 ]
 
 The constructor for @linkclass[vec].
@@ -1373,7 +1373,7 @@ Given no arguments, returns an empty, zero-length vector.
 
 @item{
 Given one argument, returns a vector of the given size, filled with
-@racket[False].
+@code{False}.
 }
 
 @item{
@@ -1384,10 +1384,10 @@ That is, @code{vec(len, init)} is equivalent to
 }
 ]
 
-@defmethform[vec filter]{(FunC(AnyC, AnyC)) -> vec?}
+@defmethform[vec filter]{@proto["pred?:FunC(AnyC, AnyC)" vec?]}
 
 Filters the given vector, by returning a vector of only the elements
-satisfying the given predicate.
+satisfying the given predicate @c{pred?}.
 
 In particular,
 @code|{
@@ -1398,16 +1398,16 @@ is equivalent to
 [ x for x in v if pred?(x) ]
 }|
 
-@defmethform[vec implode]{() -> vec?}
+@defmethform[vec implode]{@proto[vec?]}
 
 If the receiver is a vector of characters, joins them into a string.
 (Otherwise, an error is reported.)
 
-@defmethform[vec len]{() -> nat?}
+@defmethform[vec len]{@proto[nat?]}
 
 Returns the length of the vector.
 
-@defmethform[vec map]{(FunC(AnyC, AnyC)) -> vec?}
+@defmethform[vec map]{@proto["f:FunC(AnyC, AnyC)" vec?]}
 
 Maps a function over a vector, returning a new vector.
 
@@ -1424,16 +1424,16 @@ is equivalent to
 
 @subsubsection{Basic type predicates}
 
-@defprocform[bool?]{(AnyC) -> bool?}
+@defprocform[bool?]{@proto[AnyC bool?]}
 
 Determines whether its argument is a Boolean, that is
 an instance of @linkclass[bool].
 
-@defprocform[char?]{(AnyC) -> bool?}
+@defprocform[char?]{@proto[AnyC bool?]}
 
 Determines whether its argument is an instance of @linkclass[char].
 
-@defprocform[contract?]{(AnyC) -> bool?}
+@defprocform[contract?]{@proto[AnyC bool?]}
 
 Determines whether its value is a contract. Contracts include many
 constants (numbers, strings, Booleans), single-argument functions
@@ -1442,58 +1442,58 @@ as @racket[OrC] and @racket[FunC].
 
 See @secref["Contracts"] for more.
 
-@defprocform[int?]{(AnyC) -> bool?}
+@defprocform[int?]{@proto[AnyC bool?]}
 
 Determines whether its argument is an instance of @linkclass[int].
 
-@defprocform[float?]{(AnyC) -> bool?}
+@defprocform[float?]{@proto[AnyC bool?]}
 
 Determines whether its argument is an instance of @linkclass[float].
 
-@defprocform[proc?]{(AnyC) -> bool?}
+@defprocform[proc?]{@proto[AnyC bool?]}
 
 Determines whether its argument is an instance of @linkclass[proc].
 
-@defprocform[str?]{(AnyC) -> bool?}
+@defprocform[str?]{@proto[AnyC bool?]}
 
 Determines whether its argument is an instance of @linkclass[str].
 
-@defprocform[vec?]{(AnyC) -> bool?}
+@defprocform[vec?]{@proto[AnyC bool?]}
 
 Determines whether its argument is an instance of @linkclass[vec].
 
 @subsubsection{Numeric predicates}
 
-@defprocform[num?]{(AnyC) -> bool?}
+@defprocform[num?]{@proto[AnyC bool?]}
 
 Determines whether its argument is a number. This includes both
 @linkclass[int] and @linkclass[float].
 
-@defprocform[nat?]{(AnyC) -> bool?}
+@defprocform[nat?]{@proto[AnyC bool?]}
 
 Determines whether its argument is a non-negative integer.
 
-@defprocform[zero?]{(num?) -> bool?}
+@defprocform[zero?]{@proto[num? bool?]}
 
 Determines whether its argument is zero.
 
-@defprocform[positive?]{(num?) -> bool?}
+@defprocform[positive?]{@proto[num? bool?]}
 
 Determines whether its argument is greater than zero.
 
-@defprocform[negative?]{(num?) -> bool?}
+@defprocform[negative?]{@proto[num? bool?]}
 
 Determines whether its argument is less than zero.
 
-@defprocform[even?]{(num?) -> bool?}
+@defprocform[even?]{@proto[num? bool?]}
 
 Determines whether its argument is an even integer.
 
-@defprocform[odd?]{(num?) -> bool?}
+@defprocform[odd?]{@proto[num? bool?]}
 
 Determines whether its argument is an odd integer.
 
-@defprocform[nan?]{(num?) -> bool?}
+@defprocform[nan?]{@proto[num? bool?]}
 
 Determines whether its argument is the IEEE 754 @racket[float?]
 not-a-number value. This is useful, since @racket[nan] is not necessarily
@@ -1501,18 +1501,18 @@ not-a-number value. This is useful, since @racket[nan] is not necessarily
 
 @subsection{Comparision operations}
 
-@defprocform[cmp]{(AnyC, AnyC) -> OrC(int?, False)}
+@defprocform[cmp]{@proto[AnyC AnyC "OrC(int?, False)"]}
 
 Compares two values of any type. If the values are incomparable, returns
-@racket[False]. Otherwise, returns an integer: less than 0 if the first
+@code{False}. Otherwise, returns an integer: less than 0 if the first
 argument is less, 0 if equal, or 1 if the first argument is greater.
 
-@defprocform[max]{(AnyC, AnyC, ...) -> num?}
+@defprocform[max]{@proto[AnyC AnyC ... AnyC]}
 
 Returns the largest of the given arguments, using @racket[cmp] to determine
 ordering. It is an error if the values are not comparable.
 
-@defprocform[min]{(AnyC, AnyC, ...) -> num?}
+@defprocform[min]{@proto[AnyC AnyC ... AnyC]}
 
 Returns the smallest of the given arguments, using @racket[cmp] to determine
 ordering. It is an error if the values are not comparable.
@@ -1520,34 +1520,34 @@ ordering. It is an error if the values are not comparable.
 @subsection{Randomness operations}
 
 @defprocforms[random
-  [@list{() -> float?}]
-  [@list{(IntInC(1, 4294967087)) -> nat?}]
-  [@list{(int?, int?) -> nat?}]
+  [@proto[float?]]
+  [@proto["IntInC(1, 4294967087)" nat?]]
+  [@proto[int? int? nat?]]
 ]
 
 When called with zero arguments, returns a random floating point number
 in the open interval (@racket[0.0], @racket[1.0]).
 
 When called with one argument @racket[limit], returns a random exact
-integer from the closed interval [@racket[0], @racket[limit - 1]].
+integer from the closed interval [@racket[0], @code{limit - 1}].
 
 When called with two arguments @racket[min] and @racket[max], returns a
-random exact integer from the closed interval [@racket[min], @racket[max - 1]].
+random exact integer from the closed interval [@racket[min], @code{max - 1}].
 The difference between the arguments can be no greater than
 @racket[4294967087].
 
-@defconstform[RAND_MAX]{nat?}
+@defconstform[RAND_MAX]{@code{nat?}}
 
 Defined to be @racket[4294967087], the largest parameter (or span) that
 can be passed to @racket[random].
 
-@defprocform[random_bits]{(nat?) -> nat?}
+@defprocform[random_bits]{@proto[nat? nat?]}
 
 Returns a number consisting of the requested number of random bits.
 
 @subsection{I/O Functions}
 
-@defprocform[print]{(str?, AnyC, ...) -> Void}
+@defprocform[print]{@proto[str? AnyC ... VoidC]}
 
 The first argument is treated as a format string into which the
 remaining arguments are interpolated, and then the result is printed.
@@ -1569,19 +1569,19 @@ For example:
 print("%p + %p = %p", a, b, a + b)
 }|
 
-@defprocform[println]{(str?, AnyC, ...) -> Void}
+@defprocform[println]{@proto[str? AnyC ... VoidC]}
 
 Like @racket[print], but adds a newline at the end.
 
 @subsection{Other functions}
 
-@defprocform[error]{(str?, AnyC, ...) -> Void}
+@defprocform[error]{@proto[str? AnyC ... VoidC]}
 
 Terminates the program with an error message. The error message must be
 supplied as a format string followed by values to interpolate, in the
 style of @racket[print].
 
-@defprocform[dir]{(AnyC) -> VecC(str?)}
+@defprocform[dir]{@proto[AnyC "VecC(str?)"]}
 
 Given an object, returns a vector of the names of its methods.
 Given a struct, returns a vector of the names of its fields.
@@ -1593,14 +1593,19 @@ enforcing properties of function parameters, structure fields, and
 variables. A number of DSSL2 values may be used as contracts, including:
 
 @itemlist[
-    @item{Numbers, which allow only themselves.}
     @item{Booleans, which allow only themselves.}
+    @item{Characters, which allow only themselves.}
+    @item{Numbers, which allow only themselves.}
     @item{Strings, which allow only themselves.}
     @item{Functions of one argument, which are treated as flat
             contracts by applying as predicates.}
     @item{Contracts created using the contract combinators such as
             @racket[OrC] and @racket[FunC] described below.}
 ]
+
+For example, to ensure that a function takes a string and returns a
+number or @code{False}, we could use the contract
+@code{FunC(str?, OrC(num?, False))}.
 
 @subsection{Contract syntax}
 
@@ -1684,62 +1689,66 @@ Defines an interface.
 
 @subsection{Contract combinators}
 
-@defconstform[AnyC]{contract?}
+@defconstform[AnyC]{@code{contract?}}
 
 A flat contract that accepts any value.
 
-@defconstform[VoidC]{contract?}
+@defconstform[VoidC]{@code{contract?}}
 
 A flat contract that accepts the result of @racket[pass] and other
 statements that return no value (such as assignment and loops).
 
-@defprocform[VecC]{(contract?) -> contract?}
+@defprocform[VecC]{@proto[contract? contract?]}
 
 Creates a contract that protects a vector to ensure that its elements
 satisfy the given contract.
 
-@defprocform[NotC]{(contract?) -> contract?}
+@defprocform[NotC]{@proto[contract? contract?]}
 
 Creates a contract that inverts the sense of the given (flat) contract.
 
-@defprocform[OrC]{(contract?, contract?, ...) -> contract?}
+@defprocform[OrC]{@proto[contract? contract? ... contract?]}
 
 Creates a contract that accepts a value if any of the arguments does.
 For the details of how this works for higher-order contracts, see
 @racket[racket:or/c].
 
-@defprocform[AndC]{(contract?, contract?, ...) -> contract?}
+@defprocform[AndC]{@proto[contract? contract? ... contract?]}
 
 Creates a contract that accepts a value if all of the arguments do.
 For the details of how this works for higher-order contracts, see
 @racket[racket:and/c].
 
-@defprocform[FunC]{(contract?, ..., contract?) -> contract?}
+@defprocform[FunC]{@proto[arg:contract? ... res:contract? contract?]}
 
 Creates a function contract with the given arguments and result. The
 last argument is applied to the result, and all the other arguments are
 contracts applied to the parameters.
 
-@defprocform[NewForallC]{(str?) -> contract?}
+@defprocform[NewForallC]{@proto[str? contract?]}
 
 Creates a new, universal contract variable, useful in constructing
 parametric contracts.
 
-@defprocform[NewExistsC]{(str?) -> contract?}
+@defprocform[NewExistsC]{@proto[str? contract?]}
 
 Creates a new, existential contract variable, useful in constructing
 parametric contracts.
 
-@defprocform[IntInC]{(low: OrC(int?, False), high: OrC(int?, False)) -> contract?}
+@defprocform[IntInC]{@proto["low:OrC(int?, False)"
+                            "high:OrC(int?, False)"
+                            contract?]}
 
 Constructs a contract that accepts integers in the closed interval
 [@c{low}, @c{high}]. If either end of the interval is @code{False},
 that end of the interval is unchecked.
 
 @defprocforms[apply_contract
-    [@list{[X](contract?, X) -> X}]
-    [@list{[X](contract?, X, pos: str?) -> X}]
-    [@list{[X](contract?, X, pos: str?, neg: str?) -> X}]
+    [@proto[#:all [X] contract? X X]]
+    [@proto[#:all [X] contract? X pos:str? X]]
+    [@proto[#:all [X] contract? X pos:str? neg:str? X]]
 ]
 
 Applies a contract to a value, optionally specifying the parties.
+
+You are unlikely to need to use this.

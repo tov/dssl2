@@ -8,9 +8,10 @@
          (for-syntax racket/base))
 
 (provide defexpform defexpforms defsmplform defcmpdform defcmpdforms
+         defclassform linkclass Linkclass
          defconstform
          defprocform defprocforms
-         defmethform
+         defmethform defmethforms
          redefidform/inline
          c syn syn_
          q m t
@@ -54,6 +55,17 @@
 
 (define-syntax-rule (defcmpdforms (chunk ...) ...)
   (*defforms "compound" (list (list chunk ...) ...)))
+
+(define-syntax-rule (defclassform name)
+  (subsubsection #:tag (format "class:~a" 'name)
+                 "Class "
+                 (c (symbol->string 'name))))
+
+(define-syntax-rule (linkclass name)
+  (secref (format "class:~a" 'name)))
+
+(define-syntax-rule (Linkclass name)
+  (Secref (format "class:~a" 'name)))
 
 (define-syntax-rule (defconstform name chunk ...)
   (*defforms "constant" (list (list (defidform/inline name) ": " chunk ...))))

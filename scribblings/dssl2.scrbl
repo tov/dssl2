@@ -252,7 +252,7 @@ end of the line.
 
 Long string literals can also be used to comment out long blocks of code.
 
-@subsection[#:tag "stm-forms"]{Statement Forms}
+@subsection[#:tag "stm-forms"]{Statement forms}
 
 @defsmplform{@defidform/inline[assert] @syn[expr]}
 
@@ -754,7 +754,7 @@ def sch_lookup(hash, key):
     return result
 }|
 
-@subsection[#:tag "exp-forms"]{Expression Forms}
+@subsection[#:tag "exp-forms"]{Expression forms}
 
 @defexpform{@syn[var_name]}
 
@@ -772,17 +772,19 @@ Lexically, a variable is a letter or underscore, followed by zero or
 more letters, underscores, or digits, optionally ending in a question
 mark or exclamation point.
 
-@defexpform{@syn[struct_expr].@syn[field_name]}
+@defexpform{@syn[expr].@syn[prop_name]}
 
 Expression @syn[expr] must evaluate to struct value that has field
-@syn[fieldname]; then this expression evaluates to the value of that
-field of the struct.
+@syn[prop_name] or an object value that has method @syn[prop_name]; then
+this expression evaluates to the value of that field of the struct or
+that method of the object.
 
-@defexpform{@syn[vec_expr][@syn[index_expr]]}
+@defexpform{@syn[expr][@syn[index_expr]]}
 
-Expression @syn[vec_expr] must evaluate to a vector @c{v}; @syn[index_expr]
-must evaluate to an integer @c{n} between 0 and @code{len(v) - 1}.
-Then this returns the @c{n}th element of vector @c{v}.
+Expression @syn[expr] must evaluate to a vector @c{v} or string @c{s};
+@syn[index_expr] must evaluate to an integer @c{n} between 0 and
+@code{v.len() - 1}. Then this returns the @c{n}th element of vector
+@c{v} or the @c{n}th character of string @c{s}.
 
 @defexpform{@defidform/inline[True]}
 
@@ -794,9 +796,9 @@ The false Boolean value, the only value that is not considered true.
 
 @defexpform{@syn[expr]@subscript{0}(@syn[expr]₁, ..., @syn[expr]@subscript{k})}
 
-Evaluates all the expressions; then applies the result of
-@syn[expr]@subscript{0} with the results of the other expressions as
-arguments.
+Evaluates all the expressions; @syn_[expr]{0} must evaluate to a
+procedure. Then applies the result of @syn[expr]@subscript{0} with the
+results of the other expressions as arguments.
 
 For example,
 
@@ -812,6 +814,16 @@ ack(5 + 1, 5 + 2)
 
 calls the function @racket[ack] with arguments @racket[6] and
 @racket[7].
+
+Note that method calls are just object method lookup combined with
+procedure applcation. That is, when you write
+
+@dssl2block|{
+q.enqueue(5)
+}|
+
+that means lookup the @c{enqueue} method in @c{q}, and then apply the
+result to @racket[5].
 
 @defexpforms[
   @list{@defidform/inline[lambda] @syn[var_name]₁, ..., @syn[var_name]@subscript{k}: @syn[simple]}
@@ -1061,30 +1073,37 @@ DSSL2 includes seven primitive classes for building up more complex data
 structures. The constructors and methods of these classes are documented
 in this subsection.
 
-@subsubsection{Class @racket[bool]}
+@defclassform[bool]
 
-The primitive class for Boolean values, including @racket[True] and
-@racket[False].
+The primitive class for Boolean values, @racket[True] and
+@racket[False]. The type predicate for @linkclass[bool] is
+@racket[bool?].
 
-The type predicate for the @racket[bool] class is @racket[bool?].
+Booleans support logical binary operators @racket[&] (and), @racket[\|]
+(or, written without the backslash), and @racket[^] (xor), and logical
+unary negation @racket[~]. They also support comparison with
+@racket[==], @racket[<], @racket[<=], etc. @racket[False] compares less
+than @racket[True].
 
 @defprocforms[bool
     [@list{(AnyC) -> bool?}]
     [@list{() -> bool?}]
 ]
 
-Constructor for the @racket[bool] class.
+The constructor for @linkclass[bool].
 
 In its one-argument form, converts any type to @racket[bool]. All values but
 @racket[False] convert to @racket[True].
 
 In its no-argument form, returns @racket[False].
 
-@subsubsection{Class @racket[char]}
+@defclassform[char]
 
 The primitive class for representing a single character of text.
+The type predicate for @linkclass[char] is @racket[char?].
 
-The type predicate for the @racket[char] class is @racket[char?].
+A character can be converted to its integer value with the @racket[int]
+constructor.
 
 @defprocforms[char
     [@list{(char?) -> bool?}]
@@ -1093,7 +1112,7 @@ The type predicate for the @racket[char] class is @racket[char?].
     [@list{() -> bool?}]
 ]
 
-The constructor for the @racket[char] class.
+The constructor for @linkclass[char].
 
 Given a character, returns that character. Given an integer, returns the
 character corresponding to the Unicode code point, or errors if the
@@ -1101,15 +1120,23 @@ integer is not a valid Unicode character. Given a one-character string,
 returns the character of the string; any longer or shorter string is an
 error.
 
-A character can be converted to its integer value with the @racket[int]
-constructor.
+@defclassform[int]
 
-@subsubsection{Class @racket[int]}
+The primitive class for representing integral quantities of unlimited
+size. The type predicate for @linkclass[int] is @racket[int?].
 
-The primitive class for representing integral quantities in unlimited
-precision.
+Integers support binary arithmethic operators @racket[+] (addition),
+@racket[-] (subtraction), @racket[*] (multiplication), and @racket[/]
+(integer division); when combined with an instance of @linkclass[float],
+the result will also be a float. They also support unary @racket[+]
+(identity) and @racket[-] (negation).
 
-The type predicate for the @racket[int] class is @racket[int?].
+They also support comparison with @racket[==], @racket[<], @racket[<=],
+etc., and they can be compared against floats.
+
+Integers support binary bitwise operators @racket[&] (bitwise and),
+@racket[\|] (bitwise or), and @racket[^] (bitwise xor), and unary
+bitwise negation @racket[~].
 
 @defprocforms[int
     [@list{(num?) -> int?}]
@@ -1119,7 +1146,7 @@ The type predicate for the @racket[int] class is @racket[int?].
     [@list{() -> int?}]
 ]
 
-Constructor for the @racket[int] class.
+The constructor for @linkclass[int].
 
 Given a number, returns the integer part, by truncation.
 That is, the decimal point and everything after it is removed.
@@ -1148,12 +1175,20 @@ Returns the same integer.
 
 Returns the square root of the receiving integer, as a @racket[float].
 
-@subsubsection{Class @racket[float]}
+@defclassform[float]
 
 The primitive class for representing approximations of real numbers (as
-64-bit IEEE 754 numbers).
+64-bit IEEE 754 numbers). The type predicate for @linkclass[float] is
+@racket[float?].
 
-The type predicate for the @racket[float] class is @racket[float?].
+Floats support binary arithmethic operators @racket[+] (addition),
+@racket[-] (subtraction), @racket[*] (multiplication), and @racket[/]
+(division); when combined with an instance of @linkclass[int],
+the result will also be a float. They also support unary @racket[+]
+(identity) and @racket[-] (negation).
+
+They also support comparison with @racket[==], @racket[<], @racket[<=],
+etc., and they can be compared against ints.
 
 @defprocforms[float
   [@list{(num?) -> float?}]
@@ -1162,7 +1197,7 @@ The type predicate for the @racket[float] class is @racket[float?].
   [@list{() -> float?}]
 ]
 
-Constructor for the @racket[float] class.
+The constructor for @linkclass[float].
 
 Converts an exact integer to the nearest
 double-precision floating point value. If given a string, attempt to
@@ -1190,14 +1225,45 @@ That is, it rounds down to the nearest integer.
 
 Returns the square root of the receiving float.
 
-@subsubsection{Class @racket[str]}
+@defclassform[proc]
+
+The primitive class for representing functions.
+The type predicate for @linkclass[proc] is @racket[proc?].
+
+Procedures can be applied.
+
+@defprocforms[proc
+    [@list{(proc?) -> proc?}]
+    [@list{() -> proc?}]
+]
+
+The constructor for @linkclass[proc].
+
+Given one procedure argument, returns it unchanged. Given no arguments,
+returns the identity function.
+
+@defmethform[proc#compose]{(proc?) -> proc?}
+
+Composes the receiving procedure with the parameter procedure. For example,
+
+@dssl2block|{
+assert_eq (λ x: x + 1).compose(λ x: x * 2)(5), 11
+}|
+
+@defmethform[proc#vec_apply]{(vec?) -> AnyC}
+
+Applies the receiving procedure using the contents of the given vector
+as its arguments.
+
+@defclassform[str]
 
 The primitive class for representing textual data.
+The type predicate for @linkclass[str] is @racket[str?].
 
-The type predicate for the @racket[str] class is @racket[str?].
-
-A string can be indexed with square bracket notation, which returns a
-character.
+A string can be indexed with square bracket notation, which returns an
+instance of @linkclass{char}. Strings may be concatenated with the
+@racket[+] operator. Concatenating a string with a non-string using
+@racket[+] converts the non-string to a string first.
 
 @defprocforms[str
     [@list{(str?) -> str?}]
@@ -1206,7 +1272,7 @@ character.
     [@list{() -> str?}]
 ]
 
-Constructor for the @racket[str] class.
+The constructor for @linkclass[str].
 
 Given one string argument, returns that argument unchanged.
 
@@ -1237,40 +1303,12 @@ assert_eq '%s or %p'.format('this', 'that'), "this or 'that'"
 
 Returns the length of the receiving string in characters.
 
-@subsubsection{Class @racket[proc]}
-
-The primitive class for representing functions.
-
-The type predicate for the @racket[proc] class is @racket[proc?].
-
-@defprocforms[proc
-    [@list{(proc?) -> proc?}]
-    [@list{() -> proc?}]
-]
-
-Constructor for the @racket[proc] class.
-
-Given one procedure argument, returns it unchanged. Given no arguments,
-returns the identity function.
-
-@defmethform[proc#compose]{(proc?) -> proc?}
-
-Composes the receiving procedure with the parameter procedure. For example,
-
-@dssl2block|{
-assert_eq (λ x: x + 1).compose(λ x: x * 2)(5), 11
-}|
-
-@defmethform[proc#vec_apply]{(vec?) -> AnyC}
-
-Applies the receiving procedure using the contents of the given vector
-as its arguments.
-
-@subsubsection{Class @racket[vec]}
+@defclassform[vec]
 
 The primitive vector class, for representing sequence of values of fixed size.
+The type predicate for @linkclass[vec] is @racket[vec?].
 
-The type predicate for the @racket[vec] class is @racket[vec?].
+A vector can be indexed and assigned with square bracket notation.
 
 @defprocforms[vec
     [@list{() -> vec?}]
@@ -1278,7 +1316,7 @@ The type predicate for the @racket[vec] class is @racket[vec?].
     [@list{(nat?, FunC(nat?, AnyC)) -> vec?}]
 ]
 
-The constructor for the @racket[vec] class.
+The constructor for @linkclass[vec].
 
 Given no arguments, returns an empty, zero-length vector.
 
@@ -1293,7 +1331,13 @@ element initialized by applying the given function to its index.
 Filters the given vector, by returning a vector of only the elements
 satisfying the given predicate.
 
-In particular, @q{v.filter(pred?)} is equivalent to
+In particular,
+
+@dssl2block|{
+v.filter(pred?)
+}|
+
+is equivalent to
 
 @dssl2block|{
 [ x for x in v if pred?(x) ]
@@ -1312,7 +1356,13 @@ Returns the length of the vector.
 
 Maps a function over a vector, returning a new vector.
 
-In particular, @q{v.map(f)} is equivalent to
+In particular,
+
+@dssl2block|{
+v.map(f)
+}|
+
+is equivalent to
 
 @dssl2block|{
 [ f(x) for x in v ]
@@ -1322,33 +1372,14 @@ In particular, @q{v.map(f)} is equivalent to
 
 @subsubsection{Basic type predicates}
 
-@defprocform[proc?]{(AnyC) -> bool?}
+@defprocform[bool?]{(AnyC) -> bool?}
 
-Determines whether its argument is a procedure (function).
-
-@defprocform[str?]{(AnyC) -> bool?}
-
-Determines whether its argument is a string.
+Determines whether its argument is a Boolean, that is
+an instance of @linkclass[bool].
 
 @defprocform[char?]{(AnyC) -> bool?}
 
-Determines whether its argument is a string of length 1.
-
-@defprocform[int?]{(AnyC) -> bool?}
-
-Determines whether its argument is an integer.
-
-@defprocform[float?]{(AnyC) -> bool?}
-
-Determines whether its argument is a floating-point number.
-
-@defprocform[vec?]{(AnyC) -> bool?}
-
-Determines whether its argument is a vector.
-
-@defprocform[bool?]{(AnyC) -> bool?}
-
-Determines whether its argument is a Boolean.
+Determines whether its argument is an instance of @linkclass[char].
 
 @defprocform[contract?]{(AnyC) -> bool?}
 
@@ -1356,6 +1387,28 @@ Determines whether its value is a contract. Contracts include many
 constants (numbers, strings, Booleans), single-argument functions
 (considered as predicates), and the results of contract combinators such
 as @racket[OrC] and @racket[FunC].
+
+See @secref["Contracts"] for more.
+
+@defprocform[int?]{(AnyC) -> bool?}
+
+Determines whether its argument is an instance of @linkclass[int].
+
+@defprocform[float?]{(AnyC) -> bool?}
+
+Determines whether its argument is an instance of @linkclass[float].
+
+@defprocform[proc?]{(AnyC) -> bool?}
+
+Determines whether its argument is an instance of @linkclass[proc].
+
+@defprocform[str?]{(AnyC) -> bool?}
+
+Determines whether its argument is an instance of @linkclass[str].
+
+@defprocform[vec?]{(AnyC) -> bool?}
+
+Determines whether its argument is an instance of @linkclass[vec].
 
 @subsubsection{Numeric predicates}
 

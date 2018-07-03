@@ -32,7 +32,7 @@
 
 (define ~opt (meta-surround "[" "]"))
 (define ~many (meta-surround "{" "}*"))
-(define ~many1 (meta-surround "{" "}⁺"))
+(define ~many1 (meta-surround "{" "}+"))
 (define ~many-comma (meta-surround "{" "},*"))
 (define (~list . args)
   (intersperse (tt ~) args))

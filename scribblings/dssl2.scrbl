@@ -48,7 +48,7 @@ line, as in the @racket[if] and @racket[else] cases.
 
 Extraneous indentation is an error.
 
-@subsection{Formal Grammar}
+@subsection{Formal grammar}
 
 The DSSL2 language has a number of statement and expression forms, which
 are described in more depth below. Here they are summarized in
@@ -89,6 +89,9 @@ by a newline, or a compound statement.
   [lvalue    'name
              (expr "." 'name)
              (expr "[" expr "]")]
+  [mod_spec
+            'mod_name
+            'mod_string]
   [compound  (class 'name opt_ctc_params opt_implements : class_block)
              (def 'name opt_ctc_params "(" (~many-comma 'name opt_ctc) ")"
                opt_res_ctc : block)
@@ -108,19 +111,17 @@ by a newline, or a compound statement.
   [class_fields
              (~many field_def 'NEWLINE)]
   [class_methods
-             (~many1 method_def)]
+             (~many1 method_proto ":" block)]
   [interface_block
             pass
             ('NEWLINE 'INDENT (~many1 method_proto 'NEWLINE) 'DEDENT)]
+  [method_proto
+            (def 'name opt_ctc_params "(" 'name (~many "," 'name opt_ctc) ")" opt_res_ctc)]
   [struct_block
             pass
             ('NEWLINE 'INDENT (~many1 field_def 'NEWLINE) 'DEDENT)]
   [field_def
             (let 'name opt_ctc)]
-  [method_def
-            (method_proto ":" block)]
-  [method_proto
-            (def 'name opt_ctc_params "(" 'name (~many "," 'name opt_ctc) ")" opt_res_ctc)]
   [opt_implements
             (~opt "(" (~many-comma 'name) ")")]
   [opt_ctc
@@ -129,9 +130,6 @@ by a newline, or a compound statement.
             (~opt "->" ctc)]
   [opt_ctc_params
             (~opt "[" (~many-comma 'name) "]")]
-  [mod_spec
-            'mod_name
-            'mod_string]
   [ctc      expr]
   [expr     'number
             'string
@@ -153,23 +151,23 @@ by a newline, or a compound statement.
 @t{binop}s are, from tightest to loosest precedence:
 
 @itemlist[
- @item{@racket[**]}
- @item{@racket[*], @racket[/], and @racket[%]}
- @item{@racket[+] and @racket[-]}
- @item{@racket[>>] and @racket[<<]}
- @item{@racket[&]}
- @item{@racket[^]}
- @item{@racket[\|] (not written with the backslash)}
+ @item{@racket[**],}
+ @item{@racket[*], @racket[/], and @racket[%],}
+ @item{@racket[+] and @racket[-],}
+ @item{@racket[>>] and @racket[<<],}
+ @item{@racket[&],}
+ @item{@racket[^],}
+ @item{@racket[\|] (not written with the backslash),}
  @item{@racket[==], @racket[<], @racket[>], @racket[<=], @racket[>=],
  @racket[!=], @racket[is], and @racket[|is not|] (not written
- with the vertical bars)}
- @item{@racket[and]}
- @item{@racket[or]}
+ with the vertical bars),}
+ @item{@racket[and], and}
+ @item{@racket[or].}
 ]
 
-@t{unop}s are @racket[~], @racket[+], @racket[-], @racket[not].
+@t{unop}s are @racket[~], @racket[+], @racket[-], and @racket[not].
 
-@section{Lexical Syntax}
+@section{Lexical syntax}
 
 @subsection{Identifiers}
 
@@ -178,7 +176,7 @@ interfaces, fields, and methods, must start with a letter, followed by 0
 or more letters or digits. The last character also may be @q{?} or
 @q{!}.
 
-@subsection{Numeric Literals}
+@subsection{Numeric literals}
 
 Numeric literals include:
 
@@ -773,7 +771,8 @@ Note that @code{VerticalMovingPosn} takes two parameters because
 ]
 
 Defines an interface named @term[name] with methods @term_[meth_name]{1}
-through @term_[meth_name]{k}. Defining an interface binds three names:
+through @term_[meth_name]{k}. Defining an interface binds three
+identifiers:
 
 @itemlist[
     @item{The interface named itself, @term[name], which can be mentioned
@@ -1851,8 +1850,9 @@ Given a struct, returns a vector of the names of its fields.
 @section{Contracts}
 
 The contract system helps guard parts of a program against each other by
-enforcing properties of function parameters, structure fields, and
-variables. A number of DSSL2 values may be used as contracts, including:
+enforcing properties of function and method parameters and results,
+structure and class fields, and variables. A number of DSSL2 values may
+be used as contracts, including:
 
 @itemlist[
     @item{Booleans, which allow only themselves.}
@@ -1938,7 +1938,75 @@ on all, and the fields with omitted contracts default to @racket[AnyC].
     [@indent{@redefidform/inline[def] @term_[meth_name]{n}(@term_[self]{n} @~many["," @list{@term_[arg_name]{n}:} @nt_[ctc]{arg_n}]) -> @nt_[ctc]{res_n}: @nt_[block]{n}}]
 ]
 
-Defines a class.
+Defines a class with contracts. See @racket[class] for the basics of
+classes.
+
+Contracts may be placed on:
+
+@itemlist[
+    @item{fields, which are checked when the field is assigned,}
+    @item{non-self method parameters, which are checked when the method is invoked, and}
+    @item{method results, which are checked when the method returns.}
+]
+
+Any contracts may be omitted, and default to @racket[AnyC]. No contract
+may be placed on a method's self parameter, as that parameter is already
+known to be an instance of the class.
+
+If the class implements interfaces that have contracts, the interfaces'
+contracts have no effect on the defined class.
+
+A class may have some number of generic contract parameters,
+@term[ctc_param]. These can be used to parameterize a class over other
+contracts. When provided, they are in scope throughout the class, and
+are added to the front of the external constructor's parameters.
+
+For example, we can define a generic position class:
+
+@dssl2block|{
+class Posn[T]:
+    let _x: T
+    let _y: T
+
+    def __init__(self, x: T, y: T):
+        self._x = x
+        self._y = y
+
+    def x(self) -> T:
+        self._x
+
+    def y(self) -> T:
+        self._y
+}|
+
+Now it is possible to make a position with @racket[int?] coordinates or
+a position with @racket[float?] coordinates, by passing the coordinate
+contract to the @code{Posn} constructor:
+
+@dssl2block|{
+let p = Posn(int?, 3, 4)
+let q = Posn(float?, 3.0, 4.0)
+}|
+
+The @c{Posn} constructor and methods all check the given values
+against the given contract.
+
+When a class has generic contract parameters, it defines an additional
+predicate factory, @c{@term{name}Of}. The predicate factory takes an
+argument for each generic contract parameter, and returns a predicate
+that checks for instances of the class that were creates with those same
+contract parameters:
+
+@dssl2block|{
+assert Posn?(p)
+assert Posn?(q)
+
+assert PosnOf(int?)(p)
+assert not PosnOf(int?)(q)
+
+assert not PosnOf(float?)(p)
+assert PosnOf(float?)(q)
+}|
 
 @defcmpdforms[
     [@list{@redefidform/inline[interface] @term[name] @~opt["[" @~many-comma[@term[ctc_param]] "]" ]:}]
@@ -1947,7 +2015,133 @@ Defines a class.
     [@indent{@redefidform/inline[def] @term_[meth_name]{k}(@term_[self]{n} @~many["," @list{@term_[arg_name]{k}:} @nt_[ctc]{arg_n}]) -> @nt_[ctc]{res_k}}]
 ]
 
-Defines an interface.
+Defines a interface with contracts. See @racket[interface] for the
+basics of interfaces.
+
+As with a class, contracts may be provided on method parameters (except
+for self) and results. The contracts have no effect when a class
+implements the interface, but do have an effect with the interface
+is used to protect an instance of a class that implements it.
+
+Defining an interface @term[name] binds three identifiers: @term[name],
+@c{@term[name]?}, and @c{@term[name]!}. The first of these is used in
+@racket[class] definitions to refer to the interface; the second is the
+predicate, which recognizes instances of classes that implement the
+interface. The third is the @emph{interface contract}, which can be used
+to protect instances of classes that implement the interface, to ensure
+that their usage is only via the interface.
+
+When an interface contract protects an object, first it checks the class
+of the object. If the class is not declared to implement the interface,
+an error is signaled. If the class does implement the interface, then an
+@emph{interface object} is created. The interface object is like the
+object-to-be-protected, except that it includes only the methods of the
+interface, and it no longer has an identifiable class. Furthermore, any
+contracts specified on methods in the interface are applied to those
+methods of the interface object. (Reprotecting an interface object with
+the same interface has no effect.)
+
+Here is an example of an interface with one method and a class that
+implements it:
+
+@dssl2block|{
+interface HAS_X:
+    def get_x(self)
+
+class Posn (HAS_X):
+    let x
+    let y
+
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    def get_x(self): self.x
+    def get_y(self): self.y
+}|
+
+We might want to ensure that some client code uses an instance of
+@c{Posn} only according to the @c{HAS_X} interface, without accessing
+its other methods. We can use the @code{HAS_X!} interface contract to
+protect a @c{Posn} instance in exactly this way. First, we create
+an object and use it normally:
+
+@dssl2block|{
+let original = Posn(3, 4)
+
+assert_eq original.get_x(), 3
+assert_eq original.get_y(), 4
+
+assert HAS_X?(original)
+}|
+
+Note that the interface predicate @c{HAS_X?} answers @code{True} for
+instances of classes that implement @c{HAS_X}.
+
+We can protect the original object by applying the @c{HAS_X!} interface
+contract, as follows:
+
+@dssl2block|{
+let protected: HAS_X! = original
+}|
+
+Now, we can call @code{protected.get_x()} because interface @c{HAS_X}
+defines the @c{get_x} method. But we cannot call @c{get_y} on
+@c{protected}, because protecting it with @c{HAS_X!} masks out
+that method:
+
+@dssl2block|{
+assert_eq protected.get_x(), 3
+assert_error protected.get_y()
+}|
+
+We can still access @c{get_y} on @code{original}:
+
+@dssl2block|{
+assert_eq original.get_x(), 3
+assert_eq original.get_y(), 4
+}|
+
+Like classes, interfaces can have generic contract parameters
+@term[ctc_param]. When an interface has generic contract parameters,
+these parameters are available to the contracts in the body of the
+interface. The contract interface @c{@term[name]!} binds all the generic
+contract parameters to @racket[AnyC]. The interface definition also
+creates a generic interface contract factory @c{@term[name]_OF!}, which
+takes one formal parameter for each generic contract parameter, and
+returns an interface contract with the generic contract parameters
+instantiated to the actual parameters of the generic interface contract
+factory.
+
+For example, here is a generic interface for a queue:
+
+@dssl2block|{
+interface QUEUE[T]:
+    def empty(self) -> bool?
+    def enqueue(self, value: T) -> VoidC
+    def dequeue(self) -> OrC(False, T)
+}|
+
+This interface definition binds four identifiers:
+
+@itemlist[
+    @item{Interface name @c{QUEUE}, which can be used to declare
+    that classes implement the interface.}
+
+    @item{Predicate @c{QUEUE?}, which answers @code{True} for instances
+    of classes that implement @c{QUEUE}, as well as @c{QUEUE} interface
+    objects.}
+
+    @item{Generic interface contract factory @c{QUEUE_OF!}, which takes
+    one contract parameter. The resulting contract will protect an instance
+    of any class that implements @c{QUEUE} by hiding all but the @c{empty?},
+    @c{enqueue}, and @c{dequeue} methods, and applying the given contracts
+    to each. For example, @code{QUEUE_OF!(int?)}, when protecting an object,
+    ensures that its @c{enqueue} method is given an @c{int?}.}
+
+    @item{Interface contract @c{QUEUE!}, equivalent to
+    @code{QUEUE_OF!(AnyC)}.}
+]
 
 @subsection{Contract combinators}
 

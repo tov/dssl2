@@ -1735,31 +1735,31 @@ Determines whether its argument is a number. This includes both
 
 Determines whether its argument is a non-negative integer.
 
-@defprocform[zero?]{@proto[num? bool?]}
+@defprocform[zero?]{@proto[AnyC bool?]}
 
-Determines whether its argument is zero.
+Determines whether its argument is a number equal to zero.
 
-@defprocform[positive?]{@proto[num? bool?]}
+@defprocform[pos?]{@proto[AnyC bool?]}
 
-Determines whether its argument is greater than zero.
+Determines whether its argument is a number greater than zero.
 
-@defprocform[negative?]{@proto[num? bool?]}
+@defprocform[neg?]{@proto[AnyC bool?]}
 
-Determines whether its argument is less than zero.
+Determines whether its argument is a number less than zero.
 
-@defprocform[even?]{@proto[num? bool?]}
+@defprocform[even?]{@proto[AnyC bool?]}
 
-Determines whether its argument is an even integer.
+Determines whether its argument is an even number.
 
-@defprocform[odd?]{@proto[num? bool?]}
+@defprocform[odd?]{@proto[AnyC bool?]}
 
-Determines whether its argument is an odd integer.
+Determines whether its argument is an odd number.
 
-@defprocform[nan?]{@proto[num? bool?]}
+@defprocform[nan?]{@proto[AnyC bool?]}
 
-Determines whether its argument is the IEEE 754 @racket[float?]
-not-a-number value. This is useful, since @racket[nan] is not necessarily
-@racket[==] to other instances of @racket[nan].
+Determines whether its argument is the special @linkclass{float}
+not-a-number value. This is useful, since @code{nan} is not necessarily
+@racket[==] to other instances of @code{nan}.
 
 @subsection{Comparision operations}
 

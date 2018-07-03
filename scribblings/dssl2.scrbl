@@ -279,16 +279,17 @@ println(x)
 
 Accessing an undefined variable is an error.
 
-@defsmplform{@nt[lvalue] @defidform/inline[=] @nt[expr]}
+@defsmplform{@nt[lvalue] @defidform/inline[=] @nt_[expr]{rhs}}
 
-Assignment. The assigned @nt[lvalue] can be in one of three forms:
+Assigns the value of @nt_[expr]{rhs} to an @nt[lvalue].
+The assigned @nt[lvalue] can be in one of three forms:
 
 @itemlist[
- @item{@term[var_name] assigns to a variable, which can be a @racket[let]-bound
- local or a function parameter.}
- @item{@c{@term[struct_expr].@term[field_name]} assigns to a structure field,
- where the expression must evaluate to a structure that has the given field
- name.}
+ @item{@term[var_name] assigns to a variable, which can be a
+ @racket[let]-defined variable or a function parameter.}
+ @item{@c{@nt_[expr]{struct}.@term[field_name]} assigns to a structure field,
+ where expression @nt_[expr]{struct} must evaluate to a structure that
+ has a field named @term[field_name].}
  @item{@c{@nt_[expr]{vec}[@nt_[expr]{index}]} assigns to a vector element,
  where
  @nt_[expr]{vec} evaluates to the vector and @nt_[expr]{index}

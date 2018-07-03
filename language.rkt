@@ -875,18 +875,20 @@
           'name (get-srcloc ctc))))
     (define-syntax name
       (make-set!-transformer
-        (syntax-parser
+        (syntax-parser #:literals (set!)
           [(set! method _)
            (syntax-error #'method "cannot assign to method")]
           [_:id #'real-name]
           [(_:id . args) #'(real-name . args)])))))
 
-(define-for-syntax (find-constructor method-names stx)
+(define-for-syntax (find-constructor method-names method-paramses stx)
   (let/ec return
-    (for ([method-name (in-list method-names)])
+    (for ([method-name   (in-list method-names)]
+          [method-params (in-syntax method-paramses)])
       (when (eq? '__init__ (syntax-e method-name))
-        (return method-name)))
-    (syntax-error stx "class must have a constructor")))
+        (return method-name
+                (generate-temporaries method-params))))
+    (syntax-error stx "class must have a constructor __init__")))
 
 (define-for-syntax (lookup-interfaces class-name interfaces)
   (for/fold ([names     '()]
@@ -970,7 +972,11 @@
      ; Extract the defined names:
      (define field-names  (syntax->list #'(field.var ...)))
      (define method-names (syntax->list #'(method-name ...)))
-     (define constructor  (find-constructor method-names #'name))
+     (define-values (constructor constructor-params)
+       (find-constructor
+         method-names
+         #'((method-params.var ...) ...)
+         #'name))
      ; Lookup and check interfaces:
      (define-values (interface-names interface-tokens interface-methodses)
        (lookup-interfaces #'name #'(interfaces.interface ...)))
@@ -1020,7 +1026,7 @@
              (#,(struct-predicate-name #'internal-name) value))
            (maybe-define-generic-predicate name [cvs.var ...])
            (dssl-provide name)
-           (define (name cvs.var ... . rest)
+           (define (name cvs.var ... #,@constructor-params)
              (define-field field.var
                            self.field-name
                            actual-field-name
@@ -1047,7 +1053,7 @@
                 ; methods:
                 self.__class__
                 self.public-method-name ...))
-             (apply #,(self. constructor) rest)
+             (#,(self. constructor) #,@constructor-params)
              (when (eq? unsafe-undefined actual-field-name)
                (runtime-error
                  #:srclocs (get-srclocs #,constructor)

@@ -1,6 +1,6 @@
 #lang dssl2
 
-assert negative?(-5)
-assert negative?(-5.5)
-assert not negative?(0)
-assert not negative?(1)
+assert neg?(-5)
+assert neg?(-5.5)
+assert not neg?(0)
+assert not neg?(1)

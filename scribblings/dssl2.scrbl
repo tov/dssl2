@@ -81,6 +81,7 @@ by a newline, or a compound statement.
              continue
              (lvalue = expr)
              expr
+             (import mod_spec)
              (let 'name opt_ctc (~opt "=" expr))
              pass
              (return (~opt expr))
@@ -128,6 +129,9 @@ by a newline, or a compound statement.
             (~opt "->" ctc)]
   [opt_ctc_params
             (~opt "[" (~many-comma 'name) "]")]
+  [mod_spec
+            'mod_name
+            'mod_string]
   [ctc      expr]
   [expr     'number
             'string
@@ -335,9 +339,9 @@ A function may have zero arguments, as in @racket[greet]:
 def greet(): println("Hello, world!")
 }|
 
-The body of a function is defined to be a @nt[block], which means it
-can be an indented sequence of statements, or a single simple statement
-on the same line as the @racket[def].
+The body of a function is defined to be a @nt[block], which means it can
+be an indented sequence of @nt[statement]s, or a single @nt[simple]
+statement on the same line as the @racket[def].
 
 Note that @racket[def]s can be nested:
 
@@ -638,25 +642,282 @@ def fix_size!(node):
 }|
 
 @defcmpdforms[
-    [@list{@defidform/inline[class] @term[name] @m{[} ( @m["{"] @term[interface_name] @m["},*"] ) @m{]}:}]
+    [@list{@defidform/inline[class] @term[name] @~opt["(" @~many-comma[@term[interface_name]] ")"]}]
     [@indent{@redefidform/inline[let] @term_[field_name]{1}}]
     [@indent{...}]
     [@indent{@redefidform/inline[let] @term_[field_name]{k}}]
-    [@indent{@redefidform/inline[def] @term_[method_name]{0}(@term_[self]{0} @m["{"] , @term_[param_name]{0} @m["}*"]): @nt_[block]{0}}]
+    [@indent{@redefidform/inline[def] @term_[meth_name]{0}(@term_[self]{0} @~many["," @term_[param_name]{0}]): @nt_[block]{0}}]
     [@indent{...}]
-    [@indent{@redefidform/inline[def] @term_[method_name]{n}(@term_[self]{n} @m["{"] , @term_[param_name]{n} @m["}*"]): @nt_[block]{n}}]
+    [@indent{@redefidform/inline[def] @term_[meth_name]{n}(@term_[self]{n} @~many["," @term_[param_name]{n}]): @nt_[block]{n}}]
 ]
 
-Defines a class.
+Defines a class named @term[name] with private fields
+@term_[field_name]{1} through @term_[field_name]{k}, and methods
+@term_[meth_name]{0} through @term_[meth_name]{n}. Defining a class
+defines both a constructor function @term[name] and a type predicate
+@c{@term[name]?}.
+
+If optional @term[interface_name]s are given,
+this form checks that the class implements those interfaces.
+See @racket[interface] for more information
+on how interfaces work.
+
+A class has zero or more fields, which cannot be accessed from outside
+the class. Fields may be accessed from methods via the “self” parameter,
+as explained below.
+
+A class has one more more methods. Methods are public and can be
+accessed from outside the class, except for methods whose names begin
+with a single underscore, which are private. Each method takes a
+distinguished first parameter to refer to the instance of the object on
+which it was called (the “self” parameter, also known as the receiver),
+and zero or more other parameters. Inside a method, a field
+@term[field_name] may be accessed as @c{@term[self].@term[field_name]},
+where @term[self] is the name of that method's self parameter. Other
+methods may also be called via the self parameter, and the self may be
+returned or passed to other functions or methods.
+
+To call a method from either inside or outside the class, we use dot
+notation, writing the receiver, then the method names, and then the
+non-self parameters:
+@c{@term[object].@term[meth_name](@term[arg], ...)}.
+
+Every class must have an “internal” constructor method named
+@c{__init__}, which takes a self parameter and any other values needed
+to initialize the class. The internal constructor method @emph{must}
+initialize all the fields before it returns. Instances of a class may be
+constructed via the “external” constructor function, whose name is the
+same as the name of the class. It takes one fewer parameter than
+@code{__init__}, because it is not passed a self parameter. DSSL2
+arranges to create the new object and pass it to @code{__init__} for
+initialization.
+
+Here is an example of a simple class with one field and four methods:
+
+@dssl2block|{
+import cons
+
+class Stack:
+    let head
+
+    def __init__(self):
+        self.head = nil()
+
+    def push(self, value):
+        self.head = cons(value, self.head)
+
+    def pop(self):
+        self._check_non_empty()
+        let result = self.head.car
+        self.head = self.head.cdr
+        result
+
+    # Private helper method for emptiness check:
+    def _check_non_empty(self):
+        if nil?(self.head): error('Stack.pop: empty')
+}|
+
+Note that the internal constructor method @code{__init__} takes only a self
+parameter, which means that the external constructor function @code{Stack}
+takes none. Thus, we can use the constructor to create a new, empty
+stack, and then we can access the stack via its @code{push} and @code{pop}
+methods:
+
+@dssl2block|{
+let stack = Stack()
+stack.push(4)
+stack.push(5)
+assert_eq stack.pop(), 5
+assert_eq stack.pop(), 4
+assert_error stack.pop()
+}|
+
+As an example of a class with a non-trivial constructor, here is a 2-D
+position class that can change only in the @emph{y} dimension:
+
+@dssl2block|{
+class VerticalMovingPosn:
+    let x
+    let y
+
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    def get_x(self): self.x
+
+    def get_y(self): self.y
+
+    def set_y!(self, y): self.y = y
+}|
+
+We can create a @code{VerticalMovingPosn} as follows:
+
+@dssl2block|{
+let posn = VerticalMovingPosn(3, 4)
+assert_eq posn.get_x(), 3
+assert_eq posn.get_y(), 4
+posn.set_y!(10)
+assert_eq posn.get_x(), 3
+assert_eq posn.get_y(), 10
+}|
+
+Note that @code{VerticalMovingPosn} takes two parameters because
+@code{__init__} takes three: the self parameter and two more.
 
 @defcmpdforms[
     [@list{@defidform/inline[interface] @term[name]:}]
-    [@indent{@redefidform/inline[def] @term_[method_name]{1}(@term_[self]{1} @m["{"] , @term_[param_name]{1} @m["}*"])}]
+    [@indent{@redefidform/inline[def] @term_[meth_name]{1}(@term_[self]{1} @~many["," @term_[param_name]{1}]}]
     [@indent{...}]
-    [@indent{@redefidform/inline[def] @term_[method_name]{k}(@term_[self]{k} @m["{"] , @term_[param_name]{k} @m["}*"])}]
+    [@indent{@redefidform/inline[def] @term_[meth_name]{k}(@term_[self]{k} @~many["," @term_[param_name]{k}])}]
 ]
 
-Defines an interface.
+Defines an interface named @term[name] with methods @term_[meth_name]{1}
+through @term_[meth_name]{k}. Defining an interface binds three names:
+
+@itemlist[
+    @item{The interface named itself, @term[name], which can be mentioned
+      in a @racket[class] to check the class against that interface.}
+    @item{The interface predicate, @c{@term[name]?}, which checks for
+      objects whose classes are declared to implement the interface.}
+    @item{The interface contract, @c{@term[name]!}, which modifies
+      a protected object to remove methods not present in the interface.
+      See @secref{Contracts} for more information on how this works.}
+]
+
+An interface specifies some number of methods, their names, and their
+arities (numbers of parameters). It can then be used to check that a
+class @emph{implements} the interface, meaning that it provides methods
+with those names and arities.
+
+For example, consider an interface for a simple container that supports
+adding and removing elements, and checking whether the container is full:
+
+@dssl2block|{
+interface CONTAINER:
+    def empty?(self)
+    def full?(self)
+    def add(self, value)
+    def remove(self)
+}|
+
+The interface specifies a class with four methods:
+
+@itemlist[
+    @item{@c{empty?}, taking no non-self arguments,}
+    @item{@c{full?}, taking no non-self arguments,}
+    @item{@c{add}, taking one non-self argument, and}
+    @item{@c{remove}, taking non-non-self arguments.}
+]
+
+(Note that the parameter names themselves don't matter—all that matters
+is how many.)
+
+We can implement the @c{CONTAINER} interface multiple ways. For example,
+here we consider two classes that do so.
+
+First, the @c{Cell} class implements a container with room for one
+element, initially empty:
+
+@dssl2block|{
+class Cell (CONTAINER):
+    let _contents
+    let _empty?
+
+    def __init__(self):
+        self._contents = False
+        self._empty?   = True
+
+    def empty?(self):
+        self._empty?
+
+    def full?(self):
+        not self.empty?()
+
+    def add(self, value):
+        if self.full?(): error("Cell.add: full")
+        self._contents = value
+        self._full? = True
+
+    def remove(self):
+        if self.empty?(): error("Cell.remove: empty")
+        self._full? = False
+        self._contents
+}|
+
+Second, the @c{VecStack} class implements a fixed-size stack
+using a vector:
+
+@dssl2block|{
+class VecStack (CONTAINER):
+    let _data
+    let _len
+
+    def __init__(self, capacity):
+        self._data = [False; capacity]
+        self._len  = 0
+
+    def capacity(self):
+        self._data.len()
+
+    def len(self):
+        self._len
+
+    def empty?(self):
+        self.len() == 0
+
+    def full?(self):
+        self.len() == self.capacity()
+
+    def add(self, value):
+        if self.full?(): error('VecStack.add: full')
+        self._data[self._len] = value
+        self._len = self._len + 1
+
+    def remove(self):
+        if self.empty?(): error('VecStack.remove: empty')
+        size._len = self._len - 1
+        let result = self._data[self._len]
+        self._data[self._len] = False
+        result
+}|
+
+Both classes @c{Cell} and @c{VecStack} implement the methods of
+interface @c{CONTAINER} with the correct arities, so their definitions
+succeed. Notice that @c{VecStack} has additional methods not mentioned
+in the interface—this is okay! Because both classes @c{Cell} and
+@c{VecStack} implement @c{CONTAINER}, @c{CONTAINER?} will answer
+@code{True} for their instances. Furthermore, instances of either class
+can be protected with the @c{CONTAINER!} contract, which hides methods
+that are not declared in @c{CONTAINER}.
+
+If a class does not implement the methods of a declared interface, it is
+a static error. For example, consider this position class:
+
+@dssl2block|{
+class Posn (CONTAINER):
+    let _x
+    let _y
+
+    def __init__(self, x, y):
+        self._x = x
+        self._y = y
+
+    def x(self): _x
+    def y(self): _y
+}|
+
+The definition of @c{Posn} is in error, because it does not implement the
+methods of @c{CONTAINER}.
+
+@defsmplform{@defidform/inline[import] @nt[mod_spec]}
+
+Imports the specified DSSL2 module. Modules may be from the standard
+library, in which case the name is unquoted, or from the current
+directory, in which case @nt[mod_spec] should be the name of the file as
+a string literal.
+
+This form may only be used at top-level.
 
 @subsection{Testing and timing forms}
 

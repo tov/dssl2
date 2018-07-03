@@ -43,4 +43,3 @@ assert_error c.add('hi'), 'IntCell'
 let o = g(c)
 o.add(7)
 assert_error o.add('hi'), 'CONTAINER'
-

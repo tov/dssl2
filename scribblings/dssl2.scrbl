@@ -472,7 +472,7 @@ Loops over the values of the given @nt[expr], evaluating the
 @nt[block] can evaluate to a vector, a string,
 or a natural number. If a vector, then this form iterates over the
 element values (not the indices) of the vector; if a string, this iterates over
-the characters as 1-character strings; if a natural number @racket[n]
+the characters; if a natural number @racket[n]
 then it counts from @racket[0] to @racket[n - 1].
 
 @dssl2block|{
@@ -1142,16 +1142,30 @@ bitwise negation @racket[~].
 
 The constructor for @linkclass[int].
 
+@itemlist[
+@item{
 Given a number, returns the integer part, by truncation.
 That is, the decimal point and everything after it is removed.
+}
 
+@item{
+    Given a character, returns the Unicode code point value.
+}
+
+@item{
 Given a string, attempts to convert to a number before truncating,
 throwing an error if the conversion fails.
+}
 
+@item{
 Booleans @racket[True] and @racket[False] convert to @racket[1] and
 @racket[0], respectively.
+}
 
+@item{
 Given no arguments, returns @racket[0].
+}
+]
 
 @defmethform[int#abs]{() -> int?}
 
@@ -1262,21 +1276,32 @@ instance of @linkclass{char}. Strings may be concatenated with the
 @defprocforms[str
     [@list{(str?) -> str?}]
     [@list{(AnyC) -> str?}]
-    [@list{(nat?, char?) -> str?}]
+    [@list{(len: nat?, c: char?) -> str?}]
     [@list{() -> str?}]
 ]
 
 The constructor for @linkclass[str].
 
+@itemlist[
+@item{
 Given one string argument, returns that argument unchanged.
+}
 
+@item{
 Given one non-string argument, converts that argument to a string
-according to the @racket["%p"] format specifier.
+according to the @q{%p} format specifier.
+}
 
-Given two arguments, a natural and a character, makes a string of the
-given length, repeating the given character.
+@item{
 
+Given two arguments, a natural @c{len} and a character @c{c}, makes a
+string of the given length @c{len}, repeating character @c{c}.
+}
+
+@item{
 Given no arguments, returns the empty string.
+}
+]
 
 @defmethform[str#explode]{() -> VecC(char?)}
 
@@ -1306,19 +1331,29 @@ A vector can be indexed and assigned with square bracket notation.
 
 @defprocforms[vec
     [@list{() -> vec?}]
-    [@list{(nat?) -> vec?}]
-    [@list{(nat?, FunC(nat?, AnyC)) -> vec?}]
+    [@list{(len: nat?) -> vec?}]
+    [@list{(len: nat?, init: FunC(nat?, AnyC)) -> vec?}]
 ]
 
 The constructor for @linkclass[vec].
 
+@itemlist[
+@item{
 Given no arguments, returns an empty, zero-length vector.
+}
 
+@item{
 Given one argument, returns a vector of the given size, filled with
 @racket[False].
+}
 
+@item{
 Given two arguments, returns a vector of the given size, with each
 element initialized by applying the given function to its index.
+That is, @code{vec(len, init)} is equivalent to
+@code{[ init(i) for i in len ]}.
+}
+]
 
 @defmethform[vec#filter]{(FunC(AnyC, AnyC)) -> vec?}
 
@@ -1326,14 +1361,11 @@ Filters the given vector, by returning a vector of only the elements
 satisfying the given predicate.
 
 In particular,
-
-@dssl2block|{
+@code|{
 v.filter(pred?)
 }|
-
 is equivalent to
-
-@dssl2block|{
+@code|{
 [ x for x in v if pred?(x) ]
 }|
 
@@ -1351,14 +1383,11 @@ Returns the length of the vector.
 Maps a function over a vector, returning a new vector.
 
 In particular,
-
-@dssl2block|{
+@code|{
 v.map(f)
 }|
-
 is equivalent to
-
-@dssl2block|{
+@code|{
 [ f(x) for x in v ]
 }|
 
@@ -1427,11 +1456,11 @@ Determines whether its argument is greater than zero.
 
 Determines whether its argument is less than zero.
 
-@defprocform[even?]{(int?) -> bool?}
+@defprocform[even?]{(num?) -> bool?}
 
 Determines whether its argument is an even integer.
 
-@defprocform[odd?]{(int?) -> bool?}
+@defprocform[odd?]{(num?) -> bool?}
 
 Determines whether its argument is an odd integer.
 

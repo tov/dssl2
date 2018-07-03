@@ -30,7 +30,7 @@
   (elem #:style 'italic (racketvalfont x)))
 
 (define (m x)
-  (elem (larger (larger x))))
+  (racketoutput (larger (larger x))))
 
 (define (c . codes)
   (elem #:style 'tt codes))

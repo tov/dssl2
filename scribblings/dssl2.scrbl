@@ -298,12 +298,12 @@ The assigned @nt[lvalue] can be in one of three forms:
  evaluates to the index of the element.}
 ]
 
-This function assigns all three kinds of l-value:
+This method assigns all three kinds of l-value:
 
 @dssl2block|{
-def sch_insert!(hash, key, value):
-    let index = sch_bucket_index_(hash, key)
-    let current = hash.buckets[index]
+def insert!(self, key, value):
+    let index = self._bucket_index_(key)
+    let current = self._buckets[index]
     while cons?(current):
         if key == current.first.key:
             # struct assignment:
@@ -312,7 +312,7 @@ def sch_insert!(hash, key, value):
         # variable assignment:
         current = current.rest
     # vector assignment:
-    hash.buckets[index] = cons(sc_entry(key, value), hash.buckets[index])
+    self._buckets[index] = cons(sc_entry(key, value), self._buckets[index])
 }|
 
 @defcmpdform{@defidform/inline[def] @term[fun_name](@term_[var_name]{1}, ... @term_[var_name]{k}): @nt[block]}
@@ -909,12 +909,15 @@ class Posn (CONTAINER):
 The definition of @c{Posn} is in error, because it does not implement the
 methods of @c{CONTAINER}.
 
-@defsmplform{@defidform/inline[import] @nt[mod_spec]}
+@defsmplforms[
+    [@list{@defidform/inline[import] @term[mod_name]}]
+    [@list{@redefidform/inline[import] @term[mod_string]}]
+]
 
 Imports the specified DSSL2 module. Modules may be from the standard
-library, in which case the name is unquoted, or from the current
-directory, in which case @nt[mod_spec] should be the name of the file as
-a string literal.
+library, in which case the unquoted @term[mod_name] is used, or from the
+current directory, in which case @term[mod_string] should be the name of
+the file as a string literal.
 
 This form may only be used at top-level.
 

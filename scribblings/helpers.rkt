@@ -7,7 +7,9 @@
                      (only-in racket/syntax format-id)))
 
 (provide grammar
-         defexpform defexpforms defsmplform defcmpdform defcmpdforms
+         defexpform defexpforms
+         defsmplform defsmplforms
+         defcmpdform defcmpdforms
          defclassform linkclass Linkclass
          defconstform
          defprocform defprocforms
@@ -138,6 +140,9 @@
 
 (define-syntax-rule (defsmplform chunk ...)
   (*defforms "simple" (list (list chunk ...))))
+
+(define-syntax-rule (defsmplforms (chunk ...) ...)
+  (*defforms "simple" (list (list chunk ...) ...)))
 
 (define-syntax-rule (defcmpdform chunk ...)
   (*defforms "compound" (list (list chunk ...))))

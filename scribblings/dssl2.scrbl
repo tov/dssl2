@@ -5,12 +5,12 @@
         (for-label dssl2)
         (for-label (prefix-in racket: racket)))
 
-@title{DSSL2: Data Structures Student Language}
+@title[#:style 'toc]{DSSL2: Data Structures Student Language}
 @author{Jesse A. Tov <jesse@"@"eecs.northwestern.edu>}
 
 @defmodulelang[dssl2]
 
-@section[#:tag "dssl-syntax"]{Syntax of DSSL2}
+@section{Syntax introduction}
 
 @subsection{Compound statements and blocks}
 
@@ -165,16 +165,16 @@ by a newline, or a compound statement.
 
 @t{unop}s are @racket[~], @racket[+], @racket[-], @racket[not].
 
-@subsection{Lexical Syntax}
+@section{Lexical Syntax}
 
-@subsubsection{Identifiers}
+@subsection{Identifiers}
 
 @italic{Name}s, used for variables, functions, structs, classes,
 interfaces, fields, and methods, must start with a letter, followed by 0
 or more letters or digits. The last character also may be @q{?} or
 @q{!}.
 
-@subsubsection{Numeric Literals}
+@subsection{Numeric Literals}
 
 Numeric literals include:
 
@@ -186,7 +186,7 @@ Numeric literals include:
   @racket[nan]}
 ]
 
-@subsubsection{String literals}
+@subsection{String literals}
 
 String literals are delimited by either single or double quotes:
 
@@ -238,16 +238,16 @@ let a_long_string = '''This string can contain ' and " and
 even """ and newlines. Just not '' and one more.'''
 }|
 
-@subsubsection{Comments}
+@subsection{Comments}
 
 A comment in DSSL2 starts with the @q{#} character and continues to the
 end of the line.
 
 Long string literals can also be used to comment out long blocks of code.
 
-@subsection[#:tag "stm-forms"]{Statement forms}
+@section[#:tag "stm-forms"]{Statement forms}
 
-@subsubsection{Definition and assignment forms}
+@subsection{Definition and assignment forms}
 
 @defsmplform{@defidform/inline[let] @term[var_name] = @nt[expr]}
 
@@ -369,7 +369,7 @@ def rbt_insert!(key, tree):
     search!(tree.root, set_root!)
 }|
 
-@subsubsection{Loop and control forms}
+@subsection{Loop and control forms}
 
 @defsmplform{@defidform/inline[pass]}
 
@@ -383,9 +383,11 @@ def account_credit!(amount, account):
 #   ^ FILL IN YOUR CODE HERE
 }|
 
-@defcmpdform{@defidform/inline[if] @nt_[expr]{if}: @nt_[block]{if}
-             @defidform/inline[elif] @nt_[expr]{i}: @nt_[block]{i}
-             @defidform/inline[else]: @nt_[block]{else}}
+@defcmpdforms[
+    [@list{@defidform/inline[if] @nt_[expr]{if}: @nt_[block]{if}}]
+    [@~many[@defidform/inline[elif] @list{@nt_[expr]{elif}:} @nt_[block]{elif}]]
+    [@~opt[@list{@defidform/inline[else]:} @nt_[block]{else}]]
+]
 
 The DSSL2 conditional statement contains an @racket[if], 0 or more
 @racket[elif]s, and optionally an @racket[else] for if none of the
@@ -394,9 +396,9 @@ conditions holds.
 First it evaluates the @racket[if] condition @nt_[expr]{if}.
 If non-false, it then evaluates block @nt_[block]{if}
 and finishes. Otherwise, it evaluates each @racket[elif] condition
-@nt_[expr]{i} in turn; if each is false, it goes on to the
+@nt_[expr]{elif} in turn; if each is false, it goes on to the
 next, but when one is non-false then it finishes with the corresponding
-@nt_[block]{i}. Otherwise, if all of the conditions were false
+@nt_[block]{elif}. Otherwise, if all of the conditions were false
 and the optional @nt_[block]{else} is included, evaluates
 that.
 
@@ -570,7 +572,7 @@ def bloom_check?(b, s):
 
 Returns void from the current function.
 
-@subsubsection{Data structuring forms}
+@subsection{Data structuring forms}
 
 @defcmpdforms[
     [@list{@defidform/inline[struct] @term[name]:}]
@@ -655,7 +657,7 @@ Defines a class.
 
 Defines an interface.
 
-@subsubsection{Testing and timing forms}
+@subsection{Testing and timing forms}
 
 @defsmplform{@defidform/inline[assert] @nt[expr]}
 
@@ -757,9 +759,9 @@ The result is printed as follows:
 This means it tooks 309 milliseconds of CPU time over 792 milliseconds of
 wall clock time, with 238 ms of CPU time spent on garbage collection.
 
-@subsection[#:tag "exp-forms"]{Expression forms}
+@section[#:tag "exp-forms"]{Expression forms}
 
-@subsubsection{Variable expressions}
+@subsection{Variable expressions}
 
 @defexpform{@term[var_name]}
 
@@ -777,7 +779,15 @@ Lexically, a variable is a letter or underscore, followed by zero or
 more letters, underscores, or digits, optionally ending in a question
 mark or exclamation point.
 
-@subsubsection{Literal expressions}
+@subsection{Literal expressions}
+
+@defexpform{@term[number]}
+
+A numeric literal.
+
+@defexpform{@term[string]}
+
+A string literal.
 
 @defexpform{@defidform/inline[True]}
 
@@ -787,7 +797,7 @@ The true Boolean value.
 
 The false Boolean value, the only value that is not considered true.
 
-@subsubsection{Functions and application expressions}
+@subsection{Functions and application expressions}
 
 @defexpform{@nt_[expr]{0}(@nt_[expr]{1}, ..., @nt_[expr]{k})}
 
@@ -833,7 +843,7 @@ add twice its first argument to its second argument can be written
 lambda x, y: 2 * x + y
 }|
 
-@subsubsection{Vectors and indexing expressions}
+@subsection{Vectors and indexing expressions}
 
 @defexpform{@nt_[expr]{1}[@nt_[expr]{2}]}
 
@@ -930,7 +940,7 @@ evaluates to
 [ 50, 30, 10 ]
 }|
 
-@subsubsection{Structs and projection expressions}
+@subsection{Structs and projection expressions}
 
 @defexpform{@nt[expr].@term[prop_name]}
 
@@ -959,7 +969,7 @@ let baz = 5
 assert_eq Foo { bar, baz: 9 }, Foo(4, 9)
 }|
 
-@subsubsection{Operator expressions}
+@subsection{Operator expressions}
 
 Operators are described in order from tighest to loosest precedence.
 
@@ -1078,7 +1088,7 @@ def parent(link):
     link.parent if rbn?(link) else False
 }|
 
-@section{Built-in functions, classes, methods, and constants}
+@section[#:tag "prims"]{Built-in functions, classes, methods, and constants}
 
 @subsection{Primitive classes}
 
@@ -1594,20 +1604,6 @@ variables. A number of DSSL2 values may be used as contracts, including:
 
 @subsection{Contract syntax}
 
-@defcmpdform{@redefidform/inline[def] @term_[name]{f}(@term_[name]{1}: @nt_[ctc]{1}, ... @term_[name]{k}: @nt_[ctc]{k}) -> @nt_[ctc]{res}: @nt[block]}
-
-Defines function @term_[name]{f} while specifying contract expressions
-@nt_[ctc]{1} through @nt_[ctc]{k} for the parameters, and contract
-expression @nt_[ctc]{res} for the result. For example:
-
-@dssl2block|{
-def pythag(x: num?, y: num?) -> num?:
-    sqrt(x * x + y * y)
-}|
-
-Each of the contract positions is optional, and if omitted defaults to
-@racket[AnyC].
-
 @defcmpdform{@redefidform/inline[let] @term[var_name] : @nt[ctc] = @nt[expr]}
 
 Binds variable @term[var_name] to the value of expression @nt[expr],
@@ -1626,6 +1622,20 @@ let x : int?
 
 x = 5
 }|
+
+@defcmpdform{@redefidform/inline[def] @term_[name]{f}(@term_[name]{1}: @nt_[ctc]{1}, ... @term_[name]{k}: @nt_[ctc]{k}) -> @nt_[ctc]{res}: @nt[block]}
+
+Defines function @term_[name]{f} while specifying contract expressions
+@nt_[ctc]{1} through @nt_[ctc]{k} for the parameters, and contract
+expression @nt_[ctc]{res} for the result. For example:
+
+@dssl2block|{
+def pythag(x: num?, y: num?) -> num?:
+    sqrt(x * x + y * y)
+}|
+
+Each of the contract positions is optional, and if omitted defaults to
+@racket[AnyC].
 
 @defcmpdforms[
     [@list{@redefidform/inline[struct] @term[name]:}]

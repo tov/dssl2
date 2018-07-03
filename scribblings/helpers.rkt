@@ -46,10 +46,10 @@
     (if def?
       #`(elemtag #,tag #,name)
       #`(elemref #,tag #,name #:underline? #f)))
-  #`(list "‹"
+  #`(list "⟨"
           (italic #,elem)
           #,(if sub #`(subscript #,sub) #'"")
-          "›"))
+          "⟩"))
 
 (define-syntax (parse-rhs stx)
   (syntax-parse stx

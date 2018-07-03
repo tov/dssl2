@@ -664,7 +664,7 @@ A class has zero or more fields, which cannot be accessed from outside
 the class. Fields may be accessed from methods via the “self” parameter,
 as explained below.
 
-A class has one more more methods. Methods are public and can be
+A class has one or more methods. Methods are public and can be
 accessed from outside the class, except for methods whose names begin
 with a single underscore, which are private. Each method takes a
 distinguished first parameter to refer to the instance of the object on

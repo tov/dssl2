@@ -7,12 +7,14 @@
                   ~a)
          (for-syntax racket/base))
 
-(provide defexpform defexpforms defsmplform defcmpdform defcmpdforms
+(provide grammar
+         defexpform defexpforms defsmplform defcmpdform defcmpdforms
          defclassform linkclass Linkclass
          defconstform
          defprocform defprocforms
          defmethform defmethforms
          redefidform/inline
+         ~opt ~many ~many1 ~many-comma
          c syn syn_
          q m t
          dssl2block code
@@ -21,7 +23,80 @@
          scribble/racket
          scribble/struct
          (prefix-in scribble: scribble/manual)
-         (for-syntax syntax/parse))
+         (for-syntax syntax/parse
+                     racket/sequence))
+
+(define ((meta-surround before after) . x)
+  (apply ~list (m before) (append x (list (m after)))))
+
+(define ~opt (meta-surround "[" "]"))
+(define ~many (meta-surround "{" "}*"))
+(define ~many1 (meta-surround "{" "}⁺"))
+(define ~many-comma (meta-surround "{" "},*"))
+(define (~list . args)
+  (intersperse (tt ~) args))
+
+(define (intersperse x ys)
+  (cond
+    [(null? ys) '()]
+    [(null? (cdr ys)) ys]
+    [else (cons (car ys) (cons x (intersperse x (cdr ys))))]))
+
+(define-for-syntax (~nonterminal nt)
+  #`(list "‹" (emph #,(symbol->string (syntax-e nt))) "›"))
+
+(define-syntax (parse-rhs stx)
+  (syntax-parse stx
+    #:literals (~opt ~many ~many1 ~many-comma quote)
+    [(_ (nt:id ...) #f)
+     #'""]
+    [(_ (nt:id ...) name:id)
+     #:when (memq (syntax-e #'name) (syntax->datum #'(nt ...)))
+     (~nonterminal #'name)]
+    [(_ (nt:id ...) name:id)
+     #'(scribble:racket name)]
+    [(_ (nt:id ...) token:str)
+     #'(q token)]
+    [(_ (nt:id ...) (quote token:id))
+     #`(t #,(symbol->string (syntax-e #'token)))]
+    [(_ (nt:id ...) (~opt arg:expr ...))
+     #'(~opt (parse-rhs (nt ...) arg) ...)]
+    [(_ (nt:id ...) (~many arg:expr ...))
+     #'(~many (parse-rhs (nt ...) arg) ...)]
+    [(_ (nt:id ...) (~many1 arg:expr ...))
+     #'(~many1 (parse-rhs (nt ...) arg) ...)]
+    [(_ (nt:id ...) (~many-comma arg:expr ...))
+     #'(~many-comma (parse-rhs (nt ...) arg) ...)]
+    [(_ (nt:id ...) (sub:expr ...))
+     #'(~list (parse-rhs (nt ...) sub) ...)]))
+
+(define-syntax (grammar stx)
+  (syntax-parse stx
+    [(_ [non-terminal:id production0:expr production:expr ...] ...)
+     (define (interpret-nt nt)
+       (or (and nt (~nonterminal nt))
+           ""))
+     (define (interpret-sym sym)
+       (or (and sym #`(m #,sym))
+           #'""))
+     (define rows '())
+     (define (row nt sym rhs)
+       (set! rows
+         (cons #`(list #,(interpret-nt nt)
+                       #,(interpret-sym sym)
+                       (parse-rhs (non-terminal ...) #,rhs))
+               rows)))
+     (for ([non-terminal (in-syntax #'(non-terminal ...))]
+           [productions  (in-syntax #'((production0 production ...) ...))])
+       (let ([productions (syntax->list productions)])
+         (row non-terminal "=" (car productions))
+         (for ([production (cdr productions)])
+           (row #f "|" production))
+         (row #f #f #f)))
+     #`(tabular
+         #:sep (tt ~)
+         #:column-properties '(right center left)
+         (list #,@(reverse rows)))]))
 
 (define (q x)
   (elem (racketvalfont x)))
@@ -62,10 +137,12 @@
                  (c (symbol->string 'name))))
 
 (define-syntax-rule (linkclass name)
-  (secref (format "class:~a" 'name)))
+  (seclink (format "class:~a" 'name)
+           "class " (tt (format "~a" 'name))))
 
 (define-syntax-rule (Linkclass name)
-  (Secref (format "class:~a" 'name)))
+  (seclink (format "class:~a" 'name)
+           "Class " (tt (format "~a" 'name))))
 
 (define-syntax-rule (defconstform name chunk ...)
   (*defforms "constant" (list (list (defidform/inline name) ": " chunk ...))))

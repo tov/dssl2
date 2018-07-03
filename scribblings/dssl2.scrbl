@@ -59,99 +59,89 @@ Non-terminal symbols are written in @syn{italic typewriter}, whereas
 terminal symbols are in @q{colored typewriter}. Conventions include:
 
 @itemlist[
- @item{@m["{"] @syn[x] @m["}*"] for repetition 0 or more times}
- @item{@m["{"] @syn[x] @m["}⁺"] for repetition 1 or more times}
- @item{@m["{"] @syn[x] @m["},*"] for repetition 0 or more times with commas in
+ @item{@~many{@syn[x]} for repetition 0 or more times}
+ @item{@~many1{@syn[x]} for repetition 1 or more times}
+ @item{@~many-comma{@syn[x]} for repetition 0 or more times with commas in
  between}
- @item{@m["["] @syn[x] @m["]"] for optional}
+ @item{@~opt{@syn[x]} for optional}
 ]
 
 The grammar begins by saying that a program is a sequence of zero or
 more statements, where a statement is either a simple statement followed
 by a newline, or a compound statement.
 
-@racketgrammar*[
-#:literals (def struct let lambda λ else if elif while for in test
-            time break continue : True False = interface class
-            assert assert_eq assert_error pass return NEWLINE INDENT DEDENT)
-[program (code:line @#,m["{"] statement @#,m["}*"])]
-[statement   (code:line simple @#,q{NEWLINE})
+@grammar[
+  [program   (~many statement)]
+  [statement (simple 'NEWLINE)
              compound]
-[simple
-            (code:line assert expr)
-            (code:line assert_eq expr @#,q{,} expr)
-            (code:line assert_error expr @#,m["["] @#,q{,} expr @#,m["]"])
-            break
-            continue
-            (code:line lvalue = expr)
-            expr
-            (code:line let @#,t{name} opt-ctc @#,m["["] @#,q{=} expr @#,m["]"])
-            (code:line pass)
-            (code:line return @#,m["["] expr @#,m["]"])
-            (code:line simple @#,q{;} simple)]
-[lvalue @#,t{name}
-        (code:line struct_expr @#,q{.} @#,t{name})
-        (code:line vec_expr @#,q["["] index_expr @#,q["]"])]
-[compound
-            (code:line class @#,t{name} opt_ctc_params opt_implements @#,q{:} class_block)
-            (code:line def @#,t{name} opt_ctc_params @#,q{(} @#,m["{"] @#,t{name} opt_ctc @#,m["},*"] @#,q{)} opt_res_ctc @#,q{:} block)
-            (code:line if expr @#,q{:} block @#,m["{"] elif expr @#,q{:} block @#,m["}*"] @#,m["["] else @#,q{:} block @#,m["]"])
-            (code:line interface @#,t{name} opt_ctc_params @#,q{:} interface_block)
-            (code:line for @#,m{[} @#,t{name} @#,q{,} @#,m{]} @#,t{name} @#,q{in} expr @#,q{:} block)
-            (code:line struct @#,t{name} @#,q{:} struct_block)
-            (code:line test @#,m{[} expr @#,m{]} @#,q{:} block)
-            (code:line time @#,m{[} expr @#,m{]} @#,q{:} block)
-            (code:line while expr @#,q{:} block)
-            ]
-[block
-        (code:line simple @#,q{NEWLINE})
-        (code:line @#,q{NEWLINE} @#,q{INDENT} @#,m["{"] statement @#,m["}⁺"] @#,q{DEDENT})]
-[class_block
-        (code:line @#,q{NEWLINE} @#,q{INDENT} class_fields class_methods @#,q{DEDENT})]
-[class_fields
-        (code:line @#,m["{"] field_def @#,q{NEWLINE} @#,m["}*"])]
-[class_methods
-        (code:line @#,m["{"] method_def @#,q{NEWLINE} @#,m["}⁺"])]
-[interface_block
-        (code:line pass)
-        (code:line @#,q{NEWLINE} @#,q{INDENT} @#,m["{"] method_proto @#,q{NEWLINE} @#,m["}⁺"] @#,q{DEDENT})]
-[struct_block
-        (code:line pass)
-        (code:line @#,q{NEWLINE} @#,q{INDENT} @#,m["{"] field_def @#,q{NEWLINE} @#,m["}⁺"] @#,q{DEDENT})]
-[field_def
-        (code:line let @#,t{name} opt_ctc)]
-[method_def
-        (code:line method_proto @#,q{:} block)]
-[method_proto
-        (code:line def @#,t{name} opt_ctc_params @#,q["("] @#,t{name} @#,m["{"] @#,q{,} @#,t{name} opt_ctc @#,m["}*"] @#,q[")"] opt_res_ctc)]
-[opt_implements
-        (code:line)
-        (code:line @#,q["("] @#,m["{"] @#,t{name} @#,m["},*"] @#,q[")"])]
-[opt_ctc
-        (code:line)
-        (code:line @#,q{:} expr)]
-[opt_res_ctc
-        (code:line)
-        (code:line @#,q{->} expr)]
-[opt_ctc_params
-        (code:line)
-        (code:line @#,q{[} @#,m["{"] @#,t{name} @#,m["},*"] @#,q{]})]
-[expr lvalue
-      @#,q{number}
-      @#,q{string}
-      True
-      False
-      (code:line expr @#,q{(} @#,m["{"] expr @#,m["},*"] @#,q{)})
-      (code:line lambda @#,m["{"] @#,t{name} @#,m["},*"] @#,q{:} simple)
-      (code:line @#,q{λ} @#,m["{"] @#,t{name} @#,m["},*"] @#,q{:} simple)
-      (code:line expr @#,q{if} expr @#,q{else} expr)
-      (code:line @#,t{name} @#,q["{"] @#,m["{"] @#,t{name} : expr @#,m["},*"] @#,q["}"])
-      (code:line @#,q{[} @#,m["{"] expr @#,m["},*"] @#,q{]})
-      (code:line @#,q{[} expr @#,q{;} expr @#,q{]})
-      (code:line @#,q{[} expr @#,q{for} @#,m{[} @#,t{name} @#,q{,} @#,m{]} @#,t{name} @#,q{in} expr @#,m{[} @#,q{if} expr @#,m{]} @#,q{]})
-      (code:line expr @#,t{binop} expr)
-      (code:line @#,t{unop} expr)
-      ]
+  [simple    (assert expr)
+             (assert_eq expr "," expr)
+             (assert_error expr (~opt "," expr))
+             break
+             continue
+             (lvalue = expr)
+             expr
+             (let 'name opt_ctc (~opt "=" expr))
+             pass
+             (return (~opt expr))
+             (simple ";" simple)]
+  [lvalue    'name
+             (expr "." 'name)
+             (expr "[" expr "]")]
+  [compound  (class 'name opt_ctc_params opt_implements : class_block)
+             (def 'name opt_ctc_params "(" (~many-comma 'name opt_ctc) ")"
+               opt_res_ctc : block)
+             (if expr ":" block
+                 (~many elif expr ":" block)
+                 (~opt else ":" block))
+             (interface 'name opt_ctc_params ":" interface_block)
+             (for (~opt 'name ",") 'name "in" expr ":" block)
+             (struct 'name ":" struct_block)
+             (test (~opt expr) ":" block)
+             (time (~opt expr) ":" block)
+             (while expr ":" block)]
+  [block     (simple 'NEWLINE)
+             ('NEWLINE 'INDENT (~many1 statement) 'DEDENT)]
+  [class_block
+             ('NEWLINE 'INDENT class_fields class_methods 'DEDENT)]
+  [class_fields
+             (~many field_def 'NEWLINE)]
+  [class_methods
+             (~many1 method_def)]
+  [interface_block
+            pass
+            ('NEWLINE 'INDENT (~many1 method_proto 'NEWLINE) 'DEDENT)]
+  [struct_block
+            pass
+            ('NEWLINE 'INDENT (~many1 field_def 'NEWLINE) 'DEDENT)]
+  [field_def
+            (let 'name opt_ctc)]
+  [method_def
+            (method_proto ":" block)]
+  [method_proto
+            (def 'name opt_ctc_params "(" 'name (~many "," 'name opt_ctc) ")" opt_res_ctc)]
+  [opt_implements
+            (~opt "(" (~many-comma 'name) ")")]
+  [opt_ctc
+            (~opt ":" expr)]
+  [opt_res_ctc
+            (~opt "->" expr)]
+  [opt_ctc_params
+            (~opt "[" (~many-comma 'name) "]")]
+  [expr     'number
+            'string
+            True
+            False
+            (expr "(" (~many-comma expr) ")")
+            (lambda (~many-comma 'name) ":" simple)
+            ("λ" (~many-comma 'name) ":" simple)
+            ('struct_name "{" (~many-comma 'name ":" expr) "}")
+            (expr "if" expr "else" expr)
+            ("[" (~many-comma expr) "]")
+            ("[" expr ";" expr "]")
+            ("[" expr "for" (~opt 'name ",") 'name "in" expr (~opt "if" expr) "]")
+            (expr 'binop expr)
+            ('unop expr)]
 ]
 
 @t{binop}s are, from tightest to loosest precedence:

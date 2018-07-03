@@ -16,8 +16,8 @@
 
 DSSL2 uses alignment and indentation to delimit @deftech{blocks}. In
 particular, compound statements such as
-@racket[if]-@racket[elif]-@racket[else] take @syn[block]s for each
-condition, where a @syn[block] can be either one simple statement
+@racket[if]-@racket[elif]-@racket[else] take @nt[block]s for each
+condition, where a @nt[block] can be either one simple statement
 followed by a newline, or a sequence of statements on subsequent lines
 that are all indented by four additional spaces. Here is an example of a
 tree insertion function written using indentation:
@@ -55,15 +55,15 @@ are described in more depth below. Here they are summarized in
 @hyperlink["https://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_form"]{
     Extended Backus-Naur Form}.
 
-Non-terminal symbols are written in @syn{italic typewriter}, whereas
-terminal symbols are in @q{colored typewriter}. Conventions include:
+Non-terminal symbols are written in ‹@emph{italic_with_pointies}›, whereas
+terminal symbols are in @term[|colored typewriter|]. Conventions include:
 
 @itemlist[
- @item{@~many{@syn[x]} for repetition 0 or more times}
- @item{@~many1{@syn[x]} for repetition 1 or more times}
- @item{@~many-comma{@syn[x]} for repetition 0 or more times with commas in
+ @item{@~many{@term[x]} for repetition 0 or more times}
+ @item{@~many1{@term[x]} for repetition 1 or more times}
+ @item{@~many-comma{@term[x]} for repetition 0 or more times with commas in
  between}
- @item{@~opt{@syn[x]} for optional}
+ @item{@~opt{@term[x]} for optional}
 ]
 
 The grammar begins by saying that a program is a sequence of zero or
@@ -123,11 +123,12 @@ by a newline, or a compound statement.
   [opt_implements
             (~opt "(" (~many-comma 'name) ")")]
   [opt_ctc
-            (~opt ":" expr)]
+            (~opt ":" ctc)]
   [opt_res_ctc
-            (~opt "->" expr)]
+            (~opt "->" ctc)]
   [opt_ctc_params
             (~opt "[" (~many-comma 'name) "]")]
+  [ctc      expr]
   [expr     'number
             'string
             True
@@ -218,8 +219,8 @@ characters via the escape code @c{\n}. Other escape codes include:
   @item{@c{\r} for ASCII carriage return (also @c{\x0D})}
   @item{@c{\t} for ASCII tab (also @c{\x09})}
   @item{@c{\v} for ASCII vertical tab (also @c{\x0B})}
-  @item{@c{\x@syn{hh}} in hex, for example @c{\x0A} is newline}
-  @item{@c{\@syn{ooo}} in octal, for example @c{\011} is tab}
+  @item{@c{\x@term{hh}} in hex, for example @c{\x0A} is newline}
+  @item{@c{\@term{ooo}} in octal, for example @c{\011} is tab}
   @item{A backslash immediately followed by a newline causes both characters to
       be ignored, which provides a way to wrap long strings across lines.}
 ]
@@ -245,9 +246,9 @@ Long string literals can also be used to comment out long blocks of code.
 
 @subsection[#:tag "stm-forms"]{Statement forms}
 
-@defsmplform{@defidform/inline[assert] @syn[expr]}
+@defsmplform{@defidform/inline[assert] @nt[expr]}
 
-Asserts that the given @syn[expr] evaluates to non-false. If the
+Asserts that the given @nt[expr] evaluates to non-false. If the
 expression evaluates false, signals an error.
 
 @dssl2block|{
@@ -258,9 +259,9 @@ test "sch_member? finds 'hello'":
     assert sch_member?(h, 'hello')
 }|
 
-@defsmplform{@defidform/inline[assert_eq] @syn[expr]₁, @syn[expr]₂}
+@defsmplform{@defidform/inline[assert_eq] @nt_[expr]{1}, @nt_[expr]{2}}
 
-Asserts that the given @syn[expr]s evaluates to structurally equal values.
+Asserts that the given @nt[expr]s evaluates to structurally equal values.
 If they are not equal, signals an error.
 
 @dssl2block|{
@@ -271,28 +272,29 @@ test 'first_char_hasher':
     assert_eq first_char_hasher('apple'), 97
 }|
 
-@defsmplform{@defidform/inline[assert_error] @syn[expr], @syn[string_expr]}
+@defsmplform{@defidform/inline[assert_error] @nt_[expr]{fail}, @nt_[expr]{str}}
 
-Asserts that the given @syn[expr] errors, and that the error message
-contains the substring that results from evaluating @syn[string_expr].
+Asserts that the given @nt_[expr]{fail} errors, and that the error message
+contains the substring that results from evaluating @nt_[expr]{str}.
 
-@defsmplform{@redefidform/inline[assert_error] @syn[expr]}
+@defsmplform{@redefidform/inline[assert_error] @nt[expr]}
 
-Asserts that the given @syn[expr] errors without checking for a
+Asserts that the given @nt[expr] errors without checking for a
 particular error.
 
-@defsmplform{@syn[lvalue] @defidform/inline[=] @syn[expr]}
+@defsmplform{@nt[lvalue] @defidform/inline[=] @nt[expr]}
 
-Assignment. The assigned @syn[lvalue] can be in one of three forms:
+Assignment. The assigned @nt[lvalue] can be in one of three forms:
 
 @itemlist[
- @item{@syn[var_name] assigns to a variable, which can be a @syn[let]-bound
+ @item{@term[var_name] assigns to a variable, which can be a @racket[let]-bound
  local or a function parameter.}
- @item{@c{@syn[struct_expr].@syn[field_name]} assigns to a structure field, where
- the expression must evaluate to a structure that has the given field
+ @item{@c{@term[struct_expr].@term[field_name]} assigns to a structure field,
+ where the expression must evaluate to a structure that has the given field
  name.}
- @item{@c{@syn[vec_expr][@syn[index_expr]]} assigns to a vector element, where
- @c{@syn[vec_expr]} evaluates to the vector and @c{@syn[index_expr]}
+ @item{@c{@nt_[expr]{vec}[@nt_[expr]{index}]} assigns to a vector element,
+ where
+ @nt_[expr]{vec} evaluates to the vector and @nt_[expr]{index}
  evaluates to the index of the element.}
 ]
 
@@ -324,21 +326,22 @@ When in a @racket[for] or @racket[while] loop, ends the current
 iteration of the (inner-most) loop and begins the next iteration.
 
 @defcmpdforms[
-    [@list{@defidform/inline[class] @syn[name] @m{[} ( @m["{"] @syn[interface_name] @m["},*"] ) @m{]}:}]
-    [@indent{@redefidform/inline[let] @syn_[field_name]{1}}]
+    [@list{@defidform/inline[class] @term[name] @m{[} ( @m["{"] @term[interface_name] @m["},*"] ) @m{]}:}]
+    [@indent{@redefidform/inline[let] @term_[field_name]{1}}]
     [@indent{...}]
-    [@indent{@redefidform/inline[let] @syn_[field_name]{k}}]
-    [@indent{@redefidform/inline[def] @syn_[method_name]{0}(@syn_[self]{0} @m["{"] , @syn_[param_name]{0} @m["}*"]): @syn_[block]{0}}]
+    [@indent{@redefidform/inline[let] @term_[field_name]{k}}]
+    [@indent{@redefidform/inline[def] @term_[method_name]{0}(@term_[self]{0} @m["{"] , @term_[param_name]{0} @m["}*"]): @nt_[block]{0}}]
     [@indent{...}]
-    [@indent{@redefidform/inline[def] @syn_[method_name]{n}(@syn_[self]{n} @m["{"] , @syn_[param_name]{n} @m["}*"]): @syn_[block]{n}}]
+    [@indent{@redefidform/inline[def] @term_[method_name]{n}(@term_[self]{n} @m["{"] , @term_[param_name]{n} @m["}*"]): @nt_[block]{n}}]
 ]
 
 Defines a class.
 
-@defcmpdform{@defidform/inline[def] @syn[fun_name](@syn[var_name]₁, ... @syn[var_name]@subscript{k}): @syn[block]}
+@defcmpdform{@defidform/inline[def] @term[fun_name](@term_[var_name]{1}, ... @term_[var_name]{k}): @nt[block]}
 
-Defines @syn[fun_name] to be a function with formal parameters @syn[var_name]₁,
-@c{...}, @syn[var_name]@subscript{k} and with body @syn[block].
+Defines @term[fun_name] to be a function with formal parameters
+@term_[var_name]{1}, @c{...}, @term_[var_name]{k} and with body
+@nt[block].
 
 For example,
 
@@ -356,7 +359,7 @@ A function may have zero arguments, as in @racket[greet]:
 def greet(): println("Hello, world!")
 }|
 
-The body of a function is defined to be a @tech{block}, which means it
+The body of a function is defined to be a @nt[block], which means it
 can be an indented sequence of statements, or a single simple statement
 on the same line as the @racket[def].
 
@@ -391,7 +394,7 @@ def rbt_insert!(key, tree):
     search!(tree.root, set_root!)
 }|
 
-@defsmplform{@syn[expr]}
+@defsmplform{@nt[expr]}
 
 An expression, evaluated for both side effect and, if at the tail end
 of a function, its value.
@@ -406,21 +409,21 @@ def size(tree):
     else: 0
 }|
 
-@defcmpdform{@defidform/inline[if] @syn[expr]@subscript{if}: @syn[block]@subscript{if}
-             @defidform/inline[elif] @syn[expr]@subscript{i}: @syn[block]@subscript{i}
-             @defidform/inline[else]: @syn[block]@subscript{else}}
+@defcmpdform{@defidform/inline[if] @nt_[expr]{if}: @nt_[block]{if}
+             @defidform/inline[elif] @nt_[expr]{i}: @nt_[block]{i}
+             @defidform/inline[else]: @nt_[block]{else}}
 
 The DSSL2 conditional statement contains an @racket[if], 0 or more
 @racket[elif]s, and optionally an @racket[else] for if none of the
 conditions holds.
 
-First it evaluates the @racket[if] condition @syn[expr]@subscript{if}.
-If non-false, it then evaluates @tech{block} @syn[block]@subscript{if}
+First it evaluates the @racket[if] condition @nt_[expr]{if}.
+If non-false, it then evaluates block @nt_[block]{if}
 and finishes. Otherwise, it evaluates each @racket[elif] condition
-@syn[expr]@subscript{i} in turn; if each is false, it goes on to the
+@nt_[expr]{i} in turn; if each is false, it goes on to the
 next, but when one is non-false then it finishes with the corresponding
-@syn[block]@subscript{i}. Otherwise, if all of the conditions were false
-and the optional @syn[block]@subscript{else} is included, evaluates
+@nt_[block]{i}. Otherwise, if all of the conditions were false
+and the optional @nt_[block]{else} is included, evaluates
 that.
 
 For example, we can have an @racket[if] with no @racket[elif] or
@@ -463,18 +466,18 @@ def rebalance_left_(key, balance, left0, right):
     else: error('Cannot happen')
 }|
 
-@defcmpdform{@defidform/inline[for] @syn[var_name] @q{in} @syn[expr]: @syn[block]}
+@defcmpdform{@defidform/inline[for] @term[var_name] in @nt[expr]: @nt[block]}
 
-Loops over the values of the given @syn[expr], evaluating the
-@tech{block} for each. The @syn[expr] can evaluate to a vector, a string,
+Loops over the values of the given @nt[expr], evaluating the
+@nt[block] can evaluate to a vector, a string,
 or a natural number. If a vector, then this form iterates over the
-values (not the indices) of the vector; if a string, this iterates over
+element values (not the indices) of the vector; if a string, this iterates over
 the characters as 1-character strings; if a natural number @racket[n]
 then it counts from @racket[0] to @racket[n - 1].
 
 @dssl2block|{
 for person in people_to_greet:
-    println("Hello, ~a!", person)
+    println("Hello, %s!", person)
 }|
 
 In this example hash function producer, the @racket[for] loops over the
@@ -495,31 +498,31 @@ def make_sbox_hash(n):
     hash
 }|
 
-@defcmpdform{@redefidform/inline[for] @syn[var_name]₁, @syn[var_name]₂ @q{in} @syn[expr]: @syn[block]}
+@defcmpdform{@redefidform/inline[for] @term_[var_name]{1}, @term_[var_name]{2} in @nt[expr]: @nt[block]}
 
-Loops over the indices and values of the given @syn[expr], evaluating
-the @tech{block} for each. The @syn[expr] can evaluate to a vector, a
-string, or a natural number. If a vector, then @syn[var]₁
-takes on the indices of the vector while @syn[var]₂ takes on
-the values; if a string, then @syn[var]₁ takes on the
-indices of the characters while @syn[var]₂ takes on the
+Loops over the indices and values of the given @nt[expr], evaluating
+the @nt[block] for each. The @nt[expr] can evaluate to a vector, a
+string, or a natural number. If a vector, then @term_[var]{1}
+takes on the indices of the vector while @term_[var]{2} takes on
+the values; if a string, then @term_[var]{1} takes on the
+indices of the characters while @term_[var]{2} takes on the
 characters; if a natural number then both variables count together.
 
 @dssl2block|{
 for ix, person in people_to_greet:
-    println("~e: Hello, ~a!", ix, person)
+    println("%p: Hello, %s!", ix, person)
 }|
 
 @defcmpdforms[
-    [@list{@defidform/inline[interface] @syn[name]:}]
-    [@indent{@redefidform/inline[def] @syn_[method_name]{1}(@syn_[self]{1} @m["{"] , @syn_[param_name]{1} @m["}*"])}]
+    [@list{@defidform/inline[interface] @term[name]:}]
+    [@indent{@redefidform/inline[def] @term_[method_name]{1}(@term_[self]{1} @m["{"] , @term_[param_name]{1} @m["}*"])}]
     [@indent{...}]
-    [@indent{@redefidform/inline[def] @syn_[method_name]{k}(@syn_[self]{k} @m["{"] , @syn_[param_name]{k} @m["}*"])}]
+    [@indent{@redefidform/inline[def] @term_[method_name]{k}(@term_[self]{k} @m["{"] , @term_[param_name]{k} @m["}*"])}]
 ]
 
 Defines an interface.
 
-@defsmplform{@defidform/inline[let] @syn[var_name] = @syn[expr]}
+@defsmplform{@defidform/inline[let] @term[var_name] = @nt[expr]}
 
 Declares and defines a local variable. Local variables may be declared in any
 scope and last for that scope. A local variable may be re-assigned with the
@@ -532,7 +535,7 @@ def sum(v):
     return result
 }|
 
-@defsmplform{@redefidform/inline[let] @syn[var_name]}
+@defsmplform{@redefidform/inline[let] @term[var_name]}
 
 Declares a local variable, which will be undefined until it is assigned:
 
@@ -561,9 +564,9 @@ def account_credit!(amount, account):
 #   ^ FILL IN YOUR CODE HERE
 }|
 
-@defsmplform{@defidform/inline[return] @syn[expr]}
+@defsmplform{@defidform/inline[return] @nt[expr]}
 
-Returns the value of the given @syn[expr] from the inner-most function.
+Returns the value of the given @nt[expr] from the inner-most function.
 Note that this is often optional, since the last expression in a
 function will be used as its return value.
 
@@ -595,14 +598,14 @@ def bloom_check?(b, s):
 Returns void from the current function.
 
 @defcmpdforms[
-    [@list{@defidform/inline[struct] @syn[name]:}]
-    [@indent{@redefidform/inline[let] @syn_[field_name]{1}}]
+    [@list{@defidform/inline[struct] @term[name]:}]
+    [@indent{@redefidform/inline[let] @term_[field_name]{1}}]
     [@indent{...}]
-    [@indent{@redefidform/inline[let] @syn_[field_name]{k}}]
+    [@indent{@redefidform/inline[let] @term_[field_name]{k}}]
 ]
 
-Defines a new structure type @syn[struct_name] with fields given by
-@syn[field_name]₁, @c{...}, @syn[field_name]@subscript{k}. For example,
+Defines a new structure type @term[struct_name] with fields given by
+@term_[field_name]{1}, @c{...}, @term_[field_name]{k}. For example,
 to define a struct @racket[posn] with fields @racket[x] and @racket[y],
 we write:
 
@@ -656,13 +659,13 @@ def fix_size!(node):
     node.size = 1 + size(node.left) + size(node.right)
 }|
 
-@defcmpdform{@defidform/inline[test] @syn[expr]: @syn[block]}
+@defcmpdform{@defidform/inline[test] @nt[expr]: @nt[block]}
 
-Runs the code in @tech{block} as a test case named @syn[expr]
+Runs the code in @nt[block] as a test case named @nt[expr]
 (which is optional). If an
-assertion fails or an error occurs in @syn[block], the test case
+assertion fails or an error occurs in @nt[block], the test case
 terminates, failure is reported, and the program continues after the
-@tech{block}.
+block.
 
 For example:
 
@@ -672,7 +675,7 @@ test "arithmetic":
     assert_eq 2 + 2, 4
 }|
 
-A @racket[test] @tech{block} can be used to perform just one check or a
+A @racket[test] @nt[block] can be used to perform just one check or a
 long sequence of preparation and checks:
 
 @dssl2block|{
@@ -698,10 +701,10 @@ test 'single-chaining hash table':
     assert_eq sch_keys(h), cons('hello', cons('helo', nil()))
 }|
 
-@defcmpdform{@defidform/inline[time] @syn[expr]: @syn[block]}
+@defcmpdform{@defidform/inline[time] @nt[expr]: @nt[block]}
 
-Times the execution of the @tech{block}, and then prints the results labeled
-with the result of @syn[expr] (which isn’t timed, and which is optional).
+Times the execution of the @nt[block], and then prints the results labeled
+with the result of @nt[expr] (which isn’t timed, and which is optional).
 
 For example, we can time how long it takes to create an array of
 10,000,000 @racket[0]s:
@@ -720,9 +723,9 @@ The result is printed as follows:
 This means it tooks 309 milliseconds of CPU time over 792 milliseconds of
 wall clock time, with 238 ms of CPU time spent on garbage collection.
 
-@defcmpdform{@defidform/inline[while] @syn[expr]: @syn[block]}
+@defcmpdform{@defidform/inline[while] @nt[expr]: @nt[block]}
 
-Iterates the @tech{block} while the @syn[expr] evaluates to non-false.
+Iterates the @nt[block] while the @nt[expr] evaluates to non-false.
 For example:
 
 @dssl2block|{
@@ -747,7 +750,7 @@ def sch_lookup(hash, key):
 
 @subsection[#:tag "exp-forms"]{Expression forms}
 
-@defexpform{@syn[var_name]}
+@defexpform{@term[var_name]}
 
 The value of a variable, which must be a function parameter, bound with
 @racket[let], or defined with @racket[def]. For example,
@@ -763,17 +766,17 @@ Lexically, a variable is a letter or underscore, followed by zero or
 more letters, underscores, or digits, optionally ending in a question
 mark or exclamation point.
 
-@defexpform{@syn[expr].@syn[prop_name]}
+@defexpform{@nt[expr].@term[prop_name]}
 
-Expression @syn[expr] must evaluate to struct value that has field
-@syn[prop_name] or an object value that has method @syn[prop_name]; then
+Expression @nt[expr] must evaluate to struct value that has field
+@term[prop_name] or an object value that has method @term[prop_name]; then
 this expression evaluates to the value of that field of the struct or
 that method of the object.
 
-@defexpform{@syn[expr][@syn[index_expr]]}
+@defexpform{@nt_[expr]{1}[@nt_[expr]{2}]}
 
-Expression @syn[expr] must evaluate to a vector @c{v} or string @c{s};
-@syn[index_expr] must evaluate to an integer @c{n} between 0 and
+Expression @nt_[expr]{1} must evaluate to a vector @c{v} or string @c{s};
+@nt_[expr]{2} must evaluate to an integer @c{n} between 0 and
 @code{v.len() - 1}. Then this returns the @c{n}th element of vector
 @c{v} or the @c{n}th character of string @c{s}.
 
@@ -785,10 +788,10 @@ The true Boolean value.
 
 The false Boolean value, the only value that is not considered true.
 
-@defexpform{@syn[expr]@subscript{0}(@syn[expr]₁, ..., @syn[expr]@subscript{k})}
+@defexpform{@nt_[expr]{0}(@nt_[expr]{1}, ..., @nt_[expr]{k})}
 
-Evaluates all the expressions; @syn_[expr]{0} must evaluate to a
-procedure. Then applies the result of @syn[expr]@subscript{0} with the
+Evaluates all the expressions; @nt_[expr]{0} must evaluate to a
+procedure. Then applies the result of @nt_[expr]{0} with the
 results of the other expressions as arguments.
 
 For example,
@@ -817,24 +820,24 @@ that means lookup the @c{enqueue} method in @c{q}, and then apply the
 result to @racket[5].
 
 @defexpforms[
-  @list{@defidform/inline[lambda] @syn[var_name]₁, ..., @syn[var_name]@subscript{k}: @syn[simple]}
-  @list{@q{λ} @syn[var_name]₁, ..., @syn[var_name]@subscript{k}: @syn[simple]}
+  @list{@defidform/inline[lambda] @term_[var_name]{1}, ..., @term_[var_name]{k}: @nt[simple]}
+  @list{λ @term_[var_name]{1}, ..., @term_[var_name]{k}: @nt[simple]}
 ]
 
-Creates an anonymous function with parameters @syn[var_name]₁, @c{...},
-@syn[var_name]@subscript{k} and body @syn[simple]. For example, the function to
+Creates an anonymous function with parameters @term_[var_name]{1}, @c{...},
+@term_[var_name]{k} and body @nt[simple]. For example, the function to
 add twice its first argument to its second argument can be written
 
 @dssl2block|{
 lambda x, y: 2 * x + y
 }|
 
-@defexpform{@syn[true_expr] @q{if} @syn[cond_expr] @q{else} @syn[false_expr]}
+@defexpform{@nt_[expr]{then} @q{if} @nt_[expr]{cond} @q{else} @nt_[expr]{else}}
 
 The ternary expression first evaluates the condition
-@syn[cond_expr]. If non-false,
-evaluates @syn[true_expr] for its value; otherwise,
-evaluates @syn[false_expr] for its value.
+@nt_[expr]{cond}. If non-false,
+evaluates @nt_[expr]{then} for its value; otherwise,
+evaluates @nt_[expr]{else} for its value.
 
 For example:
 
@@ -843,7 +846,7 @@ def parent(link):
     link.parent if rbn?(link) else False
 }|
 
-@defexpform{@syn[struct_name] { @syn[field_name]₁: @syn[expr]₁, ..., @syn[field_name]@subscript{k}: @syn[expr]@subscript{k} }}
+@defexpform{@term[struct_name] { @term_[field_name]{1}: @nt_[expr]{1}, ..., @term_[field_name]{k}: @nt_[expr]{k} }}
 
 Constructs a struct with the given name and the values of the given
 expressions for its fields. The struct must have been declared with
@@ -863,7 +866,7 @@ let baz = 5
 assert_eq Foo { bar, baz: 9 }, Foo(4, 9)
 }|
 
-@defexpform{[ @syn[expr]@subscript{0}, ..., @syn[expr]@subscript{k - 1} ]}
+@defexpform{[ @nt_[expr]{0}, ..., @nt_[expr]{k - 1} ]}
 
 Creates a new vector of length @c{k} whose values are the values
 of the expressions.
@@ -874,10 +877,10 @@ For example:
 let v = [ 1, 2, 3, 4, 5 ]
 }|
 
-@defexpform{[ @syn[init_expr]; @syn[size_expr] ]}
+@defexpform{[ @nt_[expr]{init}; @nt_[expr]{size} ]}
 
 Constructs a new vector whose length is the value of
-@syn[size_expr], filled with the value of @syn[init_expr]. That is,
+@nt_[expr]{size}, filled with the value of @nt_[expr]{init}. That is,
 
 @dssl2block|{
 [ 0; 5 ]
@@ -890,18 +893,18 @@ means the same thing as
 }|
 
 @defexpforms[
-  @list{[ @syn[elem_expr] @q{for} @syn[var_name] @q{in} @syn[iter_expr] ]}
-  @list{[ @syn[elem_expr] @q{for} @syn[var_name]₁, @syn[var_name]₂ @q{in} @syn[iter_expr] ]}
+  @list{[ @nt_[expr]{elem} for @term[var_name] in @nt_[expr]{iter} ]}
+  @list{[ @nt_[expr]{elem} for @term_[var_name]{1}, @term_[var_name]{2} in @nt_[expr]{iter} ]}
 ]
 
-Vector comprehensions: produces a vector of the values of @syn[elem_expr]
-while iterating the variable(s) over @syn[iter_expr]. In particular,
-@syn[iter_expr] must be a vector @c{v}, a string @c{s}, or a
+Vector comprehensions: produces a vector of the values of @nt_[expr]{elem}
+while iterating the variable(s) over @nt_[expr]{iter}. In particular,
+@nt_[expr]{iter} must be a vector @c{v}, a string @c{s}, or a
 natural number @c{n}; in which case the iterated-over values are
 the elements of @c{v}, the 1-character strings comprising
 @c{s}, or counting from 0 to @code{n - 1}, respectively. If one
-variable @syn[var_name] is provided, it takes on those values. If two are
-provided, then @syn[var_name]₂ takes on those values, while @syn[var_name]₁
+variable @term[var_name] is provided, it takes on those values. If two are
+provided, then @term_[var_name]{2} takes on those values, while @term_[var_name]{1}
 takes on the indices counting from 0 upward.
 
 For example,
@@ -929,14 +932,14 @@ evaluates to
 }|
 
 @defexpforms[
-  @list{[ @syn[elem_expr] @q{for} @syn[var_name] @q{in} @syn[iter_expr] @q{if} @syn[cond_expr] ]}
-  @list{[ @syn[elem_expr] @q{for} @syn[var_name]₁, @syn[var_name]₂ @q{in} @syn[iter_expr] @q{if} @syn[cond_expr] ]}
+  @list{[ @nt_[expr]{elem} for @term[var_name] in @nt_[expr]{iter} @q{if} @nt_[expr]{cond} ]}
+  @list{[ @nt_[expr]{elem} for @term_[var_name]{1}, @term_[var_name]{2} in @nt_[expr]{iter} @q{if} @nt_[expr]{cond} ]}
 ]
 
-If the optional @syn[cond_expr] is provided, only elements for which
-@syn[cond_expr] is non-false are included. That is, the variable(s) take on
-each of their values, then @syn[cond_expr] is evaluated in the scope of the
-variable(s). If it's non-false then @syn[elem_expr] is evaluated and
+If the optional @nt_[expr]{cond} is provided, only elements for which
+@nt_[expr]{cond} is non-false are included. That is, the variable(s) take on
+each of their values, then @nt_[expr]{cond} is evaluated in the scope of the
+variable(s). If it's non-false then @nt_[expr]{elem} is evaluated and
 included in the resulting vector.
 
 For example,
@@ -955,38 +958,38 @@ evaluates to
 
 Operators are described in order from tighest to loosest precedence.
 
-@defexpform{@syn[expr]₁ @defidform/inline[**] @syn[expr]₂}
+@defexpform{@nt_[expr]{1} @defidform/inline[**] @nt_[expr]{2}}
 
-Raises the value of @syn[expr]₁ to the power of the value of
-@syn[expr]₂, both of which must be numbers.
+Raises the value of @nt_[expr]{1} to the power of the value of
+@nt_[expr]{2}, both of which must be numbers.
 
 The @racket[**] operator is right-associative.
 
 @defexpforms[
-  @list{@defidform/inline[not] @syn[expr]}
-  @list{@defidform/inline[~]@syn[expr]}
-  @list{-@syn[expr]}
-  @list{+@syn[expr]}
+  @list{@defidform/inline[not] @nt[expr]}
+  @list{@defidform/inline[~]@nt[expr]}
+  @list{-@nt[expr]}
+  @list{+@nt[expr]}
 ]
 
 Logical negation, bitwise negation, numerical negation, and numerical identity.
 
-@c{not} @syn[expr] evaluates @syn[expr], then returns @racket[True] if
+@c{not} @nt[expr] evaluates @nt[expr], then returns @racket[True] if
 the result was @racket[False], and @racket[False] for any other result.
 
-@c{~}@syn[expr], @c{-}@syn[expr], and @c{+}@syn[expr] require
-that @syn[expr] evaluate to a number. Then @c{~} flips every bit,
+@c{~}@nt[expr], @c{-}@nt[expr], and @c{+}@nt[expr] require
+that @nt[expr] evaluate to a number. Then @c{~} flips every bit,
 @c{-} negates it, and @c{+} returns it unchanged.
 
 @defexpforms[
-  @list{@syn[expr]₁ @defidform/inline[*] @syn[expr]₂}
-  @list{@syn[expr]₁ @defidform/inline[/] @syn[expr]₂}
-  @list{@syn[expr]₁ @defidform/inline[%] @syn[expr]₂}
+  @list{@nt_[expr]{1} @defidform/inline[*] @nt_[expr]{2}}
+  @list{@nt_[expr]{1} @defidform/inline[/] @nt_[expr]{2}}
+  @list{@nt_[expr]{1} @defidform/inline[%] @nt_[expr]{2}}
 ]
 
 Multiplies, divides, or modulos the values of the expressions, respectively.
 
-@defexpform{@syn[expr]₁ @defidform/inline[+] @syn[expr]₂}
+@defexpform{@nt_[expr]{1} @defidform/inline[+] @nt_[expr]{2}}
 
 Addition:
 
@@ -999,38 +1002,38 @@ Addition:
 
 Anything else is an error.
 
-@defexpform{@syn[expr]₁ @defidform/inline[-] @syn[expr]₂}
+@defexpform{@nt_[expr]{1} @defidform/inline[-] @nt_[expr]{2}}
 
 Subtracts two numbers.
 
 @defexpforms[
-  @list{@syn[expr]₁ @defidform/inline[<<] @syn[expr]₂}
-  @list{@syn[expr]₁ @defidform/inline[>>] @syn[expr]₂}
+  @list{@nt_[expr]{1} @defidform/inline[<<] @nt_[expr]{2}}
+  @list{@nt_[expr]{1} @defidform/inline[>>] @nt_[expr]{2}}
 ]
 
 Left and right bitwise shift.
 
-@defexpform{@syn[expr]₁ @defidform/inline[&] @syn[expr]₂}
+@defexpform{@nt_[expr]{1} @defidform/inline[&] @nt_[expr]{2}}
 
 Bitwise and.
 
-@defexpform{@syn[expr]₁ @defidform/inline[^] @syn[expr]₂}
+@defexpform{@nt_[expr]{1} @defidform/inline[^] @nt_[expr]{2}}
 
 Bitwise xor.
 
-@defexpform{@syn[expr]₁ @defidform/inline[\|] @syn[expr]₂}
+@defexpform{@nt_[expr]{1} @defidform/inline[\|] @nt_[expr]{2}}
 
 Bitwise or. (Not written with the backslash.)
 
 @defexpforms[
-  @list{@syn[expr]₁ @defidform/inline[==] @syn[expr]₂}
-  @list{@syn[expr]₁ @defidform/inline[!=] @syn[expr]₂}
-  @list{@syn[expr]₁ @defidform/inline[is] @syn[expr]₂}
-  @list{@syn[expr]₁ @defidform/inline[|is not|] @syn[expr]₂}
-  @list{@syn[expr]₁ @defidform/inline[<] @syn[expr]₂}
-  @list{@syn[expr]₁ @defidform/inline[<=] @syn[expr]₂}
-  @list{@syn[expr]₁ @defidform/inline[>] @syn[expr]₂}
-  @list{@syn[expr]₁ @defidform/inline[>=] @syn[expr]₂}
+  @list{@nt_[expr]{1} @defidform/inline[==] @nt_[expr]{2}}
+  @list{@nt_[expr]{1} @defidform/inline[!=] @nt_[expr]{2}}
+  @list{@nt_[expr]{1} @defidform/inline[is] @nt_[expr]{2}}
+  @list{@nt_[expr]{1} @defidform/inline[|is not|] @nt_[expr]{2}}
+  @list{@nt_[expr]{1} @defidform/inline[<] @nt_[expr]{2}}
+  @list{@nt_[expr]{1} @defidform/inline[<=] @nt_[expr]{2}}
+  @list{@nt_[expr]{1} @defidform/inline[>] @nt_[expr]{2}}
+  @list{@nt_[expr]{1} @defidform/inline[>=] @nt_[expr]{2}}
 ]
 
 Operator @racket[==] is structural equality, and @racket[!=] is its
@@ -1044,17 +1047,17 @@ Operators @racket[<], @racket[<=], @racket[>], and @racket[>=] are the
 standard inequalities for numbers, and compare pairs of strings in
 lexicographic order.
 
-@defexpform{@syn[expr]₁ @defidform/inline[and] @syn[expr]₂}
+@defexpform{@nt_[expr]{1} @defidform/inline[and] @nt_[expr]{2}}
 
-Short-circuiting logical and. First evaluates @syn[expr]₁; if the result
+Short-circuiting logical and. First evaluates @nt_[expr]{1}; if the result
 is @racket[False] then the whole conjunction is @racket[False];
-otherwise, the result of the conjunction is the result of @syn[expr]₂.
+otherwise, the result of the conjunction is the result of @nt_[expr]{2}.
 
-@defexpform{@syn[expr]₁ @defidform/inline[or] @syn[expr]₂}
+@defexpform{@nt_[expr]{1} @defidform/inline[or] @nt_[expr]{2}}
 
-Short-circuiting logical or. First evaluates @syn[expr]₁; if the result
+Short-circuiting logical or. First evaluates @nt_[expr]{1}; if the result
 is non-false then the whole disjunction has that result; otherwise the
-result of the conjunction is the result of @syn[expr]₂.
+result of the conjunction is the result of @nt_[expr]{2}.
 
 @section{Built-in functions, classes, and constants}
 
@@ -1542,11 +1545,11 @@ variables. A number of DSSL2 values may be used as contracts, including:
 
 @subsection{Contract syntax}
 
-@defcmpdform{@redefidform/inline[def] @syn_[name]{f}(@syn[name]₁: @syn[expr]₁, ... @syn_[name]{k}: @syn_[expr]{k}) -> @syn_[expr]{r}: @syn[block]}
+@defcmpdform{@redefidform/inline[def] @term_[name]{f}(@term_[name]{1}: @nt_[ctc]{1}, ... @term_[name]{k}: @nt_[ctc]{k}) -> @nt_[ctc]{res}: @nt[block]}
 
-Defines function @syn_[name]{f} while specifying contracts
-@syn_[expr]{1} through @syn_[expr]{k} for the parameters, and contract
-@syn_[expr]{r} for the result. For example:
+Defines function @term_[name]{f} while specifying contract expressions
+@nt_[ctc]{1} through @nt_[ctc]{k} for the parameters, and contract
+expression @nt_[ctc]{res} for the result. For example:
 
 @dssl2block|{
 def pythag(x: num?, y: num?) -> num?:
@@ -1556,17 +1559,17 @@ def pythag(x: num?, y: num?) -> num?:
 Each of the contract positions is optional, and if omitted defaults to
 @racket[AnyC].
 
-@defcmpdform{@redefidform/inline[let] @syn[var_name] : @syn[contract_expr] = @syn[expr]}
+@defcmpdform{@redefidform/inline[let] @term[var_name] : @nt[ctc] = @nt[expr]}
 
-Binds variable @syn[var_name] to the value of expression @syn[expr],
-while applying the contract @syn[contract_expr]. Subsequent assignments
+Binds variable @term[var_name] to the value of expression @nt[expr],
+while applying the contract @nt[ctc]. Subsequent assignments
 to the variable also must satisfy the contract. For example:
 
 @dssl2block|{
 let x : int? = 0
 }|
 
-Note that the @syn[expr] is optional, and the contract will not be
+Note that the @nt_[expr]{rhs} is optional, and the contract will not be
 checked before the variable is assigned:
 
 @dssl2block|{
@@ -1576,14 +1579,14 @@ x = 5
 }|
 
 @defcmpdforms[
-    [@list{@redefidform/inline[struct] @syn[name]:}]
-    [@indent{@redefidform/inline[let] @syn_[field_name]{1}: @syn_[ctc_expr]{1}}]
+    [@list{@redefidform/inline[struct] @term[name]:}]
+    [@indent{@redefidform/inline[let] @term_[field_name]{1}: @nt_[ctc]{1}}]
     [@indent{...}]
-    [@indent{@redefidform/inline[let] @syn_[field_name]{k}: @syn_[ctc_expr]{k}}]
+    [@indent{@redefidform/inline[let] @term_[field_name]{k}: @nt_[ctc]{k}}]
 ]
 
-Defines a structure @syn[name] with the given contracts @syn_[ctc_expr]{i}
-applied to the fields @syn_[field_name]{i}. This means that the contracts will
+Defines a structure @term[name] with the given contracts @nt_[ctc]{i}
+applied to the fields @term_[field_name]{i}. This means that the contracts will
 be applied both when constructing the structure and when mutating it.
 For example:
 
@@ -1600,22 +1603,22 @@ It’s possible to include contracts on some fields without including them
 on all, and the fields with omitted contracts default to @racket[AnyC].
 
 @defcmpdforms[
-    [@list{@redefidform/inline[class] @syn[name] @m["["] [ @m["{"] @syn[ctc_param] @m["},*"] ] @m["]"] @m{[} ( @m["{"] @syn[interface_name] @m["},*"] ) @m{]}:}]
-    [@indent{@redefidform/inline[let] @syn_[field_name]{1}: @syn_[field_ctc]{1}}]
+    [@list{@redefidform/inline[class] @term[name] @~opt["[" @~many-comma[@term[ctc_param]] "]"] @~opt["(" @~many-comma[@term[interface_name]] ")"]:}]
+    [@indent{@redefidform/inline[let] @term_[field_name]{1}: @nt_[ctc]{field_1}}]
     [@indent{...}]
-    [@indent{@redefidform/inline[let] @syn_[field_name]{k}: @syn_[field_ctc]{k}}]
-    [@indent{@redefidform/inline[def] @syn_[method_name]{0}(@syn_[self]{0} @m["{"] , @syn_[arg_name]{0}: @syn_[param_ctc]{0} @m["}*"]) -> @syn_[res_ctc]{0}: @syn_[block]{0}}]
+    [@indent{@redefidform/inline[let] @term_[field_name]{k}: @nt_[ctc]{field_k}}]
+    [@indent{@redefidform/inline[def] @term_[meth_name]{0}(@term_[self]{0} @~many["," @list{@term_[arg_name]{0}:} @nt_[ctc]{arg_0}]) -> @nt_[ctc]{res_0}: @nt_[block]{0}}]
     [@indent{...}]
-    [@indent{@redefidform/inline[def] @syn_[method_name]{n}(@syn_[self]{n} @m["{"] , @syn_[arg_name]{n}: @syn_[param_ctc]{n} @m["}*"]) -> @syn_[res_ctc]{n}: @syn_[block]{n}}]
+    [@indent{@redefidform/inline[def] @term_[meth_name]{n}(@term_[self]{n} @~many["," @list{@term_[arg_name]{n}:} @nt_[ctc]{arg_n}]) -> @nt_[ctc]{res_n}: @nt_[block]{n}}]
 ]
 
 Defines a class.
 
 @defcmpdforms[
-    [@list{@redefidform/inline[interface] @syn[name] @m["["] [ @m["{"] @syn[ctc_param] @m["},*"] ] @m["]"]:}]
-    [@indent{@redefidform/inline[def] @syn_[method_name]{1}(@syn_[self]{1} @m["{"] , @syn_[arg_name]{1}: @syn_[param_ctc]{1} @m["}*"]) -> @syn_[res_ctc]{1}}]
+    [@list{@redefidform/inline[interface] @term[name] @~opt["[" @~many-comma[@term[ctc_param]] "]" ]:}]
+    [@indent{@redefidform/inline[def] @term_[meth_name]{1}(@term_[self]{1} @~many["," @list{@term_[arg_name]{1}:} @nt_[ctc]{arg_1}]) -> @nt_[ctc]{res_1}}]
     [@indent{...}]
-    [@indent{@redefidform/inline[def] @syn_[method_name]{k}(@syn_[self]{n} @m["{"] , @syn_[arg_name]{k}: @syn_[param_ctc]{n} @m["}*"]) -> @syn_[res_ctc]{k}}]
+    [@indent{@redefidform/inline[def] @term_[meth_name]{k}(@term_[self]{n} @~many["," @list{@term_[arg_name]{k}:} @nt_[ctc]{arg_n}]) -> @nt_[ctc]{res_k}}]
 ]
 
 Defines an interface.

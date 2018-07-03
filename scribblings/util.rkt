@@ -15,7 +15,7 @@
          defmethform defmethforms
          redefidform/inline
          ~opt ~many ~many1 ~many-comma
-         c syn syn_
+         c nt nt_ term term_
          q m t
          dssl2block code
          indent)
@@ -42,13 +42,17 @@
     [(null? (cdr ys)) ys]
     [else (cons (car ys) (cons x (intersperse x (cdr ys))))]))
 
-(define-for-syntax (~nonterminal nt [def? #f])
-  (define name   (symbol->string (syntax-e nt)))
+(define-for-syntax (~nonterminal name0 #:def? [def? #f] #:sub [sub #f])
+  (define name   (symbol->string (syntax-e name0)))
   (define tag    (format "nt:~a" name))
-  (define syntax #`(list "‹" (emph #,name) "›"))
-  (if def?
-    #`(elemtag #,tag #,syntax)
-    #`(elemref #,tag #,syntax #:underline? #f)))
+  (define elem
+    (if def?
+      #`(elemtag #,tag #,name)
+      #`(elemref #,tag #,name #:underline? #f)))
+  #`(list "‹"
+          (italic #,elem)
+          #,(if sub #`(subscript #,sub) #'"")
+          "›"))
 
 (define-syntax (parse-rhs stx)
   (syntax-parse stx
@@ -79,7 +83,7 @@
   (syntax-parse stx
     [(_ [non-terminal:id production0:expr production:expr ...] ...)
      (define (interpret-nt nt)
-       (or (and nt (~nonterminal nt #t))
+       (or (and nt (~nonterminal nt #:def? #t))
            ""))
      (define (interpret-sym sym)
        (or (and sym #`(m #,sym))
@@ -115,11 +119,21 @@
 (define (c . codes)
   (elem #:style 'tt codes))
 
-(define-syntax-rule (syn var)
-  (c (italic (~a 'var))))
+(define-syntax-rule (term var)
+  (elem #:style 'italic (racketvalfont (~a 'var))))
 
-(define-syntax-rule (syn_ var sub ...)
-  (c (italic (~a 'var) (subscript sub ...))))
+(define-syntax-rule (term_ var sub ...)
+  (racketvalfont (elem #:style 'italic (~a 'var))
+                 (subscript sub ...)))
+
+(define-syntax (nt stx)
+  (syntax-parse stx
+    [(_ name:id) (~nonterminal #'name)]))
+
+(define-syntax (nt_ stx)
+  (syntax-parse stx
+    [(_ name:id sub:expr ...)
+     (~nonterminal #'name #:sub #'(list sub ...))]))
 
 (define-syntax-rule (defexpform chunk ...)
   (*defforms "expr" (list (list chunk ...))))

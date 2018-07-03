@@ -739,7 +739,7 @@
                   (racket:contract
                     contract method-value
                     'name "method caller"
-                    (format "~a.~a" 'name 'method) srcloc))]))
+                    (format "~a#~a" 'name 'method) srcloc))]))
          (define (make-projection cvs.var ...)
            (define contract-parameters (vector-immutable cvs.var ...))
            (λ (blame)
@@ -842,7 +842,7 @@
                          . args))])))))]))
 
 (define-for-syntax (qualify qualifier property)
-  (format-id qualifier "~a.~a" qualifier property))
+  (format-id qualifier "~a#~a" qualifier property))
 
 (define-simple-macro (bind-self class:id self:id actual-self:id body:expr)
   (syntax-parameterize

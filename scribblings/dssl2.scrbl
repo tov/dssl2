@@ -193,7 +193,7 @@ Numeric literals include:
   @racket[nan]}
 ]
 
-@subsubsection{String Literals}
+@subsubsection{String literals}
 
 String literals are delimited by either single or double quotes:
 
@@ -235,10 +235,22 @@ characters via the escape code @c{\n}. Other escape codes include:
 
 Any other character following a backslash stands for itself.
 
+An alternative form for string literals uses three quotation marks of
+either kind. The contents of such a string are treated literally, rather
+than interpreting escapes, and they may contain any characters except
+the terminating quotation mark sequence.
+
+@dssl2block|{
+let a_long_string = '''This string can contain ' and " and
+even """ and newlines. Just not '' and one more.'''
+}|
+
 @subsubsection{Comments}
 
 A comment in DSSL2 starts with the @q{#} character and continues to the
 end of the line.
+
+Long string literals can also be used to comment out long blocks of code.
 
 @subsection[#:tag "stm-forms"]{Statement Forms}
 
@@ -1041,9 +1053,274 @@ Short-circuiting logical or. First evaluates @syn[expr]₁; if the result
 is non-false then the whole disjunction has that result; otherwise the
 result of the conjunction is the result of @syn[expr]₂.
 
-@section{Built-in functions and values}
+@section{Built-in functions, classes, and constants}
 
-@subsection{Type predicates}
+@subsection{Primitive classes}
+
+DSSL2 includes seven primitive classes for building up more complex data
+structures. The constructors and methods of these classes are documented
+in this subsection.
+
+@subsubsection{Class @racket[bool]}
+
+The primitive class for Boolean values, including @racket[True] and
+@racket[False].
+
+The type predicate for the @racket[bool] class is @racket[bool?].
+
+@defprocforms[bool
+    [@list{(AnyC) -> bool?}]
+    [@list{() -> bool?}]
+]
+
+Constructor for the @racket[bool] class.
+
+In its one-argument form, converts any type to @racket[bool]. All values but
+@racket[False] convert to @racket[True].
+
+In its no-argument form, returns @racket[False].
+
+@subsubsection{Class @racket[char]}
+
+The primitive class for representing a single character of text.
+
+The type predicate for the @racket[char] class is @racket[char?].
+
+@defprocforms[char
+    [@list{(char?) -> bool?}]
+    [@list{(int?) -> bool?}]
+    [@list{(str?) -> bool?}]
+    [@list{() -> bool?}]
+]
+
+The constructor for the @racket[char] class.
+
+Given a character, returns that character. Given an integer, returns the
+character corresponding to the Unicode code point, or errors if the
+integer is not a valid Unicode character. Given a one-character string,
+returns the character of the string; any longer or shorter string is an
+error.
+
+A character can be converted to its integer value with the @racket[int]
+constructor.
+
+@subsubsection{Class @racket[int]}
+
+The primitive class for representing integral quantities in unlimited
+precision.
+
+The type predicate for the @racket[int] class is @racket[int?].
+
+@defprocforms[int
+    [@list{(num?) -> int?}]
+    [@list{(char?) -> int?}]
+    [@list{(str?) -> int?}]
+    [@list{(bool?) -> int?}]
+    [@list{() -> int?}]
+]
+
+Constructor for the @racket[int] class.
+
+Given a number, returns the integer part, by truncation.
+That is, the decimal point and everything after it is removed.
+
+Given a string, attempts to convert to a number before truncating,
+throwing an error if the conversion fails.
+
+Booleans @racket[True] and @racket[False] convert to @racket[1] and
+@racket[0], respectively.
+
+Given no arguments, returns @racket[0].
+
+@defmethform[int#abs]{() -> int?}
+
+Returns the absolute value of the receiving integer.
+
+@defmethform[int#ceiling]{() -> int?}
+
+Returns the same integer.
+
+@defmethform[int#floor]{() -> int?}
+
+Returns the same integer.
+
+@defmethform[int#sqrt]{() -> float?}
+
+Returns the square root of the receiving integer, as a @racket[float].
+
+@subsubsection{Class @racket[float]}
+
+The primitive class for representing approximations of real numbers (as
+64-bit IEEE 754 numbers).
+
+The type predicate for the @racket[float] class is @racket[float?].
+
+@defprocforms[float
+  [@list{(num?) -> float?}]
+  [@list{(str?) -> float?}]
+  [@list{(bool?) -> float?}]
+  [@list{() -> float?}]
+]
+
+Constructor for the @racket[float] class.
+
+Converts an exact integer to the nearest
+double-precision floating point value. If given a string, attempt to
+convert to a number, throwing an error if the conversion fails. Booleans
+@racket[True] and @racket[False] convert to @racket[1.0] and @racket[0.0],
+respectively.
+
+Given no arguments, returns @racket[0.0].
+
+@defmethform[float#abs]{() -> float?}
+
+Returns the absolute value of the receiving float.
+
+@defmethform[float#ceiling]{() -> int?}
+
+Returns smallest integer that is no less than the receiving float.
+That is, it rounds up to the nearest integer.
+
+@defmethform[float#floor]{() -> int?}
+
+Returns the largest integer that is no greater than the receiving float.
+That is, it rounds down to the nearest integer.
+
+@defmethform[float#sqrt]{() -> float?}
+
+Returns the square root of the receiving float.
+
+@subsubsection{Class @racket[str]}
+
+The primitive class for representing textual data.
+
+The type predicate for the @racket[str] class is @racket[str?].
+
+A string can be indexed with square bracket notation, which returns a
+character.
+
+@defprocforms[str
+    [@list{(str?) -> str?}]
+    [@list{(AnyC) -> str?}]
+    [@list{(nat?, char?) -> str?}]
+    [@list{() -> str?}]
+]
+
+Constructor for the @racket[str] class.
+
+Given one string argument, returns that argument unchanged.
+
+Given one non-string argument, converts that argument to a string
+according to the @racket["%p"] format specifier.
+
+Given two arguments, a natural and a character, makes a string of the
+given length, repeating the given character.
+
+Given no arguments, returns the empty string.
+
+@defmethform[str#explode]{() -> VecC(char?)}
+
+Breaks the receiving string into a vector of its characters.
+
+@defmethform[str#format]{(AnyC, ...) -> str?}
+
+Formats the given arguments, treating the receiving string
+as a format string in the style of @racket[print].
+
+For example,
+
+@dssl2block|{
+assert_eq '%s or %p'.format('this', 'that'), "this or 'that'"
+}|
+
+@defmethform[str#len]{() -> nat?}
+
+Returns the length of the receiving string in characters.
+
+@subsubsection{Class @racket[proc]}
+
+The primitive class for representing functions.
+
+The type predicate for the @racket[proc] class is @racket[proc?].
+
+@defprocforms[proc
+    [@list{(proc?) -> proc?}]
+    [@list{() -> proc?}]
+]
+
+Constructor for the @racket[proc] class.
+
+Given one procedure argument, returns it unchanged. Given no arguments,
+returns the identity function.
+
+@defmethform[proc#compose]{(proc?) -> proc?}
+
+Composes the receiving procedure with the parameter procedure. For example,
+
+@dssl2block|{
+assert_eq (λ x: x + 1).compose(λ x: x * 2)(5), 11
+}|
+
+@defmethform[proc#vec_apply]{(vec?) -> AnyC}
+
+Applies the receiving procedure using the contents of the given vector
+as its arguments.
+
+@subsubsection{Class @racket[vec]}
+
+The primitive vector class, for representing sequence of values of fixed size.
+
+The type predicate for the @racket[vec] class is @racket[vec?].
+
+@defprocforms[vec
+    [@list{() -> vec?}]
+    [@list{(nat?) -> vec?}]
+    [@list{(nat?, FunC(nat?, AnyC)) -> vec?}]
+]
+
+The constructor for the @racket[vec] class.
+
+Given no arguments, returns an empty, zero-length vector.
+
+Given one argument, returns a vector of the given size, filled with
+@racket[False].
+
+Given two arguments, returns a vector of the given size, with each
+element initialized by applying the given function to its index.
+
+@defmethform[vec#filter]{(FunC(AnyC, AnyC)) -> vec?}
+
+Filters the given vector, by returning a vector of only the elements
+satisfying the given predicate.
+
+In particular, @q{v.filter(pred?)} is equivalent to
+
+@dssl2block|{
+[ x for x in v if pred?(x) ]
+}|
+
+@defmethform[vec#implode]{() -> vec?}
+
+If the receiver is a vector of characters, joins them into a string.
+(Otherwise, an error is reported.)
+
+@defmethform[vec#len]{() -> vec?}
+
+Returns the length of the vector.
+
+@defmethform[vec#map]{(FunC(AnyC, AnyC)) -> vec?}
+
+Maps a function over a vector, returning a new vector.
+
+In particular, @q{v.map(f)} is equivalent to
+
+@dssl2block|{
+[ f(x) for x in v ]
+}|
+
+@subsection{Predicates}
+
+@subsubsection{Basic type predicates}
 
 @defprocform[proc?]{(AnyC) -> bool?}
 
@@ -1056,10 +1333,6 @@ Determines whether its argument is a string.
 @defprocform[char?]{(AnyC) -> bool?}
 
 Determines whether its argument is a string of length 1.
-
-@defprocform[num?]{(AnyC) -> bool?}
-
-Determines whether its argument is a number.
 
 @defprocform[int?]{(AnyC) -> bool?}
 
@@ -1075,7 +1348,7 @@ Determines whether its argument is a vector.
 
 @defprocform[bool?]{(AnyC) -> bool?}
 
-Determines whether its argument is a bool?.
+Determines whether its argument is a Boolean.
 
 @defprocform[contract?]{(AnyC) -> bool?}
 
@@ -1084,87 +1357,16 @@ constants (numbers, strings, Booleans), single-argument functions
 (considered as predicates), and the results of contract combinators such
 as @racket[OrC] and @racket[FunC].
 
-@subsection{Numeric operations}
+@subsubsection{Numeric predicates}
 
-@defprocform[floor]{(num?) -> int?}
+@defprocform[num?]{(AnyC) -> bool?}
 
-Rounds a number down to the largest integer that is no greater.
+Determines whether its argument is a number. This includes both
+@racket[int]s and @racket[float]s.
 
-@defprocform[ceiling]{(num?) -> int?}
+@defprocform[nat?]{(AnyC) -> bool?}
 
-Rounds a number up to the smallest integer that is no less.
-
-@defprocforms[int
-    [@list{(num?) -> int?}]
-    [@list{(str?) -> int?}]
-    [@list{(bool?) -> int?}]
-]
-
-Returns the integer part of a number, by truncation. That is, the
-decimal point and everything after it is removed. If given a string,
-attempt to convert to a number before truncating, throwing an error if
-the conversion fails. Booleans @racket[True] and @racket[False] convert
-to @racket[1] and @racket[0], respectively.
-
-@defprocforms[float
-  [@list{(num?) -> float?}]
-  [@list{(str?) -> float?}]
-  [@list{(bool?) -> float?}]
-]
-
-Converts an exact integer to the nearest
-double-precision floating point value. If given a string, attempt to
-convert to a number, throwing an error if the conversion fails. Booleans
-@racket[True] and @racket[False] convert to @racket[1.0] and @racket[0.0],
-respectively.
-
-@defprocforms[random
-  [@list{() -> float?}]
-  [@list{(IntInC(1, 4294967087)) -> nat?}]
-  [@list{(int?, int?) -> nat?}]
-]
-
-When called with zero arguments, returns a random floating point number
-in the open interval (@racket[0.0], @racket[1.0]).
-
-When called with one argument @racket[limit], returns a random exact
-integer from the closed interval [@racket[0], @racket[limit - 1]].
-
-When called with two arguments @racket[min] and @racket[max], returns a
-random exact integer from the closed interval [@racket[min], @racket[max - 1]].
-The difference between the arguments can be no greater than
-@racket[4294967087].
-
-@defprocform[max]{(num?, num?, ...) -> num?}
-
-Returns the largest of the given numbers.
-
-@defprocform[min]{(num?, num?, ...) -> num?}
-
-Returns the smallest of the given numbers.
-
-@defprocform[quotient]{(nat?, nat?) -> nat?}
-
-Returns the truncated quotient.
-
-@defconstform[RAND_MAX]{nat?}
-
-Defined to be @racket[4294967087], the largest parameter (or span) that
-can be passed to @racket[random].
-
-@defprocform[random_bits]{(nat?) -> nat?}
-
-Returns a number consisting of the requested number of random bits.
-
-@defprocform[remainder]{(nat?, nat?) -> nat?}
-
-Returns the remainder of the truncated @racket[quotient].
-
-@defprocform[sqrt]{(num?) -> float?}
-
-Computes the square root of a number.
-
-@subsubsection{Predicates}
+Determines whether its argument is a non-negative integer.
 
 @defprocform[zero?]{(num?) -> bool?}
 
@@ -1192,95 +1394,75 @@ Determines whether its argument is the IEEE 754 @racket[float?]
 not-a-number value. This is useful, since @racket[nan] is not necessarily
 @racket[==] to other instances of @racket[nan].
 
-@subsection{String operations}
+@subsection{Comparision operations}
 
-@defprocform[chr]{(nat?) -> str?}
+@defprocform[cmp]{(AnyC, AnyC) -> OrC(int?, False)}
 
-Converts the code point of a character to the character that it
-represents, as a one-character string. Inverse to @racket[ord].
+Compares two values of any type. If the values are incomparable, returns
+@racket[False]. Otherwise, returns an integer: less than 0 if the first
+argument is less, 0 if equal, or 1 if the first argument is greater.
 
-@dssl2block|{
-assert_eq chr(97), 'a'
-}|
+@defprocform[max]{(AnyC, AnyC, ...) -> num?}
 
-@defprocform[explode]{(str?) -> VectorOf[str?]}
+Returns the largest of the given arguments, using @racket[cmp] to determine
+ordering. It is an error if the values are not comparable.
 
-Breaks a string into a vector of 1-character strings.
+@defprocform[min]{(AnyC, AnyC, ...) -> num?}
 
-@defprocform[format]{(str?, AnyC, ...) -> str?}
+Returns the smallest of the given arguments, using @racket[cmp] to determine
+ordering. It is an error if the values are not comparable.
 
-Using its first argument as a template, interpolates the remaining
-arguments, producing a string. The main recognized escape codes are
-@c{~e} and @c{~a}. The former, @c{~e}, displays values the same way that
-they are displayed in the interactions window, including quotation marks
-around strings. The latter, @c{~a}, can be used to display strings
-without quotation marks.
+@subsection{Randomness operations}
 
-Additionally, @c{~n} can be used to insert a newline, and @c{~~}
-inserts a literal @c{~}.
+@defprocforms[random
+  [@list{() -> float?}]
+  [@list{(IntInC(1, 4294967087)) -> nat?}]
+  [@list{(int?, int?) -> nat?}]
+]
 
-@defprocform[implode]{(VectorOf[str?]) -> str?}
+When called with zero arguments, returns a random floating point number
+in the open interval (@racket[0.0], @racket[1.0]).
 
-Concatenates a vector of strings into a single string.
+When called with one argument @racket[limit], returns a random exact
+integer from the closed interval [@racket[0], @racket[limit - 1]].
 
-@defprocform[ord]{(str?) -> nat?}
+When called with two arguments @racket[min] and @racket[max], returns a
+random exact integer from the closed interval [@racket[min], @racket[max - 1]].
+The difference between the arguments can be no greater than
+@racket[4294967087].
 
-Converts a character, represented as a one-character string, to its
-code point. Inverse to @racket[chr].
+@defconstform[RAND_MAX]{nat?}
 
-@dssl2block|{
-assert_eq ord('a'), 97
-}|
+Defined to be @racket[4294967087], the largest parameter (or span) that
+can be passed to @racket[random].
 
-@defprocform[str]{(AnyC) -> str?}
+@defprocform[random_bits]{(nat?) -> nat?}
 
-Converts any type to a string. Equivalent to @racket[format]
-with @racket["~e"] as the format string.
-
-@defprocform[strlen]{(str?) -> nat?}
-
-Returns the length of a string in characters.
-
-@subsection{Vector operations}
-
-@defprocform[build_vector]{[X](n: nat?, f: FunC(nat?, X)) -> VectorOf[X]}
-
-Creates a vector of size @c{n} whose elements are @code{f(0)},
-@code{f(1)}, ..., @code{f(n - 1)}. Equivalent to
-
-@dssl2block|{
-[ f(x) for x in n ]
-}|
-
-@defprocform[filter]{[X](pred: FunC(X, bool?), v: VectorOf[X]) -> VectorOf[X]}
-
-Returns a vector containing the elements of @c{v} for which
-@c{pred} returns non-false. Equivalent to
-
-@dssl2block|{
-[ x for x in v if pred(x) ]
-}|
-
-@defprocform[len]{[X](VectorOf[X]) -> nat?}
-
-Returns the length of a vector.
-
-@defprocform[map]{[X, Y](f: FunC(X, Y), v: VectorOf[X]) -> VectorOf[X]}
-
-Returns a vector consisting of @c{f} applied to each element of
-@c{v}. Equivalent to
-
-@dssl2block|{
-[ f(x) for x in v ]
-}|
+Returns a number consisting of the requested number of random bits.
 
 @subsection{I/O Functions}
 
 @defprocform[print]{(str?, AnyC, ...) -> Void}
 
 The first argument is treated as a format string into which the
-remaining arguments are interpolated, à la @racket[format]. Then the
-result is printed.
+remaining arguments are interpolated, and then the result is printed.
+
+The format string is a string that contains a formatting code for each
+additional argument, as follows:
+
+@itemlist[
+    @item{@q{%p} – prints the object, formatted nicely if possible}
+    @item{@q{%d} – prints the object in raw, debug mode, ignoring
+                   user-defined printers}
+    @item{@q{%s} – interpolates a string or character as itself, without
+                   quoting; the same as @q{%p} for other types}
+]
+
+For example:
+
+@dssl2block|{
+print("%p + %p = %p", a, b, a + b)
+}|
 
 @defprocform[println]{(str?, AnyC, ...) -> Void}
 

@@ -92,9 +92,10 @@
         (method:unwrapped-method ...))
      (with-syntax
        ([(visible-method-name ...)
-         (map (λ (sel) (format-id #f "~a.~a" #'class-name sel))
+         (map (λ (sel) (format-id #'class-name "~a#~a" #'class-name sel))
               (syntax->list #'(method.sel ...)))])
        #'(begin
+           (#%provide visible-method-name ...)
            (define (visible-method-name self)
              (procedure-rename
                (contract method.ctc

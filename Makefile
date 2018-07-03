@@ -2,6 +2,8 @@ PACKAGE = dssl2
 
 default: lang
 
+hard: doc
+
 test:
 	raco test test/parser.rkt test/run-dssl2-tests.rkt
 

@@ -10,6 +10,7 @@
 (provide defexpform defexpforms defsmplform defcmpdform defcmpdforms
          defconstform
          defprocform defprocforms
+         defmethform
          redefidform/inline
          c syn syn_
          q m t
@@ -64,6 +65,16 @@
   (*defforms "procedure"
              (list (list (defidform/inline name) chunk0 ...)
                    (list (redefidform/inline name) chunk ...) ...)))
+
+(define-syntax-rule (defmethform name chunk ...)
+  (*defforms "method"
+             (list (list (defidform/inline name) chunk ...))))
+
+(define-syntax-rule (defmethforms name [chunk0 ...] [chunk ...] ...)
+  (*defforms "method"
+             (list (list (defidform/inline name) chunk0 ...)
+                   (link (redefidform/inline name) chunk ...)
+                   ...)))
 
 (define (*defforms kind forms)
   (define labeller (add-background-label (or kind "syntax")))

@@ -1348,7 +1348,7 @@ is equivalent to
 If the receiver is a vector of characters, joins them into a string.
 (Otherwise, an error is reported.)
 
-@defmethform[vec#len]{() -> vec?}
+@defmethform[vec#len]{() -> nat?}
 
 Returns the length of the vector.
 

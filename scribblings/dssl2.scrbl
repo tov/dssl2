@@ -167,9 +167,10 @@ by a newline, or a compound statement.
 
 @subsubsection{Identifiers}
 
-@italic{Name}s, used for variables, functions, and struct fields, must
-start with a letter, followed by 0 or more letters or digits. The last
-character also may be @q{?} or @q{!}.
+@italic{Name}s, used for variables, functions, structs, classes,
+interfaces, fields, and methods, must start with a letter, followed by 0
+or more letters or digits. The last character also may be @q{?} or
+@q{!}.
 
 @subsubsection{Numeric Literals}
 
@@ -280,6 +281,38 @@ contains the substring that results from evaluating @syn[string_expr].
 Asserts that the given @syn[expr] errors without checking for a
 particular error.
 
+@defsmplform{@syn[lvalue] @defidform/inline[=] @syn[expr]}
+
+Assignment. The assigned @syn[lvalue] can be in one of three forms:
+
+@itemlist[
+ @item{@syn[var_name] assigns to a variable, which can be a @syn[let]-bound
+ local or a function parameter.}
+ @item{@c{@syn[struct_expr].@syn[field_name]} assigns to a structure field, where
+ the expression must evaluate to a structure that has the given field
+ name.}
+ @item{@c{@syn[vec_expr][@syn[index_expr]]} assigns to a vector element, where
+ @c{@syn[vec_expr]} evaluates to the vector and @c{@syn[index_expr]}
+ evaluates to the index of the element.}
+]
+
+This function assigns all three kinds of l-value:
+
+@dssl2block|{
+def sch_insert!(hash, key, value):
+    let index = sch_bucket_index_(hash, key)
+    let current = hash.buckets[index]
+    while cons?(current):
+        if key == current.first.key:
+            # struct assignment:
+            current.first.value = value
+            return
+        # variable assignment:
+        current = current.rest
+    # vector assignment:
+    hash.buckets[index] = cons(sc_entry(key, value), hash.buckets[index])
+}|
+
 @defsmplform{@defidform/inline[break]}
 
 When in a @racket[for] or @racket[while] loop, ends the (inner-most)
@@ -289,6 +322,18 @@ loop immediately.
 
 When in a @racket[for] or @racket[while] loop, ends the current
 iteration of the (inner-most) loop and begins the next iteration.
+
+@defcmpdforms[
+    [@list{@defidform/inline[class] @syn[name] @m{[} ( @m["{"] @syn[interface_name] @m["},*"] ) @m{]}:}]
+    [@indent{@redefidform/inline[let] @syn_[field_name]{1}}]
+    [@indent{...}]
+    [@indent{@redefidform/inline[let] @syn_[field_name]{k}}]
+    [@indent{@redefidform/inline[def] @syn_[method_name]{0}(@syn_[self]{0} @m["{"] , @syn_[param_name]{0} @m["}*"]): @syn_[block]{0}}]
+    [@indent{...}]
+    [@indent{@redefidform/inline[def] @syn_[method_name]{n}(@syn_[self]{n} @m["{"] , @syn_[param_name]{n} @m["}*"]): @syn_[block]{n}}]
+]
+
+Defines a class.
 
 @defcmpdform{@defidform/inline[def] @syn[fun_name](@syn[var_name]₁, ... @syn[var_name]@subscript{k}): @syn[block]}
 
@@ -344,38 +389,6 @@ def rbt_insert!(key, tree):
 
     def set_root!(new_node): tree.root = new_node
     search!(tree.root, set_root!)
-}|
-
-@defsmplform{@syn[lvalue] @defidform/inline[=] @syn[expr]}
-
-Assignment. The assigned @syn[lvalue] can be in one of three forms:
-
-@itemlist[
- @item{@syn[var_name] assigns to a variable, which can be a @syn[let]-bound
- local or a function parameter.}
- @item{@c{@syn[struct_expr].@syn[field_name]} assigns to a structure field, where
- the expression must evaluate to a structure that has the given field
- name.}
- @item{@c{@syn[vec_expr][@syn[index_expr]]} assigns to a vector element, where
- @c{@syn[vec_expr]} evaluates to the vector and @c{@syn[index_expr]}
- evaluates to the index of the element.}
-]
-
-This function assigns all three kinds of l-value:
-
-@dssl2block|{
-def sch_insert!(hash, key, value):
-    let index = sch_bucket_index_(hash, key)
-    let current = hash.buckets[index]
-    while cons?(current):
-        if key == current.first.key:
-            # struct assignment:
-            current.first.value = value
-            return
-        # variable assignment:
-        current = current.rest
-    # vector assignment:
-    hash.buckets[index] = cons(sc_entry(key, value), hash.buckets[index])
 }|
 
 @defsmplform{@syn[expr]}
@@ -450,36 +463,6 @@ def rebalance_left_(key, balance, left0, right):
     else: error('Cannot happen')
 }|
 
-@defsmplform{@defidform/inline[let] @syn[var_name] = @syn[expr]}
-
-Declares and defines a local variable. Local variables may be declared in any
-scope and last for that scope. A local variable may be re-assigned with the
-assignment form (@racket[=]), as in the third line here:
-
-@dssl2block|{
-def sum(v):
-    let result = 0
-    for elem in v: result = result + elem
-    return result
-}|
-
-@defsmplform{@redefidform/inline[let] @syn[var_name]}
-
-Declares a local variable, which will be undefined until it is assigned:
-
-@dssl2block|{
-let x
-
-if y:
-    x = f()
-else:
-    x = g()
-
-println(x)
-}|
-
-Accessing an undefined variable is an error.
-
 @defcmpdform{@defidform/inline[for] @syn[var_name] @q{in} @syn[expr]: @syn[block]}
 
 Loops over the values of the given @syn[expr], evaluating the
@@ -526,6 +509,90 @@ characters; if a natural number then both variables count together.
 for ix, person in people_to_greet:
     println("~e: Hello, ~a!", ix, person)
 }|
+
+@defcmpdforms[
+    [@list{@defidform/inline[interface] @syn[name]:}]
+    [@indent{@redefidform/inline[def] @syn_[method_name]{1}(@syn_[self]{1} @m["{"] , @syn_[param_name]{1} @m["}*"])}]
+    [@indent{...}]
+    [@indent{@redefidform/inline[def] @syn_[method_name]{k}(@syn_[self]{k} @m["{"] , @syn_[param_name]{k} @m["}*"])}]
+]
+
+Defines an interface.
+
+@defsmplform{@defidform/inline[let] @syn[var_name] = @syn[expr]}
+
+Declares and defines a local variable. Local variables may be declared in any
+scope and last for that scope. A local variable may be re-assigned with the
+assignment form (@racket[=]), as in the third line here:
+
+@dssl2block|{
+def sum(v):
+    let result = 0
+    for elem in v: result = result + elem
+    return result
+}|
+
+@defsmplform{@redefidform/inline[let] @syn[var_name]}
+
+Declares a local variable, which will be undefined until it is assigned:
+
+@dssl2block|{
+let x
+
+if y:
+    x = f()
+else:
+    x = g()
+
+println(x)
+}|
+
+Accessing an undefined variable is an error.
+
+@defsmplform{@defidform/inline[pass]}
+
+Does nothing.
+
+@dssl2block|{
+# account_credit! : num? account? -> VoidC
+# Adds the given amount to the given account’s balance.
+def account_credit!(amount, account):
+    pass
+#   ^ FILL IN YOUR CODE HERE
+}|
+
+@defsmplform{@defidform/inline[return] @syn[expr]}
+
+Returns the value of the given @syn[expr] from the inner-most function.
+Note that this is often optional, since the last expression in a
+function will be used as its return value.
+
+That is, these are equivalent:
+
+@dssl2block|{
+def inc(x): x + 1
+}|
+
+@dssl2block|{
+def inc(x): return x + 1
+}|
+
+In this function, the first @racket[return] is necessary because it breaks out
+of the loop and exits the function; the second @racket[return] is optional and
+could be omitted.
+
+@dssl2block|{
+# : bloom-filter? str? -> bool?
+def bloom_check?(b, s):
+    for hash in b.hashes:
+        let index = hash(s) % b.bv.size
+        if not bv_ref(b.bv, index): return False
+    return True
+}|
+
+@defsmplform{@redefidform/inline[return]}
+
+Returns void from the current function.
 
 @defcmpdforms[
     [@list{@defidform/inline[struct] @syn[name]:}]
@@ -588,72 +655,6 @@ def size(tree):
 def fix_size!(node):
     node.size = 1 + size(node.left) + size(node.right)
 }|
-
-@defcmpdforms[
-    [@list{@defidform/inline[class] @syn[name] @m{[} ( @m["{"] @syn[interface_name] @m["},*"] ) @m{]}:}]
-    [@indent{@redefidform/inline[let] @syn_[field_name]{1}}]
-    [@indent{...}]
-    [@indent{@redefidform/inline[let] @syn_[field_name]{k}}]
-    [@indent{@redefidform/inline[def] @syn_[method_name]{0}(@syn_[self]{0} @m["{"] , @syn_[param_name]{0} @m["}*"]): @syn_[block]{0}}]
-    [@indent{...}]
-    [@indent{@redefidform/inline[def] @syn_[method_name]{n}(@syn_[self]{n} @m["{"] , @syn_[param_name]{n} @m["}*"]): @syn_[block]{n}}]
-]
-
-Defines a class.
-
-@defcmpdforms[
-    [@list{@defidform/inline[interface] @syn[name]:}]
-    [@indent{@redefidform/inline[def] @syn_[method_name]{1}(@syn_[self]{1} @m["{"] , @syn_[param_name]{1} @m["}*"])}]
-    [@indent{...}]
-    [@indent{@redefidform/inline[def] @syn_[method_name]{k}(@syn_[self]{k} @m["{"] , @syn_[param_name]{k} @m["}*"])}]
-]
-
-Defines an interface.
-
-@defsmplform{@defidform/inline[pass]}
-
-Does nothing.
-
-@dssl2block|{
-# account_credit! : num? account? -> VoidC
-# Adds the given amount to the given account’s balance.
-def account_credit!(amount, account):
-    pass
-#   ^ FILL IN YOUR CODE HERE
-}|
-
-@defsmplform{@defidform/inline[return] @syn[expr]}
-
-Returns the value of the given @syn[expr] from the inner-most function.
-Note that this is often optional, since the last expression in a
-function will be used as its return value.
-
-That is, these are equivalent:
-
-@dssl2block|{
-def inc(x): x + 1
-}|
-
-@dssl2block|{
-def inc(x): return x + 1
-}|
-
-In this function, the first @racket[return] is necessary because it breaks out
-of the loop and exits the function; the second @racket[return] is optional and
-could be omitted.
-
-@dssl2block|{
-# : bloom-filter? str? -> bool?
-def bloom_check?(b, s):
-    for hash in b.hashes:
-        let index = hash(s) % b.bv.size
-        if not bv_ref(b.bv, index): return False
-    return True
-}|
-
-@defsmplform{@redefidform/inline[return]}
-
-Returns void from the current function.
 
 @defcmpdform{@defidform/inline[test] @syn[expr]: @syn[block]}
 

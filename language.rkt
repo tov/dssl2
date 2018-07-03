@@ -91,12 +91,14 @@
 (define-syntax-parameter
   inc-passed-tests!
   (lambda (stx)
-    (syntax-error stx "use of inc-passed-tests!")))
+    (syntax-error
+      stx "test blocks cannot be used in the interactions window")))
 
 (define-syntax-parameter
   inc-total-tests!
   (lambda (stx)
-    (syntax-error stx "use of inc-total-tests!")))
+    (syntax-error
+      stx "test blocks cannot be used in the interactions window")))
 
 (define-syntax (dssl-module-begin stx)
   (syntax-case stx ()
@@ -366,14 +368,16 @@
      #'(dssl-in-value/value (get-srclocs v) v)]))
 
 (define-syntax (dssl-import stx)
+  (unless (memq (syntax-local-context) '(module top-level))
+    (syntax-error stx "import can only appear at top-level"))
   (define filename
     (syntax-parse stx
-      [(_ lib:string) (syntax->datum #'lib)]
+      [(_ lib:string) (syntax-e #'lib)]
       [(_ lib:id)
        (path->string
          (build-path
            lib-directory
-           (format "~a.rkt" (syntax->datum #'lib))))]))
+           (format "~a.rkt" (syntax-e #'lib))))]))
   (datum->syntax stx `(#%require (file ,filename))))
 
 ; setf! is like Common Lisp setf, but it just recognizes three forms. We

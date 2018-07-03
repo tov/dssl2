@@ -133,11 +133,12 @@ by a newline, or a compound statement.
             'string
             True
             False
+            lvalue
+            (expr "if" expr "else" expr)
             (expr "(" (~many-comma expr) ")")
             (lambda (~many-comma 'name) ":" simple)
             ("λ" (~many-comma 'name) ":" simple)
             ('struct_name "{" (~many-comma 'name ":" expr) "}")
-            (expr "if" expr "else" expr)
             ("[" (~many-comma expr) "]")
             ("[" expr ";" expr "]")
             ("[" expr "for" (~opt 'name ",") 'name "in" expr (~opt "if" expr) "]")
@@ -246,41 +247,37 @@ Long string literals can also be used to comment out long blocks of code.
 
 @subsection[#:tag "stm-forms"]{Statement forms}
 
-@defsmplform{@defidform/inline[assert] @nt[expr]}
+@subsubsection{Definition and assignment forms}
 
-Asserts that the given @nt[expr] evaluates to non-false. If the
-expression evaluates false, signals an error.
+@defsmplform{@defidform/inline[let] @term[var_name] = @nt[expr]}
 
-@dssl2block|{
-test "sch_member? finds 'hello'":
-    let h = sch_new_sbox(10)
-    assert not sch_member?(h, 'hello')
-    sch_insert!(h, 'hello', 5)
-    assert sch_member?(h, 'hello')
-}|
-
-@defsmplform{@defidform/inline[assert_eq] @nt_[expr]{1}, @nt_[expr]{2}}
-
-Asserts that the given @nt[expr]s evaluates to structurally equal values.
-If they are not equal, signals an error.
+Declares and defines a local variable. Local variables may be declared in any
+scope and last for that scope. A local variable may be re-assigned with the
+assignment form (@racket[=]), as in the third line here:
 
 @dssl2block|{
-test 'first_char_hasher':
-    assert_eq first_char_hasher(''), 0
-    assert_eq first_char_hasher('A'), 65
-    assert_eq first_char_hasher('Apple'), 65
-    assert_eq first_char_hasher('apple'), 97
+def sum(v):
+    let result = 0
+    for elem in v: result = result + elem
+    return result
 }|
 
-@defsmplform{@defidform/inline[assert_error] @nt_[expr]{fail}, @nt_[expr]{str}}
+@defsmplform{@redefidform/inline[let] @term[var_name]}
 
-Asserts that the given @nt_[expr]{fail} errors, and that the error message
-contains the substring that results from evaluating @nt_[expr]{str}.
+Declares a local variable, which will be undefined until it is assigned:
 
-@defsmplform{@redefidform/inline[assert_error] @nt[expr]}
+@dssl2block|{
+let x
 
-Asserts that the given @nt[expr] errors without checking for a
-particular error.
+if y:
+    x = f()
+else:
+    x = g()
+
+println(x)
+}|
+
+Accessing an undefined variable is an error.
 
 @defsmplform{@nt[lvalue] @defidform/inline[=] @nt[expr]}
 
@@ -314,28 +311,6 @@ def sch_insert!(hash, key, value):
     # vector assignment:
     hash.buckets[index] = cons(sc_entry(key, value), hash.buckets[index])
 }|
-
-@defsmplform{@defidform/inline[break]}
-
-When in a @racket[for] or @racket[while] loop, ends the (inner-most)
-loop immediately.
-
-@defsmplform{@defidform/inline[continue]}
-
-When in a @racket[for] or @racket[while] loop, ends the current
-iteration of the (inner-most) loop and begins the next iteration.
-
-@defcmpdforms[
-    [@list{@defidform/inline[class] @term[name] @m{[} ( @m["{"] @term[interface_name] @m["},*"] ) @m{]}:}]
-    [@indent{@redefidform/inline[let] @term_[field_name]{1}}]
-    [@indent{...}]
-    [@indent{@redefidform/inline[let] @term_[field_name]{k}}]
-    [@indent{@redefidform/inline[def] @term_[method_name]{0}(@term_[self]{0} @m["{"] , @term_[param_name]{0} @m["}*"]): @nt_[block]{0}}]
-    [@indent{...}]
-    [@indent{@redefidform/inline[def] @term_[method_name]{n}(@term_[self]{n} @m["{"] , @term_[param_name]{n} @m["}*"]): @nt_[block]{n}}]
-]
-
-Defines a class.
 
 @defcmpdform{@defidform/inline[def] @term[fun_name](@term_[var_name]{1}, ... @term_[var_name]{k}): @nt[block]}
 
@@ -394,19 +369,18 @@ def rbt_insert!(key, tree):
     search!(tree.root, set_root!)
 }|
 
-@defsmplform{@nt[expr]}
+@subsubsection{Loop and control forms}
 
-An expression, evaluated for both side effect and, if at the tail end
-of a function, its value.
+@defsmplform{@defidform/inline[pass]}
 
-For example, this function returns the @racket[size] field of parameter
-@racket[tree] if @racket[tree] is a @racket[Node], and @racket[0] otherwise:
+Does nothing.
 
 @dssl2block|{
-# size : RndBstOf[X] -> nat?
-def size(tree):
-    if Node?(tree): tree.size
-    else: 0
+# account_credit! : num? account? -> VoidC
+# Adds the given amount to the given account’s balance.
+def account_credit!(amount, account):
+    pass
+#   ^ FILL IN YOUR CODE HERE
 }|
 
 @defcmpdform{@defidform/inline[if] @nt_[expr]{if}: @nt_[block]{if}
@@ -513,55 +487,54 @@ for ix, person in people_to_greet:
     println("%p: Hello, %s!", ix, person)
 }|
 
-@defcmpdforms[
-    [@list{@defidform/inline[interface] @term[name]:}]
-    [@indent{@redefidform/inline[def] @term_[method_name]{1}(@term_[self]{1} @m["{"] , @term_[param_name]{1} @m["}*"])}]
-    [@indent{...}]
-    [@indent{@redefidform/inline[def] @term_[method_name]{k}(@term_[self]{k} @m["{"] , @term_[param_name]{k} @m["}*"])}]
-]
+@defcmpdform{@defidform/inline[while] @nt[expr]: @nt[block]}
 
-Defines an interface.
-
-@defsmplform{@defidform/inline[let] @term[var_name] = @nt[expr]}
-
-Declares and defines a local variable. Local variables may be declared in any
-scope and last for that scope. A local variable may be re-assigned with the
-assignment form (@racket[=]), as in the third line here:
+Iterates the @nt[block] while the @nt[expr] evaluates to non-false.
+For example:
 
 @dssl2block|{
-def sum(v):
-    let result = 0
-    for elem in v: result = result + elem
+while not is_empty(queue):
+    explore(dequeue(queue))
+}|
+
+Here's a hash table lookup function that uses @racket[while], which it breaks
+out of using @racket[break]:
+
+@dssl2block|{
+def sch_lookup(hash, key):
+    let bucket = sch_bucket_(hash, key)
+    let result = False
+    while cons?(bucket):
+        if key == bucket.first.key:
+            result = bucket.first.value
+            break
+        bucket = bucket.rest
     return result
 }|
 
-@defsmplform{@redefidform/inline[let] @term[var_name]}
+@defsmplform{@defidform/inline[break]}
 
-Declares a local variable, which will be undefined until it is assigned:
+When in a @racket[for] or @racket[while] loop, ends the (inner-most)
+loop immediately.
 
-@dssl2block|{
-let x
+@defsmplform{@defidform/inline[continue]}
 
-if y:
-    x = f()
-else:
-    x = g()
+When in a @racket[for] or @racket[while] loop, ends the current
+iteration of the (inner-most) loop and begins the next iteration.
 
-println(x)
-}|
+@defsmplform{@nt[expr]}
 
-Accessing an undefined variable is an error.
+An expression, evaluated for both side effect and, if at the tail end
+of a function, its value.
 
-@defsmplform{@defidform/inline[pass]}
-
-Does nothing.
+For example, this function returns the @racket[size] field of parameter
+@racket[tree] if @racket[tree] is a @racket[Node], and @racket[0] otherwise:
 
 @dssl2block|{
-# account_credit! : num? account? -> VoidC
-# Adds the given amount to the given account’s balance.
-def account_credit!(amount, account):
-    pass
-#   ^ FILL IN YOUR CODE HERE
+# size : RndBstOf[X] -> nat?
+def size(tree):
+    if Node?(tree): tree.size
+    else: 0
 }|
 
 @defsmplform{@defidform/inline[return] @nt[expr]}
@@ -596,6 +569,8 @@ def bloom_check?(b, s):
 @defsmplform{@redefidform/inline[return]}
 
 Returns void from the current function.
+
+@subsubsection{Data structuring forms}
 
 @defcmpdforms[
     [@list{@defidform/inline[struct] @term[name]:}]
@@ -658,6 +633,65 @@ def size(tree):
 def fix_size!(node):
     node.size = 1 + size(node.left) + size(node.right)
 }|
+
+@defcmpdforms[
+    [@list{@defidform/inline[class] @term[name] @m{[} ( @m["{"] @term[interface_name] @m["},*"] ) @m{]}:}]
+    [@indent{@redefidform/inline[let] @term_[field_name]{1}}]
+    [@indent{...}]
+    [@indent{@redefidform/inline[let] @term_[field_name]{k}}]
+    [@indent{@redefidform/inline[def] @term_[method_name]{0}(@term_[self]{0} @m["{"] , @term_[param_name]{0} @m["}*"]): @nt_[block]{0}}]
+    [@indent{...}]
+    [@indent{@redefidform/inline[def] @term_[method_name]{n}(@term_[self]{n} @m["{"] , @term_[param_name]{n} @m["}*"]): @nt_[block]{n}}]
+]
+
+Defines a class.
+
+@defcmpdforms[
+    [@list{@defidform/inline[interface] @term[name]:}]
+    [@indent{@redefidform/inline[def] @term_[method_name]{1}(@term_[self]{1} @m["{"] , @term_[param_name]{1} @m["}*"])}]
+    [@indent{...}]
+    [@indent{@redefidform/inline[def] @term_[method_name]{k}(@term_[self]{k} @m["{"] , @term_[param_name]{k} @m["}*"])}]
+]
+
+Defines an interface.
+
+@subsubsection{Testing and timing forms}
+
+@defsmplform{@defidform/inline[assert] @nt[expr]}
+
+Asserts that the given @nt[expr] evaluates to non-false. If the
+expression evaluates false, signals an error.
+
+@dssl2block|{
+test "sch_member? finds 'hello'":
+    let h = sch_new_sbox(10)
+    assert not sch_member?(h, 'hello')
+    sch_insert!(h, 'hello', 5)
+    assert sch_member?(h, 'hello')
+}|
+
+@defsmplform{@defidform/inline[assert_eq] @nt_[expr]{1}, @nt_[expr]{2}}
+
+Asserts that the given @nt[expr]s evaluates to structurally equal values.
+If they are not equal, signals an error.
+
+@dssl2block|{
+test 'first_char_hasher':
+    assert_eq first_char_hasher(''), 0
+    assert_eq first_char_hasher('A'), 65
+    assert_eq first_char_hasher('Apple'), 65
+    assert_eq first_char_hasher('apple'), 97
+}|
+
+@defsmplform{@defidform/inline[assert_error] @nt_[expr]{fail}, @nt_[expr]{str}}
+
+Asserts that the given @nt_[expr]{fail} errors, and that the error message
+contains the substring that results from evaluating @nt_[expr]{str}.
+
+@defsmplform{@redefidform/inline[assert_error] @nt[expr]}
+
+Asserts that the given @nt[expr] errors without checking for a
+particular error.
 
 @defcmpdform{@defidform/inline[test] @nt[expr]: @nt[block]}
 
@@ -723,32 +757,9 @@ The result is printed as follows:
 This means it tooks 309 milliseconds of CPU time over 792 milliseconds of
 wall clock time, with 238 ms of CPU time spent on garbage collection.
 
-@defcmpdform{@defidform/inline[while] @nt[expr]: @nt[block]}
-
-Iterates the @nt[block] while the @nt[expr] evaluates to non-false.
-For example:
-
-@dssl2block|{
-while not is_empty(queue):
-    explore(dequeue(queue))
-}|
-
-Here's a hash table lookup function that uses @racket[while], which it breaks
-out of using @racket[break]:
-
-@dssl2block|{
-def sch_lookup(hash, key):
-    let bucket = sch_bucket_(hash, key)
-    let result = False
-    while cons?(bucket):
-        if key == bucket.first.key:
-            result = bucket.first.value
-            break
-        bucket = bucket.rest
-    return result
-}|
-
 @subsection[#:tag "exp-forms"]{Expression forms}
+
+@subsubsection{Variable expressions}
 
 @defexpform{@term[var_name]}
 
@@ -766,19 +777,7 @@ Lexically, a variable is a letter or underscore, followed by zero or
 more letters, underscores, or digits, optionally ending in a question
 mark or exclamation point.
 
-@defexpform{@nt[expr].@term[prop_name]}
-
-Expression @nt[expr] must evaluate to struct value that has field
-@term[prop_name] or an object value that has method @term[prop_name]; then
-this expression evaluates to the value of that field of the struct or
-that method of the object.
-
-@defexpform{@nt_[expr]{1}[@nt_[expr]{2}]}
-
-Expression @nt_[expr]{1} must evaluate to a vector @c{v} or string @c{s};
-@nt_[expr]{2} must evaluate to an integer @c{n} between 0 and
-@code{v.len() - 1}. Then this returns the @c{n}th element of vector
-@c{v} or the @c{n}th character of string @c{s}.
+@subsubsection{Literal expressions}
 
 @defexpform{@defidform/inline[True]}
 
@@ -787,6 +786,8 @@ The true Boolean value.
 @defexpform{@defidform/inline[False]}
 
 The false Boolean value, the only value that is not considered true.
+
+@subsubsection{Functions and application expressions}
 
 @defexpform{@nt_[expr]{0}(@nt_[expr]{1}, ..., @nt_[expr]{k})}
 
@@ -832,39 +833,14 @@ add twice its first argument to its second argument can be written
 lambda x, y: 2 * x + y
 }|
 
-@defexpform{@nt_[expr]{then} @q{if} @nt_[expr]{cond} @q{else} @nt_[expr]{else}}
+@subsubsection{Vectors and indexing expressions}
 
-The ternary expression first evaluates the condition
-@nt_[expr]{cond}. If non-false,
-evaluates @nt_[expr]{then} for its value; otherwise,
-evaluates @nt_[expr]{else} for its value.
+@defexpform{@nt_[expr]{1}[@nt_[expr]{2}]}
 
-For example:
-
-@dssl2block|{
-def parent(link):
-    link.parent if rbn?(link) else False
-}|
-
-@defexpform{@term[struct_name] { @term_[field_name]{1}: @nt_[expr]{1}, ..., @term_[field_name]{k}: @nt_[expr]{k} }}
-
-Constructs a struct with the given name and the values of the given
-expressions for its fields. The struct must have been declared with
-those fields using @racket[struct].
-
-If a variable with the same name as a field is in scope, omitting the
-field value will use that variable:
-
-@dssl2block|{
-struct Foo:
-    let bar
-    let baz
-
-let bar = 4
-let baz = 5
-
-assert_eq Foo { bar, baz: 9 }, Foo(4, 9)
-}|
+Expression @nt_[expr]{1} must evaluate to a vector @c{v} or string @c{s};
+@nt_[expr]{2} must evaluate to an integer @c{n} between 0 and
+@code{v.len() - 1}. Then this returns the @c{n}th element of vector
+@c{v} or the @c{n}th character of string @c{s}.
 
 @defexpform{[ @nt_[expr]{0}, ..., @nt_[expr]{k - 1} ]}
 
@@ -932,8 +908,8 @@ evaluates to
 }|
 
 @defexpforms[
-  @list{[ @nt_[expr]{elem} for @term[var_name] in @nt_[expr]{iter} @q{if} @nt_[expr]{cond} ]}
-  @list{[ @nt_[expr]{elem} for @term_[var_name]{1}, @term_[var_name]{2} in @nt_[expr]{iter} @q{if} @nt_[expr]{cond} ]}
+  @list{[ @nt_[expr]{elem} for @term[var_name] in @nt_[expr]{iter} if @nt_[expr]{cond} ]}
+  @list{[ @nt_[expr]{elem} for @term_[var_name]{1}, @term_[var_name]{2} in @nt_[expr]{iter} if @nt_[expr]{cond} ]}
 ]
 
 If the optional @nt_[expr]{cond} is provided, only elements for which
@@ -954,7 +930,36 @@ evaluates to
 [ 50, 30, 10 ]
 }|
 
-@subsubsection{Operators}
+@subsubsection{Structs and projection expressions}
+
+@defexpform{@nt[expr].@term[prop_name]}
+
+Expression @nt[expr] must evaluate to struct value that has field
+@term[prop_name] or an object value that has method @term[prop_name]; then
+this expression evaluates to the value of that field of the struct or
+that method of the object.
+
+@defexpform{@term[struct_name] { @term_[field_name]{1}: @nt_[expr]{1}, ..., @term_[field_name]{k}: @nt_[expr]{k} }}
+
+Constructs a struct with the given name and the values of the given
+expressions for its fields. The struct must have been declared with
+those fields using @racket[struct].
+
+If a variable with the same name as a field is in scope, omitting the
+field value will use that variable:
+
+@dssl2block|{
+struct Foo:
+    let bar
+    let baz
+
+let bar = 4
+let baz = 5
+
+assert_eq Foo { bar, baz: 9 }, Foo(4, 9)
+}|
+
+@subsubsection{Operator expressions}
 
 Operators are described in order from tighest to loosest precedence.
 
@@ -1058,6 +1063,20 @@ otherwise, the result of the conjunction is the result of @nt_[expr]{2}.
 Short-circuiting logical or. First evaluates @nt_[expr]{1}; if the result
 is non-false then the whole disjunction has that result; otherwise the
 result of the conjunction is the result of @nt_[expr]{2}.
+
+@defexpform{@nt_[expr]{then} if @nt_[expr]{cond} else @nt_[expr]{else}}
+
+The ternary expression first evaluates the condition
+@nt_[expr]{cond}. If non-false,
+evaluates @nt_[expr]{then} for its value; otherwise,
+evaluates @nt_[expr]{else} for its value.
+
+For example:
+
+@dssl2block|{
+def parent(link):
+    link.parent if rbn?(link) else False
+}|
 
 @section{Built-in functions, classes, methods, and constants}
 
@@ -1550,11 +1569,12 @@ Like @racket[print], but adds a newline at the end.
 
 Terminates the program with an error message. The error message must be
 supplied as a format string followed by values to interpolate, in the
-style of @racket[format].
+style of @racket[print].
 
-@defprocform[identity]{[X](X) -> X}
+@defprocform[dir]{(AnyC) -> VecC(str?)}
 
-The identity function, which just returns its argument.
+Given an object, returns a vector of the names of its methods.
+Given a struct, returns a vector of the names of its fields.
 
 @section{Contracts}
 

@@ -71,8 +71,7 @@
            [println (-> str? AnyC ... VoidC)]
            [sleep (-> num? VoidC)])
          ; * other functions
-         dir
-         identity)
+         dir)
 
 (require "errors.rkt"
          "object.rkt"

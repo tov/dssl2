@@ -55,7 +55,7 @@ are described in more depth below. Here they are summarized in
 @hyperlink["https://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_form"]{
     Extended Backus-Naur Form}.
 
-Non-terminal symbols are written in ‹@emph{italic_with_pointies}›, whereas
+Non-terminal symbols are written in ⟨@emph{italic_with_pointies}⟩, whereas
 terminal symbols are in @term[|colored typewriter|]. Conventions include:
 
 @itemlist[
@@ -414,7 +414,7 @@ if should_greet:
 }|
 
 The function @code{greet()} will be called if variable
-@code{should_greet} is true, and otherwise it will not.
+@code{should_greet} is non-false, and otherwise it will not.
 
 Or we can have several @racket[elif] parts:
 
@@ -470,7 +470,7 @@ def make_sbox_hash(n):
     def hash(input_string):
         let result = 0
         for c in input_string:
-            let svalue = sbox[ord(c) % 256]
+            let svalue = sbox[int(c) % 256]
             result = result ^ svalue
             result = (3 * result) % (2 ** n)
         return result
@@ -498,16 +498,16 @@ Iterates the @nt[block] while the @nt[expr] evaluates to non-false.
 For example:
 
 @dssl2block|{
-while not is_empty(queue):
-    explore(dequeue(queue))
+while not queue.empty?():
+    explore(queue.dequeue())
 }|
 
-Here's a hash table lookup function that uses @racket[while], which it breaks
+Here's a hash table lookup method that uses @racket[while], which it breaks
 out of using @racket[break]:
 
 @dssl2block|{
-def sch_lookup(hash, key):
-    let bucket = sch_bucket_(hash, key)
+def lookup(self, key):
+    let bucket = self._find_bucket(key)
     let result = False
     while cons?(bucket):
         if key == bucket.first.key:
@@ -558,16 +558,16 @@ def inc(x): x + 1
 def inc(x): return x + 1
 }|
 
-In this function, the first @racket[return] is necessary because it breaks out
+In this method, the first @racket[return] is necessary because it breaks out
 of the loop and exits the function; the second @racket[return] is optional and
 could be omitted.
 
 @dssl2block|{
 # : bloom-filter? str? -> bool?
-def bloom_check?(b, s):
-    for hash in b.hashes:
-        let index = hash(s) % b.bv.size
-        if not bv_ref(b.bv, index): return False
+def bloom_check?(self, s):
+    for hash in self._hashes:
+        let index = hash(s) % self._bv.len()
+        if not self._bv[index]: return False
     return True
 }|
 
@@ -980,25 +980,25 @@ long sequence of preparation and checks:
 
 @dssl2block|{
 test 'single-chaining hash table':
-    let h = sch_new_1(10)
-    assert not sch_member?(h, 'hello')
+    let h = ScHash(10)
+    assert not h.member?('hello')
 
-    sch_insert!(h, 'hello', 5)
-    assert sch_member?(h, 'hello')
-    assert_eq sch_lookup(h, 'hello'), 5
-    assert not sch_member?(h, 'goodbye')
-    assert not sch_member?(h, 'helo')
+    h.insert!('hello', 5)
+    assert h.member?('hello')
+    assert_eq h.lookup('hello'), 5
+    assert not h.member?('goodbye')
+    assert not h.member?('helo')
 
-    sch_insert!(h, 'helo', 4)
-    assert_eq sch_lookup(h, 'hello'), 5
-    assert_eq sch_lookup(h, 'helo'), 4
-    assert not sch_member?(h, 'hel')
+    h.insert!('helo', 4)
+    assert_eq h.lookup('hello'), 5
+    assert_eq h.lookup('helo'), 4
+    assert not h.member?('hel')
 
-    sch_insert!(h, 'hello', 10)
-    assert_eq sch_lookup(h, 'hello'), 10
-    assert_eq sch_lookup(h, 'helo'), 4
-    assert not sch_member?(h, 'hel')
-    assert_eq sch_keys(h), cons('hello', cons('helo', nil()))
+    h.insert!('hello', 10)
+    assert_eq h.lookup('hello'), 10
+    assert_eq h.lookup('helo'), 4
+    assert not h.member?('hel')
+    assert_eq h.keys(h), cons('hello', cons('helo', nil()))
 }|
 
 @defcmpdform{@defidform/inline[time] @nt[expr]: @nt[block]}

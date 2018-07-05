@@ -8,7 +8,6 @@
          interface-contract-name
          generic-interface-contract-name
          generic-class-contract-name
-         struct-constructor-name
          struct-getter-name
          struct-setter-name)
 
@@ -42,11 +41,6 @@
 
 (define (generic-class-contract-name name)
   (format-id name "~aOf" name))
-
-(define-syntax (struct-constructor-name stx)
-  (syntax-parse stx
-    [(_ name:id)
-     (format-id #'name "make-~a" #'name)]))
 
 (define-syntax (struct-getter-name stx)
   (syntax-parse stx

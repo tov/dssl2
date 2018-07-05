@@ -429,9 +429,9 @@
     #:context 'struct
     [(_ (name:id internal-name:id) . fields:unique-identifiers)
      #`(begin
-         (define-struct (internal-name struct-base) (fields.var ...)
-                        #:mutable
-                        #:transparent)
+         (struct internal-name struct-base (fields.var ...)
+           #:mutable
+           #:transparent)
          (dssl-provide #,(struct-predicate-name #'name))
          (define (#,(struct-predicate-name #'name) value)
            (#,(struct-predicate-name #'internal-name) value)))]))
@@ -710,7 +710,7 @@
          (syntax-error method-name "interface methods cannot be private")))
      #`(begin
          (define interface-token (gensym))
-         (define-struct (interface-struct object-base)
+         (struct interface-struct object-base
            [method-name ...])
          (define interface-info
            (make-object-info 'name
@@ -761,7 +761,7 @@
                           "interface ~a with contract parameters ~e")
                         val 'name (object-base-contract-params val)))]
                    [(first-order? val)
-                    (make-interface-struct
+                    (interface-struct
                       interface-info
                       contract-parameters
                       (λ () (vector-immutable (cons '_repr val)))
@@ -1004,11 +1004,11 @@
         [(self.public-method-name ...)
          (map self. (filter public-method-name? method-names))])
        #`(begin
-           (define-struct (internal-name object-base)
-                          (__class__
-                           public-method-name
-                           ...)
-                          #:transparent)
+           (struct internal-name object-base
+             (__class__
+               public-method-name
+               ...)
+             #:transparent)
            (define internal-object-info
              (make-object-info
                'name
@@ -1045,7 +1045,7 @@
              ...
              (define self.__class__ name)
              (define actual-self
-               ((struct-constructor-name internal-name)
+               (internal-name
                 internal-object-info
                 (vector-immutable cvs.var ...)
                 (λ () (vector-immutable

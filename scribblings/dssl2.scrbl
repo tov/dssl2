@@ -575,7 +575,7 @@ def bloom_check?(self, s):
 
 Returns void from the current function.
 
-@subsection{Data structuring forms}
+@subsection{Data and program structuring forms}
 
 @defcmpdforms[
     [@list{@defidform/inline[struct] @term[name]:}]
@@ -919,7 +919,11 @@ library, in which case the unquoted @term[mod_name] is used, or from the
 current directory, in which case @term[mod_string] should be the name of
 the file as a string literal.
 
-This form may only be used at top-level.
+A DSSL2 module is a @c{.rkt} file starting with @c{#lang dssl2} and
+consisting of a sequence of DSSL2 @nt[statement]s. All definitions not
+starting with a single underscore are public, and may be imported into
+another DSSL2 module. The @racket[import] form may only be used at the
+top level of a module.
 
 @subsection{Testing and timing forms}
 
@@ -929,11 +933,11 @@ Asserts that the given @nt[expr] evaluates to non-false. If the
 expression evaluates false, signals an error.
 
 @dssl2block|{
-test "sch_member? finds 'hello'":
-    let h = sch_new_sbox(10)
-    assert not sch_member?(h, 'hello')
-    sch_insert!(h, 'hello', 5)
-    assert sch_member?(h, 'hello')
+test "ScHash.member? finds 'hello'":
+    let h = ScHash(10, make_sbox_hash())
+    assert not h.member?('hello')
+    h.insert!('hello', 5)
+    assert h.member?('hello')
 }|
 
 @defsmplform{@defidform/inline[assert_eq] @nt_[expr]{1}, @nt_[expr]{2}}

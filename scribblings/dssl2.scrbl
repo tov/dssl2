@@ -779,9 +779,9 @@ identifiers:
       in a @racket[class] to check the class against that interface.}
     @item{The interface predicate, @c{@term[name]?}, which checks for
       objects whose classes are declared to implement the interface.}
-    @item{The interface contract, @c{@term[name]!}, which modifies
+    @item{The @tech{interface contract}, @c{@term[name]!}, which modifies
       a protected object to remove methods not present in the interface.
-      See @secref{Contracts} for more information on how this works.}
+      See @secref{Contracts} for more information on contracts.}
 ]
 
 An interface specifies some number of methods, their names, and their
@@ -886,9 +886,11 @@ interface @c{CONTAINER} with the correct arities, so their definitions
 succeed. Notice that @c{VecStack} has additional methods not mentioned
 in the interface—this is okay! Because both classes @c{Cell} and
 @c{VecStack} implement @c{CONTAINER}, @c{CONTAINER?} will answer
-@code{True} for their instances. Furthermore, instances of either class
-can be protected with the @c{CONTAINER!} contract, which hides methods
-that are not declared in @c{CONTAINER}.
+@code{True} for their instances.
+
+Furthermore, instances of either class can be protected with the
+@c{CONTAINER!} @tech{interface contract}, which hides methods that are
+not declared in @c{CONTAINER}.
 
 If a class does not implement the methods of a declared interface, it is
 a static error. For example, consider this position class:
@@ -2034,7 +2036,7 @@ Defining an interface @term[name] binds three identifiers: @term[name],
 @c{@term[name]?}, and @c{@term[name]!}. The first of these is used in
 @racket[class] definitions to refer to the interface; the second is the
 predicate, which recognizes instances of classes that implement the
-interface. The third is the @emph{interface contract}, which can be used
+interface. The third is the @deftech{interface contract}, which can be used
 to protect instances of classes that implement the interface, to ensure
 that their usage is only via the interface.
 
@@ -2107,6 +2109,43 @@ We can still access @c{get_y} on @code{original}:
 @dssl2block|{
 assert_eq original.get_x(), 3
 assert_eq original.get_y(), 4
+}|
+
+As another example of how interface contracts can protect objects
+against misuse, consider the following class @c{Counter}, which
+implements an interface @c{STEPPABLE}:
+
+@dssl2block|{
+interface STEPPABLE:
+    def step(self)
+
+class Counter (STEPPABLE):
+    let count
+    def __init__(self, value: int?): self.count = value
+    def get(self): self.count
+    def step(self): self.count = self.count + 1
+}|
+
+The @c{STEPPABLE!} interface contract can be placed on a parameter to a
+function to ensure that the function only uses the given object
+according to the @c{STEPPABLE} interface. For example, we know that this
+@c{advance} function can only use the @c{step} method to advance the
+@c{Counter}:
+
+@dssl2block|{
+def advance(counter: STEPPABLE!, count: nat?):
+    while count > 0:
+        counter.step()
+        count = count - 1
+}|
+
+A version of the function that attempts to do addition will fail because
+the necessary methods are missing:
+
+@dssl2block|{
+def sneaky_advance(counter: STEPPABLE!, count: nat?):
+    # Won't work because both .__init__ and .get are missing.
+    counter.__init__(counter.get() + count)
 }|
 
 Like classes, interfaces can have generic contract parameters

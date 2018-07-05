@@ -671,7 +671,7 @@
            [(object-base? value)
             (for/list ([method-info
                          (in-vector (object-info-method-infos
-                                      (object-base-object-info value)))])
+                                      (object-base-info value)))])
               (symbol->string (method-info-name method-info)))]
            [(pred value)
             (list (symbol->string sel) ...)]

@@ -2,14 +2,14 @@
 
 (provide object-base
          object-base?
-         object-base-object-info
+         object-base-info
          object-base-contract-params
          object-base-reflect
-         make-object-info
+         object-info
          object-info-name
          object-info-interfaces
          object-info-method-infos
-         make-method-info
+         method-info
          method-info?
          method-info-name
          method-info-getter
@@ -27,15 +27,15 @@
                      (only-in racket/syntax format-id syntax-local-eval)
                      "names.rkt"))
 
-(define-struct method-info (name getter))
-(define-struct object-info (name interfaces method-infos))
+(struct method-info (name getter))
+(struct object-info (name constructor interfaces method-infos))
 
-(define-struct object-base (object-info contract-params reflect)
-               #:transparent)
+(struct object-base (info contract-params reflect)
+  #:transparent)
 
 (define (write-object obj port recur)
   (fprintf port "#<object:~a"
-           (object-info-name (object-base-object-info obj)))
+           (object-info-name (object-base-info obj)))
   (for ([field-pair (in-vector ((object-base-reflect obj)))])
     (fprintf port " ~a=" (car field-pair))
     (recur (cdr field-pair)))
@@ -113,7 +113,7 @@
 (define (get-method-info obj sym)
   (let/ec return
     (define info-vector (object-info-method-infos
-                          (object-base-object-info obj)))
+                          (object-base-info obj)))
     (for ([info (in-vector info-vector)])
       (when (eq? sym (method-info-name info))
         (return info)))

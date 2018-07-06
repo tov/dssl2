@@ -672,10 +672,15 @@
   (lambda (stx)
     (syntax-error stx "use of self outside of method")))
 
-(define (contract-parameters-match? cs1 cs2)
-  (for/and ([c1 (in-vector cs1)]
-            [c2 (in-vector cs2)])
-    (eq? c1 c2)))
+(define (contract-params-match? token paramses cs2)
+  (cond
+    [(assq token paramses)
+     =>
+     (λ (pair)
+       (for/and ([c1 (in-vector (cdr pair))]
+                 [c2 (in-vector cs2)])
+         (eq? c1 c2)))]
+    [else #f]))
 
 (define-for-syntax (public-method-name? stx)
   (define name (symbol->string (syntax-e stx)))
@@ -710,18 +715,24 @@
          (syntax-error method-name "interface methods cannot be private")))
      #`(begin
          (define interface-token (gensym))
-         (struct interface-struct object-base
-           [method-name ...])
-         (define interface-info
-           (object-info 'name
-                        interface-struct
-                        (vector-immutable interface-token)
-                        (vector-immutable
-                          (method-info
-                            'method-name
-                            (struct-getter-name interface-struct
-                                                method-name))
-                          ...)))
+         (define interface-method-table
+           (for/hasheq
+             ([srcloc
+                (in-vector (vector (get-srcloc method-name) ...))]
+              [each-method-name
+                (in-vector (vector 'method-name ...))]
+              [method-ctc
+                (in-vector
+                  (vector
+                    (λ (cvs.var ...)
+                       (maybe-parametric->/c
+                         [method-cvs.var ...]
+                         (-> (ensure-contract 'def method-params.contract)
+                             ...
+                             (ensure-contract 'def
+                                              method-result.result))))
+                     ...))])
+             (values each-method-name (cons method-ctc srcloc))))
          (dssl-provide (for-syntax name))
          (define-for-syntax name
            (list
@@ -733,49 +744,44 @@
            (and (object-base? obj)
                 (vector-memq interface-token
                              (object-info-interfaces
-                               (object-base-info obj)))
-                #t))
+                               (object-base-info obj)))))
          (define (#,(struct-predicate-name #'name) obj)
-           (first-order? obj))
-         (define-syntax (project-method stx)
-           (syntax-parse stx #:literals (quote)
-             [(_ object:expr (quote method:id) contract:expr srcloc:expr)
-              #'(let ([method-value (get-method-value object 'method)])
-                  (racket:contract
-                    contract method-value
-                    'name "method caller"
-                    (class-qualify/sym 'name 'method) srcloc))]))
+           (and (first-order? obj)
+                #t))
          (define (make-projection cvs.var ...)
            (define contract-parameters (vector-immutable cvs.var ...))
            (λ (blame)
               (λ (val neg-party)
                  (cond
-                   [(interface-struct? val)
-                    (if (contract-parameters-match?
-                          (object-base-contract-params val)
-                          contract-parameters)
-                      val
-                      (racket:raise-blame-error
-                        blame #:missing-party neg-party val
-                        (string-append
-                          "value ~e already implements "
-                          "interface ~a with contract parameters ~e")
-                        val 'name (object-base-contract-params val)))]
+                   [(and (object-base? val)
+                         (contract-params-match?
+                           interface-token
+                           (object-base-contract-paramses val)
+                           contract-parameters))
+                    val]
                    [(first-order? val)
-                    (interface-struct
-                      interface-info
-                      contract-parameters
-                      (λ () (vector-immutable (cons '_repr val)))
-                      (project-method
-                        val
-                        'method-name
-                        (maybe-parametric->/c
-                          [method-cvs.var ...]
-                          (-> (ensure-contract 'def method-params.contract)
-                              ...
-                              (ensure-contract 'def method-result.result)))
-                        (get-srcloc method-name))
-                      ...)]
+                    ((object-info-projector (object-base-info val))
+                     val
+                     (cons interface-token contract-parameters)
+                     (λ (sel method)
+                        (cond
+                          [(hash-ref interface-method-table sel #f)
+                           =>
+                           (λ (pair)
+                              (racket:contract
+                                ((car pair) cvs.var ...) method
+                                (format "method ~a of interface ~a"
+                                        sel 'name)
+                                "method caller"
+                                #f
+                                (cdr pair)))]
+                          [else
+                            (λ _
+                               (racket:raise-blame-error
+                                 (racket:blame-swap blame)
+                                 #:missing-party neg-party val
+                                 "interface ~a is protecting method ~a"
+                                 'name sel))])))]
                    [(object-base? val)
                     (racket:raise-blame-error
                       blame #:missing-party neg-party val
@@ -948,9 +954,10 @@
            (procedure-rename
              (λ (value)
                 (and (#,(struct-predicate-name #'name) value)
-                     (contract-parameters-match?
-                       contract-params
-                       (object-base-contract-params value))))
+                     (contract-params-match?
+                       #f
+                       (object-base-contract-paramses value)
+                       contract-params)))
              (format-symbol #,format-string 'name "Of" cvs ...))))]))
 
 (define-syntax (dssl-class stx)
@@ -1013,7 +1020,21 @@
            (define internal-object-info
              (object-info
                'name
-               internal-name
+               (λ (val contract-params visitor)
+                  (internal-name
+                    (object-base-info val)
+                    (cons contract-params
+                          (object-base-contract-paramses val))
+                    (object-base-reflect val)
+                    (visitor '__class__
+                             ((struct-getter-name internal-name __class__)
+                              val))
+                    (visitor 'public-method-name
+                             ((struct-getter-name
+                                internal-name
+                                public-method-name)
+                              val))
+                    ...))
                (vector-immutable #,@interface-tokens)
                (vector-immutable
                  (method-info
@@ -1049,7 +1070,7 @@
              (define actual-self
                (internal-name
                 internal-object-info
-                (vector-immutable cvs.var ...)
+                (list (cons #f (vector-immutable cvs.var ...)))
                 (λ () (vector-immutable
                          (cons 'field.var self.field-name) ...))
                 ; methods:

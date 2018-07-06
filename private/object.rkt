@@ -3,10 +3,11 @@
 (provide object-base
          object-base?
          object-base-info
-         object-base-contract-params
+         object-base-contract-paramses
          object-base-reflect
          object-info
          object-info-name
+         object-info-projector
          object-info-interfaces
          object-info-method-infos
          method-info
@@ -28,9 +29,10 @@
                      "names.rkt"))
 
 (struct method-info (name getter))
-(struct object-info (name constructor interfaces method-infos))
+(struct object-info (name projector interfaces method-infos))
+; projector is map-methods
 
-(struct object-base (info contract-params reflect)
+(struct object-base (info contract-paramses reflect)
   #:transparent)
 
 (define (write-object obj port recur)

@@ -146,7 +146,7 @@ def container_test(make: FunC(nat?, CONTAINER!)):
     assert o.empty?()
     assert not o.full?()
     assert_error o.remove(), 'empty'
-    assert_error o.capacity(), 'does not have method'
+    assert_error o.capacity(), 'protecting'
     o.add(2)
     assert not o.empty?()
     assert not o.full?()

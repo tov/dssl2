@@ -322,8 +322,8 @@
          $1]
         [(<atom> PERIOD <ident>)
          (loc `(struct-ref ,$1 ,$3))]
-        [(<atom> LBRACK <expr> RBRACK)
-         (loc `(vec-ref ,$1 ,$3))])
+        [(<atom> LBRACK <non-empty-actuals> RBRACK)
+         (loc `(vec-ref ,$1 ,@$3))])
 
       (<string-literal>
         [(STRING-LITERAL)
@@ -356,6 +356,12 @@
          (loc `(,(struct-special-name/located $1) ,@$3))]
         [(LPAREN <expr> RPAREN)
          (loc $2)])
+
+      (<non-empty-actuals>
+        [(<expr>)
+         (list $1)]
+        [(<expr> COMMA <non-empty-actuals>)
+         (cons $1 $3)])
 
       (<actuals>
         [()

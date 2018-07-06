@@ -1017,24 +1017,26 @@
                public-method-name
                ...)
              #:transparent)
+           ; Used for applying interfact contracts:
+           (define (map-fields val contract-params visitor)
+             (internal-name
+               (object-base-info val)
+               (cons contract-params
+                     (object-base-contract-paramses val))
+               (object-base-reflect val)
+               (visitor '__class__
+                        ((struct-getter-name internal-name __class__)
+                         val))
+               (visitor 'public-method-name
+                        ((struct-getter-name
+                           internal-name
+                           public-method-name)
+                         val))
+               ...))
            (define internal-object-info
              (object-info
                'name
-               (λ (val contract-params visitor)
-                  (internal-name
-                    (object-base-info val)
-                    (cons contract-params
-                          (object-base-contract-paramses val))
-                    (object-base-reflect val)
-                    (visitor '__class__
-                             ((struct-getter-name internal-name __class__)
-                              val))
-                    (visitor 'public-method-name
-                             ((struct-getter-name
-                                internal-name
-                                public-method-name)
-                              val))
-                    ...))
+               map-fields
                (vector-immutable #,@interface-tokens)
                (vector-immutable
                  (method-info

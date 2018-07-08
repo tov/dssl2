@@ -4,13 +4,16 @@
          generic-base?
          generic-base-name
          generic-base-instantiate
-         generic-class-apply
-         square-bracket-lambda)
+         generic-class?
+         generic-contract?
+         square-bracket-lambda
+         square-bracket-contract)
 
 (require syntax/parse/define)
 (require (only-in racket/contract/base
                   contract-name))
 (require (only-in racket/contract/combinator
+                  make-contract
                   prop:contract
                   build-contract-property))
 (require (for-syntax racket/base))
@@ -63,3 +66,27 @@
          (generic-class 'name
                         instantiate
                         (instantiate default ...)))]))
+
+(define-syntax (square-bracket-contract stx)
+  (syntax-parse stx
+    [(_ name:id ()
+        #:first-order first-order:expr
+        #:late-neg-projection late-neg-projection:expr)
+     #'(make-contract #:name 'name
+                      #:first-order first-order
+                      #:late-neg-projection late-neg-projection)]
+    [(_ name:id ([opt-formal:id default:expr] ...+)
+        #:first-order first-order:expr
+        #:late-neg-projection late-neg-projection:expr)
+     #'(let ([make-first-order (λ (opt-formal ...) first-order)]
+             [make-projection  (λ (opt-formal ...) late-neg-projection)])
+         (generic-contract
+           'name
+           (λ (opt-formal ...)
+              (make-contract
+                #:name (format-generic 'name (list opt-formal ...))
+                #:first-order (make-first-order opt-formal ...)
+                #:late-neg-projection (make-projection opt-formal ...)))
+           (make-first-order default ...)
+           (make-projection default ...)))]))
+

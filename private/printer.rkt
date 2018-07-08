@@ -141,8 +141,8 @@
               =>
               (λ (value.__print__) (value.__print__ (make-print port)))]
              [else (write-object value port visit)]))]
-        [(generic-base? value)
-         (display (generic-base-name value) port)]
+        [(generic-class? value)
+         (fprintf port "#<class:~a>" (generic-base-name value))]
         [(procedure? value)
          (cond
            [(contract? value)

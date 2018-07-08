@@ -33,7 +33,7 @@ class IntCell (CONTAINER):
     def get(self):
         'a'
 
-def g(x: CONTAINER_OF!(int?)): x
+def g(x: CONTAINER![int?]): x
 def h(x: CONTAINER!): x
 
 let c = IntCell(5)

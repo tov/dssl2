@@ -10,7 +10,7 @@ class Stream[T]:
     # Stream: (T: contract?) T (-> Stream[T]) -> Stream[T]
     def __init__(self, first: T, rest: FunC(Stream?)):
         self._first = first
-        self._rest  = Promise(Stream?, rest)
+        self._rest  = Promise[Stream?](rest)
 
     # first: -> T
     def first(self): self._first
@@ -43,7 +43,7 @@ class Stream[T]:
     
     # map_of: (U: contract?) (U -> U) -> Stream[U]
     def map_of(self, U: contract?, f: FunC(AnyC, AnyC)) -> Stream?:
-        Stream(U, f(self.first()), λ: self.rest().map_of(U, f))
+        Stream[U](f(self.first()), λ: self.rest().map_of(U, f))
     
     # map: (T -> AnyC) -> Stream?
     def map(self, f): self.map_of(AnyC, f)
@@ -52,22 +52,22 @@ class Stream[T]:
 # Creates a memoizing stream from the first element and a thunk producing
 # the rest.
 def scons(first, rest: FunC(Stream?)):
-    Stream(AnyC, first, rest)
+    Stream(first, rest)
 
 # ones : Stream[1]
 # A stream of 1s, forever.
-let ones = Stream(1, 1, λ: ones)
+let ones = Stream[1](1, λ: ones)
 
 # nats : Stream[nat?]
 # The natural numbers starting with 1.
-let nats = Stream(nat?, 0, λ: nats.map_of(nat?, λ x: x + 1))
+let nats = Stream[nat?](0, λ: nats.map_of(nat?, λ x: x + 1))
 
 # unfold_stream_of : (T: contract?) T (T -> T) -> Stream[T]
 # Produces the stream by iterating `get_next` on the starting value `start`:
 #   start, get_next(start), get_next(get_next(start)), ...
 def unfold_stream_of(T: contract?, start, get_next) -> Stream?:
     let get_next_c: FunC(T, T) = get_next
-    def loop(start): Stream(T, start, λ: loop(get_next(start)))
+    def loop(start): Stream[T](start, λ: loop(get_next(start)))
     loop(start)
 
 # unfold_stream : AnyC (AnyC -> AnyC) -> Stream?

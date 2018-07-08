@@ -83,10 +83,10 @@ class Array[T]:
         self.set(n, v)
 
 def array() -> Array?:
-    Array(AnyC, 8)
+    Array(8)
     
 def array_of_vec(v: vec?) -> Array?:
-    let a = Array(AnyC, v.len())
+    let a = Array(v.len())
     for i in v: a.push(i)
     a
 

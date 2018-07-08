@@ -38,8 +38,8 @@ class Cell[T] (CELL):
     def get(self) -> T:
         self._contents
        
-let c = Cell(nat?, 5)
-let d = Cell(nat?, 5)
+let c = Cell[nat?](5)
+let d = Cell[nat?](5)
 
 assert_eq str(c), "Cell(5)"      
 assert_eq c, d
@@ -55,4 +55,17 @@ class AnyCell:
 let e = AnyCell(5)
 e.set!(e)
 assert_eq str(e), "#0=Cell(#0#)"
+
+class Pair[T, U]:
+    let _fst
+    let _snd
+    
+    def __init__(self, fst: T, snd: U):
+        self._fst = fst
+        self._snd = snd
+        
+    def fst(self): self._fst
+    def snd(self): self._snd
+    def fst!(self, fst: T): self._fst = fst
+    def snd!(self, snd: U): self._snd = snd
 

@@ -2,7 +2,7 @@
 
 import dll
 
-let lst = Dll(int?)
+let lst = Dll[int?]()
 
 lst.push_back(3)
 lst.push_back(4)

@@ -6,6 +6,7 @@
          dssl-format)
 (require "struct.rkt")
 (require "object.rkt")
+(require "generic.rkt")
 (require "errors.rkt")
 (require (only-in racket/contract
                   contract?)
@@ -140,6 +141,8 @@
               =>
               (λ (value.__print__) (value.__print__ (make-print port)))]
              [else (write-object value port visit)]))]
+        [(generic-base? value)
+         (display (generic-base-name value) port)]
         [(and (contract? value)
               (not (string=? "???" (format "~a" (contract-name value)))))
          (display (contract-name value) port)]

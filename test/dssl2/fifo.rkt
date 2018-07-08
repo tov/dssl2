@@ -2,7 +2,7 @@
 
 import fifo
 
-let q = Fifo(AnyC)
+let q = Fifo()
 
 assert q.empty?()
 assert_eq q.size(), 0

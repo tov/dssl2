@@ -45,7 +45,7 @@ class Dll[X]:
 
     # Precondition: count is number of nodes in [start, limit)
     def _detach(self, start: _DllNode?, limit: _DllNode?, count: int?) -> Dll?:
-        let result = Dll(X)
+        let result = Dll[X]
         if start is limit: return result
         let new_sentinel = _DllNode(limit.prev, False, start)
         limit.prev = start.prev
@@ -161,6 +161,3 @@ class Dll[X]:
         let v = [False; self.size()]
         self.each_with_index(lambda i, x: v[i] = x)
         v
-
-def dll(): Dll(AnyC)
-

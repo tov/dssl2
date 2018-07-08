@@ -49,6 +49,7 @@
          "private/operators.rkt"
          "private/struct.rkt"
          "private/object.rkt"
+         "private/generic.rkt"
          "private/prims.rkt"
          "private/printer.rkt"
          racket/stxparam
@@ -384,8 +385,8 @@
 ; use this to translate assignments.
 (define-syntax (dssl-= stx)
   (syntax-parse stx #:literals (dssl-vec-ref dssl-struct-ref)
-    [(_ (dssl-vec-ref v:expr i:expr) rhs:expr)
-     #'(dssl-vec-set! v i rhs)]
+    [(_ (dssl-vec-ref v:expr i:expr ...+) rhs:expr)
+     #'(dssl-vec-set! v (list i ...) rhs)]
     [(_ (dssl-struct-ref s:expr f:id) rhs:expr)
      #'(dssl-struct-set! s f rhs)]
     [(_ i:id rhs:expr)
@@ -408,19 +409,21 @@
     [else
       "variable must be defined with ‘let’ before it can be assigned"]))
 
-(define (dssl-vec-ref v i)
+(define (dssl-vec-ref v i . rest)
   (cond
     [(get-method-value v '__index_ref__)
      =>
-     (λ (index) (index i))]
+     (λ (index) (apply index i rest))]
+    [(generic-base? v)
+     (apply (generic-base-instantiate v) i rest)]
     [else
       (runtime-error "not a vector or indexable object: %p" v)]))
 
-(define (dssl-vec-set! v i a)
+(define (dssl-vec-set! v is a)
   (cond
     [(get-method-value v '__index_set__)
      =>
-     (λ (set) (set i a))]
+     (λ (set) (apply set (append is (list a))))]
     [else
       (runtime-error "not a vector or indexable object: %p" v)]))
 
@@ -1051,39 +1054,41 @@
              (#,(struct-predicate-name #'internal-name) value))
            (maybe-define-generic-predicate name [cvs.var ...])
            (dssl-provide name)
-           (define (name cvs.var ... #,@constructor-params)
-             (define-field field.var
-                           self.field-name
-                           actual-field-name
-                           field.contract)
-             ...
-             (define-method
-               self.method-name
-               (maybe-parametric->/c
-                 [method-cvs.var ...]
-                 (-> (ensure-contract 'def method-params.contract)
-                     ...
-                     (ensure-contract 'def method-result.result)))
-               (lambda (method-params.var ...)
-                 (bind-self name method-self actual-self
-                   (with-return method-body ...))))
-             ...
-             (define self.__class__ name)
-             (define actual-self
-               (internal-name
-                internal-object-info
-                (list (cons #f (vector-immutable cvs.var ...)))
-                (λ () (vector-immutable
-                         (cons 'field.var self.field-name) ...))
-                ; methods:
-                self.__class__
-                self.public-method-name ...))
-             (#,(self. constructor) #,@constructor-params)
-             (when (eq? unsafe-undefined actual-field-name)
-               (runtime-error
-                 #:srclocs (get-srclocs #,constructor)
-                 "constructor for class %s did not assign field %s"
-                 'name 'field.var))
-             ...
-             actual-self)))]))
+           (define name
+             (square-bracket-lambda
+               name ([cvs.var AnyC] ...) #,constructor-params
+               (define-field field.var
+                             self.field-name
+                             actual-field-name
+                             field.contract)
+               ...
+               (define-method
+                 self.method-name
+                 (maybe-parametric->/c
+                   [method-cvs.var ...]
+                   (-> (ensure-contract 'def method-params.contract)
+                       ...
+                       (ensure-contract 'def method-result.result)))
+                 (lambda (method-params.var ...)
+                   (bind-self name method-self actual-self
+                              (with-return method-body ...))))
+               ...
+               (define self.__class__ name)
+               (define actual-self
+                 (internal-name
+                   internal-object-info
+                   (list (cons #f (vector-immutable cvs.var ...)))
+                   (λ () (vector-immutable
+                            (cons 'field.var self.field-name) ...))
+                   ; methods:
+                   self.__class__
+                   self.public-method-name ...))
+               (#,(self. constructor) #,@constructor-params)
+               (when (eq? unsafe-undefined actual-field-name)
+                 (runtime-error
+                   #:srclocs (get-srclocs #,constructor)
+                   "constructor for class %s did not assign field %s"
+                   'name 'field.var))
+               ...
+               actual-self))))]))
 

@@ -8,7 +8,7 @@ class Fifo[X]:
     let repr_
 
     def __init__(self):
-        self.repr_ = Dll(X)
+        self.repr_ = Dll[X]()
 
     def ElementC(self) -> contract?:
         X

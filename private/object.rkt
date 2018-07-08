@@ -24,8 +24,11 @@
 (require syntax/parse/define)
 (require (only-in racket/contract/base any/c -> contract))
 (require (for-syntax racket/base
-                     (only-in racket/sequence in-syntax)
-                     (only-in racket/syntax format-id syntax-local-eval)
+                     (only-in racket/sequence
+                              in-syntax)
+                     (only-in racket/syntax
+                              format-id
+                              syntax-local-eval)
                      "names.rkt"))
 
 (struct method-info (name getter))

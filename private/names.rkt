@@ -6,8 +6,6 @@
          struct-special-name
          struct-special-name/located
          interface-contract-name
-         generic-interface-contract-name
-         generic-class-contract-name
          struct-getter-name
          struct-setter-name)
 
@@ -35,12 +33,6 @@
 
 (define (interface-contract-name name)
   (format-id name "~a!" name))
-
-(define (generic-interface-contract-name name)
-  (format-id name "~a_OF!" name))
-
-(define (generic-class-contract-name name)
-  (format-id name "~aOf" name))
 
 (define-syntax (struct-getter-name stx)
   (syntax-parse stx

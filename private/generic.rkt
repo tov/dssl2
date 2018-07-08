@@ -1,12 +1,13 @@
 #lang racket/base
 
-(provide generic-base
-         generic-base?
+(provide generic-base?
          generic-base-name
          generic-base-instantiate
-         generic-class?
-         generic-contract?
-         square-bracket-lambda
+         generic-proc
+         generic-proc?
+         generic-proc-tag
+         square-bracket-class-lambda
+         square-bracket-proc
          square-bracket-contract)
 
 (require syntax/parse/define)
@@ -22,10 +23,10 @@
 ; with square brackets.
 (struct generic-base (name instantiate))
 
-; Generic classes are functions with optional square-bracket
+; Generic procs are functions with optional square-bracket
 ; arguments. That is, they can be instantiated or directly
 ; applied.
-(struct generic-class generic-base (apply)
+(struct generic-proc generic-base (apply tag)
   #:property prop:procedure
   (struct-field-index apply))
 
@@ -46,7 +47,7 @@
   (fprintf port "]")
   (string->symbol (get-output-string port)))
 
-(define-syntax (square-bracket-lambda stx)
+(define-syntax (square-bracket-class-lambda stx)
   (syntax-parse stx
     [(_ name:id
         ()
@@ -63,9 +64,28 @@
                     (λ (formal ...)
                        body ...)
                     (format-generic 'name (list opt-formal ...))))])
-         (generic-class 'name
-                        instantiate
-                        (instantiate default ...)))]))
+         (generic-proc 'name
+                       instantiate
+                       (instantiate default ...)
+                       'class))]))
+
+(define-syntax (square-bracket-proc stx)
+  (syntax-parse stx
+    [(_ name:id
+        #:generic (opt-formal:id ...+) generic:expr
+        #:default default:expr)
+     #'(generic-proc
+         'name
+         (λ (opt-formal ...)
+            (procedure-rename
+              generic
+              (format-generic 'name (list opt-formal ...))))
+         default
+         'proc)]
+    [(_ name:id
+        #:generic () generic:expr
+        #:default default:expr)
+     #'default]))
 
 (define-syntax (square-bracket-contract stx)
   (syntax-parse stx

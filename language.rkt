@@ -694,9 +694,9 @@
   (if (zero? nparams)
     "%s"
     (apply string-append
-           "%s%s(%p"
+           "%s%s[%p"
            (append (make-list (sub1 nparams) ", %p")
-                   (list ")")))))
+                   (list "]")))))
 
 (define (format-symbol fmt . args)
   (string->symbol (apply dssl-format fmt args)))
@@ -925,25 +925,28 @@
              (syntax-e interface-name)
              (add1 (cadr method-info)))))])))
 
-(define-syntax (maybe-define-generic-predicate stx)
+(define-syntax (define-class-predicate stx)
   (syntax-parse stx
-    [(_ name:id [])
-     #'(begin)]
-    [(_ name:id [cvs:id ...])
+    [(_ name:id internal-name:id [])
+     #`(define (#,(struct-predicate-name #'name) v)
+         (#,(struct-predicate-name #'internal-name) v))]
+    [(_ name:id internal-name:id [cvs:id ...+])
      (define format-string
        (contract-name-format-string (length (syntax->list #'(cvs ...)))))
      #`(begin
-         (dssl-provide #,(generic-class-contract-name #'name))
-         (define (#,(generic-class-contract-name #'name) cvs ...)
-           (define contract-params (vector-immutable cvs ...))
-           (procedure-rename
-             (λ (value)
-                (and (#,(struct-predicate-name #'name) value)
-                     (contract-params-match?
-                       #f
-                       (object-base-contract-paramses value)
-                       contract-params)))
-             (format-symbol #,format-string 'name "Of" cvs ...))))]))
+         (dssl-provide #,(struct-predicate-name #'name))
+         (define #,(struct-predicate-name #'name)
+           (square-bracket-proc
+             #,(struct-predicate-name #'name)
+             #:generic (cvs ...)
+             (let ([contract-params (vector-immutable cvs ...)])
+               (λ (value)
+                  (and (#,(struct-predicate-name #'internal-name) value)
+                       (contract-params-match?
+                         #f
+                         (object-base-contract-paramses value)
+                         contract-params))))
+             #:default #,(struct-predicate-name #'internal-name))))]))
 
 (define-syntax (dssl-class stx)
   (syntax-parse stx
@@ -1031,13 +1034,10 @@
                    'public-method-name
                    (struct-getter-name internal-name public-method-name))
                  ...)))
-           (dssl-provide #,(struct-predicate-name #'name))
-           (define (#,(struct-predicate-name #'name) value)
-             (#,(struct-predicate-name #'internal-name) value))
-           (maybe-define-generic-predicate name [cvs.var ...])
+           (define-class-predicate name internal-name [cvs.var ...])
            (dssl-provide name)
            (define name
-             (square-bracket-lambda
+             (square-bracket-class-lambda
                name ([cvs.var AnyC] ...) #,constructor-params
                (define-field field.var
                              self.field-name

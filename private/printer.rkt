@@ -143,15 +143,19 @@
              [else (write-object value port visit)]))]
         [(generic-base? value)
          (display (generic-base-name value) port)]
-        [(and (contract? value)
-              (not (string=? "???" (format "~a" (contract-name value)))))
-         (display (contract-name value) port)]
         [(procedure? value)
-         (if (object-name value)
-           (fprintf port "#<proc:~a>" (object-name value))
-           (fprintf port "#<proc>"))]
+         (cond
+           [(contract? value)
+            (fprintf port "#<proc:~a>" (contract-name value))]
+           [(object-name value)
+            (fprintf port "#<proc:~a>" (object-name value))]
+           [else
+             (fprintf port "#<proc>")])]
+        [(contract? value)
+         ; (not (string=? "???" (format "~a" (contract-name value)))))
+         (fprintf port "#<contract:~a>" (contract-name value))]
         [(void? value)              (display "#<void>" port)]
-        [else                       (display "#<unknown-value>" port)]))))
+        [else                       (display "#<unprintable>" port)]))))
 
 (define (make-print port)
   (λ (fmt . args)

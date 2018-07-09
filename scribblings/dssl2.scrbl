@@ -780,7 +780,7 @@ identifiers:
     @item{The interface predicate, @c{@term[name]?}, which checks for
       objects whose classes are declared to implement the interface.}
     @item{The @tech{interface contract}, @c{@term[name]!}, which modifies
-      a protected object to remove methods not present in the interface.
+      a protected object to disable methods not present in the interface.
       See @secref{Contracts} for more information on contracts.}
 ]
 
@@ -889,7 +889,7 @@ in the interface—this is okay! Because both classes @c{Cell} and
 @code{True} for their instances.
 
 Furthermore, instances of either class can be protected with the
-@c{CONTAINER!} @tech{interface contract}, which hides methods that are
+@c{CONTAINER!} @tech{interface contract}, which disables methods that are
 not declared in @c{CONTAINER}.
 
 If a class does not implement the methods of a declared interface, it is
@@ -2042,13 +2042,13 @@ that their usage is only via the interface.
 
 When an interface contract protects an object, first it checks the class
 of the object. If the class is not declared to implement the interface,
-an error is signaled. If the class does implement the interface, then an
-@emph{interface object} is created. The interface object is like the
-object-to-be-protected, except that it includes only the methods of the
-interface, and it no longer has an identifiable class. Furthermore, any
-contracts specified on methods in the interface are applied to those
-methods of the interface object. (Reprotecting an interface object with
-the same interface has no effect.)
+an error is signaled. If the class does implement the interface, then a
+@emph{protected object} is created. The protected object is like the
+original object, except that only the methods of the interface are
+usable; all other methods will error, blaming the caller, if called.
+Furthermore, any contracts specified on methods in the interface are
+applied to those methods of the protected object. (Reprotecting a
+protected object with the same interface has no effect.)
 
 Here is an example of an interface with one method and a class that
 implements it:
@@ -2096,8 +2096,8 @@ let protected: HAS_X! = original
 
 Now, we can call @code{protected.get_x()} because interface @c{HAS_X}
 defines the @c{get_x} method. But we cannot call @c{get_y} on
-@c{protected}, because protecting it with @c{HAS_X!} masks out
-that method:
+@c{protected}, because protecting it with @c{HAS_X!} makes all methods
+other than @c{get_x} raise an error:
 
 @dssl2block|{
 assert_eq protected.get_x(), 3
@@ -2140,7 +2140,7 @@ def advance(counter: STEPPABLE!, count: nat?):
 }|
 
 A version of the function that attempts to do addition will fail because
-the necessary methods are missing:
+the necessary methods aren't usable when the object is protected:
 
 @dssl2block|{
 def sneaky_advance(counter: STEPPABLE!, count: nat?):

@@ -675,15 +675,10 @@
   (lambda (stx)
     (syntax-error stx "use of self outside of method")))
 
-(define (contract-params-match? token paramses cs2)
-  (cond
-    [(assq token paramses)
-     =>
-     (λ (pair)
-       (for/and ([c1 (in-vector (cdr pair))]
-                 [c2 (in-vector cs2)])
-         (eq? c1 c2)))]
-    [else #f]))
+(define (contract-params-match? cs1 cs2)
+  (for/and ([c1 (in-vector cs1)]
+            [c2 (in-vector cs2)])
+    (eq? c1 c2)))
 
 (define-for-syntax (public-method-name? stx)
   (define name (symbol->string (syntax-e stx)))
@@ -757,11 +752,20 @@
               (λ (val neg-party)
                  (cond
                    [(and (object-base? val)
-                         (contract-params-match?
-                           interface-token
-                           (object-base-contract-paramses val)
-                           contract-parameters))
-                    val]
+                         (assq interface-token
+                               (object-base-contract-paramses val)))
+                    =>
+                    (λ (pair)
+                       (if (contract-params-match?
+                             (cdr pair)
+                             contract-parameters)
+                         val
+                         (racket:raise-blame-error
+                           blame #:missing-party neg-party val
+                           (string-append
+                             "cannot re-protect with with same interface"
+                             " (~a) and different contract parameters")
+                           'name)))]
                    [(first-order? val)
                     ((object-info-projector (object-base-info val))
                      val
@@ -928,8 +932,10 @@
 (define-syntax (define-class-predicate stx)
   (syntax-parse stx
     [(_ name:id internal-name:id [])
-     #`(define (#,(struct-predicate-name #'name) v)
-         (#,(struct-predicate-name #'internal-name) v))]
+     #`(begin
+         (dssl-provide #,(struct-predicate-name #'name))
+         (define (#,(struct-predicate-name #'name) v)
+           (#,(struct-predicate-name #'internal-name) v)))]
     [(_ name:id internal-name:id [cvs:id ...+])
      (define format-string
        (contract-name-format-string (length (syntax->list #'(cvs ...)))))
@@ -941,11 +947,13 @@
              #:generic (cvs ...)
              (let ([contract-params (vector-immutable cvs ...)])
                (λ (value)
-                  (and (#,(struct-predicate-name #'internal-name) value)
-                       (contract-params-match?
-                         #f
-                         (object-base-contract-paramses value)
-                         contract-params))))
+                  (cond
+                    [(and (#,(struct-predicate-name #'internal-name) value)
+                          (assq #f (object-base-contract-paramses value)))
+                     =>
+                     (λ (pair)
+                        (contract-params-match? (cdr pair) contract-params))]
+                    [else #f])))
              #:default #,(struct-predicate-name #'internal-name))))]))
 
 (define-syntax (dssl-class stx)

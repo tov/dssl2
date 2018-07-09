@@ -1967,8 +1967,10 @@ contracts have no effect on the defined class.
 
 A class may have some number of generic contract parameters,
 @term[ctc_param]. These can be used to parameterize a class over other
-contracts. When provided, they are in scope throughout the class, and
-are added to the front of the external constructor's parameters.
+contracts. When provided, they are in scope throughout the class. The
+external constructor receives the actual contracts for an instance of
+the class as optional, square bracket parameters, giving before the
+ordinary parameters that are passed to the internal constructor.
 
 For example, we can define a generic position class:
 
@@ -1990,31 +1992,54 @@ class Posn[T]:
 
 Now it is possible to make a position with @racket[int?] coordinates or
 a position with @racket[float?] coordinates, by passing the coordinate
-contract to the @code{Posn} constructor:
+contract in square brackets to the @code{Posn} constructor:
 
 @dssl2block|{
-let p = Posn(int?, 3, 4)
-let q = Posn(float?, 3.0, 4.0)
+let p = Posn[int?](3, 4)
+let q = Posn[float?](3.0, 4.0)
 }|
 
-The @c{Posn} constructor and methods all check the given values
-against the given contract.
+Specifying contract parameters is optional, and if omitted, they default
+to @racket[AnyC]. So we can write
 
-When a class has generic contract parameters, it defines an additional
-predicate factory, @c{@term{name}Of}. The predicate factory takes an
-argument for each generic contract parameter, and returns a predicate
-that checks for instances of the class that were creates with those same
-contract parameters:
+@dssl2block|{
+let r = Posn(3, 4.0)
+}|
+
+to get a @code{Posn[AnyC]}.
+
+When a contract parameter is given, the @c{Posn} constructor and methods
+all check the given values against the given contract.
+
+When a class has generic contract parameters, its predicate can also be
+instantiated with contracts, using square brackets:
+
+@dssl2block|{
+assert Posn?[int?](p)
+assert not Posn?[int?](q)
+assert not Posn?[int?](r)
+
+assert not Posn?[float?](p)
+assert Posn?[float?](q)
+assert not Posn?[float?](r)
+}|
+
+If the predicate is not instantiated, it recognizes all objects of that
+class regardless of how their contract parameters are instantiated:
 
 @dssl2block|{
 assert Posn?(p)
 assert Posn?(q)
+assert Posn?(r)
+}|
 
-assert PosnOf(int?)(p)
-assert not PosnOf(int?)(q)
+Note that a predicate not being instantated is different from
+instantiating it with @racket[AnyC]:
 
-assert not PosnOf(float?)(p)
-assert PosnOf(float?)(q)
+@dssl2block|{
+assert not Posn?[AnyC](p)
+assert not Posn?[AnyC](q)
+assert Posn?[AnyC](r)
 }|
 
 @defcmpdforms[
@@ -2151,13 +2176,9 @@ def sneaky_advance(counter: STEPPABLE!, count: nat?):
 Like classes, interfaces can have generic contract parameters
 @term[ctc_param]. When an interface has generic contract parameters,
 these parameters are available to the contracts in the body of the
-interface. The contract interface @c{@term[name]!} binds all the generic
-contract parameters to @racket[AnyC]. The interface definition also
-creates a generic interface contract factory @c{@term[name]_OF!}, which
-takes one formal parameter for each generic contract parameter, and
-returns an interface contract with the generic contract parameters
-instantiated to the actual parameters of the generic interface contract
-factory.
+interface. The interface contract @c{@term[name]!} takes its contract
+parameters as optional square bracket parameters that default to
+@racket[AnyC].
 
 For example, here is a generic interface for a queue:
 
@@ -2168,7 +2189,7 @@ interface QUEUE[T]:
     def dequeue(self) -> OrC(False, T)
 }|
 
-This interface definition binds four identifiers:
+This interface definition binds three identifiers:
 
 @itemlist[
     @item{Interface name @c{QUEUE}, which can be used to declare
@@ -2178,15 +2199,14 @@ This interface definition binds four identifiers:
     of classes that implement @c{QUEUE}, as well as @c{QUEUE} interface
     objects.}
 
-    @item{Generic interface contract factory @c{QUEUE_OF!}, which takes
-    one contract parameter. The resulting contract will protect an instance
-    of any class that implements @c{QUEUE} by hiding all but the @c{empty?},
-    @c{enqueue}, and @c{dequeue} methods, and applying the given contracts
-    to each. For example, @code{QUEUE_OF!(int?)}, when protecting an object,
-    ensures that its @c{enqueue} method is given an @c{int?}.}
-
-    @item{Interface contract @c{QUEUE!}, equivalent to
-    @code{QUEUE_OF!(AnyC)}.}
+    @item{Generic interface contract @c{QUEUE!}, which optionally takes
+    one square contract parameter. The resulting contract will protect
+    an instance of any class that implements @c{QUEUE} by disabling all
+    but the @c{empty?}, @c{enqueue}, and @c{dequeue} methods, and
+    applying the given contracts to each. For example,
+    @code{QUEUE![int?]}, when protecting an object, ensures that its
+    @c{enqueue} method is given an @c{int?}. Or @code{QUEUE!} can be used
+    to protect an object, without specifying an element contract.}
 ]
 
 @subsection{Contract combinators}

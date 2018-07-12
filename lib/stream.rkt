@@ -41,13 +41,10 @@ class Stream[T]:
             count  = count - 1
         result
     
-    # map_of: (U: contract?) (U -> U) -> Stream[U]
-    def map_of(self, U: contract?, f: FunC(AnyC, AnyC)) -> Stream?:
-        Stream[U](f(self.first()), λ: self.rest().map_of(U, f))
+    # map[U]: (U -> U) -> Stream[U]
+    def map[U](self, f: FunC(AnyC, AnyC)) -> Stream?:
+        Stream[U](f(self.first()), λ: self.rest().map[U](f))
     
-    # map: (T -> AnyC) -> Stream?
-    def map(self, f): self.map_of(AnyC, f)
-
 # scons : AnyC (-> Stream?) -> Stream?
 # Creates a memoizing stream from the first element and a thunk producing
 # the rest.
@@ -60,7 +57,7 @@ let ones = Stream[1](1, λ: ones)
 
 # nats : Stream[nat?]
 # The natural numbers starting with 1.
-let nats = Stream[nat?](0, λ: nats.map_of(nat?, λ x: x + 1))
+let nats = Stream[nat?](0, λ: nats.map[nat?](λ x: x + 1))
 
 # unfold_stream_of : (T: contract?) T (T -> T) -> Stream[T]
 # Produces the stream by iterating `get_next` on the starting value `start`:

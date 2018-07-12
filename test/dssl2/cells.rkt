@@ -69,8 +69,3 @@ class Pair[T, U]:
     def fst!(self, fst: T): self._fst = fst
     def snd!(self, snd: U): self._snd = snd
 
-def g[T](x: bool?, t: T, f: T) -> T:
-    t if x else f
-    
-def h(x: bool?, t: int?, f: int?) -> nat?:
-    t if x else f

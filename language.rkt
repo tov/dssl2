@@ -62,7 +62,6 @@
          rackunit
          (only-in racket/contract/base
                   ->
-                  ->i
                   contract
                   rename-contract)
          (only-in racket/contract/parametric
@@ -249,12 +248,6 @@
       ((f cvs.var ...) [bs.var (ensure-contract 'def bs.contract)] ...)
       (ensure-contract 'def result-contract.result)
       (with-return expr ...))))
-
-(define-syntax (maybe-parametric->/c stx)
-  (syntax-parse stx
-    [(_ [] contract:expr) #'contract]
-    [(_ [cv:id ...] contract:expr)
-     #'(parametric->/c [cv ...] contract)]))
 
 (define-syntax (dssl-let stx)
   (syntax-parse stx
@@ -718,19 +711,20 @@
                 (in-vector
                   (vector
                     (λ (cvs.var ...)
-                       (maybe-parametric->/c
+                       (square-bracket-proc-contract
+                         method-name
                          [method-cvs.var ...]
-                         (-> (ensure-contract 'def method-params.contract)
-                             ...
-                             (ensure-contract 'def
-                                              method-result.result))))
-                     ...))])
+                         (ensure-contract 'def method-params.contract)
+                         ...
+                         (ensure-contract 'def method-result.result)))
+                    ...))])
              (values each-method-name (cons method-ctc srcloc))))
          (dssl-provide (for-syntax name))
          (define-for-syntax name
            (list
              #'interface-token
              (list 'method-name
+                   (length (syntax->list #'(method-cvs.var ...)))
                    (length (syntax->list #'(method-params ...))))
              ...))
          (define (first-order? obj)
@@ -854,24 +848,6 @@
              (syntax-error #'op "self parameter is not a function")])))
       body)))
 
-(define-simple-macro (define-method name:id ctc:expr rhs:expr)
-  (begin
-    (define real-name
-      (let ([contract ctc]
-            [name     rhs])
-        (racket:contract
-          contract name
-          (format "method ~a at ~a" 'name (srcloc->string (get-srcloc name)))
-          "method caller"
-          'name (get-srcloc ctc))))
-    (define-syntax name
-      (make-set!-transformer
-        (syntax-parser #:literals (set!)
-          [(set! method _)
-           (syntax-error #'method "cannot assign to method")]
-          [_:id #'real-name]
-          [(_:id . args) #'(real-name . args)])))))
-
 (define-for-syntax (find-constructor method-names method-paramses stx)
   (let/ec return
     (for ([method-name   (in-list method-names)]
@@ -898,6 +874,7 @@
                      interface-methods
                      class-name
                      class-methods
+                     class-method-cvarses
                      class-method-paramses)
   (define class-method-names (map syntax-e class-methods))
   (for ([method-info (in-list interface-methods)])
@@ -909,20 +886,30 @@
         (syntax-e interface-name))))
   (for ([method-stx    (in-list class-methods)]
         [method-name   (in-list class-method-names)]
+        [method-cvars  (in-list class-method-cvarses)]
         [method-params (in-list class-method-paramses)])
     (cond
       [(assq method-name interface-methods)
        =>
        (lambda (method-info)
+         (define cvar-arity (length (syntax->list method-cvars)))
+         (unless (= cvar-arity (cadr method-info))
+           (syntax-error
+             class-name
+             "method ~a takes ~a contract params, but interface ~a specifies ~a"
+             method-name
+             cvar-arity
+             (syntax-e interface-name)
+             (cadr method-info)))
          (define actual-arity (length (syntax->list method-params)))
-         (unless (= actual-arity (cadr method-info))
+         (unless (= actual-arity (caddr method-info))
            (syntax-error
              class-name
              "method ~a takes ~a params, but interface ~a specifies ~a"
              method-name
              (add1 actual-arity)
              (syntax-e interface-name)
-             (add1 (cadr method-info)))))])))
+             (add1 (caddr method-info)))))])))
 
 (define-syntax (define-class-predicate stx)
   (syntax-parse stx
@@ -986,6 +973,7 @@
          interface-methods
          #'name
          method-names
+         (syntax->list #'((method-cvs.var ...) ...))
          (syntax->list #'((method-params ...) ...))))
      ; Generate new names:
      (define (self. property) (class-qualify #'name property))
@@ -1047,16 +1035,13 @@
                              actual-field-name
                              field.contract)
                ...
-               (define-method
-                 self.method-name
-                 (maybe-parametric->/c
-                   [method-cvs.var ...]
-                   (-> (ensure-contract 'def method-params.contract)
-                       ...
-                       (ensure-contract 'def method-result.result)))
-                 (lambda (method-params.var ...)
-                   (bind-self name method-self actual-self
-                              (with-return method-body ...))))
+               (define-square-bracket-proc
+                 ((self.method-name method-cvs.var ...)
+                  [method-params.var
+                    (ensure-contract 'def method-params.contract)] ...)
+                 (ensure-contract 'def method-result.result)
+                 (bind-self name method-self actual-self
+                            (with-return method-body ...)))
                ...
                (define self.__class__ name)
                (define actual-self

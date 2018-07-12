@@ -9,23 +9,28 @@
          square-bracket-class-lambda
          square-bracket-proc
          define-square-bracket-proc
+         square-bracket-proc-contract
          square-bracket-contract)
 
 (require "errors.rkt")
 (require (for-syntax "errors.rkt"))
 (require syntax/parse/define)
-(require (only-in racket/contract/region
+(require (only-in racket/function
+                  arity-includes?)
+         (only-in racket/contract/region
                   define/contract)
          (only-in racket/contract/base
                   contract
                   any/c
-                  ->i
                   ->
+                  ->i
                   contract-name)
          (only-in racket/contract/combinator
                   make-contract
                   prop:contract
-                  build-contract-property))
+                  build-contract-property
+                  raise-blame-error
+                  blame-positive))
 (require (for-syntax racket/base
                      (only-in racket/syntax generate-temporary)))
 
@@ -129,7 +134,9 @@
              (λ (stx)
                 (syntax-parse stx #:literals (set!)
                   [(set! _:id e:expr)
-                   (syntax-error stx "cannot assign to def'd function")]
+                   (syntax-error
+                     stx
+                     "cannot assign to def'd function or method")]
                   [(_:id . rest)
                    (with-syntax
                      ([app         (datum->syntax stx '#%app)]
@@ -141,6 +148,47 @@
                       ([neg-party  (compose-neg-party "usage" stx)])
                       (syntax/loc stx
                         (real-definition neg-party)))])))))]))
+
+(define-syntax (square-bracket-proc-contract stx)
+  (syntax-parse stx
+    [(_ name:id [] formal:expr ... result:expr)
+     #'(-> formal ... result)]
+    [(_ name:id [opt-formal:id ...+] formal:expr ... result:expr)
+     #'(let ()
+         (define (first-order? proc)
+           (and (generic-proc? proc)
+                (arity-includes?
+                  (procedure-arity (generic-proc-apply proc))
+                  (length (syntax->list #'(formal ...))))
+                (arity-includes?
+                  (procedure-arity (generic-base-instantiate proc))
+                  (length (syntax->list #'(opt-formal ...))))))
+         (define ((late-neg-proj blame) value missing-party)
+           (cond
+             [(first-order? value)
+              (generic-proc
+                (generic-base-name value)
+                (contract (->i ([opt-formal any/c] ...)
+                               (_ (opt-formal ...)
+                                  (-> formal ... result)))
+                          (generic-base-instantiate value)
+                          (blame-positive blame)
+                          missing-party
+                          'name #f)
+                (contract
+                  (let ([opt-formal any/c] ...)
+                    (-> formal ... result))
+                  (generic-proc-apply value)
+                  (blame-positive blame)
+                  missing-party
+                  'name #f)
+                (generic-proc-tag value))]
+             [else
+               (raise-blame-error
+                 blame #:missing-party missing-party value
+                 "not a generic procedure")]))
+         (make-contract #:first-order first-order?
+                        #:late-neg-projection late-neg-proj))]))
 
 (define-syntax (square-bracket-contract stx)
   (syntax-parse stx

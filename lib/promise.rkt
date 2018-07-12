@@ -6,7 +6,7 @@ class Promise[T]:
     let _data
 
     # Promise: (T: contract?) (-> T) -> Promise[T]
-    def __init__(self, thunk: FunC(T)):
+    def __init__(self, thunk: FunC[T]):
         self._ready = False
         self._data  = thunk
     

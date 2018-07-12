@@ -1,6 +1,6 @@
 #lang dssl2
 
-def HashFunctionC(X): FunC(X, int?)
+def HashFunctionC(X): FunC[X, int?]
 
 def make_sbox_hash() -> HashFunctionC(str?):
     let sbox = [ random_bits(64) for _ in 256 ]

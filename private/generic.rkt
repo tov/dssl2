@@ -10,7 +10,8 @@
          square-bracket-proc
          define-square-bracket-proc
          square-bracket-proc-contract
-         square-bracket-contract)
+         square-bracket-contract
+         special-square-bracket-contract)
 
 (require "errors.rkt")
 (require (for-syntax "errors.rkt"))
@@ -24,13 +25,16 @@
                   any/c
                   ->
                   ->i
-                  contract-name)
+                  contract-name
+                  rename-contract
+                  contract-late-neg-projection)
          (only-in racket/contract/combinator
                   make-contract
                   prop:contract
                   build-contract-property
                   raise-blame-error
-                  blame-positive))
+                  blame-positive
+                  contract-first-order))
 (require (for-syntax racket/base
                      (only-in racket/syntax generate-temporary)))
 
@@ -212,4 +216,43 @@
                 #:late-neg-projection (make-projection opt-formal ...)))
            (make-first-order default ...)
            (make-projection default ...)))]))
+
+(define-syntax (special-square-bracket-contract stx)
+  (syntax-parse stx
+    [(_ name:id
+        #:generic (opt-formal:id ...) generic:expr
+        #:default default:expr)
+     #'(let ([ctc default])
+         (generic-contract
+           'name
+           (λ (opt-formal ...)
+              (rename-contract
+                generic
+                (format-generic 'name (list opt-formal ...))))
+           (contract-first-order ctc)
+           (contract-late-neg-projection ctc)))]
+    [(_ name:id
+        #:generic (opt-formal:id ...+ . rest:id) generic:expr
+        #:default default:expr)
+     #'(let ([ctc default])
+         (generic-contract
+           'name
+           (λ (opt-formal ... . rest)
+              (rename-contract
+                generic
+                (format-generic 'name (list* opt-formal ... rest))))
+           (contract-first-order ctc)
+           (contract-late-neg-projection ctc)))]
+    [(_ name:id
+        #:generic opt-formals:id generic:expr
+        #:default default:expr)
+     #'(let ([ctc default])
+         (generic-contract
+           'name
+           (λ opt-formals
+              (rename-contract
+                generic
+                (format-generic 'name opt-formals)))
+           (contract-first-order ctc)
+           (contract-late-neg-projection ctc)))]))
 

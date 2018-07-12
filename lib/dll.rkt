@@ -134,7 +134,7 @@ class Dll[X]:
         else: self.sentinel_.prev.data
 
     # Processes the list elements in order, accumulating a result.
-    def foldl[Y](self, f: FunC(Y, X, Y), z: Y) -> Y:
+    def foldl[Y](self, f: FunC[Y, X, Y], z: Y) -> Y:
         let current = self.sentinel_.next
         while current is not self.sentinel_:
             z = f(z, current.data)
@@ -142,7 +142,7 @@ class Dll[X]:
         return z
 
     # Processes the list elements in reverse order, accumulating a result.
-    def foldr[Y](self, f: FunC(X, Y, Y), z: Y) -> Y:
+    def foldr[Y](self, f: FunC[X, Y, Y], z: Y) -> Y:
         let current = self.sentinel_.prev
         while current is not self.sentinel_:
             z = f(current.data, z)
@@ -151,7 +151,7 @@ class Dll[X]:
 
     # Applies the given function to each element along with its
     # position in the list.
-    def each_with_index(self, f: FunC(int?, X, VoidC)) -> VoidC:
+    def each_with_index(self, f: FunC[int?, X, VoidC]) -> VoidC:
         self.foldl(lambda i, x: f(i, x); i + 1, 0)
         pass
 

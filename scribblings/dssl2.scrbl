@@ -1602,7 +1602,7 @@ Given no arguments, returns the empty string.
 }
 ]
 
-@defmethform[str explode]{@proto["VecC(char?)"]}
+@defmethform[str explode]{@proto["VecC[char?]"]}
 
 Breaks the receiving string into a vector of its characters.
 
@@ -1631,7 +1631,7 @@ A vector can be indexed and assigned with square bracket notation.
 @defprocforms[vec
     [@proto[vec?]]
     [@proto[len:nat?  vec?]]
-    [@proto[len:nat? "init:FunC(nat?, AnyC)" vec?]]
+    [@proto[len:nat? "init:FunC[nat?, AnyC]" vec?]]
 ]
 
 The constructor for @linkclass[vec].
@@ -1654,7 +1654,7 @@ That is, @code{vec(len, init)} is equivalent to
 }
 ]
 
-@defmethform[vec filter]{@proto["pred?:FunC(AnyC, AnyC)" vec?]}
+@defmethform[vec filter]{@proto["pred?:FunC[AnyC, AnyC]" vec?]}
 
 Filters the given vector, by returning a vector of only the elements
 satisfying the given predicate @c{pred?}.
@@ -1677,7 +1677,7 @@ If the receiver is a vector of characters, joins them into a string.
 
 Returns the length of the vector.
 
-@defmethform[vec map]{@proto["f:FunC(AnyC, AnyC)" vec?]}
+@defmethform[vec map]{@proto["f:FunC[AnyC, AnyC]" vec?]}
 
 Maps a function over a vector, returning a new vector.
 
@@ -1851,7 +1851,7 @@ Terminates the program with an error message. The error message must be
 supplied as a format string followed by values to interpolate, in the
 style of @racket[print].
 
-@defprocform[dir]{@proto[AnyC "VecC(str?)"]}
+@defprocform[dir]{@proto[AnyC "VecC[str?]"]}
 
 Given an object, returns a vector of the names of its methods.
 Given a struct, returns a vector of the names of its fields.
@@ -1876,7 +1876,7 @@ be used as contracts, including:
 
 For example, to ensure that a function takes a string and returns a
 number or @code{False}, we could use the contract
-@code{FunC(str?, OrC(num?, False))}.
+@code{FunC[str?, OrC(num?, False)]}.
 
 @subsection{Contract syntax}
 
@@ -2220,10 +2220,28 @@ A flat contract that accepts any value.
 A flat contract that accepts the result of @racket[pass] and other
 statements that return no value (such as assignment and loops).
 
-@defprocform[VecC]{@proto[contract? contract?]}
+@defprocform[VecC]{[@racket[contract?]]: @racket[contract?]}
 
 Creates a contract that protects a vector to ensure that its elements
 satisfy the given contract.
+
+For example:
+
+@dssl2block|{
+let v: VecC[int?] = [2, 3, 4]
+}|
+
+If the optional square bracket parameter is omitted, @racket[VecC] just
+checks that the protected value is a vector.
+
+@defprocform[FunC]{[@racket[contract?], ..., @racket[contract?]]: @racket[contract?]}
+
+Creates a function contract with the given arguments and result. The
+last argument is applied to the result, and all the other arguments are
+contracts applied to the parameters.
+
+If the optional square bracket parameters are omitted, the resulting
+contract checks for a procedure, but nothing further.
 
 @defprocform[NotC]{@proto[contract? contract?]}
 
@@ -2240,12 +2258,6 @@ For the details of how this works for higher-order contracts, see
 Creates a contract that accepts a value if all of the arguments do.
 For the details of how this works for higher-order contracts, see
 @racket[racket:and/c].
-
-@defprocform[FunC]{@proto[arg:contract? ... res:contract? contract?]}
-
-Creates a function contract with the given arguments and result. The
-last argument is applied to the result, and all the other arguments are
-contracts applied to the parameters.
 
 @defprocform[NewForallC]{@proto[str? contract?]}
 

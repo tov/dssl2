@@ -6,7 +6,9 @@ assert_eq str(foo_bar), '#<proc:foo_bar>'
 
 def id[A](x: A) -> A: x
 
+assert_eq id[int?](5), 5
 assert_eq id(5), 5
+assert_error id[str?](5)
 
 def choose[A, B](which: bool?, x: A, y: B) -> OrC(A, B):
     x if which else y
@@ -19,9 +21,6 @@ assert_eq choose(False, 4, 'hello'), 'hello'
 def tricky[Y](good?: bool?, x: Y) -> Y:
     x if good? else 4
 
-assert_eq tricky(True, 5), 5
-assert_error tricky(False, 5), 'promised: Y'
+assert_eq tricky[str?](True, 'five'), 'five'
+assert_error tricky[str?](False, 'five'), 'promised: str?'
 
-tricky = λ x, y: x
-
-assert_error tricky(True, 5), 'promised: Y'

@@ -62,6 +62,7 @@
          rackunit
          (only-in racket/contract/base
                   ->
+                  ->i
                   contract
                   rename-contract)
          (only-in racket/contract/parametric
@@ -239,21 +240,15 @@
   (dssl-def (f:id cvs:optional-contract-vars bs:var&contract ...)
             result-contract:optional-return-contract
             expr:expr ...)
-   #:fail-when (check-duplicate-identifier
-                 (syntax->list #'(cvs.var ... bs.var ...)))
-               "duplicate argument name"
+  #:fail-when (check-duplicate-identifier
+                (syntax->list #'(cvs.var ... bs.var ...)))
+              "duplicate argument name"
   (begin
     (dssl-provide f)
-    (define/contract
-      f
-      (maybe-parametric->/c
-        [cvs.var ...]
-        (-> (ensure-contract 'def bs.contract)
-            ...
-            (ensure-contract 'def result-contract.result)))
-      (lambda (bs.var ...)
-        (with-return expr ...)))
-    (make-set!able f)))
+    (define-square-bracket-proc
+      ((f cvs.var ...) [bs.var (ensure-contract 'def bs.contract)] ...)
+      (ensure-contract 'def result-contract.result)
+      (with-return expr ...))))
 
 (define-syntax (maybe-parametric->/c stx)
   (syntax-parse stx

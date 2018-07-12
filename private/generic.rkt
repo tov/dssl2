@@ -8,16 +8,26 @@
          generic-proc-tag
          square-bracket-class-lambda
          square-bracket-proc
+         define-square-bracket-proc
          square-bracket-contract)
 
+(require "errors.rkt")
+(require (for-syntax "errors.rkt"))
 (require syntax/parse/define)
-(require (only-in racket/contract/base
-                  contract-name))
-(require (only-in racket/contract/combinator
+(require (only-in racket/contract/region
+                  define/contract)
+         (only-in racket/contract/base
+                  contract
+                  any/c
+                  ->i
+                  ->
+                  contract-name)
+         (only-in racket/contract/combinator
                   make-contract
                   prop:contract
                   build-contract-property))
-(require (for-syntax racket/base))
+(require (for-syntax racket/base
+                     (only-in racket/syntax generate-temporary)))
 
 ; This is for generic things that can be instantiated
 ; with square brackets.
@@ -86,6 +96,51 @@
         #:generic () generic:expr
         #:default default:expr)
      #'default]))
+
+(define-for-syntax (compose-neg-party who where)
+  (format "~a at ~a" who (srcloc->string (get-srcloc/fn where))))
+
+(define-syntax (define-square-bracket-proc stx)
+  (syntax-parse stx
+    [(_ ((name:id opt-formal:id ...) [formal:id formal-ctc:expr] ...)
+        result-ctc:expr
+        body:expr)
+     #`(begin
+         (define (instantiate neg-party opt-formal ...)
+           (contract (-> formal-ctc ... result-ctc)
+                     (procedure-rename
+                       (λ (formal ...) body)
+                       'name)
+                     (format "function ~a at ~a" 'name
+                             (srcloc->string (get-srcloc name)))
+                     neg-party
+                     'name (get-srcloc name)))
+         #,(if (null? (syntax->list #'(opt-formal ...)))
+             #'(define real-definition instantiate)
+             #'(define (real-definition neg-party)
+                 (square-bracket-proc
+                   name
+                   #:generic (opt-formal ...)
+                             (instantiate neg-party opt-formal ...)
+                   #:default (let ([opt-formal any/c] ...)
+                               (instantiate neg-party opt-formal ...)))))
+         (define-syntax name
+           (make-set!-transformer
+             (λ (stx)
+                (syntax-parse stx #:literals (set!)
+                  [(set! _:id e:expr)
+                   (syntax-error stx "cannot assign to def'd function")]
+                  [(_:id . rest)
+                   (with-syntax
+                     ([app         (datum->syntax stx '#%app)]
+                      [neg-party   (compose-neg-party "caller" stx)])
+                     (syntax/loc stx
+                       (app (real-definition neg-party) . rest)))]
+                  [_:id
+                    (with-syntax
+                      ([neg-party  (compose-neg-party "usage" stx)])
+                      (syntax/loc stx
+                        (real-definition neg-party)))])))))]))
 
 (define-syntax (square-bracket-contract stx)
   (syntax-parse stx

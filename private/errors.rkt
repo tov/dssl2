@@ -1,6 +1,7 @@
 #lang racket/base
 
 (provide exn:fail:dssl?
+         get-srcloc/fn
          get-srcloc
          get-srclocs
          current-dssl-error-format
@@ -13,6 +14,13 @@
 (require
   (for-syntax racket/base
               syntax/parse))
+
+(define (get-srcloc/fn expr)
+  (srcloc (syntax-source expr)
+          (syntax-line expr)
+          (syntax-column expr)
+          (syntax-position expr)
+          (syntax-span expr)))
 
 (define-syntax (get-srcloc stx)
   (syntax-parse stx

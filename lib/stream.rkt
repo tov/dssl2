@@ -41,9 +41,11 @@ class Stream[T]:
             count  = count - 1
         result
     
-    # map[U]: (U -> U) -> Stream[U]
-    def map[U](self, f: FunC[AnyC, AnyC]) -> Stream?:
-        Stream[U](f(self.first()), λ: self.rest().map[U](f))
+    # map[U]: (T -> U) -> Stream[U]
+    def map[U](self, f: FunC[T, U]) -> Stream?[U]:
+        def loop(stream):
+            Stream[U](f(stream.first()), λ: loop(stream.rest()))
+        loop(self)
     
 # scons : AnyC (-> Stream?) -> Stream?
 # Creates a memoizing stream from the first element and a thunk producing

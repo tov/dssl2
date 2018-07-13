@@ -47,8 +47,6 @@
            [NotC (-> contract? contract?)]
            [OrC (-> contract? contract? ... contract?)]
            [AndC (-> contract? contract? ... contract?)]
-           [NewForallC (-> str? contract?)]
-           [NewExistsC (-> str? contract?)]
            [IntInC (-> (OrC int? #f) (OrC int? #f) contract?)]
            [apply_contract (case-> (-> contract? AnyC AnyC)
                                    (-> contract? AnyC str? AnyC)
@@ -231,12 +229,6 @@
     FunC
     #:generic (c . cs) (FunC-helper (cons c cs))
     #:default proc?))
-
-(define (NewForallC name)
-  (new-∀/c (string->symbol name)))
-
-(define (NewExistsC name)
-  (new-∃/c (string->symbol name)))
 
 (define (IntInC low high)
   (rename-contract

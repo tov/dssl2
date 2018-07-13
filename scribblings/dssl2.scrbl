@@ -402,7 +402,7 @@ and finishes. Otherwise, it evaluates each @racket[elif] condition
 @nt_[expr]{elif} in turn; if each is false, it goes on to the
 next, but when one is non-false then it finishes with the corresponding
 @nt_[block]{elif}. Otherwise, if all of the conditions were false
-and the optional @nt_[block]{else} is included, evaluates
+and the optional @nt_[block]{else} is included, it evaluates
 that.
 
 For example, we can have an @racket[if] with no @racket[elif] or
@@ -448,11 +448,11 @@ def rebalance_left_(key, balance, left0, right):
 @defcmpdform{@defidform/inline[for] @term[var_name] in @nt[expr]: @nt[block]}
 
 Loops over the values of the given @nt[expr], evaluating the
-@nt[block] can evaluate to a vector, a string,
+@nt[block] for each. The @nt[expr] can evaluate to a vector, a string,
 or a natural number. If a vector, then this form iterates over the
 element values (not the indices) of the vector; if a string, this iterates over
 the characters; if a natural number @racket[n]
-then it counts from @racket[0] to @racket[n - 1].
+then it counts from @racket[0] to @code{n - 1}.
 
 @dssl2block|{
 for person in people_to_greet:
@@ -481,10 +481,10 @@ def make_sbox_hash(n):
 
 Loops over the indices and values of the given @nt[expr], evaluating
 the @nt[block] for each. The @nt[expr] can evaluate to a vector, a
-string, or a natural number. If a vector, then @term_[var]{1}
-takes on the indices of the vector while @term_[var]{2} takes on
-the values; if a string, then @term_[var]{1} takes on the
-indices of the characters while @term_[var]{2} takes on the
+string, or a natural number. If a vector, then @term_[var_name]{1}
+takes on the indices of the vector while @term_[var_name]{2} takes on
+the values; if a string, then @term_[var_name]{1} takes on the
+indices of the characters while @term_[var_name]{2} takes on the
 characters; if a natural number then both variables count together.
 
 @dssl2block|{
@@ -676,7 +676,7 @@ methods may also be called via the self parameter, and the self may be
 returned or passed to other functions or methods.
 
 To call a method from either inside or outside the class, we use dot
-notation, writing the receiver, then the method names, and then the
+notation, writing the receiver, then the method name, and then the
 non-self parameters:
 @c{@term[object].@term[meth_name](@term[arg], ...)}.
 
@@ -775,7 +775,7 @@ through @term_[meth_name]{k}. Defining an interface binds three
 identifiers:
 
 @itemlist[
-    @item{The interface named itself, @term[name], which can be mentioned
+    @item{The interface name itself, @term[name], which can be mentioned
       in a @racket[class] to check the class against that interface.}
     @item{The interface predicate, @c{@term[name]?}, which checks for
       objects whose classes are declared to implement the interface.}
@@ -790,7 +790,8 @@ class @emph{implements} the interface, meaning that it provides methods
 with those names and arities.
 
 For example, consider an interface for a simple container that supports
-adding and removing elements, and checking whether the container is full:
+adding and removing elements, and checking whether the container is
+empty or full:
 
 @dssl2block|{
 interface CONTAINER:
@@ -806,7 +807,7 @@ The interface specifies a class with four methods:
     @item{@c{empty?}, taking no non-self arguments,}
     @item{@c{full?}, taking no non-self arguments,}
     @item{@c{add}, taking one non-self argument, and}
-    @item{@c{remove}, taking non-non-self arguments.}
+    @item{@c{remove}, taking no non-self arguments.}
 ]
 
 (Note that the parameter names themselves don't matter—all that matters
@@ -836,11 +837,11 @@ class Cell (CONTAINER):
     def add(self, value):
         if self.full?(): error("Cell.add: full")
         self._contents = value
-        self._full? = True
+        self._empty? = False
 
     def remove(self):
         if self.empty?(): error("Cell.remove: empty")
-        self._full? = False
+        self._empty? = True
         self._contents
 }|
 
@@ -876,9 +877,7 @@ class VecStack (CONTAINER):
     def remove(self):
         if self.empty?(): error('VecStack.remove: empty')
         size._len = self._len - 1
-        let result = self._data[self._len]
-        self._data[self._len] = False
-        result
+        self._data[self._len]
 }|
 
 Both classes @c{Cell} and @c{VecStack} implement the methods of
@@ -944,7 +943,8 @@ test "ScHash.member? finds 'hello'":
 
 @defsmplform{@defidform/inline[assert_eq] @nt_[expr]{1}, @nt_[expr]{2}}
 
-Asserts that the given @nt[expr]s evaluates to structurally equal values.
+Asserts that the given @nt[expr]s evaluates to equal values, using
+@racket[==] to perform the comparison.
 If they are not equal, signals an error.
 
 @dssl2block|{
@@ -1040,7 +1040,7 @@ The value of a variable, which must be a function parameter, bound with
 
 @dssl2block|{
 let x = 5
-println(x)
+println('%p', x)
 }|
 
 prints “@code{5}”.
@@ -1113,16 +1113,16 @@ add twice its first argument to its second argument can be written
 lambda x, y: 2 * x + y
 }|
 
-@subsection{Vectors and indexing expressions}
+@subsection[#:tag "indexing"]{Vectors and indexing expressions}
 
 @defexpform{@nt_[expr]{1}[@nt_[expr]{2}]}
 
-Expression @nt_[expr]{1} must evaluate to a vector @c{v} or string @c{s};
+Expression @nt_[expr]{1} must evaluate to a vector or string @c{o};
 @nt_[expr]{2} must evaluate to an integer @c{n} between 0 and
-@code{v.len() - 1}. Then this returns the @c{n}th element of vector
-@c{v} or the @c{n}th character of string @c{s}.
+@code{o.len() - 1}. Then this returns the @c{n}th element of vector
+@c{o} or the @c{n}th character of string @c{o}.
 
-@defexpform{[ @nt_[expr]{0}, ..., @nt_[expr]{k - 1} ]}
+@defexpform{[ @nt_[expr]{1}, ..., @nt_[expr]{k} ]}
 
 Creates a new vector of length @c{k} whose values are the values
 of the expressions.
@@ -1148,6 +1148,10 @@ means the same thing as
 [ 0, 0, 0, 0, 0 ]
 }|
 
+Note that @nt_[expr]{init} is not re-evaluated to produce each element,
+so an expression like @code{[[0; 5]; 5]} produces a vector that contains
+the same vector five times, not five different subvectors.
+
 @defexpforms[
   @list{[ @nt_[expr]{elem} for @term[var_name] in @nt_[expr]{iter} ]}
   @list{[ @nt_[expr]{elem} for @term_[var_name]{1}, @term_[var_name]{2} in @nt_[expr]{iter} ]}
@@ -1157,7 +1161,7 @@ Vector comprehensions: produces a vector of the values of @nt_[expr]{elem}
 while iterating the variable(s) over @nt_[expr]{iter}. In particular,
 @nt_[expr]{iter} must be a vector @c{v}, a string @c{s}, or a
 natural number @c{n}; in which case the iterated-over values are
-the elements of @c{v}, the 1-character strings comprising
+the elements of @c{v}, the characters of
 @c{s}, or counting from 0 to @code{n - 1}, respectively. If one
 variable @term[var_name] is provided, it takes on those values. If two are
 provided, then @term_[var_name]{2} takes on those values, while @term_[var_name]{1}
@@ -1262,9 +1266,11 @@ Logical negation, bitwise negation, numerical negation, and numerical identity.
 @c{not} @nt[expr] evaluates @nt[expr], then returns @code{True} if
 the result was @code{False}, and @code{False} for any other result.
 
-@c{~}@nt[expr], @c{-}@nt[expr], and @c{+}@nt[expr] require
-that @nt[expr] evaluate to a number. Then @c{~} flips every bit,
-@c{-} negates it, and @c{+} returns it unchanged.
+@c{~}@nt[expr] requires that @nt[expr] evalutes to an integer or
+Boolean; it flips every bit of the number, or negates the Boolean.
+
+@c{-}@nt[expr] and @c{+}@nt[expr] require that @nt[expr] evaluates to a
+number. Then @c{-} negates the number, and @c{+} returns it unchanged.
 
 @defexpforms[
   @list{@nt_[expr]{1} @defidform/inline[*] @nt_[expr]{2}}
@@ -1300,15 +1306,16 @@ Left and right bitwise shift.
 
 @defexpform{@nt_[expr]{1} @defidform/inline[&] @nt_[expr]{2}}
 
-Bitwise and.
+Bitwise @emph{and} for integers; logical @emph{and} for Booleans.
 
 @defexpform{@nt_[expr]{1} @defidform/inline[^] @nt_[expr]{2}}
 
-Bitwise xor.
+Bitwise @emph{xor} for integers; logical @emph{xor} for Booleans.
 
 @defexpform{@nt_[expr]{1} @defidform/inline[\|] @nt_[expr]{2}}
 
-Bitwise or. (Not written with the backslash.)
+Bitwise @emph{or} for integers; logical @emph{or} for Booleans.
+(Not written with the backslash.)
 
 @defexpforms[
   @list{@nt_[expr]{1} @defidform/inline[==] @nt_[expr]{2}}
@@ -1321,28 +1328,28 @@ Bitwise or. (Not written with the backslash.)
   @list{@nt_[expr]{1} @defidform/inline[>=] @nt_[expr]{2}}
 ]
 
-Operator @racket[==] is structural equality, and @racket[!=] is its
-negation. Operator @racket[is] is physical equality, and @racket[|is not|]
-(not written with the vertical bars)
-is its negation. To understand the difference, suppose that we create
-two different vectors with the same contents. Those vectors are
+Operator @racket[==] is structural equality (except for classes that
+override it), and @racket[!=] is its negation. Operator @racket[is] is
+physical equality, and @racket[|is not|] (not written with the vertical
+bars) is its negation. To understand the difference, suppose that we
+create two different vectors with the same contents. Those vectors are
 structurally equal but not physically equal.
 
 Operators @racket[<], @racket[<=], @racket[>], and @racket[>=] are the
-standard inequalities for numbers, and compare pairs of strings in
+standard inequalities for numbers and characters, and compare strings in
 lexicographic order.
 
 @defexpform{@nt_[expr]{1} @defidform/inline[and] @nt_[expr]{2}}
 
-Short-circuiting logical and. First evaluates @nt_[expr]{1}; if the result
-is @code{False} then the whole conjunction is @code{False};
+Short-circuiting logical @emph{and}. First evaluates @nt_[expr]{1}; if
+the result is @code{False} then the whole conjunction is @code{False};
 otherwise, the result of the conjunction is the result of @nt_[expr]{2}.
 
 @defexpform{@nt_[expr]{1} @defidform/inline[or] @nt_[expr]{2}}
 
-Short-circuiting logical or. First evaluates @nt_[expr]{1}; if the result
-is non-false then the whole disjunction has that result; otherwise the
-result of the conjunction is the result of @nt_[expr]{2}.
+Short-circuiting logical @emph{or}. First evaluates @nt_[expr]{1}; if
+the result is non-false then the whole disjunction has that result;
+otherwise the result of the disjunction is the result of @nt_[expr]{2}.
 
 @defexpform{@nt_[expr]{then} if @nt_[expr]{cond} else @nt_[expr]{else}}
 
@@ -1372,11 +1379,11 @@ The primitive class for Boolean values, @code{True} and
 @code{False}. The type predicate for @linkclass[bool] is
 @racket[bool?].
 
-Booleans support logical binary operators @racket[&] (and), @racket[\|]
-(or, written without the backslash), and @racket[^] (xor), and logical
-unary negation @racket[~]. They also support comparison with
-@racket[==], @racket[<], @racket[<=], etc. @code{False} compares less
-than @code{True}.
+Booleans support logical binary operators @racket[&] (@emph{and}),
+@racket[\|] (@emph{or}, written without the backslash), and @racket[^]
+(@emph{xor}), and logical unary negation @racket[~]. They also support
+comparison with @racket[==], @racket[<], @racket[<=], etc. @code{False}
+compares less than @code{True}.
 
 @defprocforms[bool
     [@list{(@code{AnyC}) -> @code{bool?}}]
@@ -1396,7 +1403,8 @@ The primitive class for representing a single character of text.
 The type predicate for @linkclass[char] is @racket[char?].
 
 A character can be converted to its integer value with the @racket[int]
-constructor.
+constructor. Characters can be compared with @racket[==], @racket[<],
+@racket[<=], etc.
 
 @defprocforms[char
     [@proto[char bool?]]
@@ -1427,9 +1435,9 @@ the result will also be a float. They also support unary @racket[+]
 They also support comparison with @racket[==], @racket[<], @racket[<=],
 etc., and they can be compared against floats.
 
-Integers support binary bitwise operators @racket[&] (bitwise and),
-@racket[\|] (bitwise or), and @racket[^] (bitwise xor), and unary
-bitwise negation @racket[~].
+Integers support binary bitwise operators @racket[&] (bitwise
+@emph{and}), @racket[\|] (bitwise @emph{or}), and @racket[^] (bitwise
+@emph{xor}), and unary bitwise negation @racket[~].
 
 @defprocforms[int
     [@proto[num? int?]]
@@ -1775,7 +1783,8 @@ not-a-number value. This is useful, since @code{nan} is not necessarily
 
 Compares two values of any type. If the values are incomparable, returns
 @code{False}. Otherwise, returns an integer: less than 0 if the first
-argument is less, 0 if equal, or 1 if the first argument is greater.
+argument is less, 0 if equal, or greater than 0 if the first argument is
+greater.
 
 @defprocform[max]{@proto[AnyC AnyC ... AnyC]}
 
@@ -1791,18 +1800,18 @@ ordering. It is an error if the values are not comparable.
 
 @defprocforms[random
   [@proto[float?]]
-  [@proto["IntInC(1, 4294967087)" nat?]]
-  [@proto[int? int? nat?]]
+  [@proto["limit:IntInC(1, 4294967087)" nat?]]
+  [@proto[start:int? limit:int? nat?]]
 ]
 
 When called with zero arguments, returns a random floating point number
 in the open interval (@racket[0.0], @racket[1.0]).
 
-When called with one argument @racket[limit], returns a random exact
+When called with one argument @racket[limit], returns a random
 integer from the closed interval [@racket[0], @code{limit - 1}].
 
-When called with two arguments @racket[min] and @racket[max], returns a
-random exact integer from the closed interval [@racket[min], @code{max - 1}].
+When called with two arguments @code{start} and @code{limit}, returns a
+random integer from the closed interval [@code{start}, @code{limit - 1}].
 The difference between the arguments can be no greater than
 @racket[4294967087].
 
@@ -1813,7 +1822,11 @@ can be passed to @racket[random].
 
 @defprocform[random_bits]{@proto[nat? nat?]}
 
-Returns a number consisting of the requested number of random bits.
+Returns a natural number consisting of the requested number of random
+bits. That is, given @code{n}, returns an integer in the closed interval
+[@code{0}, @code{2 ** n - 1}]. This procedure may be slow, but it is not
+limited by @racket[RAND_MAX] in the way that the @racket[random]
+procedure is.
 
 @subsection{I/O Functions}
 
@@ -1860,8 +1873,15 @@ Given a struct, returns a vector of the names of its fields.
 
 The contract system helps guard parts of a program against each other by
 enforcing properties of function and method parameters and results,
-structure and class fields, and variables. A number of DSSL2 values may
-be used as contracts, including:
+structure and class fields, and variables. In particular, contracts
+specify properties of values that are checked at various points in the
+program.
+
+A contract may be @emph{flat}, in which case it is checked immediately
+against a value. Or a contract may by @emph{higher-order}, in which case
+it may have to wrap a value to perform further checking in the future.
+
+A number of DSSL2 values may be used as contracts, including:
 
 @itemlist[
     @item{Booleans, which allow only themselves.}
@@ -2218,14 +2238,49 @@ This interface definition binds three identifiers:
     objects.}
 
     @item{Generic interface contract @c{QUEUE!}, which optionally takes
-    one square contract parameter. The resulting contract will protect
-    an instance of any class that implements @c{QUEUE} by disabling all
-    but the @c{empty?}, @c{enqueue}, and @c{dequeue} methods, and
-    applying the given contracts to each. For example,
+    one square-bracket contract parameter. The resulting contract will
+    protect an instance of any class that implements @c{QUEUE} by
+    disabling all but the @c{empty?}, @c{enqueue}, and @c{dequeue}
+    methods, and applying the given contracts to each. For example,
     @code{QUEUE![int?]}, when protecting an object, ensures that its
-    @c{enqueue} method is given an @c{int?}. Or @code{QUEUE!} can be used
-    to protect an object, without specifying an element contract.}
+    @c{enqueue} method is given an @c{int?}. Or @code{QUEUE!} can be
+    used to protect an object, without specifying an element contract.}
 ]
+
+@defexpform{@nt_[expr]{0}[@nt_[expr]{1}, ..., @nt_[expr]{k}]}
+
+Indexes or instantiates the result of @nt_[expr]{0}.
+
+If @nt_[expr]{0} evalutes to a vector or string, then @code{k} must
+equal @code{1}, and this is an @seclink["indexing"]{indexing
+expression}.
+
+If @nt_[expr]{0} is a generic function, class, or contract, then
+@nt_[expr]{1}, ..., @nt_[expr]{k} are the parameters used to instantiate
+the generic function, class, or contract. For example, function contracts
+are created using @racket[FunC] and square brackets:
+
+@dssl2block|{
+FunC[int?, char?, str?]
+}|
+
+Or here is an example of a generic pair class, which can be instantiated
+to particular contracts for its components using square brackets:
+
+@dssl2block|{
+class Pair[T, U]:
+    let _fst
+    let _snd
+
+    def __init__(self, fst: T, snd: U):
+        self._fst = fst
+        self._snd = snd
+
+    def fst(self) -> T: self._fst
+    def snd(self) -> U: self._snd
+
+let p = Pair[int?, str?](5, 'six')
+}|
 
 @subsection{Contract combinators}
 
@@ -2237,6 +2292,8 @@ A flat contract that accepts any value.
 
 A flat contract that accepts the result of @racket[pass] and other
 statements that return no value (such as assignment and loops).
+This is used as the result contract for functions and methods that
+do not return a value.
 
 @defprocform[VecC]{[@racket[contract?]]: @racket[contract?]}
 
@@ -2249,21 +2306,32 @@ For example:
 let v: VecC[int?] = [2, 3, 4]
 }|
 
+Note that vector contracts are checked lazily, when elements are indexed
+or assigned, rather than eagerly when first protected. So for example:
+
+@dssl2block|{
+let v: VecC[int?] = [2, 3, 'four'] # okay, not checked yet
+assert_eq v[1], 3                  # passes check
+assert_error v[2]                  # fails check
+}|
+
+Assigning a non-integer to an element of @code{v} is an error as well.
+
 If the optional square bracket parameter is omitted, @racket[VecC] just
 checks that the protected value is a vector.
 
 @defprocform[FunC]{[@racket[contract?], ..., @racket[contract?]]: @racket[contract?]}
 
 Creates a function contract with the given arguments and result. The
-last argument is applied to the result, and all the other arguments are
-contracts applied to the parameters.
+last argument is a contract applied to the result, and all the other
+arguments are contracts applied to the parameters.
 
 If the optional square bracket parameters are omitted, the resulting
 contract checks for a procedure, but nothing further.
 
 @defprocform[NotC]{@proto[contract? contract?]}
 
-Creates a contract that inverts the sense of the given (flat) contract.
+Creates a contract that inverts the sense of the given flat contract.
 
 @defprocform[OrC]{@proto[contract? contract? ... contract?]}
 
@@ -2277,16 +2345,6 @@ Creates a contract that accepts a value if all of the arguments do.
 For the details of how this works for higher-order contracts, see
 @racket[racket:and/c].
 
-@defprocform[NewForallC]{@proto[str? contract?]}
-
-Creates a new, universal contract variable, useful in constructing
-parametric contracts.
-
-@defprocform[NewExistsC]{@proto[str? contract?]}
-
-Creates a new, existential contract variable, useful in constructing
-parametric contracts.
-
 @defprocform[IntInC]{@proto["low:OrC(int?, False)"
                             "high:OrC(int?, False)"
                             contract?]}
@@ -2296,9 +2354,9 @@ Constructs a contract that accepts integers in the closed interval
 that end of the interval is unchecked.
 
 @defprocforms[apply_contract
-    [@proto[#:all [X] contract? X X]]
-    [@proto[#:all [X] contract? X pos:str? X]]
-    [@proto[#:all [X] contract? X pos:str? neg:str? X]]
+    [@proto[contract? AnyC AnyC]]
+    [@proto[contract? AnyC pos:str? AnyC]]
+    [@proto[contract? AnyC pos:str? neg:str? AnyC]]
 ]
 
 Applies a contract to a value, optionally specifying the parties.

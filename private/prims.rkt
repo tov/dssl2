@@ -329,7 +329,12 @@
   (; conversions
    [__int__     (λ (self) (char->integer self))]
    ; binary methods
-   [__eq__      (λ (self other) (char=? self other))]))
+   [__cmp__     (λ (self other)
+                   (and (char? other)
+                        (cond
+                          [(char<? self other) -1]
+                          [(char=? self other) 0]
+                          [else                1])))]))
 
 (define (char/internal who val)
   (cond

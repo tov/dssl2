@@ -673,17 +673,6 @@
   (or (not (string-prefix? name "_"))
       (string-prefix? name "__")))
 
-(define-for-syntax (contract-name-format-string nparams)
-  (if (zero? nparams)
-    "%s"
-    (apply string-append
-           "%s%s[%p"
-           (append (make-list (sub1 nparams) ", %p")
-                   (list "]")))))
-
-(define (format-symbol fmt . args)
-  (string->symbol (apply dssl-format fmt args)))
-
 (define-syntax (dssl-interface stx)
   (syntax-parse stx
     #:literals (dssl-def)
@@ -919,8 +908,6 @@
          (define (#,(struct-predicate-name #'name) v)
            (#,(struct-predicate-name #'internal-name) v)))]
     [(_ name:id internal-name:id [cvs:id ...+])
-     (define format-string
-       (contract-name-format-string (length (syntax->list #'(cvs ...)))))
      #`(begin
          (dssl-provide #,(struct-predicate-name #'name))
          (define #,(struct-predicate-name #'name)

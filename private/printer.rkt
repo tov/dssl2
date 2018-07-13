@@ -3,12 +3,14 @@
 (provide dssl-print
          dssl-fprintf
          dssl-printf
-         dssl-format)
+         dssl-format
+         dssl-contract-name)
 (require "struct.rkt")
 (require "object.rkt")
 (require "generic.rkt")
 (require "errors.rkt")
 (require (only-in racket/contract
+                  contract-name
                   contract?)
          (only-in racket/set
                   mutable-seteq
@@ -19,6 +21,15 @@
          (only-in racket/math nan?))
 
 (define current-printer-state (make-parameter #f))
+
+(define (dssl-contract-name c)
+  (cond
+    [(or (boolean? c) (number? c) (string? c) (char? c))
+     (dssl-format "%p" c)]
+    [else
+      (contract-name c)]))
+
+(current-dssl-contract-name dssl-contract-name)
 
 (define (dssl-printf fmt . params)
   (apply dssl-fprintf (current-output-port) fmt params))
@@ -157,7 +168,6 @@
            [else
              (fprintf port "#<proc>")])]
         [(contract? value)
-         ; (not (string=? "???" (format "~a" (contract-name value)))))
          (fprintf port "#<contract:~a>" (contract-name value))]
         [(void? value)              (display "#<void>" port)]
         [else                       (display "#<unprintable>" port)]))))

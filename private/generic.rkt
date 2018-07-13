@@ -1,6 +1,7 @@
 #lang racket/base
 
-(provide generic-base?
+(provide current-dssl-contract-name
+         generic-base?
          generic-base-name
          generic-base-instantiate
          generic-proc
@@ -38,6 +39,11 @@
 (require (for-syntax racket/base
                      (only-in racket/syntax generate-temporary)))
 
+; The printer will change this to override how contract names are
+; composed. This is to avoid a circular dependency between this
+; module and "printer.rkt".
+(define current-dssl-contract-name (make-parameter contract-name))
+
 ; This is for generic things that can be instantiated
 ; with square brackets. They also have names for printing.
 (struct generic-base (name instantiate))
@@ -62,6 +68,7 @@
 ; Formats the application of a generic procedure to its optional (square
 ; bracket) arguments.
 (define (format-generic f xs)
+  (define contract-name (current-dssl-contract-name))
   (define port (open-output-string))
   (fprintf port "~a[~a" f (contract-name (car xs)))
   (for ([xi (in-list (cdr xs))])

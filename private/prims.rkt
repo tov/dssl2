@@ -88,7 +88,6 @@
                   any/c
                   case->
                   contract-out
-                  contract-name
                   dynamic->*
                   flat-named-contract
                   integer-in
@@ -186,9 +185,9 @@
 
 (define (format-fun f x xs)
   (define port (open-output-string))
-  (fprintf port "~a(~a" f (contract-name x))
+  (fprintf port "~a(~a" f (dssl-contract-name x))
   (for ([xi (in-list xs)])
-    (fprintf port ", ~a" (contract-name xi)))
+    (fprintf port ", ~a" (dssl-contract-name xi)))
   (fprintf port ")")
   (get-output-string port))
 

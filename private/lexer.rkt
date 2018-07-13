@@ -376,11 +376,3 @@
 (define (read-string str)
   (read (open-input-string str)))
 
-(module+ test
-  (define a-lexer (new-dssl2-lexer (current-input-port)))
-
-  (let loop ()
-    (define token (a-lexer))
-    (unless (eq? (position-token-token token) 'EOF)
-      (displayln token)
-      (loop))))

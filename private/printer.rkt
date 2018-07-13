@@ -148,7 +148,10 @@
         [(procedure? value)
          (cond
            [(contract? value)
-            (fprintf port "#<proc:~a>" (contract-name value))]
+            (define name (format "~a" (contract-name value)))
+            (if (string=? name "???")
+              (fprintf port "#<proc>")
+              (fprintf port "#<proc:~a>" name))]
            [(object-name value)
             (fprintf port "#<proc:~a>" (object-name value))]
            [else

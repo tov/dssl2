@@ -1899,7 +1899,7 @@ let x : int?
 x = 5
 }|
 
-@defcmpdform{@redefidform/inline[def] @term_[name]{f}(@term_[name]{1}: @nt_[ctc]{1}, ... @term_[name]{k}: @nt_[ctc]{k}) -> @nt_[ctc]{res}: @nt[block]}
+@defcmpdform{@redefidform/inline[def] @term_[name]{f}(@term_[name]{1}: @nt_[ctc]{1}, ..., @term_[name]{k}: @nt_[ctc]{k}) -> @nt_[ctc]{res}: @nt[block]}
 
 Defines function @term_[name]{f} while specifying contract expressions
 @nt_[ctc]{1} through @nt_[ctc]{k} for the parameters, and contract
@@ -1912,6 +1912,24 @@ def pythag(x: num?, y: num?) -> num?:
 
 Each of the contract positions is optional, and if omitted defaults to
 @racket[AnyC].
+
+Optionally, after @term_[name]{f} and before the left parenthesis,
+@nt[opt_ctc_params] may appear: one or more comma-separated names,
+enclosed in square brackets. These are optional contract parameters to
+the function, which can appear in the contracts on the rest of the
+parameters, the result, and anywhere in the body of the function.
+
+For example, a vector mapping function might be defined with contract
+parameters and contracts on its parameters as follows:
+
+@dssl2block|{
+def vec_map[T, U](f: FunC[T, U], v: VecC[T]) -> VecC[U]:
+    [ f(e) for e in v ]
+}|
+
+When calling @code{vec_map}, it's possible to supply actual contracts
+for @code{T} and @code{U} in square brackets; or omitting the square
+brackets, the contracts both default to @racket[AnyC].
 
 @defcmpdforms[
     [@list{@redefidform/inline[struct] @term[name]:}]

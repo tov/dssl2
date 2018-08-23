@@ -823,9 +823,9 @@
   (syntax-parameterize
     ([dssl-self
        (syntax-parser
-         [(_ prop)          (class-qualify #'class #'prop)]
-         [(_ prop rhs:expr) #`(set! #,(class-qualify #'class #'prop) rhs)]
-         [_:id              #'actual-self])])
+         [(_ prop:id)          (class-qualify #'class #'prop)]
+         [(_ prop:id rhs:expr) #`(set! #,(class-qualify #'class #'prop) rhs)]
+         [_:id                 #'actual-self])])
     (begin
       (define-syntax self
         (make-set!-transformer

@@ -13,9 +13,9 @@ struct cons:
 # Creates a contract that copies a list while applying the given contract
 # to each element.
 def ListOfC(element: contract?) -> contract?:
-    def projection(blame!, value):
-        map_cons(λ x: apply_contract(element, x, 'list element'), value)
-    make_contract('ListOfC(~e)'.format(element), list?, projection)
+    def project_element(x: element): x
+    def projection(blame!, value): map_cons(project_element, value)
+    make_contract('ListOfC(%p)'.format(element), list?, projection)
 
 # Creates an object to help build a list in order. The object has two methods:
 #

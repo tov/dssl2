@@ -1,27 +1,97 @@
 #lang dssl2
 
-# A list? is one of:
+# A library of header-free singly-linked lists.
+#
+# Lists are represented using two structs, nil() and cons(car, cdr).
+
+# A _list? is one of:
 # - nil()
-# - cons(AnyC, list?)
-let list? = OrC(cons?, nil?)
+# - cons(AnyC, _list?)
+let _list? = OrC(cons?, nil?)
 
 struct nil: pass
 struct cons:
-  let car: AnyC
-  let cdr: list?
+  let car
+  let cdr: _list?
 
-# Creates a contract that copies a list while applying the given contract
-# to each element.
-def ListOfC(element: contract?) -> contract?:
-    def project_element(x: element): x
-    def projection(blame!, value): map_cons(project_element, value)
-    make_contract('ListOfC(%p)'.format(element), list?, projection)
-
-# Creates an object to help build a list in order. The object has two methods:
+# The library also provides:
 #
-#   - get_head() -> ListC     returns the list
-#   - cons!(AnycC) -> VoidC   adds an element to the end of the list
-class Cons_builder:
+#   - A class ConsBuilder, for building lists in order:
+#
+#       - ConsBuilder() -> ConsBuilder?
+#         Constructs an empty ConsBuilder.
+#
+#       - cons!(self, value: AnyC) -> VoidC
+#         Adds `value` at the beginning of the list.
+#
+#       - snoc!(self, value: AnyC) -> VoidC
+#         Adds `value` at the end of the list.
+#
+#       - take!(self) -> list?
+#         Takes the built list out of this ConsBuilder and returns it,
+#         leaving this ConsBuilder empty.
+#
+#
+#   - A struct Cons containing many functions for working with cons lists:
+#
+#       - list?(x: AnyC) -> bool?
+#         Predicate for cons lists, equivalent to OrC(nil?, cons?).
+#
+#       - ListC(elt: contract?) -> contract?
+#         Constructs a contract for a list, given a contract for the
+#         elements. This contract copies the list while applying `elt`
+#         to each element.
+#
+#       - len(lst: list?) -> nat?
+#         Finds the length of a list. O(lst) time and O(1) space.
+#
+#       - app(before: list?, after: list?) -> list?
+#         Appends to lists, functionally. The resulting list will share
+#         structire with `after`. O(before) time and space.
+#
+#       - rev(lst: list?) -> list?
+#         Reverses a list, functionally. O(lst) time and space.
+#
+#       - rev_app(before: list?, after: list?) -> list?
+#         Reverses `before`, appending it onto `acc`. O(before) time and
+#         space.
+#
+#       - concat!(before: list?, after: list?) -> list?
+#         Destructively concatenates two lists, returning the concatenated
+#         list. O(before) time and O(1) space.
+#
+#       - into_vec(lst: list?, vec: vec?, where: nat?) -> VoidC
+#         Copies a list into a vector starting at index `where`. Assumes
+#         there is enough space in the vector. O(lst) time and O(1) space.
+#
+#       - to_vec(lst: list?) -> vec?
+#         Converts a list to a vector. O(lst) time and space.
+#
+#       - from_vec(vec: vec?) -> list?
+#         Creates a list from the elements of a vector. O(vec) time and
+#         space.
+#
+#       - foreach(visit: FunC[AnyC, VoidC], lst: list?) -> VoidC
+#         Calls a visitor function on each element of `lst`, in order.
+#
+#       - foldr[Y](f: FunC[AnyC, Y, Y], z: Y, lst: list?) -> Y
+#         Traverses a list from right to left, accumulating a result
+#         using the given function. O(lst * f) time and O(lst) space.
+#
+#       - foldl[Y](f: FunC[Y, AnyC, Y], z: Y, lst: list?) -> Y
+#         Traverses a list from left to right, accumulating a result
+#         using the given function. O(lst * f) time and O(1) space.
+#
+#       - map(f: FunC[AnyC, AnyC], lst: list?) -> list?
+#         Maps a list by applying a function to each element. O(lst)
+#         time and O(lst) space (to allocate the new list).
+#
+#       - filter(f: FunC[AnyC, AnyC], lst: list?) -> list?
+#         Filters a list by applying a predicate to each element. O(lst)
+#         time and O(lst) space (or more precisely, O(result) space).
+
+
+class ConsBuilder:
     let head
     let tail
 
@@ -30,6 +100,10 @@ class Cons_builder:
         self.tail = nil()
 
     def cons!(self, x):
+        self.head = cons(x, self.head)
+        if nil?(self.tail): self.tail = self.head
+
+    def snoc!(self, x):
         if cons?(self.tail):
             self.tail.cdr = cons(x, nil())
             self.tail = self.tail.cdr
@@ -37,31 +111,27 @@ class Cons_builder:
             self.head = cons(x, nil())
             self.tail = self.head
 
-    def get_head(self):
-        self.head
+    def take!(self):
+        let result = self.head
+        self.__init__()
+        result
 
-# Reverses `before`, appending it onto `acc`. O(before) time and space.
-def rev_app_cons(before: list?, acc: list?) -> list?:
+def _rev_app(before: _list?, acc: _list?) -> _list?:
     if cons?(before):
-        rev_app_cons(before.cdr, cons(before.car, acc))
+        _rev_app(before.cdr, cons(before.car, acc))
     else:
         acc
 
-# Reverses a list. O(lst) time and space.
-def rev_cons(lst: list?) -> list?:
-    rev_app_cons(lst, nil())
+def _rev(lst: _list?) -> _list?:
+    _rev_app(lst, nil())
 
-# Appends two lists, functionally. The resulting list will share structure
-# with `after`. O(before) time and space.
-def app_cons(before: list?, after: list?) -> list?:
+def _app(before: _list?, after: _list?) -> _list?:
     if cons?(before):
-        cons(before.car, app_cons(before.cdr, after))
+        cons(before.car, _app(before.cdr, after))
     else:
         after
 
-# Destructively concatenates two lists, returning the concatenated list.
-# O(before) time and O(1) space.
-def concat_cons!(before: list?, after: list?) -> list?:
+def _concat!(before: _list?, after: _list?) -> _list?:
     if nil?(before): after
     else:
         let current = before
@@ -69,78 +139,93 @@ def concat_cons!(before: list?, after: list?) -> list?:
         current.cdr = after
         before
 
-# Finds the length of a list. O(lst) time and O(1) space.
-def len_cons(lst: list?) -> int?:
+def _len(lst: _list?) -> int?:
     let result = 0
     while cons?(lst):
         lst = lst.cdr
         result = result + 1
     result
 
-# Copies a list into a vector starting at index `where`. Assumes there is enough
-# space in the vector. O(lst) time and O(1) space.
-def cons_into_vec(lst: list?, vec: vec?, where: int?) -> VoidC:
+def _into_vec(lst: _list?, vec: vec?, where: int?) -> VoidC:
     while cons?(lst):
         vec[where] = lst.car
         lst = lst.cdr
         where = where + 1
 
-# Converts a list to a vector. O(lst) time and space.
-def cons_to_vec(lst: list?) -> vec?:
-    let result = [False; len_cons(lst)]
-    cons_into_vec(lst, result, 0)
+def _to_vec(lst: _list?) -> vec?:
+    let result = [False; _len(lst)]
+    _into_vec(lst, result, 0)
     result
 
-# Creates a list from the elements of a vector. O(vec) time and space.
-def cons_from_vec(vec: vec?) -> list?:
-    let builder = Cons_builder()
-    for element in vec: builder.cons!(element)
-    builder.get_head()
+def _from_vec(vec: vec?) -> _list?:
+    let builder = ConsBuilder()
+    for element in vec: builder.snoc!(element)
+    builder.take!()
 
-# Calls a visitor function on each element of a list, in order.
-def foreach_cons(visit: FunC[AnyC, VoidC], lst: list?) -> VoidC:
+def _foreach(visit: FunC[AnyC, VoidC], lst: _list?) -> VoidC:
     while cons?(lst):
         visit(lst.car)
         lst = lst.cdr
 
-# Traverses a list from right to left, accumulating a result using the given
-# function. O(lst * f) time and O(lst) space.
-def foldr_cons[Y](f: FunC[AnyC, Y, Y], z: Y, lst: list?) -> Y:
+def _foldr[Y](f: FunC[AnyC, Y, Y], z: Y, lst: _list?) -> Y:
     if cons?(lst):
-        f(lst.car, foldr_cons(f, z, lst.cdr))
+        f(lst.car, _foldr(f, z, lst.cdr))
     else:
         z
 
-# Traverses a list from left to right, accumulating a result using the given
-# function. O(lst * f) time and O(1) space.
-def foldl_cons[Y](f: FunC[Y, AnyC, Y], z: Y, lst: list?) -> Y:
-    foreach_cons(λ element: z = f(z, element), lst)
+def _foldl[Y](f: FunC[Y, AnyC, Y], z: Y, lst: _list?) -> Y:
+    _foreach(λ element: z = f(z, element), lst)
     return z
 
-# Maps a list by applying a function to each element. O(lst) time and O(lst)
-# space (to allocate the new list).
-def map_cons(f: FunC[AnyC, AnyC], lst: list?) -> list?:
-    let builder = Cons_builder()
-    foreach_cons(λ element: builder.cons!(f(element)), lst)
-    builder.get_head()
+def _map(f: FunC[AnyC, AnyC], lst: _list?) -> _list?:
+    let builder = ConsBuilder()
+    _foreach(λ element: builder.snoc!(f(element)), lst)
+    builder.take!()
 
-# Filters a list by applying a predicate to each element. O(lst) time and O(lst)
-# space (or more precisely, O(result) space).
-def filter_cons(f: FunC[AnyC, AnyC], lst: list?) -> list?:
-    let builder = Cons_builder()
+def _filter(f: FunC[AnyC, AnyC], lst: _list?) -> _list?:
+    let builder = ConsBuilder()
     def each(element):
-        if f(element): builder.cons!(element)
-    foreach_cons(each, lst)
-    builder.get_head()
+        if f(element): builder.snoc!(element)
+    _foreach(each, lst)
+    builder.take!()
 
-def cons_tests():
-    let list = cons_from_vec
+def _ListC(element: contract?) -> contract?:
+    def project_element(x: element): x
+    def projection(blame!, value): _map(project_element, value)
+    make_contract('ListC(%p)'.format(element), _list?, projection)
 
-    test 'map_cons':
-        def add2(x): x + 2
-        assert_eq map_cons(add2, list([2, 3, 4])), list([4, 5, 6])
+struct _ConsOperations:
+    let list?
+    let ListC
+    let rev_app
+    let rev
+    let app
+    let concat!
+    let len
+    let into_vec
+    let to_vec
+    let from_vec
+    let foreach
+    let foldr
+    let foldl
+    let map
+    let filter
 
-    test 'filter_cons':
-        let lst = list([2, 3, 4, 5, 6])
-        assert_eq filter_cons(λ n: n.even?(), lst), list([2, 4, 6])
-        assert_eq filter_cons(λ n: n.odd?(), lst), list([3, 5])
+let Cons = _ConsOperations {
+    list?:    _list?,
+    ListC:    _ListC,
+    rev_app:  _rev_app,
+    rev:      _rev,
+    app:      _app,
+    concat!:  _concat!,
+    len:      _len,
+    into_vec: _into_vec,
+    to_vec:   _to_vec,
+    from_vec: _from_vec,
+    foreach:  _foreach,
+    foldr:    _foldr,
+    foldl:    _foldl,
+    map:      _map,
+    filter:   _filter,
+}
+

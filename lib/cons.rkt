@@ -118,12 +118,12 @@ class ConsBuilder:
         if nil?(self.tail): self.tail = self.head
 
     def snoc!(self, x):
-        if cons?(self.tail):
-            self.tail.cdr = cons(x, nil())
-            self.tail = self.tail.cdr
+        let old_tail = self.tail
+        self.tail = cons(x, nil())
+        if nil?(old_tail):
+            self.head = self.tail
         else:
-            self.head = cons(x, nil())
-            self.tail = self.head
+            old_tail.cdr = self.tail
 
     def take!(self):
         let result = self.head

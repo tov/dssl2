@@ -1713,10 +1713,22 @@ Determines whether its argument is an instance of @linkclass[char].
 
 @defprocform[contract?]{@proto[AnyC bool?]}
 
-Determines whether its value is a contract. Contracts include many
+Determines whether its argument is a contract. Contracts include many
 constants (numbers, strings, Booleans), single-argument functions
 (considered as predicates), and the results of contract combinators such
 as @racket[OrC] and @racket[FunC].
+
+See @secref["Contracts"] for more.
+
+@defprocform[flat_contract?]{@proto[AnyC bool?]}
+
+Determines whether its argument is a flat contract. Flat contracts are
+contracts that answer right away and return the protected value unchanged
+on success, rather than wrapping it. Flat contracts include constants
+(numbers, strings, Booleans), single-argument functions, and the results
+of contract combinators such as @racket[OrC] and @racket[AndC] applied to
+flat contracts. Non-flat contracts include the results of @racket[FunC] and
+@racket[VecC].
 
 See @secref["Contracts"] for more.
 

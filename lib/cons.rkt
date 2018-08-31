@@ -90,6 +90,16 @@ struct cons:
 #         Filters a list by applying a predicate to each element. O(lst)
 #         time and O(lst) space (or more precisely, O(result) space).
 #
+#       - andmap(f: FunC[AnyC, AnyC], lst: list?) -> AnyC
+#         Applies `f` to each element in turn, returning `False` if the
+#         result of any is `False`, and otherwise returning the result of
+#         `f` applied to the last element. (Returns `True` if `lst` is
+#         empty.)
+#
+#       - ormap(f: FunC[AnyC, AnyC], lst: list?) -> AnyC
+#         Applies `f` to each element in turn, returning the first non-false
+#         result, or `False` if none is non-False.
+#
 #       - sort[T](less_than?: FunC[T, T, AnyC], lst: ListC(T)) -> list?
 #         Sorts a list, functionally, using the given `less_than?`
 #         predicate to determine the order. O(lst^2).
@@ -193,6 +203,22 @@ def _filter(f: FunC[AnyC, AnyC], lst: _list?) -> _list?:
     _foreach(each, lst)
     builder.take!()
 
+def _andmap(f: FunC[AnyC, AnyC], lst: _list?) -> AnyC:
+    let result = True
+    while cons?(lst):
+        result = f(lst.car)
+        if not result: break
+        lst = lst.cdr
+    result
+
+def _ormap(f: FunC[AnyC, AnyC], lst: _list?) -> AnyC:
+    let result = False
+    while cons?(lst):
+        result = f(lst.car)
+        if result: break
+        lst = lst.cdr
+    result
+
 def _sort[T](less_than?: FunC[T, T, AnyC], lst: _ListC(T)) -> _list?:
     def insert(element, link):
         if cons?(link) and less_than?(link.car, element):
@@ -224,6 +250,8 @@ struct _ConsOperations:
     let foldl
     let map
     let filter
+    let andmap
+    let ormap
     let sort
 
 let Cons = _ConsOperations {
@@ -242,6 +270,8 @@ let Cons = _ConsOperations {
     foldl:    _foldl,
     map:      _map,
     filter:   _filter,
+    andmap:   _andmap,
+    ormap:    _ormap,
     sort:     _sort,
 }
 

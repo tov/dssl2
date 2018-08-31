@@ -21,13 +21,13 @@ struct cons:
 #       - ConsBuilder() -> ConsBuilder?
 #         Constructs an empty ConsBuilder.
 #
-#       - cons!(self, value: AnyC) -> VoidC
+#       - cons(self, value: AnyC) -> VoidC
 #         Adds `value` at the beginning of the list.
 #
-#       - snoc!(self, value: AnyC) -> VoidC
+#       - snoc(self, value: AnyC) -> VoidC
 #         Adds `value` at the end of the list.
 #
-#       - take!(self) -> list?
+#       - take(self) -> list?
 #         Takes the built list out of this ConsBuilder and returns it,
 #         leaving this ConsBuilder empty.
 #
@@ -56,7 +56,7 @@ struct cons:
 #         Reverses `before`, appending it onto `acc`. O(before) time and
 #         space.
 #
-#       - concat!(before: list?, after: list?) -> list?
+#       - concat(before: list?, after: list?) -> list?
 #         Destructively concatenates two lists, returning the concatenated
 #         list. O(before) time and O(1) space.
 #
@@ -113,11 +113,11 @@ class ConsBuilder:
         self.head = nil()
         self.tail = nil()
 
-    def cons!(self, x):
+    def cons(self, x):
         self.head = cons(x, self.head)
         if nil?(self.tail): self.tail = self.head
 
-    def snoc!(self, x):
+    def snoc(self, x):
         let old_tail = self.tail
         self.tail = cons(x, nil())
         if nil?(old_tail):
@@ -125,7 +125,7 @@ class ConsBuilder:
         else:
             old_tail.cdr = self.tail
 
-    def take!(self):
+    def take(self):
         let result = self.head
         self.__init__()
         result
@@ -145,7 +145,7 @@ def _app(before: _list?, after: _list?) -> _list?:
     else:
         after
 
-def _concat!(before: _list?, after: _list?) -> _list?:
+def _concat(before: _list?, after: _list?) -> _list?:
     if nil?(before): after
     else:
         let current = before
@@ -173,8 +173,8 @@ def _to_vec(lst: _list?) -> vec?:
 
 def _from_vec(vec: vec?) -> _list?:
     let builder = ConsBuilder()
-    for element in vec: builder.snoc!(element)
-    builder.take!()
+    for element in vec: builder.snoc(element)
+    builder.take()
 
 def _foreach(visit: FunC[AnyC, VoidC], lst: _list?) -> VoidC:
     while cons?(lst):
@@ -193,15 +193,15 @@ def _foldl[Y](f: FunC[Y, AnyC, Y], z: Y, lst: _list?) -> Y:
 
 def _map(f: FunC[AnyC, AnyC], lst: _list?) -> _list?:
     let builder = ConsBuilder()
-    _foreach(λ element: builder.snoc!(f(element)), lst)
-    builder.take!()
+    _foreach(λ element: builder.snoc(f(element)), lst)
+    builder.take()
 
 def _filter(f: FunC[AnyC, AnyC], lst: _list?) -> _list?:
     let builder = ConsBuilder()
     def each(element):
-        if f(element): builder.snoc!(element)
+        if f(element): builder.snoc(element)
     _foreach(each, lst)
-    builder.take!()
+    builder.take()
 
 def _andmap(f: FunC[AnyC, AnyC], lst: _list?) -> AnyC:
     let result = True
@@ -245,7 +245,7 @@ struct _ConsOperations:
     let rev_app
     let rev
     let app
-    let concat!
+    let concat
     let len
     let into_vec
     let to_vec
@@ -265,7 +265,7 @@ let Cons = _ConsOperations {
     rev_app:  _rev_app,
     rev:      _rev,
     app:      _app,
-    concat!:  _concat!,
+    concat:   _concat,
     len:      _len,
     into_vec: _into_vec,
     to_vec:   _to_vec,

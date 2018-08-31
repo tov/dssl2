@@ -230,9 +230,14 @@ def _sort[T](less_than?: FunC[T, T, AnyC], lst: _ListC(T)) -> _list?:
     loop(lst, nil())
 
 def _ListC(element: contract?) -> contract?:
-    def project_element(x: element): x
-    def projection(blame!, value): _map(project_element, value)
-    make_contract('ListC(%p)'.format(element), _list?, projection)
+    if num?(element) or bool?(element) or str?(element) or char?(element):
+        λ lst: _andmap(λ x: x == element, lst)
+    elif flat_contract?(element) and proc?(element):
+        λ lst: _andmap(element, lst)
+    else:
+        def project_element(x: element): x
+        def projection(blame!, value): _map(project_element, value)
+        make_contract('ListC(%p)'.format(element), _list?, projection)
 
 struct _ConsOperations:
     let list?

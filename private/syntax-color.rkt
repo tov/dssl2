@@ -27,7 +27,7 @@
     [(:: #\\ #\newline)         (token comment)]
     [(:or "λ" "lambda" "let" "assert" "assert_eq" "assert_error"
           "if" "elif" "else"
-          "class" "interface"
+          "class" "interface" "break" "continue"
           "while" "for" "in" "return" "pass" "def" "struct" "test"
           "time" "import")
                                 (token keyword)]

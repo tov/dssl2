@@ -89,6 +89,10 @@ struct cons:
 #       - filter(f: FunC[AnyC, AnyC], lst: list?) -> list?
 #         Filters a list by applying a predicate to each element. O(lst)
 #         time and O(lst) space (or more precisely, O(result) space).
+#
+#       - sort[T](less_than?: FunC[T, T, AnyC], lst: ListC(T)) -> list?
+#         Sorts a list, functionally, using the given `less_than?`
+#         predicate to determine the order. O(lst^2).
 
 
 class ConsBuilder:
@@ -189,6 +193,16 @@ def _filter(f: FunC[AnyC, AnyC], lst: _list?) -> _list?:
     _foreach(each, lst)
     builder.take!()
 
+def _sort[T](less_than?: FunC[T, T, AnyC], lst: _ListC(T)) -> _list?:
+    def insert(element, link):
+        if cons?(link) and less_than?(link.car, element):
+            cons(link.car, insert(element, link.cdr))
+        else: cons(element, link)
+    def loop(link, acc):
+        if nil?(link): acc
+        else: loop(link.cdr, insert(link.car, acc))
+    loop(lst, nil())
+
 def _ListC(element: contract?) -> contract?:
     def project_element(x: element): x
     def projection(blame!, value): _map(project_element, value)
@@ -210,6 +224,7 @@ struct _ConsOperations:
     let foldl
     let map
     let filter
+    let sort
 
 let Cons = _ConsOperations {
     list?:    _list?,
@@ -227,5 +242,6 @@ let Cons = _ConsOperations {
     foldl:    _foldl,
     map:      _map,
     filter:   _filter,
+    sort:     _sort,
 }
 

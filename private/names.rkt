@@ -38,7 +38,10 @@
 
 ; Here's the function the parser uses.
 (define (struct-special-name/located name)
-  (format-id #f "~a{}" name #:source name))
+  (syntax-property
+    (format-id #f "~a{}" name #:source name)
+    'original-for-check-syntax
+    #t))
 
 (define (interface-contract-name name)
   (format-id name "~a!" name))

@@ -1,8 +1,7 @@
 #lang racket/base
 
 (provide public-method-name?
-         class-qualify/sym
-         (for-syntax class-qualify)
+         class-qualify
          struct-predicate-name
          struct-special-name
          struct-special-name/located
@@ -21,13 +20,10 @@
   (or (not (string-prefix? name "_"))
       (string-prefix? name "__")))
 
-(define (class-qualify/sym qualifier property)
-  (format "«~a».~a" qualifier property))
-
-(define-for-syntax (class-qualify qualifier property)
-    (format-id property "«~a».~a" qualifier property
-               #:source property
-               #:props property))
+(define (class-qualify qualifier property)
+  (format-id property "«~a».~a" qualifier property
+             #:source property
+             #:props property))
 
 (define (struct-predicate-name name)
   (format-id name "~a?" name))

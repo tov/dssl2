@@ -34,7 +34,8 @@
          "object.rkt"
          "provide.rkt"
          "return.rkt"
-         "struct.rkt")
+         "struct.rkt"
+         "util.rkt")
 
 (define (contract-params-match? cs1 cs2)
   (for/and ([c1 (in-vector cs1)]
@@ -147,6 +148,7 @@
                (syntax-length m-cvs)
                (syntax-length params))))))
      (check-interface-consistency interface-static-info)
+     (define name-length (string-length (symbol->string (syntax-e #'name))))
      ; Code generation
      (define base-interface-table
        #'(make-immutable-hasheq
@@ -176,36 +178,47 @@
          #`(union-interfaces
              #,table
              (#,(interface-info-runtime super-info) #,@super-params))))
-     #`(begin
-         (dssl-provide (for-syntax name)
-                       #,(struct-predicate-name #'name)
-                       #,(interface-contract-name #'name))
-         (define (#,interface-runtime-name cv ...)
-           #,extended-interface-table)
-         (define-for-syntax name
-           #,(reflect-interface interface-static-info))
-         (define (first-order? obj)
-           (and (object-base? obj)
-                (vector-memq '#,interface-token
-                             (object-info-interfaces
-                               (object-base-info obj)))))
-         (define (#,(struct-predicate-name #'name) obj)
-           (and (first-order? obj) #t))
-         (define (make-projection cv ...)
-           (define interface-table (#,interface-runtime-name cv ...))
-           (define contract-parameters (vector-immutable cv ...))
-           (apply-interface-contract
-             interface-table
-             contract-parameters
-             '#,interface-token
-             first-order?))
-         (define #,(interface-contract-name #'name)
-           (square-bracket-contract
-             #,(interface-contract-name #'name)
-             ([cv AnyC] ...)
-             #:first-order first-order?
-             #:late-neg-projection
-             (make-projection cv ...))))]))
+     (syntax-property
+       #`(begin
+           (dssl-provide (for-syntax name)
+                         #,(struct-predicate-name #'name)
+                         #,(interface-contract-name #'name))
+           (define (#,interface-runtime-name cv ...)
+             #,extended-interface-table)
+           (define-for-syntax name
+                              #,(reflect-interface interface-static-info))
+           (define (first-order? obj)
+             (and (object-base? obj)
+                  (vector-memq '#,interface-token
+                               (object-info-interfaces
+                                 (object-base-info obj)))))
+           (define (make-projection cv ...)
+             (define interface-table (#,interface-runtime-name cv ...))
+             (define contract-parameters (vector-immutable cv ...))
+             (apply-interface-contract
+               interface-table
+               contract-parameters
+               '#,interface-token
+               first-order?))
+           (define (#,(struct-predicate-name #'name) obj)
+             (and (first-order? obj) #t))
+           (define #,(interface-contract-name #'name)
+             (square-bracket-contract
+               #,(interface-contract-name #'name)
+               ([cv AnyC] ...)
+               #:first-order first-order?
+               #:late-neg-projection
+               (make-projection cv ...))))
+       'sub-range-binders
+       (cons
+         (vector (syntax-local-introduce (struct-predicate-name #'name))
+                 0 name-length 0.5 0.5
+                 (syntax-local-introduce #'name)
+                 0 name-length 0.5 0.5)
+         (vector (syntax-local-introduce (interface-contract-name #'name))
+                 0 name-length 0.5 0.5
+                 (syntax-local-introduce #'name)
+                 0 name-length 0.5 0.5)))]))
 
 (define-syntax-parameter
   dssl-self
@@ -310,30 +323,45 @@
             interface-name)])))
   (loop interface-info0))
 
+(define-syntax (make-class-predicate stx)
+  (syntax-parse stx
+    [(_ name?:id internal-name?:id (cvs:id ...))
+     #'(square-bracket-proc
+         name?
+         #:generic (cvs ...)
+         (let ([contract-params (vector-immutable cvs ...)])
+           (λ (value)
+              (cond
+                [(and (internal-name? value)
+                      (assq #f (object-base-contract-paramses value)))
+                 =>
+                 (λ (pair)
+                    (contract-params-match? (cdr pair) contract-params))]
+                [else #f])))
+         #:default internal-name?)]))
+
 (define-syntax (define-class-predicate stx)
   (syntax-parse stx
-    [(_ name:id internal-name:id [])
-     #`(begin
-         (dssl-provide #,(struct-predicate-name #'name))
-         (define (#,(struct-predicate-name #'name) v)
-           (#,(struct-predicate-name #'internal-name) v)))]
-    [(_ name:id internal-name:id [cvs:id ...+])
-     #`(begin
-         (dssl-provide #,(struct-predicate-name #'name))
-         (define #,(struct-predicate-name #'name)
-           (square-bracket-proc
-             #,(struct-predicate-name #'name)
-             #:generic (cvs ...)
-             (let ([contract-params (vector-immutable cvs ...)])
-               (λ (value)
-                  (cond
-                    [(and (#,(struct-predicate-name #'internal-name) value)
-                          (assq #f (object-base-contract-paramses value)))
-                     =>
-                     (λ (pair)
-                        (contract-params-match? (cdr pair) contract-params))]
-                    [else #f])))
-             #:default #,(struct-predicate-name #'internal-name))))]))
+    [(_ name:id internal-name:id [cvs0:id ...])
+     (define name-length (string-length (symbol->string (syntax-e #'name))))
+     (with-syntax
+       ([name?          (struct-predicate-name #'name)]
+        [internal-name? (struct-predicate-name #'internal-name)])
+       (syntax-property
+        #`(begin
+            (dssl-provide name?)
+            (define name?
+              #,(syntax-parse #'(cvs0 ...)
+                  [()
+                   #'(λ (v) (internal-name? v))]
+                  [(cvs:id ...+)
+                   #'(make-class-predicate name? internal-name?
+                                           (cvs ...))])))
+        'sub-range-binders
+        (vector (syntax-local-introduce #'name?)
+                0 name-length 0.5 0.5
+                (syntax-local-introduce #'name)
+                0 name-length 0.5 0.5)))]))
 
 (define-syntax (define-dssl-class stx)
   (syntax-parse stx

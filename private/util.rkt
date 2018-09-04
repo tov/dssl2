@@ -2,6 +2,9 @@
 
 (provide syntax-length)
 
+(require (for-syntax racket/base
+                     syntax/parse))
+
 (define (syntax-length stx0)
   (define (loop stx acc)
     (cond
@@ -11,4 +14,3 @@
        (loop (cdr (syntax-e stx)) (add1 acc))]
       [else acc]))
   (loop stx0 0))
-

@@ -47,6 +47,13 @@
     (syntax-error interface-name "undefined interface"))
   (syntax-local-eval interface-name))
 
+(define-syntax (create-fake-interface-use stx)
+  (syntax-parse stx
+    [(_ interface:id)
+     (define info   (lookup-interface #'interface))
+     (define binder (syntax-local-introduce (interface-info-name info)))
+     #`(void (let ([#,binder 0]) interface))]))
+
 (define (union-interfaces i1 i2)
   (define result (make-hasheq))
   (for ([(key value) (in-hash i1)])
@@ -180,6 +187,7 @@
              (#,(interface-info-runtime super-info) #,@super-params))))
      (syntax-property
        #`(begin
+           (create-fake-interface-use super-name) ...
            (dssl-provide (for-syntax name)
                          #,(struct-predicate-name #'name)
                          #,(interface-contract-name #'name))
@@ -419,6 +427,7 @@
         [(self.public-method-name ...)
          (map self. (filter public-method-name? method-names))])
        #`(begin
+           (create-fake-interface-use interface) ...
            (struct internal-name object-base
              (__class__
                public-method-name

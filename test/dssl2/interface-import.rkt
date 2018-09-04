@@ -7,6 +7,6 @@ interface J (I):
     
 class MyJ (J):
     def __init__(self): pass
-    def m1(self): pass
-    def m2(self): pass
-    def m3(self, a): pass
+    def m1(self, x): pass
+    def m2(self, x): pass
+    def m3(self, x, y): pass

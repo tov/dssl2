@@ -3,6 +3,7 @@
 (provide public-method-name?
          class-qualify/sym
          (for-syntax class-qualify)
+         property-arrow-name
          struct-predicate-name
          struct-special-name
          struct-special-name/located
@@ -23,6 +24,9 @@
 
 (define (class-qualify/sym qualifier property)
   (format "«~a».~a" qualifier property))
+
+(define (property-arrow-name prop)
+  (format-id prop "~a-arrow" prop))
 
 (define-for-syntax (class-qualify qualifier property)
   (format-id qualifier "«~a».~a" qualifier property))

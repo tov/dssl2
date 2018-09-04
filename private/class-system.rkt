@@ -213,7 +213,7 @@
 (define-syntax (define-field stx)
   (syntax-parse stx
     [(_ external-name:id internal-name:id actual-name:id the-contract:expr)
-     (define arrow-name (format-id #'external-name "~a-arrow" #'external-name))
+     (define arrow-name (property-arrow-name #'external-name))
      #`(begin
          (define actual-name unsafe-undefined)
          (define-syntax #,arrow-name #'external-name)
@@ -249,11 +249,10 @@
     ([dssl-self
        (syntax-parser
          [(_ prop:id)
-          (define arrow-name (syntax-local-value
-                               (format-id #'prop "~a-arrow" #'prop)))
+          (define arrow-name (property-arrow-name #'prop))
           (printf "~s ~s\n" arrow-name #'prop)
           #`(begin
-              (let ([#,arrow-name 0]) prop)
+              #| (let ([#,arrow-name 0]) prop) |#
               #,(class-qualify #'class #'prop))]
          [(_ prop:id rhs:expr) #`(set! #,(class-qualify #'class #'prop) rhs)]
          [_:id                 #'actual-self])])

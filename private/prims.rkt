@@ -24,6 +24,8 @@
          float float?
          ; ** proc
          proc proc?
+         ; ** range_iterator
+         range_iterator range_iterator?
          ; ** string
          str str?
          ; ** vector
@@ -291,23 +293,67 @@
 
 ;; Primitive interfaces & classes
 
-(define-dssl-interface ITERABLE (T) ()
+(define-dssl-interface ITERABLE () ()
   ([iterator () () AnyC]))
 
-(define-dssl-interface ITERATOR (T) ((ITERABLE T))
+(define-dssl-interface ITERATOR () ((ITERABLE))
   ([try_advance () (AnyC) AnyC]))
 
-#| (define-dssl-class range_iterator (ITERATOR ITERABLE) |#
-#|   (object-lambda (low high) |#
-#|     (define (try_advance self visit) |#
-#|       (if (< low high) |#
-#|         (begin |#
-#|           (visit low) |#
-#|           (set! low (+ low 1)) |#
-#|           #true) |#
-#|         #false)) |#
-#|     (define (iterator self) |#
-#|       self))) |#
+(define-dssl-class range_iterator () (ITERATOR)
+  ([_current AnyC] [_limit AnyC])
+  ([__init__ () self ([current AnyC] [limit AnyC]) AnyC
+     (begin
+       (dssl-self _current current)
+       (dssl-self _limit limit))]
+   [current () self () AnyC
+     (dssl-self _current)]
+   [limit () self () AnyC
+     (dssl-self _limit)]
+   [iterator () self () AnyC
+     (range_iterator (dssl-self _current)
+                    (dssl-self _limit))]
+   [try_advance () self ([visit AnyC]) AnyC
+     (and (< (dssl-self _current)
+             (dssl-self _limit))
+          (begin
+            (visit (dssl-self _current))
+            (dssl-self _current (add1 (dssl-self _current)))
+            #true))]))
+
+(define (index-ref indexable ix)
+  (cond
+    [(vector? indexable) (vector-ref indexable ix)]
+    [(string? indexable) (string-ref indexable ix)]
+    [(get-method-value/fun indexable '__index_ref__)
+     =>
+     (λ (__index_ref__) (__index_ref__ ix))]
+    [else
+      (dssl-error 'index_iterator "source is not indexable")]))
+
+(define-dssl-class index_iterator () (ITERATOR)
+  ([_source AnyC] [_current AnyC] [_limit AnyC])
+  ([__init__ () self ([source AnyC] [current AnyC] [limit AnyC]) AnyC
+     (begin
+       (dssl-self _source source)
+       (dssl-self _current current)
+       (dssl-self _limit limit))]
+   [source () self () AnyC
+     (dssl-self _source)]
+   [current () self () AnyC
+     (dssl-self _current)]
+   [limit () self () AnyC
+     (dssl-self _limit)]
+   [iterator () self () AnyC
+     (index_iterator (dssl-self _source)
+                     (dssl-self _current)
+                     (dssl-self _limit))]
+   [try_advance () self ([visit AnyC]) AnyC
+     (and (< (dssl-self _current)
+             (dssl-self _limit))
+          (begin
+            (visit (index-ref (dssl-self _source) (dssl-self _current)))
+            (dssl-self _current (add1 (dssl-self _current)))
+            #true))]))
 
 (define bool
   (case-lambda

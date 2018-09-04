@@ -1,24 +1,17 @@
 #lang dssl2
 
-class range_iterator (ITERATOR):
-    let low
-    let high
-    
-    def __init__(self, low, high):
-        self.low = low
-        self.high = high
-    
-    def try_advance(self, visit):
-        if self.low < self.high:
-            visit(self.low)
-            self.low = self.low + 1
-            True
-        else:
-            False
-    
-    def iterator(self):
-        self
+let r = range_iterator(0, 8)
 
-let foo: ITERATOR! = range_iterator(0, 5)
+def each(x):
+    println('%p', x)
+ 
+class Always:
+    let value
+    def __init__(self, value): self.value = value
+    def __index_ref__(self, ix): value
 
-foo.iterator()
+let s = index_iterator("abc", 0, 3)
+s.try_advance(each)
+s.try_advance(each)
+s.try_advance(each)
+s.try_advance(each)

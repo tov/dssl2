@@ -46,15 +46,16 @@
 
 (require "private/class-system.rkt"
          "private/contract.rkt"
-         "private/names.rkt"
          "private/errors.rkt"
-         "private/operators.rkt"
-         "private/struct.rkt"
-         "private/object.rkt"
          "private/generic.rkt"
+         "private/object.rkt"
+         "private/operators.rkt"
+         "private/names.rkt"
          "private/prims.rkt"
          "private/printer.rkt"
          "private/provide.rkt"
+         "private/return.rkt"
+         "private/struct.rkt"
          racket/stxparam
          racket/splicing
          racket/contract/region
@@ -145,13 +146,6 @@
   (lambda (stx)
     (syntax-error stx "use of elif keyword")))
 
-; We define return (for lambda) as a syntax parameter, and then
-; syntax-parameterize it inside dssl-lambda.
-(define-syntax-parameter
-  dssl-return
-  (lambda (stx)
-    (syntax-error stx "use of return keyword not in a function")))
-
 (define-simple-macro (make-set!able f)
   (unless (zero? (random 1))
     (set! f (void))))
@@ -217,14 +211,6 @@
     (pattern (~seq)
              #:with (var ...) #'())))
 
-(define-simple-macro (with-return expr:expr ...)
-  (let/ec return-f
-    (syntax-parameterize
-      ([dssl-return (syntax-rules ()
-                      [(_)        (return-f (void))]
-                      [(_ result) (return-f result)])])
-      (dssl-begin expr ...))))
-
 (define-simple-macro
   (dssl-def (f:id cvs:optional-contract-vars bs:var&contract ...)
             result-contract:optional-return-contract
@@ -237,7 +223,7 @@
     (define-square-bracket-proc
       ((f cvs.var ...) [bs.var (ensure-contract 'def bs.contract)] ...)
       (ensure-contract 'def result-contract.result)
-      (with-return expr ...))))
+      (with-return (dssl-begin expr ...)))))
 
 (define-syntax (dssl-let stx)
   (syntax-parse stx
@@ -566,29 +552,29 @@
 
 (define-syntax (dssl-struct-set! stx)
   (syntax-parse stx
-    [(_ target:expr property:id rhs:expr)
-     (syntax-parse (local-expand #'target 'expression (list #'dssl-self))
+    [(_ target0:expr property:id rhs:expr)
+     (syntax-parse (local-expand #'target0 'expression (list #'dssl-self))
        #:literals (dssl-self)
        [dssl-self
          #'(dssl-self property rhs)]
-       [struct
+       [target:expr
          (quasisyntax/loc #'property
-           (let ([value struct])
+           (let ([value target])
              (cond
                [(struct-base? value)
                 ((field-info-setter
                    (get-field-info/or-else
-                     #:srclocs (get-srclocs struct)
+                     #:srclocs (get-srclocs target)
                      value 'property))
                  value rhs)]
                [(object-base? value)
                 (runtime-error
-                  #:srclocs (get-srclocs struct)
+                  #:srclocs (get-srclocs target)
                   "cannot assign to object properties from outside")]
                [else
-                 (runtime-error #:srclocs (get-srclocs struct)
+                 (runtime-error #:srclocs (get-srclocs target)
                                 "value ‘%p’ is not a struct"
-                                struct)])))])]))
+                                target)])))])]))
 
 (define-syntax (dssl-test stx)
   (syntax-parse stx
@@ -648,11 +634,6 @@
     [(_ code:expr)
      #`(dssl-assert-error/thunk (get-srclocs code) (λ () code) "")]))
 
-(define-syntax-parameter
-  dssl-self
-  (lambda (stx)
-    (syntax-error stx "use of self outside of method")))
-
 (define-syntax (dssl-interface stx)
   (syntax-parse stx
     #:literals (dssl-def)
@@ -674,127 +655,6 @@
             method-result.result]
           ...))]))
 
-(define-syntax (define-field stx)
-  (syntax-parse stx
-    [(_ external-name:id internal-name:id actual-name:id contract:expr)
-     #`(begin
-         (define actual-name unsafe-undefined)
-         (define-syntax internal-name
-           (make-set!-transformer
-             (λ (stx)
-                (syntax-parse stx #:literals (set!)
-                  [(set! _:id e:expr)
-                   (quasisyntax/loc #'contract
-                     (set! actual-name
-                       #,(quasisyntax/loc #'e
-                           (racket:contract
-                             contract e
-                             (format "field assignment at ~a"
-                                     (srcloc->string (get-srcloc e)))
-                             'external-name
-                             'external-name
-                             (get-srcloc contract)))))]
-                  [_:id
-                    #'(check-not-unsafe-undefined
-                        actual-name
-                        'external-name)]
-                  [(_:id . args)
-                   (with-syntax ([app (datum->syntax stx '#%app)])
-                     #'(app
-                         (check-not-unsafe-undefined
-                           actual-name
-                           'external-name)
-                         . args))])))))]))
-
-(define-simple-macro (bind-self class:id self:id actual-self:id body:expr)
-  (syntax-parameterize
-    ([dssl-self
-       (syntax-parser
-         [(_ prop:id)          (class-qualify #'class #'prop)]
-         [(_ prop:id rhs:expr) #`(set! #,(class-qualify #'class #'prop) rhs)]
-         [_:id                 #'actual-self])])
-    (begin
-      (define-syntax self
-        (make-set!-transformer
-          (syntax-parser
-            [_:id #'dssl-self]
-            [(set! lhs:id _)
-             (syntax-error #'lhs "cannot assign to self parameter")]
-            [(op . _)
-             (syntax-error #'op "self parameter is not a function")])))
-      body)))
-
-(define-for-syntax (find-constructor method-names method-paramses stx)
-  (let/ec return
-    (for ([method-name   (in-list method-names)]
-          [method-params (in-syntax method-paramses)])
-      (when (eq? '__init__ (syntax-e method-name))
-        (return method-name
-                (generate-temporaries method-params))))
-    (syntax-error stx "class must have a constructor __init__")))
-
-(define-for-syntax (check-class-against-interface
-                     interface-info0
-                     class-name
-                     class-method-names
-                     class-method-cvarses
-                     class-method-paramses)
-  (define class-methods (make-hasheq))
-  (for ([name   (in-list class-method-names)]
-        [cvars  (in-list class-method-cvarses)]
-        [params (in-list class-method-paramses)])
-    (hash-set! class-methods
-               (syntax-e name)
-               (imethod-info name
-                                    (syntax-length cvars)
-                                    (syntax-length params))))
-  (define (loop interface-info)
-    (define interface-name (syntax-e (interface-info-name interface-info)))
-    (for-each loop (interface-info-supers interface-info))
-    (for ([i-m-info (interface-info-methods interface-info)])
-      (define method-name (syntax-e (imethod-info-name i-m-info)))
-      (cond
-        [(hash-ref class-methods method-name #f)
-         =>
-         (λ (c-m-info)
-            (cond
-              [(compare-imethod-info interface-name c-m-info i-m-info)
-               =>
-               (λ (message) (syntax-error class-name message))]
-              [else (void)]))]
-        [else
-          (syntax-error
-            class-name
-            "class missing method ~a, required by interface ~a"
-            method-name
-            interface-name)])))
-  (loop interface-info0))
-
-(define-syntax (define-class-predicate stx)
-  (syntax-parse stx
-    [(_ name:id internal-name:id [])
-     #`(begin
-         (dssl-provide #,(struct-predicate-name #'name))
-         (define (#,(struct-predicate-name #'name) v)
-           (#,(struct-predicate-name #'internal-name) v)))]
-    [(_ name:id internal-name:id [cvs:id ...+])
-     #`(begin
-         (dssl-provide #,(struct-predicate-name #'name))
-         (define #,(struct-predicate-name #'name)
-           (square-bracket-proc
-             #,(struct-predicate-name #'name)
-             #:generic (cvs ...)
-             (let ([contract-params (vector-immutable cvs ...)])
-               (λ (value)
-                  (cond
-                    [(and (#,(struct-predicate-name #'internal-name) value)
-                          (assq #f (object-base-contract-paramses value)))
-                     =>
-                     (λ (pair)
-                        (contract-params-match? (cdr pair) contract-params))]
-                    [else #f])))
-             #:default #,(struct-predicate-name #'internal-name))))]))
-
 (define-syntax (dssl-class stx)
   (syntax-parse stx
     #:literals (dssl-let dssl-def)
@@ -808,115 +668,18 @@
                     method-params:var&contract ...)
                   method-result:optional-return-contract
                   method-body:expr ...) ...)
-     #:fail-when (check-duplicate-identifier
-                   (cons (datum->syntax #'name '__class__)
-                         (syntax->list #'(method-name ...))))
-                 "duplicate method name"
-     ; Extract the defined names:
-     (define field-names  (syntax->list #'(field.var ...)))
-     (define method-names (syntax->list #'(method-name ...)))
-     (define-values (constructor constructor-params)
-       (find-constructor
-         method-names
-         #'((method-params.var ...) ...)
-         #'name))
-     ; Lookup and check interfaces:
-     (define interfaces
-       (for/list ([interface-name (in-syntax #'(interfaces.interface ...))])
-         (define interface-info (lookup-interface interface-name))
-         (check-class-against-interface
-           interface-info
-           #'name
-           method-names
-           (syntax->list #'((method-cvs.var ...) ...))
-           (syntax->list #'((method-params ...) ...)))
-         interface-info))
-     ; Generate new names:
-     (define (self. property) (class-qualify #'name property))
-     (with-syntax
-       ([internal-name
-          (format-id #f "c:~a" #'name)]
-        [(interface-token ...)
-         (interface-info-all-tokens/list interfaces)]
-        [(actual-field-name ...)
-         (generate-temporaries field-names)]
-        [(self.field-name ...)
-         (map self. field-names)]
-        [(self.method-name ...)
-         (map self. method-names)]
-        [(public-method-name ...)
-         (filter public-method-name? method-names)]
-        [(self.public-method-name ...)
-         (map self. (filter public-method-name? method-names))])
-       #`(begin
-           (struct internal-name object-base
-             (__class__
-               public-method-name
-               ...)
-             #:transparent)
-           ; Used for applying interfact contracts:
-           (define (map-fields val contract-params visitor)
-             (internal-name
-               (object-base-info val)
-               (cons contract-params
-                     (object-base-contract-paramses val))
-               (object-base-reflect val)
-               (visitor '__class__
-                        ((struct-getter-name internal-name __class__)
-                         val))
-               (visitor 'public-method-name
-                        ((struct-getter-name
-                           internal-name
-                           public-method-name)
-                         val))
-               ...))
-           (define internal-object-info
-             (object-info
-               'name
-               map-fields
-               (vector-immutable 'interface-token ...)
-               (vector-immutable
-                 (method-info
-                   '__class__
-                   (struct-getter-name internal-name __class__))
-                 (method-info
-                   'public-method-name
-                   (struct-getter-name internal-name public-method-name))
-                 ...)))
-           (define-class-predicate name internal-name [cvs.var ...])
-           (dssl-provide name)
-           (define name
-             (square-bracket-class-lambda
-               name ([cvs.var AnyC] ...) #,constructor-params
-               (define-field field.var
-                             self.field-name
-                             actual-field-name
-                             field.contract)
-               ...
-               (define-square-bracket-proc
-                 ((self.method-name method-cvs.var ...)
-                  [method-params.var
-                    (ensure-contract 'def method-params.contract)] ...)
-                 (ensure-contract 'def method-result.result)
-                 (bind-self name method-self actual-self
-                            (with-return method-body ...)))
-               ...
-               (define self.__class__ name)
-               (define actual-self
-                 (internal-name
-                   internal-object-info
-                   (list (cons #f (vector-immutable cvs.var ...)))
-                   (λ () (vector-immutable
-                            (cons 'field.var self.field-name) ...))
-                   ; methods:
-                   self.__class__
-                   self.public-method-name ...))
-               (#,(self. constructor) #,@constructor-params)
-               (when (eq? unsafe-undefined actual-field-name)
-                 (runtime-error
-                   #:srclocs (get-srclocs #,constructor)
-                   "constructor for class %s did not assign field %s"
-                   'name 'field.var))
-               ...
-               actual-self))))]))
+     #'(define-dssl-class
+         name
+         (cvs.var ...)
+         (interfaces.interface ...)
+         ([field.var field.contract]
+          ...)
+         ([method-name
+            (method-cvs.var ...)
+            method-self
+            ([method-params.var method-params.contract]
+             ...)
+            method-result.result
+            (dssl-begin method-body ...)]
+          ...))]))
 

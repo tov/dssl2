@@ -450,6 +450,7 @@
    ; public methods
    [abs         (λ (self) (r:abs self))]
    [floor       (λ (self) self)]
+   [iterator    (λ (self) (range_iterator 0 self))]
    [ceiling     (λ (self) self)]
    [sqrt        (λ (self)
                    (if (< self 0)
@@ -567,6 +568,8 @@
    [__index_ref__ (-> nat? AnyC)
                   (λ (self i) (string-ref self i))]
    ; public methods
+   [iterator      (λ (self)
+                     (index_iterator self 0 (string-length self)))]
    [len           (λ (self) (string-length self))]
    [explode       (λ (self) (list->vector (string->list self)))]
    [format        (λ (self . args)
@@ -587,6 +590,8 @@
                   prim:vec.__eq__]
    [len           vector-length]
    [implode       prim:vec.implode]
+   [iterator      (λ (self)
+                     (index_iterator self 0 (vector-length self)))]
    [map           (-> (-> AnyC AnyC) AnyC)
                   prim:vec.map]
    [filter        (-> (-> AnyC AnyC) AnyC)

@@ -1,11 +1,5 @@
 #lang dssl2
 
-interface ITERABLE[T]:
-    def iterator(self)
-
-interface ITERATOR[T] (ITERABLE[T]):
-    def try_advance(self, visit: FunC[T, AnyC]) -> bool?
-            
 class range_iterator (ITERATOR):
     let low
     let high

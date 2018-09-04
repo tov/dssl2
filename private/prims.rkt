@@ -8,6 +8,11 @@
          dssl-send
          dssl-equal?
          ; values
+         ; * primitive interfaces
+         ; ** ITERABLE
+         (for-syntax ITERABLE) ITERABLE-table ITERABLE? ITERABLE!
+         ; ** ITERATOR
+         (for-syntax ITERATOR) ITERATOR-table ITERATOR? ITERATOR!
          ; * primitive classes
          ; ** boolean
          bool bool?
@@ -284,13 +289,13 @@
     [else           (+ (* 2 (random_bits (sub1 n)))
                        (random 2))]))
 
-;; Primitive interfaces classes
+;; Primitive interfaces & classes
 
-#| (define-dssl-interface ITERABLE () |#
-#|   (method (iterator) ITERATOR)) |#
+(define-dssl-interface ITERABLE (T) ()
+  ([iterator () () AnyC]))
 
-#| (define-dssl-interface ITERATOR (ITERATABLE) |#
-#|   (method (try_advance (FunC AnyC AnyC)) bool?)) |#
+(define-dssl-interface ITERATOR (T) ((ITERABLE T))
+  ([try_advance () (AnyC) AnyC]))
 
 #| (define-dssl-class range_iterator (ITERATOR ITERABLE) |#
 #|   (object-lambda (low high) |#

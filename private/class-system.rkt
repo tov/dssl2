@@ -173,8 +173,9 @@
            (and (object-base? obj)
                 (vector-memq '#,interface-token
                              (object-info-interfaces
-                               (object-base-info obj)))
-                #t))
+                               (object-base-info obj)))))
+         (define (#,(struct-predicate-name #'name) obj)
+           (and (first-order? obj) #t))
          (define (make-projection cv ...)
            (define interface-table (make-interface-table cv ...))
            (define contract-parameters (vector-immutable cv ...))
@@ -184,7 +185,6 @@
              '#,interface-token
              first-order?))
          (dssl-provide #,(struct-predicate-name #'name))
-         (define #,(struct-predicate-name #'name) first-order?)
          (dssl-provide #,(interface-contract-name #'name))
          (define #,(interface-contract-name #'name)
            (square-bracket-contract

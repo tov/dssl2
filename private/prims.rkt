@@ -10,9 +10,7 @@
          ; values
          ; * primitive interfaces
          ; ** ITERABLE
-         (for-syntax ITERABLE) ITERABLE-table ITERABLE? ITERABLE!
          ; ** ITERATOR
-         (for-syntax ITERATOR) ITERATOR-table ITERATOR? ITERATOR!
          ; * primitive classes
          ; ** boolean
          bool bool?
@@ -20,6 +18,7 @@
          char char?
          ; ** integer
          int int?
+         ; ** index_iterator
          ; ** float
          float float?
          ; ** proc

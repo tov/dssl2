@@ -173,10 +173,13 @@
              #,table
              (#,(interface-table-name super-name) #,@super-params))))
      #`(begin
+         (dssl-provide (for-syntax name)
+                       #,(interface-table-name #'name)
+                       #,(struct-predicate-name #'name)
+                       #,(interface-contract-name #'name))
          (define (make-interface-table cv ...)
            #,extended-interface-table)
          (define #,(interface-table-name #'name) make-interface-table)
-         (dssl-provide (for-syntax name))
          (define-for-syntax name
            #,(reflect-interface interface-static-info))
          (define (first-order? obj)
@@ -194,8 +197,6 @@
              contract-parameters
              '#,interface-token
              first-order?))
-         (dssl-provide #,(struct-predicate-name #'name))
-         (dssl-provide #,(interface-contract-name #'name))
          (define #,(interface-contract-name #'name)
            (square-bracket-contract
              #,(interface-contract-name #'name)

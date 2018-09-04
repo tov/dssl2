@@ -283,27 +283,26 @@
           (dssl-begin expr ...)
           (loop))))))
 
+(define (get-try-advance srclocs obj who)
+  (define iterator
+    (dssl-send obj 'iterator
+               #:or-else
+               (type-error #:srclocs srclocs who obj
+                           "object responding to .iterator()")))
+  (get-method-value/or-else #:srclocs srclocs iterator 'try_advance))
+
 (define-syntax (dssl-for stx)
   (syntax-parse stx
     [(_ [(i:id j:id) v:expr] expr:expr ...+)
      #:fail-when (and (bound-identifier=? #'i #'j) #'j)
                  "duplicate variable name"
      #'(let/ec break-f
-         (let* ([obj         v]
-                [fail!       (λ ()
-                                (type-error
-                                  #:srclocs (get-srclocs v)
-                                  "for loop"
-                                  obj
-                                  "object responding to .iterator()"))]
-                [iterator    (dssl-send obj 'iterator #:or-else (fail!))]
-                [try_advance (get-method-value/or-else
-                               #:srclocs (get-srclocs v)
-                               iterator 'try_advance)])
+         (let* ([obj  v]
+                [next (get-try-advance (get-srclocs v) obj "for loop")])
            (let loop ([real-i 0])
              (and
                (let ([i real-i])
-                 (try_advance
+                 (next
                    (λ (j)
                       (let/ec continue-f
                               (syntax-parameterize
@@ -316,6 +315,40 @@
     [(_ [i:id v:expr] expr:expr ...+)
      #'(dssl-for [(_ i) v] (dssl-begin expr ...))]))
 
+(struct vector-builder (vector size) #:mutable)
+(define (make-vector-builder)
+  (vector-builder (make-vector 8 #false) 0))
+(define (vector-builder-push-back vb element)
+  (define old-vector (vector-builder-vector vb))
+  (define old-capacity (vector-length old-vector))
+  (define ix (vector-builder-size vb))
+  (when (= ix old-capacity)
+    (set-vector-builder-vector!
+      vb
+      (build-vector (* 2 old-capacity)
+                    (λ (i)
+                       (if (< i old-capacity)
+                         (vector-ref old-vector i)
+                         #false)))))
+  (vector-set! (vector-builder-vector vb)
+               ix
+               element)
+  (set-vector-builder-size! vb (add1 ix)))
+(define (vector-builder-copy vb)
+  (define vector (vector-builder-vector vb))
+  (build-vector (vector-builder-size vb)
+                (λ (i) (vector-ref vector i))))
+
+(define (dssl-for/vec/fun srclocs v when? body)
+  (define next   (get-try-advance srclocs v "vector comprehension"))
+  (define result (make-vector-builder))
+  (let loop ([i 0])
+    (when (next (λ (j)
+                   (when (when? i j)
+                     (vector-builder-push-back result (body i j)))))
+      (loop (add1 i))))
+  (vector-builder-copy result))
+
 (define-syntax (dssl-for/vec stx)
   (syntax-parse stx
     [(_ [j:id v:expr] expr:expr)
@@ -327,23 +360,10 @@
     [(_ [(i:id j:id) v:expr] #:when when expr:expr)
      #:fail-when (and (bound-identifier=? #'i #'j) #'j)
                  "duplicate variable name"
-     #'(for/vector ([i (in-naturals)]
-                    [j (dssl-in-value v)]
-                    #:when when)
-         expr)]))
-
-(define (dssl-in-value/value srclocs v)
-  (cond
-    [(vec? v)      (in-vector v)]
-    [(natural? v)  (in-range v)]
-    [(str? v)      (in-string v)]
-    [else          (type-error #:srclocs srclocs
-                               'for v "something iterable")]))
-
-(define-syntax (dssl-in-value stx)
-  (syntax-parse stx
-    [(_ v:expr)
-     #'(dssl-in-value/value (get-srclocs v) v)]))
+     #'(dssl-for/vec/fun (get-srclocs v)
+                         v
+                         (λ (i j) when)
+                         (λ (i j) expr))]))
 
 (define-syntax (dssl-import stx)
   (unless (memq (syntax-local-context) '(module top-level))

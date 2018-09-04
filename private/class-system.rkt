@@ -128,10 +128,12 @@
        (for/list ([super-name (in-syntax #'(super-name ...))])
          (lookup-interface super-name)))
      (define interface-token (gensym))
+     (define interface-runtime-name (datum->syntax stx (gensym)))
      (define interface-static-info
        (interface-info
          #'name
          interface-token
+         interface-runtime-name
          super-infos
          (for/list ([name   (in-syntax #'(method-name ...))]
                     [m-cvs  (in-syntax #'((method-cv ...) ...))]
@@ -167,19 +169,17 @@
                  ...)))
      (define extended-interface-table
        (for/fold ([table base-interface-table])
-         ([super-name   (in-syntax #'(super-name ...))]
+         ([super-info   (in-list super-infos)]
           [super-params (in-syntax #'((super-param ...) ...))])
          #`(union-interfaces
              #,table
-             (#,(interface-table-name super-name) #,@super-params))))
+             (#,(interface-info-runtime super-info) #,@super-params))))
      #`(begin
          (dssl-provide (for-syntax name)
-                       #,(interface-table-name #'name)
                        #,(struct-predicate-name #'name)
                        #,(interface-contract-name #'name))
-         (define (make-interface-table cv ...)
+         (define (#,interface-runtime-name cv ...)
            #,extended-interface-table)
-         (define #,(interface-table-name #'name) make-interface-table)
          (define-for-syntax name
            #,(reflect-interface interface-static-info))
          (define (first-order? obj)
@@ -190,7 +190,7 @@
          (define (#,(struct-predicate-name #'name) obj)
            (and (first-order? obj) #t))
          (define (make-projection cv ...)
-           (define interface-table (make-interface-table cv ...))
+           (define interface-table (#,interface-runtime-name cv ...))
            (define contract-parameters (vector-immutable cv ...))
            (apply-interface-contract
              interface-table

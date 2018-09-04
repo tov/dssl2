@@ -10,8 +10,18 @@
 
 (require "errors.rkt")
 
-(struct imethod-info (name cvs arity) #:transparent)
-(struct interface-info (name token supers methods) #:transparent)
+(struct imethod-info
+  [name         ; syntax? - the name of the method
+    cvs         ; nat? - the number of contract parameters
+    arity]      ; nat? - the number of regular parameters
+  #:transparent)
+(struct interface-info
+  [name         ; syntax? - the name of the interface
+    token       ; symbol? - the runtime identity of the interface
+    runtime     ; syntax? - the name of the runtime method table
+    supers      ; (ListOf interface-info?) - list of super interfaces
+    methods]    ; (ListOf imethod-info?) - list of methods
+  #:transparent)
 
 (define (reflect-imethod info)
   #`(imethod-info #'#,(imethod-info-name info)
@@ -21,6 +31,7 @@
 (define (reflect-interface info)
   #`(interface-info #'#,(interface-info-name info)
                     '#,(interface-info-token info)
+                    #'#,(interface-info-runtime info)
                     (list
                       #,@(map reflect-interface
                               (interface-info-supers info)))

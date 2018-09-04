@@ -7,7 +7,6 @@
          struct-special-name
          struct-special-name/located
          interface-contract-name
-         interface-table-name
          struct-getter-name
          struct-setter-name)
 
@@ -41,9 +40,6 @@
 
 (define (interface-contract-name name)
   (format-id name "~a!" name))
-
-(define (interface-table-name name)
-  (format-id name "~a-table" name))
 
 (define-syntax (struct-getter-name stx)
   (syntax-parse stx

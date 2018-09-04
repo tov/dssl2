@@ -225,14 +225,14 @@
          (cons $1 $3)])
 
       (<class-method>
-        [(DEF IDENT <foralls> LPAREN <method-formals> RPAREN <result> COLON
+        [(DEF <ident> <foralls> LPAREN <method-formals> RPAREN <result> COLON
               <suite>)
          (loc/1 `(def (,$2 ,@$3 ,@$5) ,@$7 ,@$9))])
 
       (<method-formals>
-        [(IDENT)
+        [(<ident>)
          (list $1)]
-        [(IDENT COMMA <contract-formals>)
+        [(<ident> COMMA <contract-formals>)
          (cons $1 $3)])
 
       (<interface-suite>
@@ -252,7 +252,7 @@
          (cons $1 $3)])
 
       (<interface-method>
-        [(DEF IDENT <foralls> LPAREN <method-formals> RPAREN <result>)
+        [(DEF <ident> <foralls> LPAREN <method-formals> RPAREN <result>)
          (loc/1 `(def (,$2 ,@$3 ,@$5) ,@$7))])
 
       (<simple-statement>

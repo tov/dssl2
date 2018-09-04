@@ -10,7 +10,7 @@
                      syntax/parse
                      (only-in racket/sequence in-syntax)
                      (only-in racket/string string-prefix?)
-                     (only-in racket/syntax format-id syntax-local-eval)
+                     (only-in racket/syntax format-id)
                      "errors.rkt"
                      "interface.rkt"
                      "names.rkt"
@@ -43,16 +43,9 @@
     (eq? c1 c2)))
 
 (define-for-syntax (lookup-interface interface-name)
-  (unless (identifier-binding interface-name 1)
-    (syntax-error interface-name "undefined interface"))
-  (syntax-local-eval interface-name))
-
-(define-syntax (create-fake-interface-use stx)
-  (syntax-parse stx
-    [(_ interface:id)
-     (define info   (lookup-interface #'interface))
-     (define binder (syntax-local-introduce (interface-info-name info)))
-     #`(void (let ([#,binder 0]) interface))]))
+  #| (unless (identifier-binding interface-name 1) |#
+  #|   (syntax-error interface-name "undefined interface")) |#
+  (syntax-local-value interface-name))
 
 (define (union-interfaces i1 i2)
   (define result (make-hasheq))
@@ -186,47 +179,49 @@
              #,table
              (#,(interface-info-runtime super-info) #,@super-params))))
      (syntax-property
-       #`(begin
-           (create-fake-interface-use super-name) ...
-           (dssl-provide (for-syntax name)
-                         #,(struct-predicate-name #'name)
-                         #,(interface-contract-name #'name))
-           (define (#,interface-runtime-name cv ...)
-             #,extended-interface-table)
-           (define-for-syntax name
-                              #,(reflect-interface interface-static-info))
-           (define (first-order? obj)
-             (and (object-base? obj)
-                  (vector-memq '#,interface-token
-                               (object-info-interfaces
-                                 (object-base-info obj)))))
-           (define (make-projection cv ...)
-             (define interface-table (#,interface-runtime-name cv ...))
-             (define contract-parameters (vector-immutable cv ...))
-             (apply-interface-contract
-               interface-table
-               contract-parameters
-               '#,interface-token
-               first-order?))
-           (define (#,(struct-predicate-name #'name) obj)
-             (and (first-order? obj) #t))
-           (define #,(interface-contract-name #'name)
-             (square-bracket-contract
-               #,(interface-contract-name #'name)
-               ([cv AnyC] ...)
-               #:first-order first-order?
-               #:late-neg-projection
-               (make-projection cv ...))))
-       'sub-range-binders
-       (cons
-         (vector (syntax-local-introduce (struct-predicate-name #'name))
-                 0 name-length 0.5 0.5
-                 (syntax-local-introduce #'name)
-                 0 name-length 0.5 0.5)
-         (vector (syntax-local-introduce (interface-contract-name #'name))
-                 0 name-length 0.5 0.5
-                 (syntax-local-introduce #'name)
-                 0 name-length 0.5 0.5)))]))
+       (syntax-property
+         #`(begin
+             (dssl-provide name
+                           #,(struct-predicate-name #'name)
+                           #,(interface-contract-name #'name))
+             (define (#,interface-runtime-name cv ...)
+               #,extended-interface-table)
+             (define-syntax name #,(reflect-interface interface-static-info))
+             (define (first-order? obj)
+               (and (object-base? obj)
+                    (vector-memq '#,interface-token
+                                 (object-info-interfaces
+                                   (object-base-info obj)))))
+             (define (make-projection cv ...)
+               (define interface-table (#,interface-runtime-name cv ...))
+               (define contract-parameters (vector-immutable cv ...))
+               (apply-interface-contract
+                 interface-table
+                 contract-parameters
+                 '#,interface-token
+                 first-order?))
+             (define (#,(struct-predicate-name #'name) obj)
+               (and (first-order? obj) #t))
+             (define #,(interface-contract-name #'name)
+               (square-bracket-contract
+                 #,(interface-contract-name #'name)
+                 ([cv AnyC] ...)
+                 #:first-order first-order?
+                 #:late-neg-projection
+                 (make-projection cv ...))))
+         'sub-range-binders
+         (cons
+           (vector (syntax-local-introduce (struct-predicate-name #'name))
+                   0 name-length 0.5 0.5
+                   (syntax-local-introduce #'name)
+                   0 name-length 0.5 0.5)
+           (vector (syntax-local-introduce (interface-contract-name #'name))
+                   0 name-length 0.5 0.5
+                   (syntax-local-introduce #'name)
+                   0 name-length 0.5 0.5)))
+       'disappeared-use
+       (map syntax-local-introduce
+            (syntax->list #'(super-name ...))))]))
 
 (define-syntax-parameter
   dssl-self
@@ -434,75 +429,78 @@
          (filter public-method-name? method-names)]
         [(self.public-method-name ...)
          (map self. (filter public-method-name? method-names))])
-       #`(begin
-           (create-fake-interface-use interface) ...
-           (struct internal-name object-base
-             (__class__
-               public-method-name
-               ...)
-             #:transparent)
-           ; Used for applying interfact contracts:
-           (define (map-fields val contract-params visitor)
-             (internal-name
-               (object-base-info val)
-               (cons contract-params
-                     (object-base-contract-paramses val))
-               (object-base-reflect val)
-               (visitor '__class__
-                        ((struct-getter-name internal-name __class__)
-                         val))
-               (visitor 'public-method-name
-                        ((struct-getter-name
-                           internal-name
-                           public-method-name)
-                         val))
-               ...))
-           (define internal-object-info
-             (object-info
-               'name
-               map-fields
-               (vector-immutable 'interface-token ...)
-               (vector-immutable
-                 (method-info
-                   '__class__
-                   (struct-getter-name internal-name __class__))
-                 (method-info
-                   'public-method-name
-                   (struct-getter-name internal-name public-method-name))
-                 ...)))
-           (define-class-predicate name internal-name [cv ...])
-           (dssl-provide name)
-           (define name
-             (square-bracket-class-lambda
-               name ([cv AnyC] ...) #,constructor-params
-               (define-field field-var
-                             self.field-name
-                             actual-field-name
-                             field-contract)
-               ...
-               (define-square-bracket-proc
-                 ((self.method-name method-cv ...)
-                  [method-param-var
-                    (ensure-contract 'def method-param-contract)] ...)
-                 (ensure-contract 'def method-result-contract)
-                 (bind-self name method-self actual-self
-                            (with-return method-body)))
-               ...
-               (define self.__class__ name)
-               (define actual-self
-                 (internal-name
-                   internal-object-info
-                   (list (cons #f (vector-immutable cv ...)))
-                   (λ () (vector-immutable
-                            (cons 'field-var self.field-name) ...))
-                   ; methods:
-                   self.__class__
-                   self.public-method-name ...))
-               (#,(self. constructor) #,@constructor-params)
-               (when (eq? unsafe-undefined actual-field-name)
-                 (runtime-error
-                   #:srclocs (get-srclocs #,constructor)
-                   "constructor for class %s did not assign field %s"
-                   'name 'field-var))
-               ...
-               actual-self))))]))
+       (syntax-property
+         #`(begin
+             (struct internal-name object-base
+               (__class__
+                 public-method-name
+                 ...)
+               #:transparent)
+             ; Used for applying interfact contracts:
+             (define (map-fields val contract-params visitor)
+               (internal-name
+                 (object-base-info val)
+                 (cons contract-params
+                       (object-base-contract-paramses val))
+                 (object-base-reflect val)
+                 (visitor '__class__
+                          ((struct-getter-name internal-name __class__)
+                           val))
+                 (visitor 'public-method-name
+                          ((struct-getter-name
+                             internal-name
+                             public-method-name)
+                           val))
+                 ...))
+             (define internal-object-info
+               (object-info
+                 'name
+                 map-fields
+                 (vector-immutable 'interface-token ...)
+                 (vector-immutable
+                   (method-info
+                     '__class__
+                     (struct-getter-name internal-name __class__))
+                   (method-info
+                     'public-method-name
+                     (struct-getter-name internal-name public-method-name))
+                   ...)))
+             (define-class-predicate name internal-name [cv ...])
+             (dssl-provide name)
+             (define name
+               (square-bracket-class-lambda
+                 name ([cv AnyC] ...) #,constructor-params
+                 (define-field field-var
+                               self.field-name
+                               actual-field-name
+                               field-contract)
+                 ...
+                 (define-square-bracket-proc
+                   ((self.method-name method-cv ...)
+                    [method-param-var
+                      (ensure-contract 'def method-param-contract)] ...)
+                   (ensure-contract 'def method-result-contract)
+                   (bind-self name method-self actual-self
+                              (with-return method-body)))
+                 ...
+                 (define self.__class__ name)
+                 (define actual-self
+                   (internal-name
+                     internal-object-info
+                     (list (cons #f (vector-immutable cv ...)))
+                     (λ () (vector-immutable
+                              (cons 'field-var self.field-name) ...))
+                     ; methods:
+                     self.__class__
+                     self.public-method-name ...))
+                 (#,(self. constructor) #,@constructor-params)
+                 (when (eq? unsafe-undefined actual-field-name)
+                   (runtime-error
+                     #:srclocs (get-srclocs #,constructor)
+                     "constructor for class %s did not assign field %s"
+                     'name 'field-var))
+                 ...
+                 actual-self)))
+         'disappeared-use
+         (map syntax-local-introduce
+              (syntax->list #'(interface ...)))))]))

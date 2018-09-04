@@ -583,7 +583,7 @@
            'disappeared-use
            (syntax-property target 'disappeared-use))]
        [_
-         #'(let ([value target])
+         #`(let ([value #,target])
              (cond
                [(struct-base? value)
                 ((field-info-getter (get-field-info/or-else
@@ -607,22 +607,22 @@
            (syntax-property target 'disappeared-use))]
        [_
          (quasisyntax/loc #'property
-           (let ([value target])
+           (let ([value #,target])
              (cond
                [(struct-base? value)
                 ((field-info-setter
                    (get-field-info/or-else
-                     #:srclocs (get-srclocs target)
+                     #:srclocs (get-srclocs #,target)
                      value 'property))
                  value rhs)]
                [(object-base? value)
                 (runtime-error
-                  #:srclocs (get-srclocs target)
+                  #:srclocs (get-srclocs #,target)
                   "cannot assign to object properties from outside")]
                [else
-                 (runtime-error #:srclocs (get-srclocs target)
+                 (runtime-error #:srclocs (get-srclocs #,target)
                                 "value ‘%p’ is not a struct"
-                                target)])))])]))
+                                #,target)])))])]))
 
 (define-syntax (dssl-test stx)
   (syntax-parse stx

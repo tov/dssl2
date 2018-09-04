@@ -331,7 +331,7 @@
             interface-name)])))
   (loop interface-info0))
 
-(define-syntax (make-class-predicate stx)
+(define-syntax (make-generic-class-predicate stx)
   (syntax-parse stx
     [(_ name?:id internal-name?:id (cvs:id ...))
      #'(square-bracket-proc
@@ -363,8 +363,8 @@
                   [()
                    #'(λ (v) (internal-name? v))]
                   [(cvs:id ...+)
-                   #'(make-class-predicate name? internal-name?
-                                           (cvs ...))])))
+                   #'(make-generic-class-predicate
+                       name? internal-name? (cvs ...))])))
         'sub-range-binders
         (vector (syntax-local-introduce #'name?)
                 0 name-length 0.5 0.5

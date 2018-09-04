@@ -9,6 +9,6 @@
        (loop (cdr stx) (add1 acc))]
       [(and (syntax? stx) (pair? (syntax-e stx)))
        (loop (cdr (syntax-e stx)) (add1 acc))]
-      [else 0]))
+      [else acc]))
   (loop stx0 0))
 

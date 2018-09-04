@@ -574,11 +574,15 @@
 (define-syntax (dssl-struct-ref stx)
   (syntax-parse stx
     [(_ target0:expr property:id)
-     (syntax-parse (local-expand #'target0 'expression (list #'dssl-self))
+     (define target (local-expand #'target0 'expression (list #'dssl-self)))
+     (syntax-parse target
        #:literals (dssl-self)
        [dssl-self
-         #'(dssl-self property)]
-       [target:expr
+         (syntax-property
+           #'(dssl-self property)
+           'disappeared-use
+           (syntax-property target 'disappeared-use))]
+       [_
          #'(let ([value target])
              (cond
                [(struct-base? value)
@@ -593,11 +597,15 @@
 (define-syntax (dssl-struct-set! stx)
   (syntax-parse stx
     [(_ target0:expr property:id rhs:expr)
-     (syntax-parse (local-expand #'target0 'expression (list #'dssl-self))
+     (define target (local-expand #'target0 'expression (list #'dssl-self)))
+     (syntax-parse target
        #:literals (dssl-self)
        [dssl-self
-         #'(dssl-self property rhs)]
-       [target:expr
+         (syntax-property
+           #'(dssl-self property rhs)
+           'disappeared-use
+           (syntax-property target 'disappeared-use))]
+       [_
          (quasisyntax/loc #'property
            (let ([value target])
              (cond

@@ -273,7 +273,11 @@
       (define-syntax self
         (make-set!-transformer
           (syntax-parser
-            [_:id #'dssl-self]
+            [use:id
+              (syntax-property
+                #'dssl-self
+                'disappeared-use
+                (syntax-local-introduce #'use))]
             [(set! lhs:id _)
              (syntax-error #'lhs "cannot assign to self parameter")]
             [(op . _)

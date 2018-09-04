@@ -44,7 +44,9 @@
          (all-from-out "private/prims.rkt")
          (all-from-out "private/operators.rkt"))
 
-(require "private/names.rkt"
+(require "private/class-system.rkt"
+         "private/contract.rkt"
+         "private/names.rkt"
          "private/errors.rkt"
          "private/operators.rkt"
          "private/struct.rkt"
@@ -52,6 +54,7 @@
          "private/generic.rkt"
          "private/prims.rkt"
          "private/printer.rkt"
+         "private/provide.rkt"
          racket/stxparam
          racket/splicing
          racket/contract/region
@@ -68,8 +71,6 @@
                   parametric->/c)
          (only-in racket/math
                   natural?)
-         (only-in racket/vector
-                  vector-memq)
          (only-in syntax/location
                   quote-srcloc))
 (require (prefix-in racket: racket/base)
@@ -79,12 +80,13 @@
 (require (for-syntax racket/base
                      syntax/parse
                      (only-in racket/sequence in-syntax)
-                     (only-in racket/syntax format-id syntax-local-eval)
-                     (only-in racket/string string-prefix?)
+                     (only-in racket/syntax format-id)
                      (only-in racket/list make-list)
+                     "private/interface.rkt"
                      "private/names.rkt"
                      "private/errors.rkt"
-                     "private/find-lib.rkt"))
+                     "private/find-lib.rkt"
+                     "private/util.rkt"))
 
 (define dssl-True #t)
 (define dssl-False #f)
@@ -137,22 +139,6 @@
 (define-syntax-rule (dssl-top-interaction . expr)
   (dssl-begin expr))
 
-(define-syntax (dssl-provide stx)
-  (define (each-spec spec)
-    (syntax-parse spec #:literals (for-syntax)
-      [name:id #:when (public-method-name? #'name)
-        #'(provide name)]
-      [(for-syntax name:id) #:when (public-method-name? #'name)
-        #'(provide (for-syntax name))]
-      [_
-        #'(begin)]))
-  (if (eq? 'module (syntax-local-context))
-    (syntax-parse stx
-      [(_ spec ...)
-       #`(begin
-           #,@(map each-spec (syntax->list #'(spec ...))))])
-    #'(begin)))
-
 ; This is so that the documentation will consider elif a keyword.
 (define-syntax-parameter
   dssl-elif
@@ -202,6 +188,13 @@
                            (syntax->list #'(var ...)))
              "duplicate identifier name"))
 
+  (define-syntax-class
+    super-interface
+    #:description "a superinterface, possibly with parameters"
+    (pattern (name:id params:expr ...))
+    (pattern name:id
+             #:with (params ...) #'()))
+
   (define-splicing-syntax-class
     optional-implements
     #:description "optional implements clause"
@@ -223,9 +216,6 @@
              #:with (var ...) #'(vars.var ...))
     (pattern (~seq)
              #:with (var ...) #'())))
-
-(define-syntax-rule (ensure-contract who contract)
-  (ensure-contract/fn (get-srclocs contract) who contract))
 
 (define-simple-macro (with-return expr:expr ...)
   (let/ec return-f
@@ -663,129 +653,26 @@
   (lambda (stx)
     (syntax-error stx "use of self outside of method")))
 
-(define (contract-params-match? cs1 cs2)
-  (for/and ([c1 (in-vector cs1)]
-            [c2 (in-vector cs2)])
-    (eq? c1 c2)))
-
-(define-for-syntax (public-method-name? stx)
-  (define name (symbol->string (syntax-e stx)))
-  (or (not (string-prefix? name "_"))
-      (string-prefix? name "__")))
-
 (define-syntax (dssl-interface stx)
   (syntax-parse stx
     #:literals (dssl-def)
-    [(_ name:id cvs:optional-contract-vars
+    [(_ name:id
+        cvs:optional-contract-vars
+        (super:super-interface ...)
         (dssl-def (method-name:id
                     method-cvs:optional-contract-vars
                     method-self:id
                     method-params:var&contract ...)
                   method-result:optional-return-contract) ...)
-     #:fail-when (check-duplicate-identifier
-                   (syntax->list #'(method-name ...)))
-                 "duplicate method name"
-     (for ([method-name (in-syntax #'(method-name ...))])
-       (unless (public-method-name? method-name)
-         (syntax-error method-name "interface methods cannot be private")))
-     #`(begin
-         (define interface-token (gensym))
-         (define interface-method-table
-           (for/hasheq
-             ([srcloc
-                (in-vector (vector (get-srcloc method-name) ...))]
-              [each-method-name
-                (in-vector (vector 'method-name ...))]
-              [method-ctc
-                (in-vector
-                  (vector
-                    (λ (cvs.var ...)
-                       (square-bracket-proc-contract
-                         method-name
-                         [method-cvs.var ...]
-                         (ensure-contract 'def method-params.contract)
-                         ...
-                         (ensure-contract 'def method-result.result)))
-                    ...))])
-             (values each-method-name (cons method-ctc srcloc))))
-         (dssl-provide (for-syntax name))
-         (define-for-syntax name
-           (list
-             #'interface-token
-             (list 'method-name
-                   (length (syntax->list #'(method-cvs.var ...)))
-                   (length (syntax->list #'(method-params ...))))
-             ...))
-         (define (first-order? obj)
-           (and (object-base? obj)
-                (vector-memq interface-token
-                             (object-info-interfaces
-                               (object-base-info obj)))))
-         (define (#,(struct-predicate-name #'name) obj)
-           (and (first-order? obj)
-                #t))
-         (define (make-projection cvs.var ...)
-           (define contract-parameters (vector-immutable cvs.var ...))
-           (λ (blame)
-              (λ (val neg-party)
-                 (cond
-                   [(and (object-base? val)
-                         (assq interface-token
-                               (object-base-contract-paramses val)))
-                    =>
-                    (λ (pair)
-                       (if (contract-params-match?
-                             (cdr pair)
-                             contract-parameters)
-                         val
-                         (racket:raise-blame-error
-                           blame #:missing-party neg-party val
-                           (string-append
-                             "cannot re-protect with with same interface"
-                             " (~a) and different contract parameters")
-                           'name)))]
-                   [(first-order? val)
-                    ((object-info-projector (object-base-info val))
-                     val
-                     (cons interface-token contract-parameters)
-                     (λ (sel method)
-                        (cond
-                          [(hash-ref interface-method-table sel #f)
-                           =>
-                           (λ (pair)
-                              (racket:contract
-                                ((car pair) cvs.var ...) method
-                                (format "method ~a of interface ~a"
-                                        sel 'name)
-                                "method caller"
-                                #f
-                                (cdr pair)))]
-                          [else
-                            (λ _
-                               (racket:raise-blame-error
-                                 (racket:blame-swap blame)
-                                 #:missing-party neg-party val
-                                 "interface ~a is protecting method ~a"
-                                 'name sel))])))]
-                   [(object-base? val)
-                    (racket:raise-blame-error
-                      blame #:missing-party neg-party val
-                      "class ~a does not implement interface ~a"
-                      (object-info-name (object-base-info val))
-                      'name)]
-                   [else
-                     (racket:raise-blame-error
-                       blame #:missing-party neg-party val
-                       "value ~e does not implement interface ~a"
-                       val 'name)]))))
-         (dssl-provide #,(interface-contract-name #'name))
-         (define #,(interface-contract-name #'name)
-           (square-bracket-contract
-             #,(interface-contract-name #'name)
-             ([cvs.var AnyC] ...)
-             #:first-order first-order?
-             #:late-neg-projection
-             (make-projection cvs.var ...))))]))
+     #'(define-dssl-interface
+         name
+         (cvs.var ...)
+         ((super.name super.params ...) ...)
+         ([method-name
+            (method-cvs.var ...)
+            (method-params.contract ...)
+            method-result.result]
+          ...))]))
 
 (define-syntax (define-field stx)
   (syntax-parse stx
@@ -846,59 +733,42 @@
                 (generate-temporaries method-params))))
     (syntax-error stx "class must have a constructor __init__")))
 
-(define-for-syntax (lookup-interfaces class-name interfaces)
-  (for/fold ([names     '()]
-             [tokens    '()]
-             [methodses '()])
-            ([interface (in-syntax interfaces)])
-    (unless (identifier-binding interface 1)
-      (syntax-error interface "undefined interface"))
-    (define interface-info (syntax-local-eval interface))
-    (values (cons interface names)
-            (cons (car interface-info) tokens)
-            (cons (cdr interface-info) methodses))))
-
 (define-for-syntax (check-class-against-interface
-                     interface-name
-                     interface-methods
+                     interface-info0
                      class-name
-                     class-methods
+                     class-method-names
                      class-method-cvarses
                      class-method-paramses)
-  (define class-method-names (map syntax-e class-methods))
-  (for ([method-info (in-list interface-methods)])
-    (unless (memq (car method-info) class-method-names)
-      (syntax-error
-        class-name
-        "class missing method ~a, required by interface ~a"
-        (car method-info)
-        (syntax-e interface-name))))
-  (for ([method-stx    (in-list class-methods)]
-        [method-name   (in-list class-method-names)]
-        [method-cvars  (in-list class-method-cvarses)]
-        [method-params (in-list class-method-paramses)])
-    (cond
-      [(assq method-name interface-methods)
-       =>
-       (lambda (method-info)
-         (define cvar-arity (length (syntax->list method-cvars)))
-         (unless (= cvar-arity (cadr method-info))
-           (syntax-error
-             class-name
-             "method ~a takes ~a contract params, but interface ~a specifies ~a"
-             method-name
-             cvar-arity
-             (syntax-e interface-name)
-             (cadr method-info)))
-         (define actual-arity (length (syntax->list method-params)))
-         (unless (= actual-arity (caddr method-info))
-           (syntax-error
-             class-name
-             "method ~a takes ~a params, but interface ~a specifies ~a"
-             method-name
-             (add1 actual-arity)
-             (syntax-e interface-name)
-             (add1 (caddr method-info)))))])))
+  (define class-methods (make-hasheq))
+  (for ([name   (in-list class-method-names)]
+        [cvars  (in-list class-method-cvarses)]
+        [params (in-list class-method-paramses)])
+    (hash-set! class-methods
+               (syntax-e name)
+               (imethod-info name
+                                    (syntax-length cvars)
+                                    (syntax-length params))))
+  (define (loop interface-info)
+    (define interface-name (syntax-e (interface-info-name interface-info)))
+    (for-each loop (interface-info-supers interface-info))
+    (for ([i-m-info (interface-info-methods interface-info)])
+      (define method-name (syntax-e (imethod-info-name i-m-info)))
+      (cond
+        [(hash-ref class-methods method-name #f)
+         =>
+         (λ (c-m-info)
+            (cond
+              [(compare-imethod-info interface-name c-m-info i-m-info)
+               =>
+               (λ (message) (syntax-error class-name message))]
+              [else (void)]))]
+        [else
+          (syntax-error
+            class-name
+            "class missing method ~a, required by interface ~a"
+            method-name
+            interface-name)])))
+  (loop interface-info0))
 
 (define-syntax (define-class-predicate stx)
   (syntax-parse stx
@@ -951,22 +821,23 @@
          #'((method-params.var ...) ...)
          #'name))
      ; Lookup and check interfaces:
-     (define-values (interface-names interface-tokens interface-methodses)
-       (lookup-interfaces #'name #'(interfaces.interface ...)))
-     (for ([interface-name    interface-names]
-           [interface-methods interface-methodses])
-       (check-class-against-interface
-         interface-name
-         interface-methods
-         #'name
-         method-names
-         (syntax->list #'((method-cvs.var ...) ...))
-         (syntax->list #'((method-params ...) ...))))
+     (define interfaces
+       (for/list ([interface-name (in-syntax #'(interfaces.interface ...))])
+         (define interface-info (lookup-interface interface-name))
+         (check-class-against-interface
+           interface-info
+           #'name
+           method-names
+           (syntax->list #'((method-cvs.var ...) ...))
+           (syntax->list #'((method-params ...) ...)))
+         interface-info))
      ; Generate new names:
      (define (self. property) (class-qualify #'name property))
      (with-syntax
        ([internal-name
           (format-id #f "c:~a" #'name)]
+        [(interface-token ...)
+         (interface-info-all-tokens/list interfaces)]
         [(actual-field-name ...)
          (generate-temporaries field-names)]
         [(self.field-name ...)
@@ -1003,7 +874,7 @@
              (object-info
                'name
                map-fields
-               (vector-immutable #,@interface-tokens)
+               (vector-immutable 'interface-token ...)
                (vector-immutable
                  (method-info
                    '__class__

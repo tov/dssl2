@@ -71,4 +71,7 @@
          args))
 
 (define (syntax-error stx fmt . args)
-  (raise-syntax-error #f (apply format fmt args) stx))
+  (define message (apply format fmt args))
+  (if (pair? stx)
+    (raise-syntax-error #f message (car stx) #f (cdr stx))
+    (raise-syntax-error #f message stx)))

@@ -1,18 +1,26 @@
 #lang racket/base
 
-(provide class-qualify/sym
+(provide public-method-name?
+         class-qualify/sym
          (for-syntax class-qualify)
          struct-predicate-name
          struct-special-name
          struct-special-name/located
          interface-contract-name
+         interface-table-name
          struct-getter-name
          struct-setter-name)
 
 (require syntax/parse/define
+         (only-in racket/string string-prefix?)
          (only-in racket/syntax format-id))
 (require (for-syntax racket/base
                      (only-in racket/syntax format-id)))
+
+(define (public-method-name? stx)
+  (define name (symbol->string (syntax-e stx)))
+  (or (not (string-prefix? name "_"))
+      (string-prefix? name "__")))
 
 (define (class-qualify/sym qualifier property)
   (format "«~a».~a" qualifier property))
@@ -33,6 +41,9 @@
 
 (define (interface-contract-name name)
   (format-id name "~a!" name))
+
+(define (interface-table-name name)
+  (format-id name "~a-table" name))
 
 (define-syntax (struct-getter-name stx)
   (syntax-parse stx

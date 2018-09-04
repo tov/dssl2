@@ -7,7 +7,6 @@
          get-method-value
          dssl-send
          dssl-equal?
-         ensure-contract/fn
          ; values
          ; * primitive classes
          ; ** boolean
@@ -72,7 +71,9 @@
          ; * other functions
          dir)
 
-(require "errors.rkt"
+(require "class-system.rkt"
+         "contract.rkt"
+         "errors.rkt"
          "object.rkt"
          "struct.rkt"
          "generic.rkt"
@@ -180,8 +181,6 @@
 
 ;; Contracts
 
-(define AnyC (flat-named-contract 'AnyC any/c))
-
 (define VoidC (flat-named-contract 'VoidC void?))
 
 (define (format-fun f x xs)
@@ -191,13 +190,6 @@
     (fprintf port ", ~a" (dssl-contract-name xi)))
   (fprintf port ")")
   (get-output-string port))
-
-(define (ensure-contract/fn srclocs who contract)
-  (if (contract? contract)
-    contract
-    (runtime-error #:srclocs srclocs
-                   "%s: expected a contract\n got: %p"
-                   who contract)))
 
 (define VecC
   (special-square-bracket-contract
@@ -292,7 +284,25 @@
     [else           (+ (* 2 (random_bits (sub1 n)))
                        (random 2))]))
 
-;; Primitive classes
+;; Primitive interfaces classes
+
+#| (define-dssl-interface ITERABLE () |#
+#|   (method (iterator) ITERATOR)) |#
+
+#| (define-dssl-interface ITERATOR (ITERATABLE) |#
+#|   (method (try_advance (FunC AnyC AnyC)) bool?)) |#
+
+#| (define-dssl-class range_iterator (ITERATOR ITERABLE) |#
+#|   (object-lambda (low high) |#
+#|     (define (try_advance self visit) |#
+#|       (if (< low high) |#
+#|         (begin |#
+#|           (visit low) |#
+#|           (set! low (+ low 1)) |#
+#|           #true) |#
+#|         #false)) |#
+#|     (define (iterator self) |#
+#|       self))) |#
 
 (define bool
   (case-lambda

@@ -132,8 +132,9 @@
          (loc/1 `(struct ,$2 ,@$4))]
         [(CLASS <ident> <foralls> <implemented-interfaces> COLON <class-suite>)
          (loc/1 `(class ,$2 ,@$3 ,@$4 ,@$6))]
-        [(INTERFACE <ident> <foralls> COLON <interface-suite>)
-         (loc/1 `(interface ,$2 ,@$3 ,@$5))]
+        [(INTERFACE <ident> <foralls> <extended-interfaces> COLON
+                    <interface-suite>)
+         (loc/1 `(interface ,$2 ,@$3 ,$4 ,@$6))]
         [(TEST <expr> COLON <suite>)
          (loc/1 `(test ,$2 ,@$4))]
         [(TEST COLON <suite>)
@@ -168,6 +169,21 @@
       (<implemented-interfaces>
         [(LPAREN <formals> RPAREN) `(#:implements ,$2)]
         [()                        `()])
+
+      (<extended-interfaces>
+        [(LPAREN <instantiated-interface-list> RPAREN) $2]
+        [()                        '()])
+
+      (<instantiated-interface-list>
+        [()                            '()]
+        [(<instantiated-interface>)    (loc (list $1))]
+        [(<instantiated-interface> COMMA <instantiated-interface-list>)
+                                       (loc (cons $1 $3))])
+
+      (<instantiated-interface>
+        [(<ident>)                 $1]
+        [(<ident> LBRACK <formals> RBRACK)
+                                   (loc (cons $1 $3))])
 
       (<suite>
         [(<simple-statement>)

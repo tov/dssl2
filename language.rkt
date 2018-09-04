@@ -300,7 +300,7 @@
          (let* ([obj  v]
                 [next (get-try-advance (get-srclocs v) obj "for loop")])
            (let loop ([real-i 0])
-             (and
+             (when
                (let ([i real-i])
                  (next
                    (λ (j)

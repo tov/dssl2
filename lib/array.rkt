@@ -1,6 +1,6 @@
 #lang dssl2
 
-class Array[T]:
+class Array[T] (ITERABLE):
     let size_: nat?
     let data_: vec?
     
@@ -70,6 +70,9 @@ class Array[T]:
     def equals?(self, other) -> bool?:
         self.equals_with?(other, lambda x, y: x == y)
     
+    def iterator(self) -> index_iterator?:
+        index_iterator(self, 0, self.size())
+
     def __eq__(self, other) -> bool?:
         self.equals?(other)
         

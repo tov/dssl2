@@ -29,7 +29,12 @@
   (format-id prop "~a-arrow" prop))
 
 (define-for-syntax (class-qualify qualifier property)
-  (format-id qualifier "«~a».~a" qualifier property))
+  (syntax-property
+    (format-id qualifier "«~a».~a" qualifier property
+               #:source property
+               #:props property)
+    'original-for-check-syntax
+    #true))
 
 (define (struct-predicate-name name)
   (format-id name "~a?" name))

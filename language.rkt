@@ -289,35 +289,48 @@
      #:fail-when (and (bound-identifier=? #'i #'j) #'j)
                  "duplicate variable name"
      #'(let/ec break-f
-         (for ([i (in-naturals)]
-               [j (dssl-in-value v)])
-           (let/ec continue-f
-             (syntax-parameterize
-               ([dssl-break    (syntax-rules () [(_) (break-f (void))])]
-                [dssl-continue (syntax-rules () [(_) (continue-f)])])
-               expr ...))))]
+         (let* ([obj         v]
+                [fail!       (λ ()
+                                (type-error
+                                  #:srclocs (get-srclocs v)
+                                  "for loop"
+                                  obj
+                                  "object responding to .iterator()"))]
+                [iterator    (dssl-send obj 'iterator #:or-else (fail!))]
+                [try_advance (get-method-value/or-else
+                               #:srclocs (get-srclocs v)
+                               iterator 'try_advance)])
+           (let loop ([real-i 0])
+             (and
+               (let ([i real-i])
+                 (try_advance
+                   (λ (j)
+                      (let/ec continue-f
+                              (syntax-parameterize
+                                ([dssl-break
+                                   (syntax-rules () [(_) (break-f (void))])]
+                                 [dssl-continue
+                                   (syntax-rules () [(_) (continue-f)])])
+                                (dssl-begin expr ...))))))
+               (loop (add1 real-i))))))]
     [(_ [i:id v:expr] expr:expr ...+)
      #'(dssl-for [(_ i) v] (dssl-begin expr ...))]))
 
 (define-syntax (dssl-for/vec stx)
   (syntax-parse stx
-    [(_ [(i:id j:id) v:expr] expr:expr)
-     #:fail-when (and (bound-identifier=? #'i #'j) #'j)
-                 "duplicate variable name"
-     #'(for/vector ([i (in-naturals)]
-                    [j (dssl-in-value v)])
-         expr)]
     [(_ [j:id v:expr] expr:expr)
-     #'(dssl-for/vec [(_ j) v] expr)]
+     #'(dssl-for/vec [(_ j) v] #:when #true expr)]
+    [(_ [(i:id j:id) v:expr] expr:expr)
+     #'(dssl-for/vec [(i j) v] #:when #true expr)]
+    [(_ [j:id v:expr] #:when when:expr expr:expr)
+     #'(dssl-for/vec [(_ j) v] #:when when expr)]
     [(_ [(i:id j:id) v:expr] #:when when expr:expr)
      #:fail-when (and (bound-identifier=? #'i #'j) #'j)
                  "duplicate variable name"
      #'(for/vector ([i (in-naturals)]
                     [j (dssl-in-value v)]
                     #:when when)
-         expr)]
-    [(_ [j:id v:expr] #:when when:expr expr:expr)
-     #'(dssl-for/vec [(_ j) v] #:when when expr)]))
+         expr)]))
 
 (define (dssl-in-value/value srclocs v)
   (cond

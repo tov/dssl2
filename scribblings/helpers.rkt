@@ -1,8 +1,8 @@
 #lang racket/base
 
-(require "../private/names.rkt"
-         "util.rkt"
+(require "util.rkt"
          (for-syntax racket/base
+                     "../private/names.rkt"
                      "util.rkt"
                      (only-in racket/syntax format-id)))
 

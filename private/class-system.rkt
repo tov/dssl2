@@ -390,6 +390,14 @@
                    (cons (datum->syntax #'name '__class__)
                          (syntax->list #'(method-name ...))))
                  "duplicate method name"
+     (for ([method-info
+             (in-syntax #'((method-self method-param-var ...) ...))])
+       (cond
+         [(check-duplicate-identifier (syntax->list method-info))
+          =>
+          (λ (duplicate)
+             (syntax-error duplicate "duplicate method parameter"))]
+         [else (void)]))
      ; Extract the defined names:
      (define field-names  (syntax->list #'(field-var ...)))
      (define method-names (syntax->list #'(method-name ...)))

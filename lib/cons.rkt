@@ -219,7 +219,7 @@ def _ormap(f: FunC[AnyC, AnyC], lst: _list?) -> AnyC:
         lst = lst.cdr
     result
 
-def _sort[T](less_than?: FunC[T, T, AnyC], lst: _ListC(T)) -> _list?:
+def _sort[T](less_than?: FunC[T, T, AnyC], lst: _realListC(T)) -> _list?:
     def insert(element, link):
         if cons?(link) and less_than?(link.car, element):
             cons(link.car, insert(element, link.cdr))
@@ -229,7 +229,7 @@ def _sort[T](less_than?: FunC[T, T, AnyC], lst: _ListC(T)) -> _list?:
         else: loop(link.cdr, insert(link.car, acc))
     loop(lst, nil())
 
-def _ListC(element: contract?) -> contract?:
+def _realListC(element: contract?) -> contract?:
     if num?(element) or bool?(element) or str?(element) or char?(element):
         λ lst: _andmap(λ x: x == element, lst)
     elif flat_contract?(element) and proc?(element):
@@ -237,7 +237,9 @@ def _ListC(element: contract?) -> contract?:
     else:
         def project_element(x: element): x
         def projection(blame!, value): _map(project_element, value)
-        make_contract('ListC(%p)'.format(element), _list?, projection)
+        make_contract('ListC[%p]'.format(element), _list?, projection)
+
+let _ListC = SquareBracketC('ListC', _realListC)
 
 struct _ConsOperations:
     let list?

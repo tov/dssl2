@@ -43,9 +43,13 @@
     (eq? c1 c2)))
 
 (define-for-syntax (lookup-interface interface-name)
-  (syntax-local-value
-    interface-name
-    (λ () (syntax-error interface-name "undefined interface"))))
+  (define result
+    (syntax-local-value
+      interface-name
+      (λ () (syntax-error interface-name "undefined interface"))))
+  (if (interface-info? result)
+    result
+    (syntax-error interface-name "is not an interface")))
 
 (define (union-interfaces i1 i2)
   (define result (make-hasheq))

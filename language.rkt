@@ -227,7 +227,25 @@
 
 (define-syntax (dssl-let stx)
   (syntax-parse stx
-    [(_ :var&contract)
+    [(_ var:id)
+     #'(begin
+         (define real-var unsafe-undefined)
+         (make-set!able real-var)
+         (dssl-provide var)
+         (define-syntax var
+           (make-set!-transformer
+            (λ (stx)
+              (syntax-parse stx #:literals (set!)
+                [(set! _:id e:expr)
+                 #'(set! real-var e)]
+                [_:id
+                 #'(check-not-unsafe-undefined real-var 'var)]
+                [(_:id . args)
+                 (with-syntax ([app (datum->syntax stx '#%app)])
+                   #'(app
+                       (check-not-unsafe-undefined real-var 'var)
+                       . args))])))))]
+    [(_ [var:id contract:expr])
      #'(begin
          (define real-var unsafe-undefined)
          (make-set!able real-var)
@@ -253,12 +271,17 @@
                    #'(app
                        (check-not-unsafe-undefined real-var 'var)
                        . args))])))))]
-    [(_ :var&contract expr)
+    [(_ var:id rhs:expr)
+     #'(begin
+         (dssl-provide var)
+         (define var rhs)
+         (make-set!able var))]
+    [(_ [var:id contract:expr] rhs:expr)
      #'(begin
          (dssl-provide var)
          (define/contract var
                           (ensure-contract 'let contract)
-                          expr)
+                          rhs)
          (make-set!able var))]))
 
 ; while uses two syntax parameters, break and continue (shared by for)

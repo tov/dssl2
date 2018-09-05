@@ -17,7 +17,8 @@
 
 (require "errors.rkt")
 (require (for-syntax syntax/stx
-                     "errors.rkt"))
+                     "errors.rkt"
+                     "util.rkt"))
 (require syntax/parse/define)
 (require (only-in racket/function
                   arity-includes?)
@@ -226,6 +227,15 @@
                       (syntax/loc stx
                         (real-definition neg-party)))])))))]))
 
+(define ((arities->sbp? contract-arity regular-arity) proc)
+  (and (generic-proc? proc)
+       (arity-includes?
+         (procedure-arity (generic-proc-apply proc))
+         regular-arity)
+       (arity-includes?
+         (procedure-arity (generic-base-instantiate proc))
+         contract-arity)))
+
 ; Creates a contract for a procedure that accepts optional, square
 ; bracket arguments.
 ;
@@ -241,14 +251,9 @@
      #'(-> formal ... result)]
     [(_ name:id [opt-formal:id ...+] formal:expr ... result:expr)
      #'(let ()
-         (define (first-order? proc)
-           (and (generic-proc? proc)
-                (arity-includes?
-                  (procedure-arity (generic-proc-apply proc))
-                  (length (syntax->list #'(formal ...))))
-                (arity-includes?
-                  (procedure-arity (generic-base-instantiate proc))
-                  (length (syntax->list #'(opt-formal ...))))))
+         (define first-order?
+           (arities->sbp? #,(syntax-length #'(opt-formal ...))
+                          #,(syntax-length #'(formal ...))))
          (define ((late-neg-proj blame) value missing-party)
            (cond
              [(first-order? value)

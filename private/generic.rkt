@@ -303,6 +303,14 @@
 ;
 (define (build-square-bracket-contract name builder)
   (define opt-arity (procedure-arity builder))
+  (unless (exact-integer? opt-arity)
+    (dssl-error
+      (string-append
+        "SquareBracketC: builder procedure must have exact arity\n"
+        "  builder:       %p\n"
+        "  builder arity: %s")
+      builder
+      (format "~a" opt-arity)))
   (define default-arguments (make-list opt-arity any/c))
   (define default-contract (apply builder default-arguments))
   (generic-contract

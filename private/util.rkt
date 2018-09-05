@@ -1,16 +1,10 @@
 #lang racket/base
 
 (provide syntax-length)
-
-(require (for-syntax racket/base
-                     syntax/parse))
+(require syntax/stx)
 
 (define (syntax-length stx0)
-  (define (loop stx acc)
-    (cond
-      [(pair? stx)
-       (loop (cdr stx) (add1 acc))]
-      [(and (syntax? stx) (pair? (syntax-e stx)))
-       (loop (cdr (syntax-e stx)) (add1 acc))]
-      [else acc]))
-  (loop stx0 0))
+  (let loop ([stx stx0] [acc 0])
+    (if (stx-pair? stx)
+      (loop (stx-cdr stx) (add1 acc))
+      acc)))

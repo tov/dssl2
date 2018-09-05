@@ -15,7 +15,8 @@
          special-square-bracket-contract)
 
 (require "errors.rkt")
-(require (for-syntax "errors.rkt"))
+(require (for-syntax syntax/stx
+                     "errors.rkt"))
 (require syntax/parse/define)
 (require (only-in racket/function
                   arity-includes?)
@@ -165,9 +166,16 @@
     [(_ ((name:id opt-formal:id ...) [formal:id formal-ctc:expr] ...)
         result-ctc:expr
         body:expr)
+     (define no-opt-formals? (stx-null? #'(opt-formal ...)))
      #`(begin
+         #,(if no-opt-formals?
+             #'(define instantiate-contract
+                 (let ([the-contract (-> formal-ctc ... result-ctc)])
+                   (λ () the-contract)))
+             #'(define (instantiate-contract opt-formal ...)
+                 (-> formal-ctc ... result-ctc)))
          (define (instantiate neg-party opt-formal ...)
-           (contract (-> formal-ctc ... result-ctc)
+           (contract (instantiate-contract opt-formal ...)
                      (procedure-rename
                        (λ (formal ...) body)
                        'name)
@@ -175,7 +183,7 @@
                              (srcloc->string (get-srcloc name)))
                      neg-party
                      'name (get-srcloc name)))
-         #,(if (null? (syntax->list #'(opt-formal ...)))
+         #,(if no-opt-formals?
              #'(define real-definition instantiate)
              #'(define (real-definition neg-party)
                  (square-bracket-proc

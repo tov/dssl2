@@ -50,6 +50,8 @@
          VecC
          FunC
          (contract-out
+           [SquareBracketC (-> str? proc? AnyC)])
+         (contract-out
            [NotC (-> contract? contract?)]
            [OrC (-> contract? contract? ... contract?)]
            [AndC (-> contract? contract? ... contract?)]
@@ -230,6 +232,9 @@
     FunC
     #:generic (c . cs) (FunC-helper (cons c cs))
     #:default proc?))
+
+(define (SquareBracketC name builder)
+  (build-square-bracket-contract name builder))
 
 (define (IntInC low high)
   (rename-contract

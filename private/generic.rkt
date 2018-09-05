@@ -12,6 +12,7 @@
          define-square-bracket-proc
          square-bracket-proc-contract
          square-bracket-contract
+         build-square-bracket-contract
          special-square-bracket-contract)
 
 (require "errors.rkt")
@@ -36,7 +37,9 @@
                   build-contract-property
                   raise-blame-error
                   blame-positive
-                  contract-first-order))
+                  contract-first-order)
+         (only-in racket/list
+                  make-list))
 (require (for-syntax racket/base
                      (only-in racket/syntax generate-temporary)))
 
@@ -288,6 +291,25 @@
                 #:late-neg-projection (make-projection opt-formal ...)))
            (make-first-order default ...)
            (make-projection default ...)))]))
+
+; Creates a contract for a procedure that accepts optional, square
+; bracket arguments. This is the function (non-macro) version of
+; square-bracket-contract, and suitable for use from DSSL2, where it
+; is exported as SquareBracketC.
+;
+; Example:
+;
+;     SquareBracketC("my_ctc", λ T, U: FunC[T, U, Pair?])
+;
+(define (build-square-bracket-contract name builder)
+  (define opt-arity (procedure-arity builder))
+  (define default-arguments (make-list opt-arity any/c))
+  (define default-contract (apply builder default-arguments))
+  (generic-contract
+    (string->symbol name)
+    builder
+    (contract-first-order default-contract)
+    (contract-late-neg-projection default-contract)))
 
 ; Creates a contract that takes optional, square bracket parameters.
 ; Unlike square-bracket-contract, this allows specifying different

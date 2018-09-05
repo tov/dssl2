@@ -150,6 +150,18 @@
 (define-for-syntax (compose-neg-party who where)
   (format "~a at ~a" who (srcloc->string (get-srcloc/fn where))))
 
+(define (instantiate-square-bracket-proc name
+                                         the-contract
+                                         the-function
+                                         neg-party
+                                         srcloc)
+  (contract the-contract
+            (procedure-rename the-function name)
+            (format "def ~a at ~a" name (srcloc->string srcloc))
+            neg-party
+            name
+            srcloc))
+
 ; For defining a user square bracket proc, having optional contract
 ; params that default to `AnyC`. The syntax is
 ;
@@ -178,15 +190,13 @@
              #'(define (instantiate-contract opt-formal ...)
                  (-> formal-ctc ... result-ctc)))
          (define (instantiate neg-party opt-formal ...)
-           instantiate ; workaround for optimizer bug in Racket 7.0
-           (contract (instantiate-contract opt-formal ...)
-                     (procedure-rename
-                       (λ (formal ...) body)
-                       'name)
-                     (format "def ~a at ~a" 'name
-                             (srcloc->string (get-srcloc name)))
-                     neg-party
-                     'name (get-srcloc name)))
+           instantiate
+           (instantiate-square-bracket-proc
+             'name
+             (instantiate-contract opt-formal ...)
+             (λ (formal ...) body)
+             neg-party
+             (get-srcloc name)))
          #,(if no-opt-formals?
              #'(define real-definition instantiate)
              #'(define (real-definition neg-party)

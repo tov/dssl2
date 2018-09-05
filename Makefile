@@ -4,7 +4,7 @@ default: lang
 
 hard: doc
 
-test:
+test: lang
 	raco test test/parser.rkt test/run-dssl2-tests.rkt
 
 long_test: test

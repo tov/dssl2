@@ -250,10 +250,13 @@
     [(_ name:id [] formal:expr ... result:expr)
      #'(-> formal ... result)]
     [(_ name:id [opt-formal:id ...+] formal:expr ... result:expr)
+     (define default-actuals (stx-map (λ (_) #'any/c) #'(opt-formal ...)))
      #'(let ()
          (define first-order?
            (arities->sbp? #,(syntax-length #'(opt-formal ...))
                           #,(syntax-length #'(formal ...))))
+         (define (instantiate-contract opt-formal ...)
+           (-> formal ... result))
          (define ((late-neg-proj blame) value missing-party)
            (cond
              [(first-order? value)
@@ -261,18 +264,17 @@
                 (generic-base-name value)
                 (λ (opt-formal ...)
                    (contract
-                     (-> formal ... result)
+                     (instantiate-contract opt-formal ...)
                      ((generic-base-instantiate value) opt-formal ...)
                      (blame-positive blame)
                      missing-party
                      'name #f))
-                (let ([opt-formal any/c] ...)
-                  (contract
-                    (-> formal ... result)
-                    (generic-proc-apply value)
-                    (blame-positive blame)
-                    missing-party
-                    'name #f))
+                (contract
+                  (instantiate-contract #,@default-actuals)
+                  (generic-proc-apply value)
+                  (blame-positive blame)
+                  missing-party
+                  'name #f)
                 (generic-proc-tag value))]
              [else
                (raise-blame-error

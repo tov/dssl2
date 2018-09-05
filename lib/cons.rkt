@@ -1,8 +1,5 @@
 #lang dssl2
 
-def my_contract(x): True
-let test_binding: my_contract = 0
-
 # A library of header-free singly-linked lists.
 #
 # Lists are represented using two structs, nil() and cons(car, cdr).

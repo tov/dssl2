@@ -178,6 +178,7 @@
              #'(define (instantiate-contract opt-formal ...)
                  (-> formal-ctc ... result-ctc)))
          (define (instantiate neg-party opt-formal ...)
+           instantiate ; workaround for optimizer bug in Racket 7.0
            (contract (instantiate-contract opt-formal ...)
                      (procedure-rename
                        (λ (formal ...) body)

@@ -46,6 +46,9 @@ class Array[T] (ITERABLE):
         let result = self.data_[self.size_]
         self.data_[self.size_] = False
         result
+        
+    def clear(self) -> VoidC:
+        self.size_ = 0
 
     def shrink_to_fit(self) -> VoidC:
         if self.data_.len() > self.size_:

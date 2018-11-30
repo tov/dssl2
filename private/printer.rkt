@@ -39,11 +39,7 @@
     (apply dssl-fprintf port fmt params)
     (get-output-string port)))
 
-(current-dssl-error-format
-  (λ (fmt . args)
-     (if (string-contains? fmt "~")
-       (apply format fmt args)
-       (apply dssl-format fmt args))))
+(current-dssl-error-format dssl-format)
 
 (define (dssl-fprintf port fmt . params)
   (define parsed-fmt (parse-format-string fmt))

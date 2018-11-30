@@ -1,71 +1,71 @@
 #lang dssl2
 
 class Array[T] (ITERABLE):
-    let size_: nat?
-    let data_: vec?
+    let _size: nat?
+    let _data: vec?
     
     def __init__(self, capacity: nat?):
-        self.size_ = 0
-        self.data_ = [False; capacity]
+        self._size = 0
+        self._data = [False; capacity]
 
     def empty?(self) -> bool?:
-        self.size_ == 0
+        self._size == 0
 
     def size(self) -> nat?:
-        self.size_
+        self._size
 
     def capacity(self) -> nat?:
-        self.data_.len()
+        self._data.len()
 
     def ensure_capacity(self, req_cap: nat?) -> VoidC:
         if req_cap > self.capacity():
             let new_cap = max(req_cap, 2 * self.capacity())
-            self.data_ = [ self.data_[i] if i < self.size_ else False
+            self._data = [ self._data[i] if i < self._size else False
                                for i in new_cap ]
 
     def _check_index(self, index):
-        if index >= self.size_:
-            error("Array index out of bounds: ~a >= ~a", index, self.size_)
+        if index >= self._size:
+            error("Array index out of bounds: ~a >= ~a", index, self._size)
 
     def get(self, index: nat?):
         self._check_index(index)
-        self.data_[index]
+        self._data[index]
 
     def set(self, index: nat?, value: T) -> VoidC:
         self._check_index(index)
-        self.data_[index] = value
+        self._data[index] = value
 
     def push(self, value: T) -> VoidC:
-        self.ensure_capacity(self.size_ + 1)
-        self.data_[self.size_] = value
-        self.size_ = self.size_ + 1
+        self.ensure_capacity(self._size + 1)
+        self._data[self._size] = value
+        self._size = self._size + 1
 
     def pop(self) -> OrC(False, T):
-        if self.size_ == 0: return False
-        self.size_ = self.size_ - 1
-        let result = self.data_[self.size_]
-        self.data_[self.size_] = False
+        if self._size == 0: return False
+        self._size = self._size - 1
+        let result = self._data[self._size]
+        self._data[self._size] = False
         result
         
     def clear(self) -> VoidC:
-        self.size_ = 0
+        self._size = 0
 
     def shrink_to_fit(self) -> VoidC:
-        if self.data_.len() > self.size_:
-            self.data_ = [ self.data_[i] for i in self.size_ ]
+        if self._data.len() > self._size:
+            self._data = [ self._data[i] for i in self._size ]
 
     def clone(self) -> Array?:
-        let result = Array(T, self.size_)
-        for i in self.size_:
+        let result = Array(T, self._size)
+        for i in self._size:
             result.push(self.get(i))
         result
     
     def to_vec(self) -> vec?:
-        [ self.data_[i] for i in self.size_ ]
+        [ self._data[i] for i in self._size ]
 
     def equals_with?(self, other, pred?) -> bool?:
-        if self.size_ != other.size(): return False
-        for i in self.size_:
+        if self._size != other.size(): return False
+        for i in self._size:
             if not pred?(self.get(i), other.get(i)):
                 return False
         return True

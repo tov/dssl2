@@ -16,8 +16,7 @@
                   sandbox-error-output))
 
 (define grader-read-directories
-  (make-parameter '("/Applications/Racket"
-                    "/Applications/Racket v6.12")))
+  (make-parameter '("/Applications/Racket")))
 (define grader-time-limit (make-parameter 30))
 (define grader-memory-limit (make-parameter 256))
 
@@ -49,6 +48,4 @@
 
 (define (grade-file subject)
   (define-values (passed total) (grade-file/values subject))
-  (if (zero? total)
-      0
-      (exact->inexact (/ passed total))))
+  (exact->inexact (if (zero? total) 0 (/ passed total))))

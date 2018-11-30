@@ -570,7 +570,7 @@
                        (dssl-format "%p%s" other self)))]
    ; char indexing
    [__index_ref__ (-> nat? AnyC)
-                  (λ (self i) (string-ref self i))]
+                  prim:str.__index_ref__]
    ; public methods
    [iterator      (λ (self)
                      (index_iterator self 0 (string-length self)))]
@@ -578,6 +578,16 @@
    [explode       (λ (self) (list->vector (string->list self)))]
    [format        (λ (self . args)
                      (apply dssl-format self args))]))
+
+(define (bounds-check who index limit)
+  (unless (< index limit)
+    (dssl-error
+      "%s: out of bounds:\n  got index: %p\n  expected: 0 ≤ index < %p"
+      who index limit)))
+
+(define (prim:str.__index_ref__ self ix)
+  (bounds-check "str.__index_ref__" ix (string-length self))
+  (string-ref self ix))
 
 (define vec
   (case-lambda
@@ -587,9 +597,9 @@
 
 (define-unwrapped-class vec-class vec vec?
   ([__index_ref__ (-> nat? AnyC)
-                  vector-ref]
+                  prim:vec.__index_ref__]
    [__index_set__ (-> nat? AnyC AnyC)
-                  vector-set!]
+                  prim:vec.__index_set__]
    [__eq__        (-> vec? AnyC)
                   prim:vec.__eq__]
    [len           vector-length]
@@ -601,11 +611,20 @@
    [filter        (-> (-> AnyC AnyC) AnyC)
                   prim:vec.filter]))
 
+(define (prim:vec.__index_ref__ self ix)
+  (bounds-check "vec.__index_ref__" ix (vector-length self))
+  (vector-ref self ix))
+
+(define (prim:vec.__index_set__ self ix val)
+  (bounds-check "vec.__index_set__" ix (vector-length self))
+  (vector-set! self ix val))
+
 (define (prim:vec.__eq__ self other)
   (define o-ref (get-method-value other '__index_ref__))
   (and (eq? (vector-length self) (dssl-send other 'len))
-       (for/and ([i (vector-length self)])
-         (dssl-equal? (vector-ref self i) (o-ref i)))))
+       (for/and ([element (in-vector self)]
+                 [i       (in-naturals 0)])
+         (dssl-equal? element (o-ref i)))))
 
 (define (prim:vec.implode self)
   (define (convert c)

@@ -49,9 +49,9 @@
     (dssl-error
       (string-append
         "dssl-printer: format string did not match number of params\n"
-        "  format string:   ~s\n"
-        "  expected params: ~a\n"
-        "  actual params:   ~a")
+        "  format string:   %p\n"
+        "  expected params: %p\n"
+        "  actual params:   %p")
       fmt expected-params actual-params))
   (let loop ([commands parsed-fmt]
              [params   params])

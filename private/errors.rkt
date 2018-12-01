@@ -12,6 +12,7 @@
          syntax-error)
 
 (require
+  (only-in racket/port with-output-to-string)
   (for-syntax racket/base
               syntax/parse))
 
@@ -47,9 +48,25 @@
     (λ (fmt . args)
        (format "(apply dssl-format ~s ~s)" fmt args))))
 
-(define (error #:srclocs [srclocs '()] fmt . args)
+(define (dssl-format/error arg0 . args)
+  (define dssl-format (current-dssl-error-format))
+  (cond
+    [(string? arg0)
+     (apply dssl-format arg0 args)]
+    [else
+      (define fmt
+        (with-output-to-string
+          (λ ()
+             (display "error(%p")
+             (for ([_ (in-list args)]) (display ", %p"))
+             (display ")"))))
+      (apply dssl-format fmt arg0 args)]))
+
+(define (error #:srclocs [srclocs '()] . args)
   (raise (make-exn:fail:dssl
-           (apply (current-dssl-error-format) fmt args)
+           (if (pair? args)
+             (apply dssl-format/error args)
+             "error()")
            (current-continuation-marks)
            srclocs)))
 

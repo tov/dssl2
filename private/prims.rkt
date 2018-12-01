@@ -74,7 +74,7 @@
          ; * I/O operations
          (contract-out
            [print (-> str? AnyC ... VoidC)]
-           [println (-> str? AnyC ... VoidC)]
+           [println (-> AnyC AnyC ... VoidC)]
            [sleep (-> num? VoidC)])
          ; * other functions
          dir)
@@ -268,12 +268,19 @@
 
 ;; I/O operations
 
-(define (print fmt . values)
-  (apply dssl-printf fmt values))
+(define (print arg0 . args)
+  (apply dssl-printf arg0 args))
 
-(define (println fmt . values)
-  (apply dssl-printf fmt values)
-  (newline))
+(define (println arg0 . args)
+  (cond
+    [(string? arg0)
+     (apply dssl-printf arg0 args)
+     (newline)]
+    [else
+      (dssl-printf "%p" arg0)
+      (for ([arg (in-list args)])
+        (dssl-printf ", %p" arg))
+      (newline)]))
 
 (define (sleep sec)
   (r:sleep sec))

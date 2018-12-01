@@ -332,7 +332,7 @@
      =>
      (λ (__index_ref__) (__index_ref__ ix))]
     [else
-      (dssl-error 'index_iterator "source is not indexable")]))
+      (dssl-error "index_iterator: source is not indexable")]))
 
 (define-dssl-class index_iterator () (ITERATOR)
   ([_source AnyC] [_current AnyC] [_limit AnyC])

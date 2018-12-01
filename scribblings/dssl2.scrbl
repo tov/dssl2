@@ -1861,20 +1861,59 @@ additional argument, as follows:
 For example:
 
 @dssl2block|{
+let a = 3
+let b = 4
 print("%p + %p = %p", a, b, a + b)
 }|
 
-@defprocform[println]{@proto[str? AnyC ... VoidC]}
+prints “3 + 4 = 7”.
 
-Like @racket[print], but adds a newline at the end.
+@defprocforms[println
+    [@proto[str? AnyC ... VoidC]]
+    [@proto[AnyC ... VoidC]]
+]
+
+If the first argument is a string then @racket[println] is
+like @racket[print], but adds a newline at the end.
+
+If the first argument is a non-string or there are no arguments, then
+@racket[println] prints all the arguments with commas in between and a
+newline after, as if formatted by @racket["%p, …, %p\n"].
+
+If DSSL2 supported user-defined varargs functions, it might be defined
+as:
+
+@verbatim|{
+def println(*args):
+    if args.len() == 0:
+        print('\n')
+    elif str?(args[0]):
+        print(*args)
+        print('\n')
+    else:
+        let fmt = ''
+        for _ in args:
+            fmt = '%p' if fmt == '' else fmt + ', %p'
+        println(fmt, *args)
+}|
 
 @subsection{Other functions}
 
-@defprocform[error]{@proto[str? AnyC ... VoidC]}
+@defprocforms[error
+    [@proto[str? AnyC ... VoidC]]
+    [@proto[AnyC ... VoidC]]
+]
 
-Terminates the program with an error message. The error message must be
-supplied as a format string followed by values to interpolate, in the
-style of @racket[print].
+Terminates the program with an error message.
+
+If a first argument is supplied and it is a string, then the error
+message will be produced by interpolating the remaining arguments
+into the string à la @racket[print].
+
+If there are no arguments, or if the first argument is not a string,
+then it formats all the arguments with commas in between and a “call” to
+@racket[error] around it. This ensure that all calls to @racket[error]
+produce some kind of sensible output.
 
 @defprocform[dir]{@proto[AnyC "VecC[str?]"]}
 

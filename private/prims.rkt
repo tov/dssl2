@@ -74,7 +74,7 @@
          ; * I/O operations
          (contract-out
            [print (-> str? AnyC ... VoidC)]
-           [println (-> AnyC AnyC ... VoidC)]
+           [println (-> AnyC ... VoidC)]
            [sleep (-> num? VoidC)])
          ; * other functions
          dir)
@@ -271,14 +271,16 @@
 (define (print arg0 . args)
   (apply dssl-printf arg0 args))
 
-(define (println arg0 . args)
+(define (println . args)
   (cond
-    [(string? arg0)
-     (apply dssl-printf arg0 args)
+    [(null? args)
+     (newline)]
+    [(string? (car args))
+     (apply dssl-printf args)
      (newline)]
     [else
-      (dssl-printf "%p" arg0)
-      (for ([arg (in-list args)])
+      (dssl-printf "%p" (car args))
+      (for ([arg (in-list (cdr args))])
         (dssl-printf ", %p" arg))
       (newline)]))
 

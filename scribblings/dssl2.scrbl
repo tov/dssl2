@@ -1789,7 +1789,7 @@ Determines whether its argument is the special @linkclass{float}
 not-a-number value. This is useful, since @code{nan} is not necessarily
 @racket[==] to other instances of @code{nan}.
 
-@subsection{Comparision operations}
+@subsection{Comparison operations}
 
 @defprocform[cmp]{@proto[AnyC AnyC "OrC(int?, False)"]}
 

@@ -5,7 +5,9 @@ default: lang
 hard: doc
 
 test: lang
+	mkdir ./test/test_resources
 	raco test test/parser.rkt test/run-dssl2-tests.rkt
+	rm -rf ./test/test_resources
 
 long_test: test
 	raco test test/grader.rkt

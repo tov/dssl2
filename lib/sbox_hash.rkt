@@ -2,7 +2,8 @@
 
 # Each instance is a randomly generated hash function. The constructor
 # takes the bit length for the resulting hash codes. The only method,
-# `apply`, hashes a string to an integer of the requested bit length.
+# `apply`, hashes the string representation of its input to an integer
+# of the requested bit length.
 class SboxHash:
     let hash_max: nat?
     let start:    nat?
@@ -28,7 +29,8 @@ class SboxHash:
         3 * hash_code 
 
     # Applies the hash function.
-    def apply(self, input_string: str?) -> nat?:
+    def apply(self, input: AnyC) -> nat?:
+        let input_string = '%d'.format(input)
         let hash_code = self.start
         for c in input_string:
             hash_code = self._mix(self._combine(hash_code, c)) & self.hash_max

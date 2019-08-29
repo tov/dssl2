@@ -48,3 +48,6 @@ class SboxHash:
 
 # Creates a 64-bit hash function
 def SboxHash64(): SboxHash(64)
+
+def HashFunctionC(X): FunC[X, int?]
+def make_sbox_hash(): return SboxHash64().apply

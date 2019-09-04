@@ -836,6 +836,8 @@
      list->vector]
     [(struct-base? obj)
      (list->vector (get-field-list obj))]
+    [(void? obj)
+     (vector)]
     [else (type-error 'dir obj "a struct or object")]))
 
 ;; EQUALITY

@@ -135,6 +135,7 @@ by a newline, or a compound statement.
             'string
             True
             False
+            None
             lvalue
             (expr "if" expr "else" expr)
             (expr "(" (~many-comma expr) ")")
@@ -344,11 +345,11 @@ statement on the same line as the @racket[def].
 Note that @racket[def]s can be nested:
 
 @dssl2block|{
-# rbt_insert! : X RbTreeOf[X] -> Void
+# rbt_insert! : X RbTreeOf[X] -> None
 def rbt_insert!(key, tree):
     # parent : RbLinkOf[X] -> RbLinkOf[X]
     def parent(link):
-        link.parent if rbn?(link) else False
+        link.parent if rbn?(link) else None
 
     # grandparent : RbLinkOf[X] -> RbLinkOf[X]
     def grandparent(link):
@@ -360,7 +361,7 @@ def rbt_insert!(key, tree):
         if rbn?(p):
             if link is p.left: p.right
             else: p.left
-        else: False
+        else: None
 
     # aunt : RbLinkOf[X] -> RbLinkOf[X]
     def aunt(link):
@@ -397,7 +398,8 @@ The DSSL2 conditional statement contains an @racket[if], 0 or more
 conditions holds.
 
 First it evaluates the @racket[if] condition @nt_[expr]{if}.
-If non-false, it then evaluates block @nt_[block]{if}
+If non-false (any value but @racket[False] or @racket[None]),
+it then evaluates block @nt_[block]{if}
 and finishes. Otherwise, it evaluates each @racket[elif] condition
 @nt_[expr]{elif} in turn; if each is false, it goes on to the
 next, but when one is non-false then it finishes with the corresponding
@@ -508,7 +510,7 @@ out of using @racket[break]:
 @dssl2block|{
 def lookup(self, key):
     let bucket = self._find_bucket(key)
-    let result = False
+    let result = None
     while cons?(bucket):
         if key == bucket.first.key:
             result = bucket.first.value
@@ -573,7 +575,7 @@ def bloom_check?(self, s):
 
 @defsmplform{@redefidform/inline[return]}
 
-Returns void from the current function.
+Returns @racket[None] from the current function.
 
 @subsection{Data and program structuring forms}
 
@@ -618,7 +620,7 @@ Another example:
 
 @dssl2block|{
 # A RndBstOf[X] is one of:
-# - False
+# - None
 # - Node(X, nat?, RndBstOf[X], RndBstOf[X])
 struct Node:
     let key
@@ -628,7 +630,7 @@ struct Node:
 
 # singleton : X -> RndBstOf[X]
 def singleton(key):
-    Node(key, 1, False, False)
+    Node(key, 1, None, None)
 
 # size : RndBstOf[X] -> nat?
 def size(tree):
@@ -825,7 +827,7 @@ class Cell (CONTAINER):
     let _empty?
 
     def __init__(self):
-        self._contents = False
+        self._contents = None
         self._empty?   = True
 
     def empty?(self):
@@ -854,7 +856,7 @@ class VecStack (CONTAINER):
     let _len
 
     def __init__(self, capacity):
-        self._data = [False; capacity]
+        self._data = [None; capacity]
         self._len  = 0
 
     def capacity(self):
@@ -1065,7 +1067,19 @@ The true Boolean value.
 
 @defexpform{@defidform/inline[False]}
 
-The false Boolean value, the only value that is not considered true.
+The false Boolean value.
+
+This is one of only two values that are not considered truthy for the
+purpose of conditionals. The other non-truthy value is @racket[None].
+
+@defexpform{@defidform/inline[None]}
+
+A special value for representing missing data. This is also the result
+of functions that are called just for their side effects, such as
+@racket[print].
+
+This is one of only two values that are not considered truthy for the
+purpose of conditionals. The other non-truthy value is @racket[False].
 
 @subsection{Functions and application expressions}
 
@@ -1264,7 +1278,8 @@ The @racket[**] operator is right-associative.
 Logical negation, bitwise negation, numerical negation, and numerical identity.
 
 @c{not} @nt[expr] evaluates @nt[expr], then returns @code{True} if
-the result was @code{False}, and @code{False} for any other result.
+the result was @code{False} or @code{None}, and @code{False} for
+any other result.
 
 @c{~}@nt[expr] requires that @nt[expr] evalutes to an integer or
 Boolean; it flips every bit of the number, or negates the Boolean.
@@ -1342,8 +1357,9 @@ lexicographic order.
 @defexpform{@nt_[expr]{1} @defidform/inline[and] @nt_[expr]{2}}
 
 Short-circuiting logical @emph{and}. First evaluates @nt_[expr]{1}; if
-the result is @code{False} then the whole conjunction is @code{False};
-otherwise, the result of the conjunction is the result of @nt_[expr]{2}.
+the result is @code{False} or @code{None} then the whole conjunction is
+@code{False}; otherwise, the result of the conjunction is the result of
+@nt_[expr]{2}.
 
 @defexpform{@nt_[expr]{1} @defidform/inline[or] @nt_[expr]{2}}
 
@@ -1362,7 +1378,7 @@ For example:
 
 @dssl2block|{
 def parent(link):
-    link.parent if rbn?(link) else False
+    link.parent if rbn?(link) else None
 }|
 
 @section[#:tag "prims"]{Built-in functions, classes, methods, and constants}
@@ -1393,7 +1409,7 @@ compares less than @code{True}.
 The constructor for @linkclass[bool].
 
 In its one-argument form, converts any type to @racket[bool]. All values but
-@code{False} convert to @code{True}.
+@code{False} and @code{None} convert to @code{True}.
 
 In its no-argument form, returns @code{False}.
 

@@ -10,12 +10,12 @@
            [dssl-top-interaction        #%top-interaction]
            ; syntax
            [begin               begin]
-           [if                  if-e]
            [else                else]
            [void                pass]
            [vec-lit             vec-lit]
            [dssl-True           True]
            [dssl-False          False]
+           [dssl-None           None]
            [dssl-assert         assert]
            [dssl-assert-eq      assert_eq]
            [dssl-assert-error   assert_error]
@@ -28,6 +28,7 @@
            [dssl-for            for]
            [dssl-for/vec        for/vec]
            [dssl-if             if]
+           [dssl-if-e           if-e]
            [dssl-interface      interface]
            [dssl-lambda         lambda]
            [dssl-let            let]
@@ -91,6 +92,13 @@
 
 (define dssl-True #t)
 (define dssl-False #f)
+(define dssl-None (void))
+
+(define (falsy? v)
+  (or (eq? v dssl-False) (eq? v dssl-None)))
+
+(define (truthy? v)
+  (not (falsy? v)))
 
 (define-syntax-parameter
   inc-passed-tests!
@@ -155,8 +163,8 @@
     [(_ [test0 result0 ...]
         [dssl-elif test result ...] ...
         [else else-result ...])
-     (cond [test0 (dssl-begin result0 ...)]
-           [test  (dssl-begin result ...)]
+     (cond [(truthy? test0) (dssl-begin result0 ...)]
+           [(truthy? test)  (dssl-begin result ...)]
            ...
            [else (dssl-begin else-result ... )])]))
 
@@ -302,7 +310,7 @@
       (syntax-parameterize
         ([dssl-break (syntax-rules () [(_) (break-f (void))])]
          [dssl-continue (syntax-rules () [(_) (continue-f)])])
-        (when test
+        (when (truthy? test)
           (dssl-begin expr ...)
           (loop))))))
 
@@ -367,7 +375,7 @@
   (define result (make-vector-builder))
   (let loop ([i 0])
     (when (next (λ (j)
-                   (when (when? i j)
+                   (when (truthy? (when? i j))
                      (vector-builder-push-back result (body i j)))))
       (loop (add1 i))))
   (vector-builder-copy result))
@@ -670,8 +678,11 @@
 (define (vec-lit . elements)
   (list->vector elements))
 
+(define-simple-macro (dssl-if-e test:expr then:expr else:expr)
+  (if (truthy? test) then else))
+
 (define-syntax-rule (dssl-assert expr)
-  (unless expr
+  (when (falsy? expr)
     (assertion-error #:srclocs (get-srclocs expr)
                      'assert "did not evaluate to true")))
 

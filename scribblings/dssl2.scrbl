@@ -10,9 +10,9 @@
 
 @defmodulelang[dssl2]
 
-@section{Syntax introduction}
-
-@subsection{Compound statements and blocks}
+DSSL2 is a programming language for data structures students. It’s
+designed to be simple, providing only the basic elements needed to
+implement a variety of data structures.
 
 DSSL2 uses alignment and indentation to delimit @deftech{blocks}. In
 particular, compound statements such as
@@ -48,7 +48,7 @@ line, as in the @racket[if] and @racket[else] cases.
 
 Extraneous indentation is an error.
 
-@subsection{Formal grammar}
+@section{Formal grammar}
 
 The DSSL2 language has a number of statement and expression forms, which
 are described in more depth below. Here they are summarized in

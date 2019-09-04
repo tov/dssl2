@@ -238,6 +238,7 @@
       [#\λ                      (token-LAMBDA)]
       ["True"                   (token-LITERAL #t)]
       ["False"                  (token-LITERAL #f)]
+      ["None"                   (token-LITERAL (void))]
       ["def"                    (token-DEF)]
       ["struct"                 (token-STRUCT)]
       ["interface"              (token-INTERFACE)]

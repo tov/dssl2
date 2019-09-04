@@ -20,16 +20,28 @@
          >=
          <<
          >>
-         not            ; from Racket
+         not
          ; syntax
-         and            ; from Racket
-         or)            ; from Racket
+         and
+         or)
 
 (require "prims.rkt"
-         "errors.rkt")
+         "errors.rkt"
+         "singletons.rkt")
 (require (prefix-in racket: racket/base))
 (require syntax/parse/define)
 (require (for-syntax racket/base (only-in racket/syntax format-id)))
+
+(define (not v)
+  (falsy? v))
+
+(define-simple-macro (and e1:expr e2:expr)
+  (let ([v1 e1])
+    (if (truthy? v1) e2 v1)))
+
+(define-simple-macro (or e1:expr e2:expr)
+  (let ([v1 e1])
+    (if (truthy? v1) v1 e2)))
 
 (define-syntax (define-generic-binop stx)
   (syntax-parse stx #:literals (quote)
@@ -93,13 +105,13 @@
   (dssl-equal? a b))
 
 (define (!= a b)
-  (not (== a b)))
+  (racket:not (== a b)))
 
 (define (is a b)
   (eq? a b))
 
 (define (|is not| a b)
-  (not (is a b)))
+  (racket:not (is a b)))
 
 (define (< a b)
   (cond

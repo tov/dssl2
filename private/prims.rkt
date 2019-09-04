@@ -86,6 +86,7 @@
          "struct.rkt"
          "generic.rkt"
          "printer.rkt"
+         "singletons.rkt"
          syntax/parse/define
          (only-in racket/list
                   first
@@ -371,7 +372,7 @@
 (define bool
   (case-lambda
     [() #f]
-    [(x) (not (not x))]))
+    [(x) (truthy? x)]))
 
 (define-unwrapped-class bool-class bool bool?
   (; conversions

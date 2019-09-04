@@ -21,14 +21,14 @@ class D:
 def f(x: I!): x
 
 interface CONTAINER[X]:
-    def add(self, x: X) -> VoidC
+    def add(self, x: X) -> NoneC
     def get(self) -> X
     
 class IntCell (CONTAINER):
     let val: int?
     def __init__(self, x):
         self.val = x
-    def add(self, x: int?) -> VoidC:
+    def add(self, x: int?) -> NoneC:
         self.val = x
     def get(self):
         'a'

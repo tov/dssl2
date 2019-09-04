@@ -21,10 +21,10 @@ struct cons:
 #       - ConsBuilder() -> ConsBuilder?
 #         Constructs an empty ConsBuilder.
 #
-#       - cons(self, value: AnyC) -> VoidC
+#       - cons(self, value: AnyC) -> NoneC
 #         Adds `value` at the beginning of the list.
 #
-#       - snoc(self, value: AnyC) -> VoidC
+#       - snoc(self, value: AnyC) -> NoneC
 #         Adds `value` at the end of the list.
 #
 #       - take(self) -> list?
@@ -60,7 +60,7 @@ struct cons:
 #         Destructively concatenates two lists, returning the concatenated
 #         list. O(before) time and O(1) space.
 #
-#       - into_vec(lst: list?, vec: vec?, where: nat?) -> VoidC
+#       - into_vec(lst: list?, vec: vec?, where: nat?) -> NoneC
 #         Copies a list into a vector starting at index `where`. Assumes
 #         there is enough space in the vector. O(lst) time and O(1) space.
 #
@@ -71,7 +71,7 @@ struct cons:
 #         Creates a list from the elements of a vector. O(vec) time and
 #         space.
 #
-#       - foreach(visit: FunC[AnyC, VoidC], lst: list?) -> VoidC
+#       - foreach(visit: FunC[AnyC, NoneC], lst: list?) -> NoneC
 #         Calls a visitor function on each element of `lst`, in order.
 #
 #       - foldr[Y](f: FunC[AnyC, Y, Y], z: Y, lst: list?) -> Y
@@ -160,7 +160,7 @@ def _len(lst: _list?) -> int?:
         result = result + 1
     result
 
-def _into_vec(lst: _list?, vec: vec?, where: int?) -> VoidC:
+def _into_vec(lst: _list?, vec: vec?, where: int?) -> NoneC:
     while cons?(lst):
         vec[where] = lst.car
         lst = lst.cdr
@@ -176,7 +176,7 @@ def _from_vec(vec: vec?) -> _list?:
     for element in vec: builder.snoc(element)
     builder.take()
 
-def _foreach(visit: FunC[AnyC, VoidC], lst: _list?) -> VoidC:
+def _foreach(visit: FunC[AnyC, NoneC], lst: _list?) -> NoneC:
     while cons?(lst):
         visit(lst.car)
         lst = lst.cdr

@@ -18,8 +18,8 @@ class Stream[T]:
     # rest: -> Stream[T]
     def rest(self): self._rest.force()
     
-    # take_into_at: nat? nat? VectorOf[T] -> VoidC
-    def take_into_at(self, start: nat?, len: nat?, dst: vec?) -> VoidC:
+    # take_into_at: nat? nat? VectorOf[T] -> NoneC
+    def take_into_at(self, start: nat?, len: nat?, dst: vec?) -> NoneC:
         let src = self
         while len > 0:
             dst[start] = src.first()

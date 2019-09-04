@@ -17,7 +17,7 @@ class Array[T] (ITERABLE):
     def capacity(self) -> nat?:
         self._data.len()
 
-    def ensure_capacity(self, req_cap: nat?) -> VoidC:
+    def ensure_capacity(self, req_cap: nat?) -> NoneC:
         if req_cap > self.capacity():
             let new_cap = max(req_cap, 2 * self.capacity())
             self._data = [ self._data[i] if i < self._size else False
@@ -31,11 +31,11 @@ class Array[T] (ITERABLE):
         self._check_index(index)
         self._data[index]
 
-    def set(self, index: nat?, value: T) -> VoidC:
+    def set(self, index: nat?, value: T) -> NoneC:
         self._check_index(index)
         self._data[index] = value
 
-    def push(self, value: T) -> VoidC:
+    def push(self, value: T) -> NoneC:
         self.ensure_capacity(self._size + 1)
         self._data[self._size] = value
         self._size = self._size + 1
@@ -47,10 +47,10 @@ class Array[T] (ITERABLE):
         self._data[self._size] = False
         result
         
-    def clear(self) -> VoidC:
+    def clear(self) -> NoneC:
         self._size = 0
 
-    def shrink_to_fit(self) -> VoidC:
+    def shrink_to_fit(self) -> NoneC:
         if self._data.len() > self._size:
             self._data = [ self._data[i] for i in self._size ]
 

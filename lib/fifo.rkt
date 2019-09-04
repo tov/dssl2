@@ -22,7 +22,7 @@ class Fifo[X]:
     def peek(self) -> MaybeC(X):
         self.repr_.front()
 
-    def enqueue(self, value: X) -> VoidC:
+    def enqueue(self, value: X) -> NoneC:
         self.repr_.push_back(value)
 
     def dequeue(self) -> MaybeC(X):

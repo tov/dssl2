@@ -46,12 +46,12 @@ class Dll[X]:
     def get_sentinel!(self): self.sentinel_
 
     # Sets the sentinel node and size, violating encapsulation.
-    def set_sentinel_and_size!(self, sentinel: AnyC, size: nat?) -> VoidC:
+    def set_sentinel_and_size!(self, sentinel: AnyC, size: nat?) -> NoneC:
         self.sentinel_ = sentinel
         self.size_ = size
 
     # Swaps the elements of this list with another in constant time.
-    def swap(self, other: Dll?) -> VoidC:
+    def swap(self, other: Dll?) -> NoneC:
         let sentinel = other.get_sentinel!()
         let size = other.size()
         other.set_sentinel_and_size!(self.sentinel_, self.size_)
@@ -92,7 +92,7 @@ class Dll[X]:
 
     # Moves the elements from another list to the end of this list
     # in constant time. The other list is left empty.
-    def splice(self, other: Dll?) -> VoidC:
+    def splice(self, other: Dll?) -> NoneC:
         let other_sentinel = other.get_sentinel!()
         self.sentinel_.prev().next!(other_sentinel.next())
         other_sentinel.next().prev!(self.sentinel_.prev())
@@ -104,14 +104,14 @@ class Dll[X]:
         other.set_sentinel_and_size!(other_sentinel, 0)
 
     # Adds an element to the front of this list.
-    def push_front(self, value: X) -> VoidC:
+    def push_front(self, value: X) -> NoneC:
         let new_node = self.Node_(self.sentinel_, value, self.sentinel_.next())
         new_node.next().prev!(new_node)
         new_node.prev().next!(new_node)
         self.size_ = self.size_ + 1
 
     # Adds an element to the back of this list.
-    def push_back(self, value: X) -> VoidC:
+    def push_back(self, value: X) -> NoneC:
         let new_node = self.Node_(self.sentinel_.prev(), value, self.sentinel_)
         new_node.next().prev!(new_node)
         new_node.prev().next!(new_node)
@@ -165,7 +165,7 @@ class Dll[X]:
 
     # Applies the given function to each element along with its
     # position in the list.
-    def each_with_index(self, f: FunC[int?, X, VoidC]) -> VoidC:
+    def each_with_index(self, f: FunC[int?, X, NoneC]) -> NoneC:
         self.foldl(lambda i, x: f(i, x); i + 1, 0)
         pass
 

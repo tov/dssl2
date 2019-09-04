@@ -379,7 +379,7 @@ def rbt_insert!(key, tree):
 Does nothing.
 
 @dssl2block|{
-# account_credit! : num? account? -> VoidC
+# account_credit! : num? account? -> NoneC
 # Adds the given amount to the given account’s balance.
 def account_credit!(amount, account):
     pass
@@ -1842,7 +1842,7 @@ procedure is.
 
 @subsection{I/O Functions}
 
-@defprocform[print]{@proto[str? AnyC ... VoidC]}
+@defprocform[print]{@proto[str? AnyC ... NoneC]}
 
 The first argument is treated as a format string into which the
 remaining arguments are interpolated, and then the result is printed.
@@ -1869,8 +1869,8 @@ print("%p + %p = %p", a, b, a + b)
 prints “3 + 4 = 7”.
 
 @defprocforms[println
-    [@proto[str? AnyC ... VoidC]]
-    [@proto[AnyC ... VoidC]]
+    [@proto[str? AnyC ... NoneC]]
+    [@proto[AnyC ... NoneC]]
 ]
 
 If the first argument is a string then @racket[println] is
@@ -1900,8 +1900,8 @@ def println(*args):
 @subsection{Other functions}
 
 @defprocforms[error
-    [@proto[str? AnyC ... VoidC]]
-    [@proto[AnyC ... VoidC]]
+    [@proto[str? AnyC ... NoneC]]
+    [@proto[AnyC ... NoneC]]
 ]
 
 Terminates the program with an error message.
@@ -2274,7 +2274,7 @@ For example, here is a generic interface for a queue:
 @dssl2block|{
 interface QUEUE[T]:
     def empty(self) -> bool?
-    def enqueue(self, value: T) -> VoidC
+    def enqueue(self, value: T) -> NoneC
     def dequeue(self) -> OrC(False, T)
 }|
 
@@ -2339,12 +2339,12 @@ let p = Pair[int?, str?](5, 'six')
 
 A flat contract that accepts any value.
 
-@defconstform[VoidC]{@code{contract?}}
+@defconstform[NoneC]{@code{contract?}}
 
-A flat contract that accepts the result of @racket[pass] and other
-statements that return no value (such as assignment and loops).
-This is used as the result contract for functions and methods that
-do not return a value.
+A flat contract that accepts the value @racket[None], which is the
+result of @racket[pass] and other statements that return no value (such
+as assignment and loops). This is used as the result contract for
+functions and methods that do not return a value.
 
 @defprocform[VecC]{[@racket[contract?]]: @racket[contract?]}
 

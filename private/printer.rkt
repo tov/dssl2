@@ -165,7 +165,7 @@
              (fprintf port "#<proc>")])]
         [(contract? value)
          (fprintf port "#<contract:~a>" (contract-name value))]
-        [(void? value)              (display "#<void>" port)]
+        [(void? value)              (display "None" port)]
         [else                       (display "#<unprintable>" port)]))))
 
 (define (make-print port)

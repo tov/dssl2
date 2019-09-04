@@ -55,6 +55,7 @@
                                 (token hash-colon-keyword)]
     [(:or #\, #\: #\; #\=)      (token parenthesis)]
     [(:or "True" "False")       (token constant)]
+    [(:or "None")               (token constant)]
     [#\.                        (token hash-colon-keyword)]
     [identifier                 (token symbol)]
     [any-char                   (token error)]

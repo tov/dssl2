@@ -56,6 +56,7 @@
          "private/printer.rkt"
          "private/provide.rkt"
          "private/return.rkt"
+         "private/singletons.rkt"
          "private/struct.rkt"
          racket/stxparam
          racket/splicing
@@ -90,15 +91,6 @@
                      "private/find-lib.rkt"
                      "private/util.rkt"))
 
-(define dssl-True #t)
-(define dssl-False #f)
-(define dssl-None (void))
-
-(define (falsy? v)
-  (or (eq? v dssl-False) (eq? v dssl-None)))
-
-(define (truthy? v)
-  (not (falsy? v)))
 
 (define-syntax-parameter
   inc-passed-tests!

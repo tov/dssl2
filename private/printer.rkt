@@ -24,7 +24,7 @@
 
 (define (dssl-contract-name c)
   (cond
-    [(or (boolean? c) (number? c) (string? c) (char? c))
+    [(or (boolean? c) (number? c) (string? c) (char? c) (void? c))
      (dssl-format "%p" c)]
     [else
       (contract-name c)]))

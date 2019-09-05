@@ -55,13 +55,13 @@
            [NotC (-> contract? contract?)]
            [OrC (-> contract? contract? ... contract?)]
            [AndC (-> contract? contract? ... contract?)]
-           [IntInC (-> (OrC int? #f) (OrC int? #f) contract?)]
+           [IntInC (-> (OrC int? NoneC) (OrC int? NoneC) contract?)]
            [apply_contract (case-> (-> contract? AnyC AnyC)
                                    (-> contract? AnyC str? AnyC)
                                    (-> contract? AnyC str? str? AnyC))]
            [make_contract (-> str?
-                              (OrC #f (-> AnyC AnyC))
-                              (OrC #f (-> (-> str? NoneC) AnyC AnyC))
+                              (OrC NoneC (-> AnyC AnyC))
+                              (OrC NoneC (-> (-> str? NoneC) AnyC AnyC))
                               contract?)])
          ; * Randomness operations
          (contract-out
@@ -239,7 +239,8 @@
 
 (define (IntInC low high)
   (rename-contract
-    (integer-in low high)
+    (integer-in (falsy->false low)
+                (falsy->false high))
     (format-fun 'IntInC low (list high))))
 
 (define apply_contract
@@ -253,19 +254,28 @@
                      "the contracted value")]))
 
 (define (make_contract name first-order? projection)
+  (define real-check
+    (if (truthy? first-order?)
+      first-order?
+      (λ (_v) #t)))
+  (define real-projection
+    (and (truthy? projection)
+         (λ (blame)
+            (λ (value party)
+               (projection
+                 (λ (message)
+                    (raise-blame-error
+                      blame
+                      #:missing-party party
+                      value
+                      message))
+                 value)))))
   (make-contract #:name name
-                 #:first-order first-order?
-                 #:late-neg-projection
-                 (λ (blame)
-                    (λ (value party)
-                       (projection
-                         (λ (message)
-                            (raise-blame-error
-                              blame
-                              #:missing-party party
-                              value
-                              message))
-                         value)))))
+                 #:first-order real-check
+                 #:late-neg-projection real-projection))
+
+(define (falsy->false v)
+  (and (truthy? v) v))
 
 ;; I/O operations
 
@@ -602,7 +612,7 @@
 (define vec
   (case-lambda
     [() (vector)]
-    [(size) (make-vector size #false)]
+    [(size) (make-vector size dssl-None)]
     [(size init) (build-vector size init)]))
 
 (define-unwrapped-class vec-class vec vec?

@@ -73,6 +73,11 @@
            [RAND_MAX nat?])
          ; * I/O operations
          (contract-out
+           [current_directory (case->
+                               (-> str?)
+                               (-> str? bool?))]
+           [file_to_string (-> str? str?)]
+           [string_to_file (-> str? str? NoneC)]
            [print (-> str? AnyC ... NoneC)]
            [println (-> AnyC ... NoneC)]
            [open (-> str? str? str? AnyC)]
@@ -90,6 +95,9 @@
          "printer.rkt"
          "singletons.rkt"
          syntax/parse/define
+         (only-in racket/file
+                  display-to-file
+                  file->string)
          (only-in racket/list
                   first
                   rest)
@@ -109,6 +117,8 @@
                   not/c
                   raise-blame-error
                   rename-contract)
+         (only-in racket/format
+                  ~a)
          (only-in racket/function
                   identity)
          (prefix-in r: racket/base)
@@ -280,6 +290,21 @@
   (and (truthy? v) v))
 
 ;; I/O operations
+
+(define current_directory
+  (case-lambda
+    [()    (~a (current-directory))]
+    [(dir) (with-handlers ([exn:fail? (λ (_e) #f)])
+             (current-directory dir)
+             #t)]))
+
+(define (file_to_string filename)
+  (file->string filename #:mode 'binary))
+
+(define (string_to_file value filename)
+  (display-to-file value filename
+                   #:mode 'binary
+                   #:exists 'truncate/replace))
 
 (define (print arg0 . args)
   (apply dssl-printf arg0 args))
@@ -680,11 +705,11 @@
                          #f]))]
    [__add__       (λ (self other)
                      (if (str? other)
-                       (string-append self other)
+                       (~a self other)
                        (dssl-format "%s%p" self other)))]
    [__radd__      (λ (self other)
                      (if (str? other)
-                       (string-append other self)
+                       (~a other self)
                        (dssl-format "%p%s" other self)))]
    ; char indexing
    [__index_ref__ (-> nat? AnyC)

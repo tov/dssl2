@@ -6,7 +6,7 @@
         (for-label (prefix-in racket: racket)))
 
 @title[#:style 'toc]{DSSL2: Data Structures Student Language}
-@author{Jesse A. Tov <jesse@"@"eecs.northwestern.edu>}
+@author{Jesse A. Tov <jesse@"@"cs.northwestern.edu>}
 
 @defmodulelang[dssl2]
 

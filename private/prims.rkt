@@ -80,8 +80,6 @@
            [string_to_file (-> str? str? NoneC)]
            [print (-> str? AnyC ... NoneC)]
            [println (-> AnyC ... NoneC)]
-           [open (-> str? str? str? AnyC)]
-           [EOF eof-object?]
            [sleep (-> num? NoneC)])
          ; * other functions
          dir)
@@ -324,102 +322,6 @@
 
 (define (sleep sec)
   (r:sleep sec))
-
-; File I/O
-
-(define EOF eof)
-
-(define (init-mode-check rwmode tbmode)
-  (begin
-    (if (or (equal? rwmode "r") (equal? rwmode "w"))
-        #t
-        (error "The second parameter of .open() must be 'r'|'w'"))
-    (if (or (equal? tbmode "t") (equal? tbmode "b"))
-        #t
-        (error "The third parameter of .open() must be 't'|'b'"))))
-
-(define (check-mode mode expected func-name)
-  (if (equal? mode expected) #t (error func-name "file must be in '~a' mode" expected)))
-
-(define (open-file fname rwmode tbmode)
-  (cond
-    [(equal? rwmode "r")
-     (cond
-       [(equal? tbmode "t") (open-input-file fname #:mode 'text)]
-       [(equal? tbmode "b") (open-input-file fname #:mode 'binary)])]
-    [(equal? rwmode "w") 
-     (cond
-       [(equal? tbmode "t") (open-output-file fname #:exists 'truncate #:mode 'text)]
-       [(equal? tbmode "b") (open-output-file fname #:exists 'truncate #:mode 'binary)])]))
-
-(define (read-file-line file tbmode)
-  (cond
-    [(equal? tbmode "t") (read-line file)]
-    [(equal? tbmode "b") (read-bytes-line file)]))
-
-(define (make-bytes-list vector index)
-  (if (< index 0)
-      '()
-      (append (make-bytes-list vector (- index 1))(list (bytes (prim:vec.__index_ref__ vector index))))))
-
-(define (line->vector line)
-  (if (eof-object? line)
-      EOF
-      (let ([b-line-len (bytes-length line)] [b-list (bytes->list line)])
-        (let ([v (vec b-line-len)])
-          (begin
-            (for ([i (build-list b-line-len (lambda (x) x))])
-              (prim:vec.__index_set__ v i (list-ref b-list i)))
-            v)))))
-
-(define (close-file file rwmode)
-  (cond
-    [(equal? rwmode "r") (close-input-port file)]
-    [(equal? rwmode "w") (close-output-port file)]))
-
-(define-dssl-class file () ()
-  ([_fname AnyC] [_rwmode AnyC] [_tbmode AnyC] [_file AnyC])
-  ([__init__ () self ([fname AnyC] [rwmode AnyC] [tbmode AnyC]) AnyC
-     (begin
-       (init-mode-check rwmode tbmode)
-       (dssl-self _fname fname)
-       (dssl-self _rwmode rwmode)
-       (dssl-self _tbmode tbmode)
-       (dssl-self _file (open-file fname rwmode tbmode)))]
-   [readline () self () AnyC
-     (begin
-       (check-mode (dssl-self _rwmode) "r" 'readline)
-       (cond
-         [(equal? (dssl-self _tbmode) "t") (read-line (dssl-self _file))]
-         [(equal? (dssl-self _tbmode) "b")
-          (let ([line (read-bytes-line (dssl-self _file) 'any)])
-            (line->vector line))]))]
-   [readchar () self () AnyC
-     (begin
-       (check-mode (dssl-self _rwmode) "r" 'readchar)
-       (check-mode (dssl-self _tbmode) "t" 'readchar)
-       (define c (read-char (dssl-self _file)))
-       (if (eof-object? c) EOF (string c)))]
-   [readbyte () self () AnyC
-     (begin
-       (check-mode (dssl-self _rwmode) "r" 'readbytes)
-       (check-mode (dssl-self _tbmode) "b" 'readbytes)
-       (read-byte (dssl-self _file)))]
-   [write () self ([data AnyC]) AnyC
-     (begin
-       (check-mode (dssl-self _rwmode) "w" 'write)
-       (cond
-         [(equal? (dssl-self _tbmode) "t") (write-string data (dssl-self _file))]
-         [(equal? (dssl-self _tbmode) "b")
-          (if (vec? data)
-              (write-bytes (apply bytes-append (make-bytes-list data (- (vector-length data) 1)))
-                           (dssl-self _file))
-              (error "write: invalid argument"))]))]
-   [close () self () AnyC
-     (close-file (dssl-self _file) (dssl-self _rwmode))]))
-
-(define (open fname rwmode tbmode)
-  (file fname rwmode tbmode))
 
 ;; Randomness
 

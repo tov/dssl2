@@ -1,11 +1,5 @@
 #lang racket/base
 
-(require "util.rkt"
-         (for-syntax racket/base
-                     "../private/names.rkt"
-                     "util.rkt"
-                     (only-in racket/syntax format-id)))
-
 (provide grammar
          defexpform defexpforms
          defsmplform defsmplforms
@@ -20,8 +14,18 @@
          c nt nt_ term term_
          q m t
          dssl2block code
-         indent)
-(require scribble/manual
+         indent
+         (for-label
+           (all-from-out dssl2 racket)))
+
+(require "util.rkt"
+         (for-label dssl2
+                    (prefix-in racket: racket))
+         (for-syntax racket/base
+                     "../private/names.rkt"
+                     "util.rkt"
+                     (only-in racket/syntax format-id))
+         scribble/manual
          scribble/racket
          scribble/struct
          (prefix-in scribble: scribble/manual)
@@ -151,7 +155,7 @@
   (*defforms "compound" (list (list chunk ...) ...)))
 
 (define-syntax-rule (defclassform name)
-  (subsubsection #:tag (format "class:~a" 'name)
+  (subsection #:tag (format "class:~a" 'name)
                  "Class "
                  (c (symbol->string 'name))))
 

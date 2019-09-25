@@ -22,17 +22,17 @@ tree insertion function written using indentation:
 @codeblock|{
 #lang dssl2
 
-def insert!(t, k):
+def insert(t, k):
     if empty?(t): new_node(k)
     elif zero?(random(size(t) + 1)):
-        root_insert!(t, k)
+        root_insert(t, k)
     elif k < t.key:
-        t.left = insert!(t.left, k)
-        fix_size!(t)
+        t.left = insert(t.left, k)
+        fix_size(t)
         t
     elif k > t.key:
-        t.right = insert!(t.right, k)
-        fix_size!(t)
+        t.right = insert(t.right, k)
+        fix_size(t)
         t
     else: t
 }|

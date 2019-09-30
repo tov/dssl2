@@ -73,13 +73,13 @@
            [RAND_MAX nat?])
          ; * I/O operations
          (contract-out
+           [print (-> str? AnyC ... NoneC)]
+           [println (-> AnyC ... NoneC)]
            [current_directory (case->
                                (-> str?)
                                (-> str? bool?))]
            [file_to_string (-> str? str?)]
            [string_to_file (-> str? str? NoneC)]
-           [print (-> str? AnyC ... NoneC)]
-           [println (-> AnyC ... NoneC)]
            [sleep (-> num? NoneC)])
          ; * other functions
          dir)
@@ -292,9 +292,7 @@
 (define current_directory
   (case-lambda
     [()    (~a (current-directory))]
-    [(dir) (with-handlers ([exn:fail? (λ (_e) #f)])
-             (current-directory dir)
-             #t)]))
+    [(dir) (current-directory dir)]))
 
 (define (file_to_string filename)
   (file->string filename #:mode 'binary))

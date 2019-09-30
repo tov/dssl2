@@ -552,6 +552,34 @@ then it formats all the arguments with commas in between and a “call” to
 @racket[error] around it. This ensure that all calls to @racket[error]
 produce some kind of sensible output.
 
+@defprocforms[current_directory
+    [@proto[str?]]
+    [@proto[str? bool?]]
+]
+
+Given with no arguments, @racket[current_directory] returns the current
+working directory as a string.
+
+Called with one string argument @racket[s], @racket[current_directory]
+attempts to change the working directory to the directory named by
+@racket[s]. It is an error if the directory does not exist or the
+operation isn’t permitted.
+
+@defprocform[file_to_string]{@proto[str? str?]}
+
+Given the name of a file, reads its entire contents and returns it as a
+string.
+
+It is an error if the file doesn’t exist or cannot be read.
+
+@defprocform[string_to_file]{@proto[message:str? filename:str? NoneC]}
+
+Writes string @racket[message] to file @racket[filename]. If the file
+doesn’t exist, it is created; if it already exists then its contents are
+replaced.
+
+It is an error if the file cannot be written.
+
 @defprocform[dir]{@proto[AnyC "VecC[str?]"]}
 
 Given an object, returns a vector of the names of its methods.

@@ -2,14 +2,13 @@
 
 # A library of header-free singly-linked lists.
 #
-# Lists are represented using two structs, nil() and cons(car, cdr).
+# Lists are represented using None and a struct, cons(car, cdr).
 
 # A _list? is one of:
-# - nil()
 # - cons(AnyC, _list?)
-let _list? = OrC(cons?, nil?)
+# - None
+let _list? = OrC(cons?, NoneC)
 
-struct nil: pass
 struct cons:
   let car
   let cdr: _list?
@@ -35,7 +34,7 @@ struct cons:
 #   - A struct Cons containing many functions for working with cons lists:
 #
 #       - list?(x: AnyC) -> bool?
-#         Predicate for cons lists, equivalent to OrC(nil?, cons?).
+#         Predicate for cons lists.
 #
 #       - ListC(elt: contract?) -> contract?
 #         Constructs a contract for a list, given a contract for the
@@ -110,17 +109,17 @@ class ConsBuilder:
     let tail
 
     def __init__(self):
-        self.head = nil()
-        self.tail = nil()
+        self.head = None
+        self.tail = None
 
     def cons(self, x):
         self.head = cons(x, self.head)
-        if nil?(self.tail): self.tail = self.head
+        if self.tail is None: self.tail = self.head
 
     def snoc(self, x):
         let old_tail = self.tail
-        self.tail = cons(x, nil())
-        if nil?(old_tail):
+        self.tail = cons(x, None)
+        if old_tail is None:
             self.head = self.tail
         else:
             old_tail.cdr = self.tail
@@ -137,7 +136,7 @@ def _rev_app(before: _list?, acc: _list?) -> _list?:
         acc
 
 def _rev(lst: _list?) -> _list?:
-    _rev_app(lst, nil())
+    _rev_app(lst, None)
 
 def _app(before: _list?, after: _list?) -> _list?:
     if cons?(before):
@@ -146,7 +145,7 @@ def _app(before: _list?, after: _list?) -> _list?:
         after
 
 def _concat(before: _list?, after: _list?) -> _list?:
-    if nil?(before): after
+    if before is None: after
     else:
         let current = before
         while cons?(current.cdr): current = current.cdr
@@ -225,9 +224,9 @@ def _sort[T](less_than?: FunC[T, T, AnyC], lst: _realListC(T)) -> _list?:
             cons(link.car, insert(element, link.cdr))
         else: cons(element, link)
     def loop(link, acc):
-        if nil?(link): acc
+        if link is None: acc
         else: loop(link.cdr, insert(link.car, acc))
-    loop(lst, nil())
+    loop(lst, None)
 
 def _realListC(element: contract?) -> contract?:
     if num?(element) or bool?(element) or str?(element) or char?(element):

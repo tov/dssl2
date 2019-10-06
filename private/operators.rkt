@@ -124,14 +124,14 @@
   (racket:not (is a b)))
 
 (define (< a b)
-  (cond
+  (truthy-cond
     [(cmp a b)
      =>
      (λ (order) (racket:< order 0))]
     [else #f]))
 
 (define (<= a b)
-  (cond
+  (truthy-cond
     [(cmp a b)
      =>
      (λ (order) (racket:<= order 0))]

@@ -428,10 +428,10 @@ not-a-number value. This is useful, since @code{nan} is not necessarily
 
 @section{Comparison operations}
 
-@defprocform[cmp]{@proto[AnyC AnyC "OrC(int?, False)"]}
+@defprocform[cmp]{@proto[AnyC AnyC "OrC(int?, NoneC)"]}
 
 Compares two values of any type. If the values are incomparable, returns
-@code{False}. Otherwise, returns an integer: less than 0 if the first
+@code{None}. Otherwise, returns an integer: less than 0 if the first
 argument is less, 0 if equal, or greater than 0 if the first argument is
 greater.
 

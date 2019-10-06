@@ -147,15 +147,19 @@
 ;; Comparison functions
 
 (define (cmp a b)
-  (or (dssl-send a '__cmp__ b #:or-else #f))
-      (flip-order (dssl-send b '__cmp__ a #:or-else #f)))
+  (dssl-send a '__cmp__ b
+             #:or-else
+             (flip-order
+               (dssl-send b '__cmp__ a
+                          #:or-else dssl-None))))
 
 (define (flip-order order)
-  (and (int? order)
-       (- order)))
+  (if (int? order)
+    (- order)
+    dssl-None))
 
 (define (max x . xs)
-  (cond
+  (truthy-cond
     [(null? xs) x]
     [(cmp x (first xs))
      =>
@@ -168,7 +172,7 @@
                   x (first xs))]))
 
 (define (min x . xs)
-  (cond
+  (truthy-cond
     [(null? xs) x]
     [(cmp x (first xs))
      =>
@@ -283,9 +287,6 @@
   (make-contract #:name name
                  #:first-order real-check
                  #:late-neg-projection real-projection))
-
-(define (falsy->false v)
-  (and (truthy? v) v))
 
 ;; I/O operations
 
@@ -415,7 +416,7 @@
    ; unary operators
    [__invert__  (λ (self) (not self))]
    ; binary operators
-   [__cmp__     prim:bool-cmp]
+   [__cmp__     (make-cmp boolean? bool<? bool>?)]
    [__and__     prim:and]
    [__rand__    prim:and]
    [__or__      prim:or]
@@ -432,12 +433,7 @@
   (; conversions
    [__int__     (λ (self) (char->integer self))]
    ; binary methods
-   [__cmp__     (λ (self other)
-                   (and (char? other)
-                        (cond
-                          [(char<? self other) -1]
-                          [(char=? self other) 0]
-                          [else                1])))]))
+   [__cmp__     (make-cmp char? char<? char>?)]))
 
 (define (char/internal who val)
   (cond
@@ -471,7 +467,7 @@
    [__pos__     (λ (self) self)]
    [__invert__  (λ (self) (bitwise-not self))]
    ; binary operators
-   [__cmp__     prim:num-cmp]
+   [__cmp__     (make-cmp num? < >)]
    [__add__     (num-binop __add__ r:+ '__radd__)]
    [__radd__    (num-binrop __radd__ r:+)]
    [__sub__     (num-binop __sub__ r:- '__rsub__)]
@@ -527,7 +523,7 @@
    [__pos__     (λ (self) self)]
    [__invert__  (λ (self) (bitwise-not self))]
    ; binary operators
-   [__cmp__     prim:num-cmp]
+   [__cmp__     (make-cmp num? < >)]
    [__add__     (num-binop __add__ r:+ '__radd__)]
    [__radd__    (num-binrop __radd__ r:+)]
    [__sub__     (num-binop __sub__ r:- '__rsub__)]
@@ -594,15 +590,7 @@
    ; binary methods
    [__eq__        (-> str? AnyC)
                   (λ (self other) (string=? self other))]
-   [__cmp__       (λ (self other)
-                     (cond
-                       [(str? other)
-                        (cond
-                          [(string=? self other) 0]
-                          [(string<? self other) -1]
-                          [else                  1])]
-                       [else
-                         #f]))]
+   [__cmp__       (make-cmp string? string<? string>?)]
    [__add__       (λ (self other)
                      (if (str? other)
                        (~a self other)
@@ -750,27 +738,27 @@
                           (r:format "num or object responding to ~a method"
                                     'rop))]))]))
 
+(define (bool<? a b)
+  (and (not a) b))
+
+(define (bool>? a b)
+  (and a (not b)))
+
+(define (make-cmp dom? <? >?)
+  (λ (a b)
+     (cond
+       [(not (dom? b))  dssl-None]
+       [(<? a b)        -1]
+       [(>? a b)        1]
+       [else            0])))
+
 (define (right-shift a b)
   (arithmetic-shift a (- b)))
-
-(define (prim:num-cmp a b)
-  (and (num? b)
-       (cond
-         [(< a b) -1]
-         [(> a b) 1]
-         [else    0])))
 
 (define (prim:div a b)
   (cond
     [(and (int? a) (int? b)) (quotient a b)]
     [else                    (r:/ a b)]))
-
-(define (prim:bool-cmp a b)
-  (and (bool? b)
-       (cond
-         [(eq? a b) 0]
-         [b         -1]
-         [else      1])))
 
 (define-simple-macro (logical-binop name:id bool-op:expr int-op:expr)
   (λ (a b)

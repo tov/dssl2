@@ -288,7 +288,7 @@ Given no arguments, returns an empty, zero-length vector.
 
 @item{
 Given one argument, returns a vector of the given size, filled with
-@code{False}.
+@code{None}.
 }
 
 @item{

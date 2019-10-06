@@ -35,13 +35,23 @@
 (define (not v)
   (falsy? v))
 
-(define-simple-macro (and e1:expr e2:expr)
-  (let ([v1 e1])
-    (if (truthy? v1) e2 v1)))
+(define-syntax-parser and
+  [(_ e:expr es:expr ...+)
+   #'(let ([v e])
+       (if (falsy? v)
+         v
+         (and es ...)))]
+  [(_ e:expr)   #'e]
+  [(_)          #'#true])
 
-(define-simple-macro (or e1:expr e2:expr)
-  (let ([v1 e1])
-    (if (truthy? v1) v1 e2)))
+(define-syntax-parser or
+  [(_ e:expr es:expr ...+)
+   #'(let ([v e])
+       (if (truthy? v)
+         v
+         (or es ...)))]
+  [(_ e:expr)   #'e]
+  [(_)          #'#false])
 
 (define-syntax (define-generic-binop stx)
   (syntax-parse stx #:literals (quote)

@@ -155,10 +155,11 @@
     [(_ [test0 result0 ...]
         [dssl-elif test result ...] ...
         [else else-result ...])
-     (cond [(truthy? test0) (dssl-begin result0 ...)]
-           [(truthy? test)  (dssl-begin result ...)]
-           ...
-           [else (dssl-begin else-result ... )])]))
+     (truthy-cond
+       [test0 (dssl-begin result0 ...)]
+       [test  (dssl-begin result ...)]
+       ...
+       [else (dssl-begin else-result ... )])]))
 
 (define-syntax (dssl-lambda stx)
   (syntax-parse stx
@@ -670,8 +671,10 @@
 (define (vec-lit . elements)
   (list->vector elements))
 
-(define-simple-macro (dssl-if-e test:expr then:expr else:expr)
-  (if (truthy? test) then else))
+(define-simple-macro (dssl-if-e e1:expr e2:expr e3:expr)
+  (truthy-cond
+    [e1   e2]
+    [else e3]))
 
 (define-syntax-rule (dssl-assert expr)
   (when (falsy? expr)

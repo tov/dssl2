@@ -81,7 +81,7 @@ class uint64:
 
     def __rxor__(self, other):
         uint64(_as_int(other) ^ self.as_int())
-        
+
     def __lshift__(self, other):
         uint64(self.as_int() << _as_int(other))
 
@@ -98,11 +98,10 @@ class uint64:
         uint64(~self.as_int())
 
 
-test 'uint64':
+def _test():
     assert_eq        2  ** uint64(10),    1024
     assert_eq uint64(2) **        10 ,    1024
     assert_eq uint64(2) ** uint64(10),    1024
     assert_eq        1  << uint64(20), 1048576
     assert_eq uint64(1) <<        20 , 1048576
     assert_eq uint64(1) << uint64(20), 1048576
-

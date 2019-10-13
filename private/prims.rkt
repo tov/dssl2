@@ -31,6 +31,8 @@
          vec vec?
          ; * comparison functions
          cmp max min
+         ; * length
+         len
          ; * numeric predicates
          (contract-out
            [num?        (-> AnyC AnyC)]
@@ -183,6 +185,11 @@
     [else
       (dssl-error "min: not ordered: %p and %p"
                   x (first xs))]))
+
+;; length
+
+(define (len x)
+  (dssl-send x 'len))
 
 ;; Numeric predicates
 

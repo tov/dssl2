@@ -82,9 +82,9 @@
               "%s: type error\n  got: %p\n  expected: %s"
               who got expected))
 
-(define (assertion-error #:srclocs [srclocs '()] who fmt . args)
+(define (assertion-error #:srclocs [srclocs '()] fmt . args)
   (apply dssl-error #:srclocs srclocs
-         (format "Assertion failed: ~a;\n ~a" who fmt)
+         (string-append "Assertion failed: " fmt)
          args))
 
 (define (syntax-error stx fmt . args)

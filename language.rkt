@@ -17,7 +17,6 @@
            [dssl-False          False]
            [dssl-None           None]
            [dssl-assert         assert]
-           [dssl-assert-eq      assert_eq]
            [dssl-assert-error   assert_error]
            [dssl-break          break]
            [dssl-class          class]
@@ -65,7 +64,8 @@
                   unsafe-undefined
                   check-not-unsafe-undefined)
          syntax/parse/define
-         rackunit
+         (only-in rackunit
+                  test-case)
          (only-in racket/contract/base
                   ->
                   contract
@@ -74,6 +74,9 @@
                   parametric->/c)
          (only-in racket/math
                   natural?)
+         (only-in racket/sandbox
+                  call-with-limits
+                  exn:fail:resource?)
          (only-in syntax/location
                   quote-srcloc))
 (require (prefix-in racket: racket/base)
@@ -351,7 +354,7 @@
       vb
       (build-vector (* 2 old-capacity)
                     (λ (i)
-                       (if (< i old-capacity)
+                       (if (racket:< i old-capacity)
                          (vector-ref old-vector i)
                          #false)))))
   (vector-set! (vector-builder-vector vb)
@@ -460,43 +463,36 @@
          (define (#,(struct-predicate-name #'name) value)
            (#,(struct-predicate-name #'internal-name) value)))]))
 
-(define-syntax dssl-begin
-  (syntax-rules ()
-    [(_ defn ...) (dssl-begin/acc () () defn ...)]))
+(begin-for-syntax
+  (define (split-dssl-definitions stx0)
+    (define (loop stx early late)
+      (syntax-parse stx
+        #:literals (dssl-struct dssl-let begin)
+        [()
+         (values early late)]
+        [((begin . first) . rest)
+         (let-values ([(early late) (loop #'first early late)])
+           (loop #'rest early late))]
+        [((dssl-struct name:id [dssl-let :var&contract] ...) . rest)
+         (with-syntax ([s:cons (format-id #f "s:~a" #'name)])
+           (loop
+            #'rest
+            (cons #'(dssl-struct/early (name s:cons) var ...)
+                  early)
+            (cons #'(dssl-struct/late (name s:cons) (var contract) ...)
+                  late)))]
+        [(first . rest)
+         (loop #'rest early (cons #'first late))]))
+    (define-values (early late) (loop stx0 '() '()))
+    (values (reverse early) (reverse late)))
 
-(define-syntax (dssl-begin/acc stx)
-  (syntax-parse stx
-    #:literals (dssl-struct dssl-let begin)
-    ; Done, splice together the early and late defns
-    [(_ (early-defns ...) (late-defns ...))
-     #'(begin
-         early-defns ...
-         late-defns ...)]
-    ; Descend into begins
-    [(_ (early-defns ...) (late-defns ...)
-        (begin firsts ...)
-        rest ...)
-     #'(dssl-begin/acc (early-defns ...) (late-defns ...)
-                       firsts ... rest ...)]
-    ; Interpret structs
-    [(_ (early-defns ...) (late-defns ...)
-        (dssl-struct name:id (dssl-let :var&contract) ...)
-        rest ...)
-     (with-syntax ([s:cons (format-id #f "s:~a" #'name)])
-       #`(dssl-begin/acc
-           (early-defns
-             ...
-             (dssl-struct/early (name s:cons) var ...))
-           (late-defns
-             ...
-             (dssl-struct/late (name s:cons) (var contract) ...))
-           rest ...))]
-    ; Pass everything else through
-    [(_ (early-defns ...) (late-defns ...)
-        first rest ...)
-     #'(dssl-begin/acc (early-defns ...)
-                       (late-defns ... first)
-                       rest ...)]))
+  (define (expand-dssl-begin stx)
+    (define-values (early late) (split-dssl-definitions stx))
+    #`(begin #,@early #,@late)))
+
+(define-syntax-parser dssl-begin
+  [(_ . defns)
+   (expand-dssl-begin #'defns)])
 
 (define-syntax (dssl-struct stx)
   (syntax-error
@@ -651,10 +647,11 @@
 (define-syntax (dssl-test stx)
   (syntax-parse stx
     [(_ name:expr body:expr ...+)
-     #`(test-case (format "~a (line ~a)" name '#,(syntax-line stx))
-                  (inc-total-tests!)
-                  (dssl-begin body ...)
-                  (inc-passed-tests!))]))
+     #`(test-case
+         (format "~a (line ~a)" name '#,(syntax-line stx))
+         (inc-total-tests!)
+         (dssl-begin body ...)
+         (inc-passed-tests!))]))
 
 (define-syntax (dssl-time stx)
   (syntax-parse stx
@@ -676,40 +673,95 @@
     [e1   e2]
     [else e3]))
 
-(define-syntax-rule (dssl-assert expr)
-  (when (falsy? expr)
-    (assertion-error #:srclocs (get-srclocs expr)
-                     'assert "did not evaluate to true")))
+(begin-for-syntax
+  (define-splicing-syntax-class timeout
+    (pattern (~seq #:timeout seconds)
+             #:declare seconds (expr/c #'positive?)))
 
-(define-syntax-rule (dssl-assert-eq e1 e2)
-  (begin
-    (define v1 e1)
-    (define v2 e2)
-    (unless (dssl-equal? v1 v2)
-      (assertion-error #:srclocs (get-srclocs e1 e2)
-                       'assert_eq "%p ≠ %p" v1 v2))))
+  (define-syntax-class unary-operator
+    #:attributes (name)
+    (pattern (~literal not)
+             #:attr name #'"not"))
 
-(define (dssl-assert-error/thunk srclocs thunk string-pattern)
-  (define pattern
-    (regexp
-      (regexp-quote string-pattern #false)))
+  (define-syntax-class binary-operator
+    #:attributes (name)
+    (pattern (~literal ==)
+             #:attr name #'"==")
+    (pattern (~literal !=)
+             #:attr name #'"!=")
+    (pattern (~literal <=)
+             #:attr name #'"<=")
+    (pattern (~literal <)
+             #:attr name #'"<")
+    (pattern (~literal >=)
+             #:attr name #'">=")
+    (pattern (~literal >)
+             #:attr name #'">")
+    (pattern (~literal is)
+             #:attr name #'"is")
+    (pattern (~literal |is not|)
+             #:attr name #'"is not")))
+
+(define (call-with-timeout srclocs seconds thunk)
+  (with-handlers
+    ([exn:fail:resource?
+       (λ (_exn)
+          (assertion-error #:srclocs srclocs "ran out of time"))])
+    (call-with-limits seconds #f thunk)))
+
+(define-simple-macro (with-timeout loc time:expr body:expr)
+  (call-with-timeout (get-srclocs loc) time (λ () body)))
+
+(define-syntax-parser dssl-assert
+  [(_ e:expr time:timeout)
+   #'(with-timeout e time.seconds (dssl-assert e))]
+  [(_ (~and e (op:binary-operator e1:expr e2:expr)))
+   #'(let ()
+       (define v1 e1)
+       (define v2 e2)
+       (when (falsy? (op v1 v2))
+         (assertion-error #:srclocs (get-srclocs e)
+                          "%p %s %p" v1 op.name v2)))]
+  [(_ (~and e (op:unary-operator e1:expr)))
+   #'(let ()
+       (define v1 e1)
+       (when (falsy? (op v1))
+         (assertion-error #:srclocs (get-srclocs e)
+                          "%s %p" op.name v1)))]
+  [(_ e:expr)
+   #'(let ()
+       (define v e)
+       (when (falsy? v)
+         (assertion-error #:srclocs (get-srclocs e)
+                          "%p" v)))])
+
+(define (dssl-assert-error/thunk srclocs thunk str-pattern)
+  (define re-pattern (regexp (regexp-quote str-pattern #f)))
   (define (handler exception)
-    (if (regexp-match? pattern (exn-message exception))
-      #false
-      (format "errored as expected, but didn’t match the pattern\n message: ~a"
-              (exn-message exception))))
-  (define message (with-handlers ([exn:fail? handler])
-                    (thunk)
-                    "did not error as expected"))
-  (when (string? message)
-    (assertion-error #:srclocs srclocs 'assert-error message)))
+    (if (regexp-match? re-pattern (exn-message exception))
+      #f
+      (format "~a\n ~a~s\n ~a~s"
+              "got a different error than expected:"
+              "error message:  "
+              (exn-message exception)
+              "should contain: "
+              str-pattern)))
+  (define message
+    (with-handlers ([exn:fail? handler])
+      (thunk)
+      "did not error as expected"))
+  (when message (assertion-error #:srclocs srclocs message)))
 
 (define-syntax (dssl-assert-error stx)
   (syntax-parse stx
-    [(_ code:expr expected:expr)
-     #`(dssl-assert-error/thunk (get-srclocs code) (λ () code) expected)]
+    [(_ code:expr msg:expr time:timeout)
+     #'(with-timeout code time.seconds (dssl-assert-error code msg))]
+    [(_ code:expr msg:expr)
+     #`(dssl-assert-error/thunk (get-srclocs code) (λ () code) msg)]
+    [(_ code:expr time:timeout)
+     #'(dssl-assert-error code "" #:timeout time.seconds)]
     [(_ code:expr)
-     #`(dssl-assert-error/thunk (get-srclocs code) (λ () code) "")]))
+     #'(dssl-assert-error code "")]))
 
 (define-syntax (dssl-interface stx)
   (syntax-parse stx

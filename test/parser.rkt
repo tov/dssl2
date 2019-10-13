@@ -73,10 +73,12 @@
   (check-parse? "a.b.c = e[f]"
                 (= (struct-ref (struct-ref a b) c)
                    (vec-ref e f)))
+  (check-parse? "assert False, time < 5"
+                (assert #f #:timeout 5))
   (check-parse? "assert False"
                 (assert #f))
   (check-parse? "assert_eq a + 1, 6"
-                (assert_eq (+ a 1) 6))
+                (assert (== (+ a 1) 6)))
 
   ; compound statements
 

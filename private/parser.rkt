@@ -71,6 +71,9 @@
   (define-syntax-rule (loc/2 sexp)
     (loc/head sexp $2-start-pos))
 
+  (define-syntax-rule (loc/3 sexp)
+    (loc/head sexp $3-start-pos))
+
   (parser
     (tokens dssl2-empty-tokens dssl2-tokens)
     (src-pos)
@@ -290,14 +293,14 @@
          (loc/1 `(return))]
         [(<lvalue> EQUALS <expr>)
          (loc/2 `(= ,$1 ,$3))]
-        [(ASSERT <expr>)
-         (loc/1 `(assert ,$2))]
-        [(ASSERT-EQ <expr> COMMA <expr>)
-         (loc/1 `(assert_eq ,$2 ,$4))]
-        [(ASSERT-ERROR <expr>)
-         (loc/1 `(assert_error ,$2))]
-        [(ASSERT-ERROR <expr> COMMA STRING-LITERAL)
-         (loc/1 `(assert_error ,$2 ,$4))]
+        [(ASSERT <expr> <opt-timeout>)
+         (loc/1 `(assert ,$2 ,@$3))]
+        [(ASSERT-EQ <expr> COMMA <expr> <opt-timeout>)
+         (loc/1 `(assert ,(loc/3 `(== ,$2 ,$4)) ,@$5))]
+        [(ASSERT-ERROR <expr> <opt-timeout>)
+         (loc/1 `(assert_error ,$2 ,@$3))]
+        [(ASSERT-ERROR <expr> COMMA STRING-LITERAL <opt-timeout>)
+         (loc/1 `(assert_error ,$2 ,$4 ,@$5))]
         [(PASS)
          (loc/1 `(pass))])
 
@@ -401,6 +404,32 @@
         [(<ident>)
          (loc `[,$1 ,$1])])
 
+      (<opt-timeout>
+        [()
+         '()]
+        [(COMMA TIME OP-LESS <expr>)
+         (list '#:timeout $4)])
+
+      (<op2>
+        [(OP2)          $1]
+        [(NOT)          'not])
+
+      (<op3>
+        [(OP3)          $1]
+        [(OP-LESS)      $1]
+        [(IS)           'is]
+        [(IS NOT)       '|is not|])
+
+      (<op8>
+        [(OP8)          $1]
+        [(PLUS)         '+]
+        [(MINUS)        '-])
+
+      (<op10>
+        [(OP10)         $1]
+        [(PLUS)         '+]
+        [(MINUS)        '-])
+
       (<expr>
         [(LAMBDA <formals> COLON <single-line-statement>)
          (loc/1 `(lambda ,$2 ,@$4))]
@@ -422,19 +451,13 @@
          $1])
 
       (<expr2>
-        [(NOT <expr2>)
-         (loc/1 `(not ,$2))]
-        [(OP2 <expr2>)
+        [(<op2> <expr2>)
          (loc/1 `(,$1 ,$2))]
         [(<expr3>)
           $1])
 
       (<expr3>
-        [(<expr4> IS <expr4>)
-         (loc/2 `(is ,$1 ,$3))]
-        [(<expr4> IS NOT <expr4>)
-         (loc/2 `(|is not| ,$1 ,$4))]
-        [(<expr4> OP3 <expr4>)
+        [(<expr4> <op3> <expr4>)
          (loc/2 `(,$2 ,$1 ,$3))]
         [(<expr4>)
          $1])
@@ -464,11 +487,7 @@
          $1])
 
       (<expr8>
-        [(<expr8> PLUS <expr9>)
-         (loc/2 `(+ ,$1 ,$3))]
-        [(<expr8> MINUS <expr9>)
-         (loc/2 `(- ,$1 ,$3))]
-        [(<expr8> OP8 <expr9>)
+        [(<expr8> <op8> <expr9>)
          (loc/2 `(,$2 ,$1 ,$3))]
         [(<expr9>)
          $1])
@@ -480,12 +499,8 @@
          $1])
 
       (<expr10>
-        [(OP10 <expr10>)
+        [(<op10> <expr10>)
          (loc/1 `(,$1 ,$2))]
-        [(PLUS <expr10>)
-         (loc/1 `(+ ,$2))]
-        [(MINUS <expr10>)
-         (loc/1 `(- ,$2))]
         [(<expr11>)
          $1])
 

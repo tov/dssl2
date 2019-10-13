@@ -21,3 +21,4 @@ before_install:
 script:
   - raco pkg install
   - make test
+  - make long_test

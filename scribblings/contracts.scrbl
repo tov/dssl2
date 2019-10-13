@@ -67,7 +67,7 @@ Each of the contract positions is optional, and if omitted defaults to
 @racket[AnyC].
 
 Optionally, after @term_[name]{f} and before the left parenthesis,
-@nt[opt_ctc_params] may appear: one or more comma-separated names,
+@nt[opt_cvars] may appear: one or more comma-separated names,
 enclosed in square brackets. These are optional contract parameters to
 the function, which can appear in the contracts on the rest of the
 parameters, the result, and anywhere in the body of the function.
@@ -109,7 +109,7 @@ It’s possible to include contracts on some fields without including them
 on all, and the fields with omitted contracts default to @racket[AnyC].
 
 @defcmpdidform*[
-    class #:link @list{@term[name] @~opt["[" @~many-comma[@term[ctc_param]] "]"] @~opt["(" @~many-comma[@term[interface_name]] ")"]:}
+    class #:link @list{@term[name] @~opt["[" @~many-comma[@term[cvar]] "]"] @~opt["(" @~many-comma[@term[interface_name]] ")"]:}
     @indent{@id-form[let] @term_[field_name]{1}: @nt_[ctc]{field_1}}
     @indent{...}
     @indent{@id-form[let] @term_[field_name]{k}: @nt_[ctc]{field_k}}
@@ -137,7 +137,7 @@ If the class implements interfaces that have contracts, the interfaces'
 contracts have no effect on the defined class.
 
 A class may have some number of generic contract parameters,
-@term[ctc_param]. These can be used to parameterize a class over other
+@term[cvar]. These can be used to parameterize a class over other
 contracts. When provided, they are in scope throughout the class. The
 external constructor receives the actual contracts for an instance of
 the class as optional, square bracket parameters, giving before the
@@ -214,7 +214,7 @@ assert Posn?[AnyC](r)
 }|
 
 @defcmpdidform*[
-    interface #:link @list{@term[name] @~opt["[" @~many-comma[@term[ctc_param]] "]" ]:}
+    interface #:link @list{@term[name] @~opt["[" @~many-comma[@term[cvar]] "]" ]:}
     @indent{@id-form[def] @term_[meth_name]{1}(@term_[self]{1} @~many["," @list{@term_[arg_name]{1}:} @nt_[ctc]{arg_1}]) -> @nt_[ctc]{res_1}}
     @indent{...}
     @indent{@id-form[def] @term_[meth_name]{k}(@term_[self]{n} @~many["," @list{@term_[arg_name]{k}:} @nt_[ctc]{arg_n}]) -> @nt_[ctc]{res_k}}
@@ -346,7 +346,7 @@ def sneaky_advance(counter: STEPPABLE!, count: nat?):
 }|
 
 Like classes, interfaces can have generic contract parameters
-@term[ctc_param]. When an interface has generic contract parameters,
+@term[cvar]. When an interface has generic contract parameters,
 these parameters are available to the contracts in the body of the
 interface. The interface contract @c{@term[name]!} takes its contract
 parameters as optional square bracket parameters that default to

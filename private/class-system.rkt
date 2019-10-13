@@ -64,7 +64,8 @@
                  [else value])))
   (make-immutable-hasheq (hash->list result)))
 
-(define (((apply-interface-contract interface-table
+(define (((apply-interface-contract name
+                                    interface-table
                                     contract-parameters
                                     interface-token
                                     first-order?)
@@ -85,7 +86,7 @@
             (string-append
               "cannot re-protect with with same interface"
               " (~a) and different contract parameters")
-            'name)))]
+            name)))]
     [(first-order? value)
      ((object-info-projector (object-base-info value))
       value
@@ -101,18 +102,18 @@
                   (blame-swap blame)
                   #:missing-party neg-party value
                   "interface ~a is protecting method ~a"
-                  'name sel))])))]
+                  name sel))])))]
     [(object-base? value)
      (raise-blame-error
        blame #:missing-party neg-party value
        "class ~a does not implement interface ~a"
        (object-info-name (object-base-info value))
-       'name)]
+       name)]
     [else
       (raise-blame-error
         blame #:missing-party neg-party value
         "value ~e does not implement interface ~a"
-        value 'name)]))
+        value name)]))
 
 (define-syntax (define-dssl-interface stx)
   (syntax-parse stx
@@ -200,6 +201,7 @@
                (define interface-table (#,interface-runtime-name cv ...))
                (define contract-parameters (vector-immutable cv ...))
                (apply-interface-contract
+                 'name
                  interface-table
                  contract-parameters
                  '#,interface-token

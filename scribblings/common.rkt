@@ -143,36 +143,42 @@
 
 (define-syntax (id-form stx)
   (syntax-parse stx
-    [(_ form:id #:def)  #'(scribble:defidform/inline form)]
-    [(_ form:id #:link) #'(bold (racket form))]
-    [(_ form:id)        #'(to-element 'form #:defn? #t)]))
+    [(_ form:id #:def)
+     #'(scribble:defidform/inline form)]
+    [(_ form:id #:link)
+     #'(bold (racket form))]
+    [(_ form:id (~optional #:re))
+     #'(to-element 'form #:defn? #t)]))
 
 (begin-for-syntax
   (define-syntax-class form-kind
-    (pattern #:exp #:attr s #'"expr")
-    (pattern #:smpl #:attr s #'"simple")
-    (pattern #:cmpd #:attr s #'"compound")
-    (pattern #:proc #:attr s #'"procedure"))
+    (pattern #:exp  #:attr kind #'"expr")
+    (pattern #:smpl #:attr kind #'"simple")
+    (pattern #:cmpd #:attr kind #'"compound")
+    (pattern #:proc #:attr kind #'"procedure"))
+
+  (define-splicing-syntax-class opt-form-kw
+   (pattern (~seq #:re)    #:attr out #'#:re)
+   (pattern (~seq #:link)  #:attr out #'#:link)
+   (pattern (~seq #:def)   #:attr out #'#:def)
+   (pattern (~seq)         #:attr out #'#:def))
 
   (define-splicing-syntax-class name-kws
-    #:attributes (name def redef)
-    (pattern (~seq name:id #:re)
-             #:attr redef #'(id-form name)
-             #:attr def   #'(id-form name))
-    (pattern (~seq name:id #:link)
-             #:attr redef #'(id-form name)
-             #:attr def   #'(id-form name #:link))
-    (pattern (~seq name:id)
-             #:attr redef #'(id-form name)
-             #:attr def   #'(id-form name #:def)))
+    (pattern (~seq name:id kw:opt-form-kw)
+             #:attr [$ 1]  (list #'name #'kw.out)
+             #:attr redef  #'(id-form name #:re)
+             #:attr def    #'(id-form name kw.out)))
 
   (define-splicing-syntax-class defidform-head
-    #:attributes (name def redef kind)
-    (pattern (~seq raw-kind:form-kind :name-kws)
-             #:attr kind  #'raw-kind.s)))
+    (pattern (~seq fk:form-kind kw:name-kws)
+             #:attr [$ 1] (cons #'fk (attribute kw.$))
+             #:attr kind  #'fk.kind
+             #:attr name  #'kw.name
+             #:attr def   #'kw.def
+             #:attr redef #'kw.redef)))
 
-(define-simple-macro (defform* kind:form-kind form ...)
-  (*defforms kind.s (list form ...)))
+(define-simple-macro (defform* :form-kind form ...)
+  (*defforms kind (list form ...)))
 
 (define-simple-macro (defform kind:form-kind chunk ...)
   (defform* kind (list chunk ...)))
@@ -187,7 +193,7 @@
 
 (define-simple-macro
   (defidform hd:defidform-head chunk ...)
-  (defidform* (~@ . hd) (list chunk ...)))
+  (defidform* hd.$ ... (list chunk ...)))
 
 (define-syntax-rule (defexpform chunk ...)
   (defform #:exp chunk ...))
@@ -207,23 +213,26 @@
 (define-syntax-rule (defcmpdform* form ...)
   (defform* #:cmpd form ...))
 
-(define-simple-macro (defexpidform nk:name-kws . rest)
-  (defidform #:exp (~@ . nk) ~ . rest))
+(define-syntax-parser define-def*idform
+  [(_ short-name:id)
+   (with-syntax
+     ([form-name  (format->stx string->symbol "def~aidform" #'short-name)]
+      [form-name* (format->stx string->symbol "def~aidform*" #'short-name)]
+      [kw         (format->stx string->keyword "~a" #'short-name)])
+     #'(begin
+         (define-simple-macro (form-name* nk:name-kws first . rest)
+           (defidform* kw nk.$ (... ...) (list ~ first) . rest))
+         (define-simple-macro (form-name nk:name-kws . rest)
+           (form-name* nk.$ (... ...) (list . rest)))))])
 
-(define-simple-macro (defsmplidform nk:name-kws . rest)
-  (defidform #:smpl (~@ . nk) ~ . rest))
+; format->stx : [String -> X] [Format-string-like "~a"] Identifier
+;               -> [Syntax-of X]
+(define-for-syntax (format->stx cvt fmt stx)
+  (datum->syntax stx (cvt (format fmt (syntax-e stx)))))
 
-(define-simple-macro (defcmpdidform nk:name-kws . rest)
-  (defidform #:cmpd (~@ . nk) ~ . rest))
-
-(define-simple-macro (defexpidform* nk:name-kws first . rest)
-  (defidform* #:exp (~@ . nk) (list ~ first) . rest))
-
-(define-simple-macro (defsmplidform* nk:name-kws first . rest)
-  (defidform* #:smpl (~@ . nk) (list ~ first) . rest))
-
-(define-simple-macro (defcmpdidform* nk:name-kws first . rest)
-  (defidform* #:cmpd (~@ . nk) (list ~ first) . rest))
+(define-def*idform exp)
+(define-def*idform smpl)
+(define-def*idform cmpd)
 
 (define-syntax-rule (defclassform name)
   (subsection #:tag (format "class:~a" 'name)

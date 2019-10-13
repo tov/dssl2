@@ -126,9 +126,7 @@
         (splicing-syntax-parameterize
           ([inc-passed-tests! (syntax-rules () [(_) (inc-passed!)])]
            [inc-total-tests!  (syntax-rules () [(_) (inc-total!)])])
-          (splicing-parameterize
-            ([dssl-assertion-timeout (dssl-assertion-timeout)])
-            (dssl-begin expr ...)))
+          (dssl-begin expr ...))
         (print-test-results passed-tests total-tests))]))
 
 (define (print-test-results passed total)
@@ -785,7 +783,7 @@
                                   (λ () code)
                                   msg))]
     [(_ code:expr timeout:opt-timeout)
-     #'(dssl-assert-error code "" (~@ . timeout))]))
+     #'(dssl-assert-error code "" . timeout)]))
 
 (define-syntax (dssl-interface stx)
   (syntax-parse stx

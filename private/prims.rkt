@@ -128,23 +128,20 @@
                      (only-in racket/syntax syntax-local-eval)
                      syntax/parse))
 
+(define-simple-macro (def-conj name:id pred?:expr ...+)
+  (define (name x)
+    (and (pred? x) ...)))
+
 ;;; Basic type predicates
 
-(define (int? x) (exact-integer? x))
-
-(define (str? x) (string? x))
-
-(define (vec? x) (vector? x))
-
-(define (float? x) (flonum? x))
-
-(define (bool? x) (boolean? x))
-
-(define (proc? x) (procedure? x))
-
-(define (contract? x) (r:contract? x))
-
-(define (flat_contract? x) (r:flat-contract? x))
+(def-conj int? exact-integer?)
+(def-conj str? string?)
+(def-conj vec? vector?)
+(def-conj float? flonum?)
+(def-conj bool? boolean?)
+(def-conj proc? procedure?)
+(def-conj contract? r:contract?)
+(def-conj flat_contract? r:flat-contract?)
 
 ;; Comparison functions
 
@@ -196,18 +193,14 @@
 (define (num? x)
   (or (int? x) (float? x)))
 
-(define (nat? x)
-  (and (int? x) (not (r:negative? x))))
+(def-conj nan?  num? r:nan?)
+(def-conj zero? num? r:zero?)
+(def-conj pos?  num? r:positive?)
+(def-conj neg?  num? r:negative?)
+(def-conj even? num? r:even?)
+(def-conj odd?  num? r:odd?)
 
-(define (and-num pred?)
-  (λ (x) (and (num? x) (pred? x))))
-
-(define nan?  (and-num r:nan?))
-(define zero? (and-num r:zero?))
-(define pos?  (and-num r:positive?))
-(define neg?  (and-num r:negative?))
-(define even? (and-num r:even?))
-(define odd?  (and-num r:odd?))
+(def-conj nat?  int? (compose not r:negative?))
 
 ;; Contracts
 

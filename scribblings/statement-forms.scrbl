@@ -56,7 +56,7 @@ The assigned @nt[lvalue] can be in one of three forms:
 This method assigns all three kinds of l-value:
 
 @dssl2block|{
-def insert!(self, key, value):
+def insert(self, key, value):
     let index = self._bucket_index_(key)
     let current = self._buckets[index]
     while cons?(current):
@@ -99,8 +99,8 @@ statement on the same line as the @racket[def].
 Note that @racket[def]s can be nested:
 
 @dssl2block|{
-# rbt_insert! : X RbTreeOf[X] -> None
-def rbt_insert!(key, tree):
+# rbt_insert : X RbTreeOf[X] -> None
+def rbt_insert(key, tree):
     # parent : RbLinkOf[X] -> RbLinkOf[X]
     def parent(link):
         link.parent if rbn?(link) else None
@@ -123,8 +123,8 @@ def rbt_insert!(key, tree):
 
     # . . .
 
-    def set_root!(new_node): tree.root = new_node
-    search!(tree.root, set_root!)
+    def set_root(new_node): tree.root = new_node
+    search(tree.root, set_root)
 }|
 
 @section{Loop and control forms}
@@ -134,9 +134,9 @@ def rbt_insert!(key, tree):
 Does nothing.
 
 @dssl2block|{
-# account_credit! : num? account? -> NoneC
+# account_credit : num? account? -> NoneC
 # Adds the given amount to the given account’s balance.
-def account_credit!(amount, account):
+def account_credit(amount, account):
     pass
 #   ^ FILL IN YOUR CODE HERE
 }|
@@ -390,8 +390,8 @@ def singleton(key):
 def size(tree):
     tree.size if Node?(tree) else 0
 
-# fix_size! : Node? -> Void
-def fix_size!(node):
+# fix_size : Node? -> Void
+def fix_size(node):
     node.size = 1 + size(node.left) + size(node.right)
 }|
 
@@ -502,7 +502,7 @@ class VerticalMovingPosn:
 
     def get_y(self): self.y
 
-    def set_y!(self, y): self.y = y
+    def set_y(self, y): self.y = y
 }|
 
 We can create a @code{VerticalMovingPosn} as follows:
@@ -511,7 +511,7 @@ We can create a @code{VerticalMovingPosn} as follows:
 let posn = VerticalMovingPosn(3, 4)
 assert posn.get_x() == 3
 assert posn.get_y() == 4
-posn.set_y!(10)
+posn.set_y(10)
 assert posn.get_x() == 3
 assert posn.get_y() == 10
 }|
@@ -693,7 +693,7 @@ expression evaluates @racket[False] or @racket[None], signals an error.
 test 'ScHash.member? finds "hello"':
     let h = ScHash(10, make_sbox_hash())
     assert not h.member?('hello')
-    h.insert!('hello', 5)
+    h.insert('hello', 5)
     assert h.member?('hello')
 
 test 'first_char_hasher works':
@@ -754,18 +754,18 @@ test 'single-chaining hash table':
     let h = ScHash(10)
     assert not h.member?('hello')
 
-    h.insert!('hello', 5)
+    h.insert('hello', 5)
     assert h.member?('hello')
     assert h.lookup('hello') == 5
     assert not h.member?('goodbye')
     assert not h.member?('helo')
 
-    h.insert!('helo', 4)
+    h.insert('helo', 4)
     assert h.lookup('hello') == 5
     assert h.lookup('helo') == 4
     assert not h.member?('hel')
 
-    h.insert!('hello', 10)
+    h.insert('hello', 10)
     assert h.lookup('hello') == 10
     assert h.lookup('helo') == 4
     assert not h.member?('hel')

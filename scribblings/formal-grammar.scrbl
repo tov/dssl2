@@ -28,8 +28,8 @@ by a newline, or a compound statement.
   [program   (~many statement)]
   [statement (simple 'NEWLINE)
              compound]
-  [simple    (assert expr)
-             (assert_error expr (~opt "," expr))
+  [simple    (assert expr opt_timeout)
+             (assert_error expr (~opt "," expr) opt_timeout)
              break
              continue
              (lvalue = expr)
@@ -75,6 +75,8 @@ by a newline, or a compound statement.
             ('NEWLINE 'INDENT (~many1 field_def 'NEWLINE) 'DEDENT)]
   [field_def
             (let 'name opt_ctc)]
+  [opt_timeout
+            (~opt "," "time" "<" expr)]
   [opt_implements
             (~opt "(" (~many-comma 'name) ")")]
   [opt_ctc
@@ -93,7 +95,7 @@ by a newline, or a compound statement.
             (expr "if" expr "else" expr)
             (expr "(" (~many-comma expr) ")")
             (lambda (~many-comma 'name) ":" simple)
-            ("λ" (~many-comma 'name) ":" simple)
+            (λ (~many-comma 'name) ":" simple)
             ('struct_name "{" (~many-comma 'name ":" expr) "}")
             ("[" (~many-comma expr) "]")
             ("[" expr ";" expr "]")

@@ -30,9 +30,11 @@ clean:
 
 .PHONY: test all clean lang
 
-doc: scribblings/$(PACKAGE).scrbl
-	raco scribble --dest $@ $^
-	echo "<meta http-equiv='refresh' content='0;url=$(PACKAGE).html'>" > doc/index.html
+DOC_SRC = $(shell git ls-files scribblings)
+
+doc: scribblings/$(PACKAGE).scrbl $(DOC_SRC)
+	raco make scribblings/*.rkt
+	raco scribble --dest $@ $<
 
 setup:
 	raco setup $(PACKAGE)

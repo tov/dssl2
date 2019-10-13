@@ -23,8 +23,8 @@ comparison with @racket[==], @racket[<], @racket[<=], etc. @code{False}
 compares less than @code{True}.
 
 @defprocforms[bool
-    [@list{(@code{AnyC}) -> @code{bool?}}]
-    [@list{() -> @code{bool?}}]
+    @list{(@code{AnyC}) -> @code{bool?}}
+    @list{() -> @code{bool?}}
 ]
 
 The constructor for @linkclass[bool].
@@ -44,10 +44,10 @@ constructor. Characters can be compared with @racket[==], @racket[<],
 @racket[<=], etc.
 
 @defprocforms[char
-    [@proto[char bool?]]
-    [@proto[int? bool?]]
-    [@proto[str? bool?]]
-    [@proto[bool?]]
+    @proto[char bool?]
+    @proto[int? bool?]
+    @proto[str? bool?]
+    @proto[bool?]
 ]
 
 The constructor for @linkclass[char].
@@ -77,11 +77,11 @@ Integers support binary bitwise operators @racket[&] (bitwise
 @emph{xor}), and unary bitwise negation @racket[~].
 
 @defprocforms[int
-    [@proto[num? int?]]
-    [@proto[char? int?]]
-    [@proto[str? int?]]
-    [@proto[bool? int?]]
-    [@proto[int?]]
+    @proto[num? int?]
+    @proto[char? int?]
+    @proto[str? int?]
+    @proto[bool? int?]
+    @proto[int?]
 ]
 
 The constructor for @linkclass[int].
@@ -143,10 +143,10 @@ They also support comparison with @racket[==], @racket[<], @racket[<=],
 etc., and they can be compared against ints.
 
 @defprocforms[float
-  [@proto[num? float?]]
-  [@proto[str? float?]]
-  [@proto[bool? float?]]
-  [@proto[float?]]
+  @proto[num? float?]
+  @proto[str? float?]
+  @proto[bool? float?]
+  @proto[float?]
 ]
 
 The constructor for @linkclass[float].
@@ -185,8 +185,8 @@ The type predicate for @linkclass[proc] is @racket[proc?].
 Procedures can be applied.
 
 @defprocforms[proc
-    [@proto[proc? proc?]]
-    [@proto[proc?]]
+    @proto[proc? proc?]
+    @proto[proc?]
 ]
 
 The constructor for @linkclass[proc].
@@ -218,10 +218,10 @@ instance of @linkclass{char}. Strings may be concatenated with the
 @racket[+] converts the non-string to a string first.
 
 @defprocforms[str
-    [@proto[str? str?]]
-    [@proto[AnyC str?]]
-    [@proto[len:nat? c:char? str?]]
-    [@proto[str?]]
+    @proto[str? str?]
+    @proto[AnyC str?]
+    @proto[len:nat? c:char? str?]
+    @proto[str?]
 ]
 
 The constructor for @linkclass[str].
@@ -274,9 +274,9 @@ The type predicate for @linkclass[vec] is @racket[vec?].
 A vector can be indexed and assigned with square bracket notation.
 
 @defprocforms[vec
-    [@proto[vec?]]
-    [@proto[len:nat?  vec?]]
-    [@proto[len:nat? "init:FunC[nat?, AnyC]" vec?]]
+    @proto[vec?]
+    @proto[len:nat?  vec?]
+    @proto[len:nat? "init:FunC[nat?, AnyC]" vec?]
 ]
 
 The constructor for @linkclass[vec].
@@ -448,9 +448,9 @@ ordering. It is an error if the values are not comparable.
 @section{Randomness operations}
 
 @defprocforms[random
-  [@proto[float?]]
-  [@proto["limit:IntInC(1, 4294967087)" nat?]]
-  [@proto[start:int? limit:int? nat?]]
+  @proto[float?]
+  @proto["limit:IntInC(1, 4294967087)" nat?]
+  @proto[start:int? limit:int? nat?]
 ]
 
 When called with zero arguments, returns a random floating point number
@@ -506,8 +506,8 @@ print("%p + %p = %p", a, b, a + b)
 prints “3 + 4 = 7”.
 
 @defprocforms[println
-    [@proto[str? AnyC ... NoneC]]
-    [@proto[AnyC ... NoneC]]
+    @proto[str? AnyC ... NoneC]
+    @proto[AnyC ... NoneC]
 ]
 
 If the first argument is a string then @racket[println] is
@@ -535,8 +535,8 @@ def println(*args):
 }|
 
 @defprocforms[current_directory
-    [@proto[str?]]
-    [@proto[str? bool?]]
+    @proto[str?]
+    @proto[str? bool?]
 ]
 
 Given with no arguments, @racket[current_directory] returns the current
@@ -565,8 +565,8 @@ It is an error if the file cannot be written.
 @section{Other functions}
 
 @defprocforms[error
-    [@proto[str? AnyC ... NoneC]]
-    [@proto[AnyC ... NoneC]]
+    @proto[str? AnyC ... NoneC]
+    @proto[AnyC ... NoneC]
 ]
 
 Terminates the program with an error message.

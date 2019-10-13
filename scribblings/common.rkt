@@ -1,15 +1,17 @@
 #lang racket/base
 
 (provide grammar
-         defexpform defexpforms
-         defsmplform defsmplforms
-         defcmpdform defcmpdforms
+         defform defform*
+         defidform defidform*
+         defexpform defexpform* defexpidform defexpidform*
+         defsmplform defsmplform* defsmplidform defsmplidform*
+         defcmpdform defcmpdform* defcmpdidform defcmpdidform*
          defclassform linkclass Linkclass
          defconstform
          defprocform defprocforms
          defmethform defmethforms
          proto
-         redefidform/inline
+         id-form
          ~opt ~many ~many1 ~many-comma
          c nt nt_ term term_
          q m t
@@ -25,10 +27,13 @@
                      "../private/names.rkt"
                      "util.rkt"
                      (only-in racket/syntax format-id))
-         scribble/manual
+         (except-in scribble/manual
+                    defform defform*
+                    defidform defidform/inline)
          scribble/racket
          scribble/struct
          (prefix-in scribble: scribble/manual)
+         syntax/parse/define
          (for-syntax syntax/parse
                      (only-in racket/string string-contains?)
                      (only-in racket/sequence in-syntax)))
@@ -136,23 +141,89 @@
     [(_ name:id sub:expr ...)
      (~nonterminal #'name #:sub #'(list sub ...))]))
 
-(define-syntax-rule (defexpform chunk ...)
-  (*defforms "expr" (list (list chunk ...))))
+(define-syntax (id-form stx)
+  (syntax-parse stx
+    [(_ form:id #:def)  #'(scribble:defidform/inline form)]
+    [(_ form:id #:link) #'(bold (racket form))]
+    [(_ form:id)        #'(to-element 'form #:defn? #t)]))
 
-(define-syntax-rule (defexpforms form ...)
-  (*defforms "expr" (list form ...)))
+(begin-for-syntax
+  (define-syntax-class form-kind
+    (pattern #:exp #:attr s #'"expr")
+    (pattern #:smpl #:attr s #'"simple")
+    (pattern #:cmpd #:attr s #'"compound")
+    (pattern #:proc #:attr s #'"procedure"))
+
+  (define-splicing-syntax-class name-kws
+    #:attributes (name def redef)
+    (pattern (~seq name:id #:re)
+             #:attr redef #'(id-form name)
+             #:attr def   #'(id-form name))
+    (pattern (~seq name:id #:link)
+             #:attr redef #'(id-form name)
+             #:attr def   #'(id-form name #:link))
+    (pattern (~seq name:id)
+             #:attr redef #'(id-form name)
+             #:attr def   #'(id-form name #:def)))
+
+  (define-splicing-syntax-class defidform-head
+    #:attributes (name def redef kind)
+    (pattern (~seq raw-kind:form-kind :name-kws)
+             #:attr kind  #'raw-kind.s)))
+
+(define-simple-macro (defform* kind:form-kind form ...)
+  (*defforms kind.s (list form ...)))
+
+(define-simple-macro (defform kind:form-kind chunk ...)
+  (defform* kind (list chunk ...)))
+
+(define-simple-macro
+  (defidform* hd:defidform-head form0 form ...)
+  (let* ([hd.name hd.redef])
+    (*defforms
+      hd.kind
+      (list (list hd.def form0)
+            form ...))))
+
+(define-simple-macro
+  (defidform hd:defidform-head chunk ...)
+  (defidform* (~@ . hd) (list chunk ...)))
+
+(define-syntax-rule (defexpform chunk ...)
+  (defform #:exp chunk ...))
+
+(define-syntax-rule (defexpform* form ...)
+  (defform* #:exp form ...))
 
 (define-syntax-rule (defsmplform chunk ...)
-  (*defforms "simple" (list (list chunk ...))))
+  (defform #:smpl chunk ...))
 
-(define-syntax-rule (defsmplforms (chunk ...) ...)
-  (*defforms "simple" (list (list chunk ...) ...)))
+(define-syntax-rule (defsmplform* form ...)
+  (defform* #:smpl form ...))
 
 (define-syntax-rule (defcmpdform chunk ...)
-  (*defforms "compound" (list (list chunk ...))))
+  (defform #:cmpd chunk ...))
 
-(define-syntax-rule (defcmpdforms (chunk ...) ...)
-  (*defforms "compound" (list (list chunk ...) ...)))
+(define-syntax-rule (defcmpdform* form ...)
+  (defform* #:cmpd form ...))
+
+(define-simple-macro (defexpidform nk:name-kws . rest)
+  (defidform #:exp (~@ . nk) ~ . rest))
+
+(define-simple-macro (defsmplidform nk:name-kws . rest)
+  (defidform #:smpl (~@ . nk) ~ . rest))
+
+(define-simple-macro (defcmpdidform nk:name-kws . rest)
+  (defidform #:cmpd (~@ . nk) ~ . rest))
+
+(define-simple-macro (defexpidform* nk:name-kws first . rest)
+  (defidform* #:exp (~@ . nk) (list ~ first) . rest))
+
+(define-simple-macro (defsmplidform* nk:name-kws first . rest)
+  (defidform* #:smpl (~@ . nk) (list ~ first) . rest))
+
+(define-simple-macro (defcmpdidform* nk:name-kws first . rest)
+  (defidform* #:cmpd (~@ . nk) (list ~ first) . rest))
 
 (define-syntax-rule (defclassform name)
   (subsection #:tag (format "class:~a" 'name)
@@ -168,15 +239,13 @@
            "Class " (tt (format "~a" 'name))))
 
 (define-syntax-rule (defconstform name chunk ...)
-  (*defforms "constant" (list (list (defidform/inline name) ": " chunk ...))))
+  (*defforms "constant" (list (list (id-form name #:def) ": " chunk ...))))
 
 (define-syntax-rule (defprocform name chunk ...)
-  (*defforms "procedure" (list (list (defidform/inline name) chunk ...))))
+  (defidform #:proc name chunk ...))
 
-(define-syntax-rule (defprocforms name [chunk0 ...] [chunk ...] ...)
-  (*defforms "procedure"
-             (list (list (defidform/inline name) chunk0 ...)
-                   (list (redefidform/inline name) chunk ...) ...)))
+(define-syntax-rule (defprocforms name form0 form ...)
+  (defidform* #:proc name form0 (list name form) ...))
 
 (define-syntax (typeset-param stx)
   (syntax-parse stx #:datum-literals (...)
@@ -219,19 +288,19 @@
     [(_ name:id sel:id chunk ...)
      (define method-name (class-qualify #'name #'sel))
      #`(*defforms "method"
-                  (list (list (defidform/inline #,method-name) chunk ...)))]))
+                  (list (list (id-form #,method-name #:def) chunk ...)))]))
 
 (define-syntax (defmethforms stx)
   (syntax-parse stx
     [(_ name:id sel:id [chunk0 ...] [chunk ...] ...)
      (define method-name (class-qualify #'name #'sel))
      #`(*defforms "method"
-                  (list (list (defidform/inline #,method-name) chunk0 ...)
-                        (link (redefidform/inline #,method-name) chunk ...)
+                  (list (list (id-form #,method-name #:def) chunk0 ...)
+                        (link (id-form #,method-name) chunk ...)
                         ...))]))
 
 (define (*defforms kind forms)
-  (define labeller (add-background-label (or kind "syntax")))
+  (define labeller (add-background-label kind))
   (define (make-cell form)
     (list (make-paragraph (list (to-element (c form))))))
   (define table-content
@@ -242,9 +311,6 @@
   (make-blockquote
     vertical-inset-style
     (list table)))
-
-(define-syntax-rule (redefidform/inline form)
-  (to-element 'form #:defn? #t))
 
 (define-syntax (dssl2block stx)
   (syntax-parse stx

@@ -6,7 +6,7 @@
 
 @section{Definition and assignment forms}
 
-@defsmplform{@defidform/inline[let] @term[var_name] = @nt[expr]}
+@defsmplidform[let]{@term[var_name] = @nt[expr]}
 
 Declares and defines a local variable. Local variables may be declared in any
 scope and last for that scope. A local variable may be re-assigned with the
@@ -19,7 +19,7 @@ def sum(v):
     return result
 }|
 
-@defsmplform{@redefidform/inline[let] @term[var_name]}
+@defsmplidform[let #:re]{@term[var_name]}
 
 Declares a local variable, which will be undefined until it is assigned:
 
@@ -36,7 +36,7 @@ println(x)
 
 Accessing an undefined variable is an error.
 
-@defsmplform{@nt[lvalue] @defidform/inline[=] @nt_[expr]{rhs}}
+@defsmplform{@nt[lvalue] @id-form[= #:def] @nt_[expr]{rhs}}
 
 Assigns the value of @nt_[expr]{rhs} to an @nt[lvalue].
 The assigned @nt[lvalue] can be in one of three forms:
@@ -70,7 +70,7 @@ def insert!(self, key, value):
     self._buckets[index] = cons(sc_entry(key, value), self._buckets[index])
 }|
 
-@defcmpdform{@defidform/inline[def] @term[fun_name](@term_[var_name]{1}, ... @term_[var_name]{k}): @nt[block]}
+@defcmpdidform[def]{@term[fun_name](@term_[var_name]{1}, ... @term_[var_name]{k}): @nt[block]}
 
 Defines @term[fun_name] to be a function with formal parameters
 @term_[var_name]{1}, @c{...}, @term_[var_name]{k} and with body
@@ -129,7 +129,7 @@ def rbt_insert!(key, tree):
 
 @section{Loop and control forms}
 
-@defsmplform{@defidform/inline[pass]}
+@defsmplidform[pass]
 
 Does nothing.
 
@@ -141,10 +141,10 @@ def account_credit!(amount, account):
 #   ^ FILL IN YOUR CODE HERE
 }|
 
-@defcmpdforms[
-    [@list{@defidform/inline[if] @nt_[expr]{if}: @nt_[block]{if}}]
-    [@~many[@defidform/inline[elif] @list{@nt_[expr]{elif}:} @nt_[block]{elif}]]
-    [@~opt[@list{@defidform/inline[else]:} @nt_[block]{else}]]
+@defcmpdidform*[if
+    @list{@nt_[expr]{if}: @nt_[block]{if}}
+    @~many[@id-form[elif #:def] @list{@nt_[expr]{elif}:} @nt_[block]{elif}]
+    @~opt[@list{@id-form[else #:def]:} @nt_[block]{else}]
 ]
 
 The DSSL2 conditional statement contains an @racket[if], 0 or more
@@ -201,7 +201,7 @@ def rebalance_left_(key, balance, left0, right):
     else: error('Cannot happen')
 }|
 
-@defcmpdform{@defidform/inline[for] @term[var_name] in @nt[expr]: @nt[block]}
+@defcmpdidform[for]{@term[var_name] in @nt[expr]: @nt[block]}
 
 Loops over the values of the given @nt[expr], evaluating the
 @nt[block] for each. The @nt[expr] can evaluate to a vector, a string,
@@ -233,7 +233,7 @@ def make_sbox_hash(n):
     hash
 }|
 
-@defcmpdform{@redefidform/inline[for] @term_[var_name]{1}, @term_[var_name]{2} in @nt[expr]: @nt[block]}
+@defcmpdidform[for #:re]{@term_[var_name]{1}, @term_[var_name]{2} in @nt[expr]: @nt[block]}
 
 Loops over the indices and values of the given @nt[expr], evaluating
 the @nt[block] for each. The @nt[expr] can evaluate to a vector, a
@@ -248,7 +248,7 @@ for ix, person in people_to_greet:
     println("%p: Hello, %s!", ix, person)
 }|
 
-@defcmpdform{@defidform/inline[while] @nt[expr]: @nt[block]}
+@defcmpdidform[while]{@nt[expr]: @nt[block]}
 
 Iterates the @nt[block] while the @nt[expr] evaluates to non-false.
 For example:
@@ -273,12 +273,12 @@ def lookup(self, key):
     return result
 }|
 
-@defsmplform{@defidform/inline[break]}
+@defsmplidform[break]
 
 When in a @racket[for] or @racket[while] loop, ends the (inner-most)
 loop immediately.
 
-@defsmplform{@defidform/inline[continue]}
+@defsmplidform[continue]
 
 When in a @racket[for] or @racket[while] loop, ends the current
 iteration of the (inner-most) loop and begins the next iteration.
@@ -298,7 +298,7 @@ def size(tree):
     else: 0
 }|
 
-@defsmplform{@defidform/inline[return] @nt[expr]}
+@defsmplidform[return]{@nt[expr]}
 
 Returns the value of the given @nt[expr] from the inner-most function.
 Note that this is often optional, since the last expression in a
@@ -327,17 +327,17 @@ def bloom_check?(self, s):
     return True
 }|
 
-@defsmplform{@redefidform/inline[return]}
+@defsmplidform[return #:re]{}
 
 Returns @racket[None] from the current function.
 
 @section{Data and program structuring forms}
 
-@defcmpdforms[
-    [@list{@defidform/inline[struct] @term[name]:}]
-    [@indent{@redefidform/inline[let] @term_[field_name]{1}}]
-    [@indent{...}]
-    [@indent{@redefidform/inline[let] @term_[field_name]{k}}]
+@defcmpdidform*[struct
+    @list{@term[name]:}
+    @indent{@id-form[let] @term_[field_name]{1}}
+    @indent{...}
+    @indent{@id-form[let] @term_[field_name]{k}}
 ]
 
 Defines a new structure type @term[struct_name] with fields given by
@@ -395,14 +395,14 @@ def fix_size!(node):
     node.size = 1 + size(node.left) + size(node.right)
 }|
 
-@defcmpdforms[
-    [@list{@defidform/inline[class] @term[name] @~opt["(" @~many-comma[@term[interface_name]] ")"]}]
-    [@indent{@redefidform/inline[let] @term_[field_name]{1}}]
-    [@indent{...}]
-    [@indent{@redefidform/inline[let] @term_[field_name]{k}}]
-    [@indent{@redefidform/inline[def] @term_[meth_name]{0}(@term_[self]{0} @~many["," @term_[param_name]{0}]): @nt_[block]{0}}]
-    [@indent{...}]
-    [@indent{@redefidform/inline[def] @term_[meth_name]{n}(@term_[self]{n} @~many["," @term_[param_name]{n}]): @nt_[block]{n}}]
+@defcmpdidform*[
+    class @list{@term[name] @~opt["(" @~many-comma[@term[interface_name]] ")"]}
+    @indent{@id-form[let] @term_[field_name]{1}}
+    @indent{...}
+    @indent{@id-form[let] @term_[field_name]{k}}
+    @indent{@id-form[def] @term_[meth_name]{0}(@term_[self]{0} @~many["," @term_[param_name]{0}]): @nt_[block]{0}}
+    @indent{...}
+    @indent{@id-form[def] @term_[meth_name]{n}(@term_[self]{n} @~many["," @term_[param_name]{n}]): @nt_[block]{n}}
 ]
 
 Defines a class named @term[name] with private fields
@@ -519,11 +519,11 @@ assert posn.get_y() == 10
 Note that @code{VerticalMovingPosn} takes two parameters because
 @code{__init__} takes three: the self parameter and two more.
 
-@defcmpdforms[
-    [@list{@defidform/inline[interface] @term[name]:}]
-    [@indent{@redefidform/inline[def] @term_[meth_name]{1}(@term_[self]{1} @~many["," @term_[param_name]{1}]}]
-    [@indent{...}]
-    [@indent{@redefidform/inline[def] @term_[meth_name]{k}(@term_[self]{k} @~many["," @term_[param_name]{k}])}]
+@defcmpdidform*[
+    interface @list{@term[name]:}
+    @indent{@id-form[def] @term_[meth_name]{1}(@term_[self]{1} @~many["," @term_[param_name]{1}]}
+    @indent{...}
+    @indent{@id-form[def] @term_[meth_name]{k}(@term_[self]{k} @~many["," @term_[param_name]{k}])}
 ]
 
 Defines an interface named @term[name] with methods @term_[meth_name]{1}
@@ -666,9 +666,9 @@ class Posn (CONTAINER):
 The definition of @c{Posn} is in error, because it does not implement the
 methods of @c{CONTAINER}.
 
-@defsmplforms[
-    [@list{@defidform/inline[import] @term[mod_name]}]
-    [@list{@redefidform/inline[import] @term[mod_string]}]
+@defsmplidform*[
+    import @list{@term[mod_name]}
+    @list[import]{ @term[mod_string]}
 ]
 
 Imports the specified DSSL2 module. Modules may be from the standard
@@ -684,10 +684,10 @@ top level of a module.
 
 @section{Testing and timing forms}
 
-@defsmplform{@defidform/inline[assert] @nt[expr]}
+@defsmplidform[assert]{@nt[expr]}
 
-Asserts that the given @nt[expr] evaluates to non-false. If the
-expression evaluates false, signals an error.
+Asserts that the given @nt[expr] evaluates to a truthy value. If the
+expression evaluates @racket[False] or @racket[None], signals an error.
 
 @dssl2block|{
 test 'ScHash.member? finds "hello"':
@@ -703,17 +703,34 @@ test 'first_char_hasher works':
     assert first_char_hasher('apple') == 97
 }|
 
-@defsmplform{@defidform/inline[assert_error] @nt_[expr]{fail}, @nt_[expr]{str}}
+@defsmplidform[assert #:re]{@nt_[expr]{test}, time < @nt_[expr]{sec}}
 
-Asserts that the given @nt_[expr]{fail} errors, and that the error message
-contains the substring that results from evaluating @nt_[expr]{str}.
+Asserts that @nt_[expr]{test} evaluates to a truthy value in less than
+@nt_[expr]{sec} seconds.
 
-@defsmplform{@redefidform/inline[assert_error] @nt[expr]}
+@defsmplidform[assert_error]{@nt_[expr]{fail}, @nt_[expr]{str}}
+@defsmplidform[assert_error #:re]{@nt_[expr]{fail}}
 
-Asserts that the given @nt[expr] errors without checking for a
-particular error.
+Asserts that evaluating @nt_[expr]{fail} errors, without specifying a
+particular error message to check for.
 
-@defcmpdform{@defidform/inline[test] @nt[expr]: @nt[block]}
+
+Asserts that evaluating @nt_[expr]{fail} errors, and that the resulting
+error message contains the value of @nt_[expr]{str} as a substring.
+
+@defsmplidform[assert_error #:re]{@nt_[expr]{fail}, @nt_[expr]{str}, time < @nt_[expr]{sec}}
+
+Asserts that evaluating @nt_[expr]{fail} errors in less than
+@nt_[expr]{sec} seconds, and that the resulting
+error message contains the value of @nt_[expr]{str} as a substring.
+
+@defsmplidform[assert_error #:re]{@nt_[expr]{fail}, time < @nt_[expr]{sec}}
+
+Asserts that evaluating @nt_[expr]{fail} errors in less than
+@nt_[expr]{sec} seconds, without specifying a particular error message
+to check for.
+
+@defcmpdidform[test]{@nt[expr]: @nt[block]}
 
 Runs the code in @nt[block] as a test case named @nt[expr]
 (which is optional). If an
@@ -755,7 +772,7 @@ test 'single-chaining hash table':
     assert h.keys(h) == cons('hello', cons('helo', nil()))
 }|
 
-@defcmpdform{@defidform/inline[time] @nt[expr]: @nt[block]}
+@defcmpdidform[time]{@nt[expr]: @nt[block]}
 
 Times the execution of the @nt[block], and then prints the results labeled
 with the result of @nt[expr] (which isn’t timed, and which is optional).

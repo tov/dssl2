@@ -33,7 +33,7 @@ number or @code{False}, we could use the contract
 
 @section{Contract syntax}
 
-@defcmpdform{@redefidform/inline[let] @term[var_name] : @nt[ctc] = @nt[expr]}
+@defcmpdidform[let #:link]{@term[var_name] : @nt[ctc] = @nt[expr]}
 
 Binds variable @term[var_name] to the value of expression @nt[expr],
 while applying the contract @nt[ctc]. Subsequent assignments
@@ -52,7 +52,7 @@ let x : int?
 x = 5
 }|
 
-@defcmpdform{@redefidform/inline[def] @term_[name]{f}(@term_[name]{1}: @nt_[ctc]{1}, ..., @term_[name]{k}: @nt_[ctc]{k}) -> @nt_[ctc]{res}: @nt[block]}
+@defcmpdidform[def #:link]{@term_[name]{f}(@term_[name]{1}: @nt_[ctc]{1}, ..., @term_[name]{k}: @nt_[ctc]{k}) -> @nt_[ctc]{res}: @nt[block]}
 
 Defines function @term_[name]{f} while specifying contract expressions
 @nt_[ctc]{1} through @nt_[ctc]{k} for the parameters, and contract
@@ -84,11 +84,11 @@ When calling @code{vec_map}, it's possible to supply actual contracts
 for @code{T} and @code{U} in square brackets; or omitting the square
 brackets, the contracts both default to @racket[AnyC].
 
-@defcmpdforms[
-    [@list{@redefidform/inline[struct] @term[name]:}]
-    [@indent{@redefidform/inline[let] @term_[field_name]{1}: @nt_[ctc]{1}}]
-    [@indent{...}]
-    [@indent{@redefidform/inline[let] @term_[field_name]{k}: @nt_[ctc]{k}}]
+@defcmpdidform*[
+    struct #:link @list{@term[name]:}
+    @indent{@id-form[let] @term_[field_name]{1}: @nt_[ctc]{1}}
+    @indent{...}
+    @indent{@id-form[let] @term_[field_name]{k}: @nt_[ctc]{k}}
 ]
 
 Defines a structure @term[name] with the given contracts @nt_[ctc]{i}
@@ -108,14 +108,14 @@ the @racket[float?] predicate, as will assigning to either field.
 It’s possible to include contracts on some fields without including them
 on all, and the fields with omitted contracts default to @racket[AnyC].
 
-@defcmpdforms[
-    [@list{@redefidform/inline[class] @term[name] @~opt["[" @~many-comma[@term[ctc_param]] "]"] @~opt["(" @~many-comma[@term[interface_name]] ")"]:}]
-    [@indent{@redefidform/inline[let] @term_[field_name]{1}: @nt_[ctc]{field_1}}]
-    [@indent{...}]
-    [@indent{@redefidform/inline[let] @term_[field_name]{k}: @nt_[ctc]{field_k}}]
-    [@indent{@redefidform/inline[def] @term_[meth_name]{0}(@term_[self]{0} @~many["," @list{@term_[arg_name]{0}:} @nt_[ctc]{arg_0}]) -> @nt_[ctc]{res_0}: @nt_[block]{0}}]
-    [@indent{...}]
-    [@indent{@redefidform/inline[def] @term_[meth_name]{n}(@term_[self]{n} @~many["," @list{@term_[arg_name]{n}:} @nt_[ctc]{arg_n}]) -> @nt_[ctc]{res_n}: @nt_[block]{n}}]
+@defcmpdidform*[
+    class #:link @list{@term[name] @~opt["[" @~many-comma[@term[ctc_param]] "]"] @~opt["(" @~many-comma[@term[interface_name]] ")"]:}
+    @indent{@id-form[let] @term_[field_name]{1}: @nt_[ctc]{field_1}}
+    @indent{...}
+    @indent{@id-form[let] @term_[field_name]{k}: @nt_[ctc]{field_k}}
+    @indent{@id-form[def] @term_[meth_name]{0}(@term_[self]{0} @~many["," @list{@term_[arg_name]{0}:} @nt_[ctc]{arg_0}]) -> @nt_[ctc]{res_0}: @nt_[block]{0}}
+    @indent{...}
+    @indent{@id-form[def] @term_[meth_name]{n}(@term_[self]{n} @~many["," @list{@term_[arg_name]{n}:} @nt_[ctc]{arg_n}]) -> @nt_[ctc]{res_n}: @nt_[block]{n}}
 ]
 
 Defines a class with contracts. See @racket[class] for the basics of
@@ -213,11 +213,11 @@ assert not Posn?[AnyC](q)
 assert Posn?[AnyC](r)
 }|
 
-@defcmpdforms[
-    [@list{@redefidform/inline[interface] @term[name] @~opt["[" @~many-comma[@term[ctc_param]] "]" ]:}]
-    [@indent{@redefidform/inline[def] @term_[meth_name]{1}(@term_[self]{1} @~many["," @list{@term_[arg_name]{1}:} @nt_[ctc]{arg_1}]) -> @nt_[ctc]{res_1}}]
-    [@indent{...}]
-    [@indent{@redefidform/inline[def] @term_[meth_name]{k}(@term_[self]{n} @~many["," @list{@term_[arg_name]{k}:} @nt_[ctc]{arg_n}]) -> @nt_[ctc]{res_k}}]
+@defcmpdidform*[
+    interface #:link @list{@term[name] @~opt["[" @~many-comma[@term[ctc_param]] "]" ]:}
+    @indent{@id-form[def] @term_[meth_name]{1}(@term_[self]{1} @~many["," @list{@term_[arg_name]{1}:} @nt_[ctc]{arg_1}]) -> @nt_[ctc]{res_1}}
+    @indent{...}
+    @indent{@id-form[def] @term_[meth_name]{k}(@term_[self]{n} @~many["," @list{@term_[arg_name]{k}:} @nt_[ctc]{arg_n}]) -> @nt_[ctc]{res_k}}
 ]
 
 Defines a interface with contracts. See @racket[interface] for the
@@ -488,9 +488,9 @@ Constructs a contract that accepts integers in the closed interval
 that end of the interval is unchecked.
 
 @defprocforms[apply_contract
-    [@proto[contract? AnyC AnyC]]
-    [@proto[contract? AnyC pos:str? AnyC]]
-    [@proto[contract? AnyC pos:str? neg:str? AnyC]]
+    @proto[contract? AnyC AnyC]
+    @proto[contract? AnyC pos:str? AnyC]
+    @proto[contract? AnyC pos:str? neg:str? AnyC]
 ]
 
 Applies a contract to a value, optionally specifying the parties.

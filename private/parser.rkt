@@ -293,6 +293,8 @@
          (loc/1 `(return))]
         [(<lvalue> EQUALS <expr>)
          (loc/2 `(= ,$1 ,$3))]
+        [(ASSERT <timeout>)
+         (loc/1 `(assert ,@$2))]
         [(ASSERT <expr> <opt-timeout>)
          (loc/1 `(assert ,$2 ,@$3))]
         [(ASSERT-EQ <expr> COMMA <expr> <opt-timeout>)
@@ -405,10 +407,12 @@
          (loc `[,$1 ,$1])])
 
       (<opt-timeout>
-        [()
-         '()]
-        [(COMMA TIME OP-LESS <expr>)
-         (list '#:timeout $4)])
+        [()                     '()]
+        [(COMMA <timeout>)      $2])
+
+      (<timeout>
+        [(TIME OP-LESS <expr>)
+         (list '#:timeout $3)])
 
       (<op2>
         [(OP2)          $1]

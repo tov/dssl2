@@ -107,6 +107,8 @@
     (syntax-error
       stx "test blocks cannot be used in the interactions window")))
 
+(define dssl-assertion-timeout (make-parameter +inf.0))
+
 (define-syntax (dssl-module-begin stx)
   (syntax-case stx ()
     [(_ expr ...)
@@ -114,7 +116,6 @@
         (module* configure-runtime racket/base
           (require dssl2/private/rte)
           (setup-rte))
-        ; (#%provide #,(datum->syntax stx '(all-defined)))
         (module test-info racket/base
           (provide passed-tests total-tests inc-passed! inc-total!)
           (define passed-tests 0)
@@ -125,7 +126,9 @@
         (splicing-syntax-parameterize
           ([inc-passed-tests! (syntax-rules () [(_) (inc-passed!)])]
            [inc-total-tests!  (syntax-rules () [(_) (inc-total!)])])
-          (dssl-begin expr ...))
+          (splicing-parameterize
+            ([dssl-assertion-timeout (dssl-assertion-timeout)])
+            (dssl-begin expr ...)))
         (print-test-results passed-tests total-tests))]))
 
 (define (print-test-results passed total)
@@ -674,13 +677,19 @@
     [else e3]))
 
 (begin-for-syntax
-  (define-splicing-syntax-class timeout
+  (define-splicing-syntax-class req-timeout
     #:attributes (seconds)
     (pattern (~seq #:timeout raw-seconds)
              #:declare raw-seconds
              (expr/c #'positive?
-                     #:name "assertion timeout seconds")
+                     #:name "*assertion timeout seconds*")
              #:attr seconds #'raw-seconds.c))
+
+  (define-splicing-syntax-class opt-timeout
+    #:attributes (seconds)
+    (pattern (~seq :req-timeout))
+    (pattern (~seq)
+             #:attr seconds #'(dssl-assertion-timeout)))
 
   (define-syntax-class unary-operator
     #:attributes (name)
@@ -707,33 +716,45 @@
              #:attr name #'"is not")))
 
 (define (call-with-timeout srclocs seconds thunk)
-  (with-handlers
-    ([exn:fail:resource?
-       (λ (_exn)
-          (assertion-error #:srclocs srclocs "ran out of time"))])
-    (call-with-limits seconds #f thunk)))
+  (cond
+    [(= +inf.0 seconds) (thunk)]
+    [else
+      (with-handlers
+        ([exn:fail:resource?
+           (λ (_exn)
+              (assertion-error
+                #:srclocs srclocs
+                "out of time\n timeout: %p seconds"
+                seconds))])
+        (call-with-limits seconds #f thunk))]))
 
-(define-simple-macro (with-timeout loc time:expr body:expr)
-  (call-with-timeout (get-srclocs loc) time (λ () body)))
+(define-simple-macro (with-timeout loc time:expr body:expr ...+)
+  (call-with-timeout (get-srclocs loc) time (λ () body ...)))
 
 (define-syntax-parser dssl-assert
-  [(_ e:expr time:timeout)
-   #'(with-timeout e time.seconds (dssl-assert e))]
-  [(_ (~and e (op:binary-operator e1:expr e2:expr)))
-   #'(let ()
+  ; changing the default timeout
+  [(_ timeout:req-timeout)
+   #'(dssl-assertion-timeout timeout.seconds)]
+  ; binary operators:
+  [(_ (~and e (op:binary-operator e1:expr e2:expr))
+      timeout:opt-timeout)
+   #'(with-timeout e timeout.seconds
        (define v1 e1)
        (define v2 e2)
        (when (falsy? (op v1 v2))
          (assertion-error #:srclocs (get-srclocs e)
                           "%p %s %p" v1 op.name v2)))]
-  [(_ (~and e (op:unary-operator e1:expr)))
-   #'(let ()
+  ; unary operators:
+  [(_ (~and e (op:unary-operator e1:expr))
+      timeout:opt-timeout)
+   #'(with-timeout e timeout.seconds
        (define v1 e1)
        (when (falsy? (op v1))
          (assertion-error #:srclocs (get-srclocs e)
                           "%s %p" op.name v1)))]
-  [(_ e:expr)
-   #'(let ()
+  ; arbitrary expressions:
+  [(_ e:expr timeout:opt-timeout)
+   #'(with-timeout e timeout.seconds
        (define v e)
        (when (falsy? v)
          (assertion-error #:srclocs (get-srclocs e)
@@ -758,14 +779,13 @@
 
 (define-syntax (dssl-assert-error stx)
   (syntax-parse stx
-    [(_ code:expr msg:expr time:timeout)
-     #'(with-timeout code time.seconds (dssl-assert-error code msg))]
-    [(_ code:expr msg:expr)
-     #`(dssl-assert-error/thunk (get-srclocs code) (λ () code) msg)]
-    [(_ code:expr time:timeout)
-     #'(dssl-assert-error code "" #:timeout time.seconds)]
-    [(_ code:expr)
-     #'(dssl-assert-error code "")]))
+    [(_ code:expr msg:expr timeout:opt-timeout)
+     #`(with-timeout code timeout.seconds
+         (dssl-assert-error/thunk (get-srclocs code)
+                                  (λ () code)
+                                  msg))]
+    [(_ code:expr timeout:opt-timeout)
+     #'(dssl-assert-error code "" (~@ . timeout))]))
 
 (define-syntax (dssl-interface stx)
   (syntax-parse stx

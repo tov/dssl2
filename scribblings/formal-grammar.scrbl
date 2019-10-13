@@ -29,7 +29,6 @@ by a newline, or a compound statement.
   [statement (simple 'NEWLINE)
              compound]
   [simple    (assert expr)
-             (assert_eq expr "," expr)
              (assert_error expr (~opt "," expr))
              break
              continue

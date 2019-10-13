@@ -367,7 +367,7 @@ It also possible to construct the struct by giving the fields in order
 using function syntax:
 
 @dssl2block|{
-assert_eq magnitude(posn(3, 4)), 5
+assert magnitude(posn(3, 4)) == 5
 }|
 
 Another example:
@@ -481,8 +481,8 @@ methods:
 let stack = Stack()
 stack.push(4)
 stack.push(5)
-assert_eq stack.pop(), 5
-assert_eq stack.pop(), 4
+assert stack.pop() == 5
+assert stack.pop() == 4
 assert_error stack.pop()
 }|
 
@@ -509,11 +509,11 @@ We can create a @code{VerticalMovingPosn} as follows:
 
 @dssl2block|{
 let posn = VerticalMovingPosn(3, 4)
-assert_eq posn.get_x(), 3
-assert_eq posn.get_y(), 4
+assert posn.get_x() == 3
+assert posn.get_y() == 4
 posn.set_y!(10)
-assert_eq posn.get_x(), 3
-assert_eq posn.get_y(), 10
+assert posn.get_x() == 3
+assert posn.get_y() == 10
 }|
 
 Note that @code{VerticalMovingPosn} takes two parameters because
@@ -690,25 +690,17 @@ Asserts that the given @nt[expr] evaluates to non-false. If the
 expression evaluates false, signals an error.
 
 @dssl2block|{
-test "ScHash.member? finds 'hello'":
+test 'ScHash.member? finds "hello"':
     let h = ScHash(10, make_sbox_hash())
     assert not h.member?('hello')
     h.insert!('hello', 5)
     assert h.member?('hello')
-}|
 
-@defsmplform{@defidform/inline[assert_eq] @nt_[expr]{1}, @nt_[expr]{2}}
-
-Asserts that the given @nt[expr]s evaluates to equal values, using
-@racket[==] to perform the comparison.
-If they are not equal, signals an error.
-
-@dssl2block|{
-test 'first_char_hasher':
-    assert_eq first_char_hasher(''), 0
-    assert_eq first_char_hasher('A'), 65
-    assert_eq first_char_hasher('Apple'), 65
-    assert_eq first_char_hasher('apple'), 97
+test 'first_char_hasher works':
+    assert first_char_hasher('')      == 0
+    assert first_char_hasher('A')     == 65
+    assert first_char_hasher('Apple') == 65
+    assert first_char_hasher('apple') == 97
 }|
 
 @defsmplform{@defidform/inline[assert_error] @nt_[expr]{fail}, @nt_[expr]{str}}
@@ -733,8 +725,8 @@ For example:
 
 @dssl2block|{
 test "arithmetic":
-    assert_eq 1 + 1, 2
-    assert_eq 2 + 2, 4
+    assert 1 + 1 == 2
+    assert 2 + 2 == 4
 }|
 
 A @racket[test] @nt[block] can be used to perform just one check or a
@@ -747,20 +739,20 @@ test 'single-chaining hash table':
 
     h.insert!('hello', 5)
     assert h.member?('hello')
-    assert_eq h.lookup('hello'), 5
+    assert h.lookup('hello') == 5
     assert not h.member?('goodbye')
     assert not h.member?('helo')
 
     h.insert!('helo', 4)
-    assert_eq h.lookup('hello'), 5
-    assert_eq h.lookup('helo'), 4
+    assert h.lookup('hello') == 5
+    assert h.lookup('helo') == 4
     assert not h.member?('hel')
 
     h.insert!('hello', 10)
-    assert_eq h.lookup('hello'), 10
-    assert_eq h.lookup('helo'), 4
+    assert h.lookup('hello') == 10
+    assert h.lookup('helo') == 4
     assert not h.member?('hel')
-    assert_eq h.keys(h), cons('hello', cons('helo', nil()))
+    assert h.keys(h) == cons('hello', cons('helo', nil()))
 }|
 
 @defcmpdform{@defidform/inline[time] @nt[expr]: @nt[block]}

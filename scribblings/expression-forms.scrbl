@@ -225,7 +225,7 @@ struct Foo:
 let bar = 4
 let baz = 5
 
-assert_eq Foo { bar, baz: 9 }, Foo(4, 9)
+assert Foo { bar, baz: 9 } == Foo(4, 9)
 }|
 
 @section{Operator expressions}

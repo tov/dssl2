@@ -274,8 +274,8 @@ an object and use it normally:
 @dssl2block|{
 let original = Posn(3, 4)
 
-assert_eq original.get_x(), 3
-assert_eq original.get_y(), 4
+assert original.get_x() == 3
+assert original.get_y() == 4
 
 assert HAS_X?(original)
 }|
@@ -296,15 +296,16 @@ defines the @c{get_x} method. But we cannot call @c{get_y} on
 other than @c{get_x} raise an error:
 
 @dssl2block|{
-assert_eq protected.get_x(), 3
-assert_error protected.get_y()
+assert protected.get_x() == 3
+assert_error protected.get_y(), \
+    'interface HAS_X is protecting method get_y'
 }|
 
 We can still access @c{get_y} on @code{original}:
 
 @dssl2block|{
-assert_eq original.get_x(), 3
-assert_eq original.get_y(), 4
+assert original.get_x() == 3
+assert original.get_y() == 4
 }|
 
 As another example of how interface contracts can protect objects
@@ -444,7 +445,7 @@ or assigned, rather than eagerly when first protected. So for example:
 
 @dssl2block|{
 let v: VecC[int?] = [2, 3, 'four'] # okay, not checked yet
-assert_eq v[1], 3                  # passes check
+assert v[1] == 3                   # passes check
 assert_error v[2]                  # fails check
 }|
 

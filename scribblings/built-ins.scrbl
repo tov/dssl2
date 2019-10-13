@@ -199,7 +199,7 @@ returns the identity function.
 Composes the receiving procedure with the parameter procedure. For example,
 
 @dssl2block|{
-assert_eq (λ x: x + 1).compose(λ x: x * 2)(5), 11
+assert (λ x: x + 1).compose(λ x: x * 2)(5) == 11
 }|
 
 @defmethform[proc vec_apply]{@proto[vec? AnyC]}
@@ -259,7 +259,7 @@ as a format string in the style of @racket[print].
 For example,
 
 @dssl2block|{
-assert_eq '%s or %p'.format('this', 'that'), "this or 'that'"
+assert '%s or %p'.format('this', 'that') == "this or 'that'"
 }|
 
 @defmethform[str len]{@proto[nat?]}

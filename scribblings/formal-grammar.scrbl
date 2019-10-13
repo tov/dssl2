@@ -28,64 +28,6 @@ by a newline, or a compound statement.
   [program   (~many statement)]
   [statement (simple 'NEWLINE)
              compound]
-  [simple    (assert expr opt_timeout)
-             (assert_error expr (~opt "," expr) opt_timeout)
-             break
-             continue
-             (lvalue = expr)
-             expr
-             (import mod_spec)
-             (let 'name opt_ctc (~opt "=" expr))
-             pass
-             (return (~opt expr))
-             (simple ";" simple)]
-  [lvalue    'name
-             (expr "." 'name)
-             (expr "[" expr "]")]
-  [mod_spec
-            'mod_name
-            'mod_string]
-  [compound  (class 'name opt_ctc_params opt_implements : class_block)
-             (def 'name opt_ctc_params "(" (~many-comma 'name opt_ctc) ")"
-               opt_res_ctc : block)
-             (if expr ":" block
-                 (~many elif expr ":" block)
-                 (~opt else ":" block))
-             (interface 'name opt_ctc_params ":" interface_block)
-             (for (~opt 'name ",") 'name "in" expr ":" block)
-             (struct 'name ":" struct_block)
-             (test (~opt expr) ":" block)
-             (time (~opt expr) ":" block)
-             (while expr ":" block)]
-  [block     (simple 'NEWLINE)
-             ('NEWLINE 'INDENT (~many1 statement) 'DEDENT)]
-  [class_block
-             ('NEWLINE 'INDENT class_fields class_methods 'DEDENT)]
-  [class_fields
-             (~many field_def 'NEWLINE)]
-  [class_methods
-             (~many1 method_proto ":" block)]
-  [interface_block
-            pass
-            ('NEWLINE 'INDENT (~many1 method_proto 'NEWLINE) 'DEDENT)]
-  [method_proto
-            (def 'name opt_ctc_params "(" 'name (~many "," 'name opt_ctc) ")" opt_res_ctc)]
-  [struct_block
-            pass
-            ('NEWLINE 'INDENT (~many1 field_def 'NEWLINE) 'DEDENT)]
-  [field_def
-            (let 'name opt_ctc)]
-  [opt_timeout
-            (~opt "," "time" "<" expr)]
-  [opt_implements
-            (~opt "(" (~many-comma 'name) ")")]
-  [opt_ctc
-            (~opt ":" ctc)]
-  [opt_res_ctc
-            (~opt "->" ctc)]
-  [opt_ctc_params
-            (~opt "[" (~many-comma 'name) "]")]
-  [ctc      expr]
   [expr     'number
             'string
             True
@@ -102,6 +44,61 @@ by a newline, or a compound statement.
             ("[" expr "for" (~opt 'name ",") 'name "in" expr (~opt "if" expr) "]")
             (expr 'binop expr)
             ('unop expr)]
+  [simple    (assert expr opt_timeout)
+             (assert_error expr (~opt "," expr) opt_timeout)
+             break
+             continue
+             (lvalue = expr)
+             expr
+             (import mod_spec)
+             (let 'name opt_ctc (~opt "=" expr))
+             pass
+             (return (~opt expr))
+             (simple ";" simple)]
+  [lvalue    'name
+             (expr "." 'name)
+             (expr "[" expr "]")]
+  [compound  (class 'name opt_cvars opt_implements : class_block)
+             (def 'name opt_cvars "(" (~many-comma 'name opt_ctc) ")"
+               opt_res_ctc : block)
+             (if expr ":" block
+                 (~many elif expr ":" block)
+                 (~opt else ":" block))
+             (interface 'name opt_cvars ":" interface_block)
+             (for (~opt 'name ",") 'name "in" expr ":" block)
+             (struct 'name ":" struct_block)
+             (test (~opt expr) ":" block)
+             (time (~opt expr) ":" block)
+             (while expr ":" block)]
+  [block     (simple 'NEWLINE)
+             ('NEWLINE 'INDENT (~many1 statement) 'DEDENT)]
+  [class_block
+             ('NEWLINE 'INDENT (~many field_def) (~many1 meth_proto ":" block) 'DEDENT)]
+  ; [class_fields ]
+  ; [class_methods ]
+  [interface_block
+            pass
+            ('NEWLINE 'INDENT (~many1 meth_proto 'NEWLINE) 'DEDENT)]
+  [struct_block
+            pass
+            ('NEWLINE 'INDENT (~many1 field_def) 'DEDENT)]
+  [meth_proto
+            (def 'name opt_cvars "(" 'name (~many "," 'name opt_ctc) ")" opt_res_ctc)]
+  [field_def
+            (let 'name opt_ctc 'NEWLINE)]
+  [opt_timeout
+            (~opt "," "time" "<" expr)]
+  [opt_implements
+            (~opt "(" (~many-comma 'name) ")")]
+  [opt_ctc
+            (~opt ":" ctc)]
+  [opt_res_ctc
+            (~opt "->" ctc)]
+  [opt_cvars
+            (~opt "[" (~many-comma 'name) "]")]
+  [ctc      expr]
+  [mod_spec 'mod_name
+            'mod_string]
 ]
 
 @t{binop}s are, from tightest to loosest precedence:

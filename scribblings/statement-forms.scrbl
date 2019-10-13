@@ -201,7 +201,7 @@ def rebalance_left_(key, balance, left0, right):
     else: error('Cannot happen')
 }|
 
-@defcmpdidform[for]{@term[var_name] in @nt[expr]: @nt[block]}
+@defcmpdidform[for]{@term[var_name] @racket[in] @nt[expr]: @nt[block]}
 
 Loops over the values of the given @nt[expr], evaluating the
 @nt[block] for each. The @nt[expr] can evaluate to a vector, a string,

@@ -54,11 +54,9 @@
          "private/prims.rkt"
          "private/printer.rkt"
          "private/provide.rkt"
-         "private/return.rkt"
+         "private/stxparams.rkt"
          "private/singletons.rkt"
          "private/struct.rkt"
-         racket/stxparam
-         racket/splicing
          racket/contract/region
          (only-in racket/unsafe/undefined
                   unsafe-undefined
@@ -94,19 +92,6 @@
                      "private/find-lib.rkt"
                      "private/util.rkt"))
 
-
-(define-syntax-parameter
-  inc-passed-tests!
-  (lambda (stx)
-    (syntax-error
-      stx "test blocks cannot be used in the interactions window")))
-
-(define-syntax-parameter
-  inc-total-tests!
-  (lambda (stx)
-    (syntax-error
-      stx "test blocks cannot be used in the interactions window")))
-
 (define dssl-assertion-timeout (make-parameter +inf.0))
 
 (define-syntax (dssl-module-begin stx)
@@ -123,9 +108,7 @@
           (define (inc-passed!) (set! passed-tests (add1 passed-tests)))
           (define (inc-total!) (set! total-tests (add1 total-tests))))
         (require 'test-info)
-        (splicing-syntax-parameterize
-          ([inc-passed-tests! (syntax-rules () [(_) (inc-passed!)])]
-           [inc-total-tests!  (syntax-rules () [(_) (inc-total!)])])
+        (with-test-counters [inc-passed! inc-total!]
           (dssl-begin expr ...))
         (print-test-results passed-tests total-tests))]))
 
@@ -145,10 +128,8 @@
   (dssl-begin expr))
 
 ; This is so that the documentation will consider elif a keyword.
-(define-syntax-parameter
-  dssl-elif
-  (lambda (stx)
-    (syntax-error stx "use of elif keyword")))
+(define-syntax (dssl-elif stx)
+  (syntax-error stx "bad use of elif keyword"))
 
 (define-simple-macro (make-set!able f)
   (unless (zero? (random 1))
@@ -169,7 +150,8 @@
   (syntax-parse stx
     [(_ (param:id ...) expr:expr ...)
      (quasisyntax/loc stx
-       (lambda (param ...) (dssl-begin expr ...)))]))
+       (with-masked-control
+         (lambda (param ...) (dssl-begin expr ...))))]))
 
 (begin-for-syntax
   (define-syntax-class
@@ -228,7 +210,7 @@
     (define-square-bracket-proc
       ((f cvs.var ...) [bs.var (ensure-contract 'def bs.contract)] ...)
       (ensure-contract 'def result-contract.result)
-      (with-return (dssl-begin expr ...)))))
+      (wrap-procedure-body (dssl-begin expr ...)))))
 
 (define-syntax (dssl-let stx)
   (syntax-parse stx
@@ -289,27 +271,38 @@
                           rhs)
          (make-set!able var))]))
 
-; while uses two syntax parameters, break and continue (shared by for)
-(define-syntax-parameter
-  dssl-break
-  (lambda (stx)
-    (syntax-error stx "use of break keyword not in a loop")))
-
-(define-syntax-parameter
-  dssl-continue
-  (lambda (stx)
-    (syntax-error stx "use of continue keyword not in a loop")))
-
 (define-syntax-rule (dssl-while test expr ...)
-  (let/ec break-f
+  (with-break
     (let loop ()
-      (define (continue-f) (loop) (break-f (void)))
-      (syntax-parameterize
-        ([dssl-break (syntax-rules () [(_) (break-f (void))])]
-         [dssl-continue (syntax-rules () [(_) (continue-f)])])
-        (when (truthy? test)
-          (dssl-begin expr ...)
-          (loop))))))
+      (when (truthy? test)
+        (with-continue
+          (dssl-begin expr ...))
+        (loop)))))
+
+(define-syntax (dssl-for stx)
+  (syntax-parse stx
+    [(_ [(i:id j:id) v:expr] expr:expr ...+)
+     #:fail-when (and (bound-identifier=? #'i #'j) #'j)
+                 "duplicate variable name"
+     #'(with-break
+         (dssl-for/fun
+           (get-srclocs v)
+           v
+           (dssl-for-loop-body (i j) expr ...)))]
+    [(_ [i:id v:expr] expr:expr ...+)
+     #'(dssl-for [(_ i) v] expr ...)]))
+
+(define (dssl-for/fun srclocs obj body)
+  (define next (get-try-advance srclocs obj "for loop"))
+  (let loop ([my-i 0])
+    (when (next (body my-i))
+      (loop (add1 my-i)))))
+
+(define-simple-macro (dssl-for-loop-body (i:id j:id) body:expr ...)
+  (λ (i)
+     (λ (j)
+        (with-continue
+          (dssl-begin body ...)))))
 
 (define (get-try-advance srclocs obj who)
   (define iterator
@@ -318,30 +311,6 @@
                (type-error #:srclocs srclocs who obj
                            "object responding to .iterator()")))
   (get-method-value/or-else #:srclocs srclocs iterator 'try_advance))
-
-(define-syntax (dssl-for stx)
-  (syntax-parse stx
-    [(_ [(i:id j:id) v:expr] expr:expr ...+)
-     #:fail-when (and (bound-identifier=? #'i #'j) #'j)
-                 "duplicate variable name"
-     #'(let/ec break-f
-         (let* ([obj  v]
-                [next (get-try-advance (get-srclocs v) obj "for loop")])
-           (let loop ([real-i 0])
-             (when
-               (let ([i real-i])
-                 (next
-                   (λ (j)
-                      (let/ec continue-f
-                              (syntax-parameterize
-                                ([dssl-break
-                                   (syntax-rules () [(_) (break-f (void))])]
-                                 [dssl-continue
-                                   (syntax-rules () [(_) (continue-f)])])
-                                (dssl-begin expr ...))))))
-               (loop (add1 real-i))))))]
-    [(_ [i:id v:expr] expr:expr ...+)
-     #'(dssl-for [(_ i) v] (dssl-begin expr ...))]))
 
 (struct vector-builder (vector size) #:mutable)
 (define (make-vector-builder)

@@ -33,8 +33,8 @@
          "names.rkt"
          "object.rkt"
          "provide.rkt"
-         "return.rkt"
          "struct.rkt"
+         "stxparams.rkt"
          "util.rkt")
 
 (define (contract-params-match? cs1 cs2)
@@ -491,7 +491,7 @@
                       (ensure-contract 'def method-param-contract)] ...)
                    (ensure-contract 'def method-result-contract)
                    (bind-self name method-self actual-self
-                              (with-return method-body)))
+                              (wrap-procedure-body method-body)))
                  ...
                  (define self.__class__ name)
                  (define actual-self

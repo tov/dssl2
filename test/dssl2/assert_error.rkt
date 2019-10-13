@@ -1,17 +1,13 @@
 #lang dssl2
 
-test 'no pattern':
-    assert_error error('hello')
+assert_error error('hello')
 
-test 'matches':
-    assert_error error('hello'), 'el'
+assert_error error('hello'), 'el'
 
-test 'no error':
-    def inner():
-        assert_error 5
-    assert_error inner(), 'did not error'
+def no_error():
+    assert_error 5
+assert_error no_error(), 'did not error'
 
-test 'does not match':
-    def inner():
-        assert_error error('hello'), 'Elf'
-    assert_error inner(), 'didn’t match the pattern'
+def wrong_error():
+    assert_error error('hello'), 'Elf'
+assert_error wrong_error(), 'got a different error'

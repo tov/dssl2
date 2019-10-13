@@ -675,8 +675,12 @@
 
 (begin-for-syntax
   (define-splicing-syntax-class timeout
-    (pattern (~seq #:timeout seconds)
-             #:declare seconds (expr/c #'positive?)))
+    #:attributes (seconds)
+    (pattern (~seq #:timeout raw-seconds)
+             #:declare raw-seconds
+             (expr/c #'positive?
+                     #:name "assertion timeout seconds")
+             #:attr seconds #'raw-seconds.c))
 
   (define-syntax-class unary-operator
     #:attributes (name)

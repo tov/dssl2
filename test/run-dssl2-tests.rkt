@@ -15,50 +15,74 @@
 (define temp-directory
   (build-path (find-system-path 'temp-dir) "dssl2-test"))
 
-(define pass-count 0)
-(define fail-count 0)
+(define (slow-test? file)
+  (regexp-match #rx"-slow(-[a-z]+)*[.]rkt$" file))
 
-(define (run-all-tests)
-  (for ([test-file (glob (build-path TESTS "dssl2" "*.rkt"))])
+(define (fail-test? file)
+  (regexp-match #rx"-fail(-[a-z]+)*[.]rkt$" file))
+
+(define (run-one-test short-name test-file)
+  (define-values (handle-exn no-exn-result)
+    (if (fail-test? test-file)
+      (values (λ (_e) #f)
+              "expected to throw but didn’t")
+      (values (λ (e) (format "threw ~a" e))
+              #f)))
+  (with-handlers ([exn:fail? handle-exn])
+    (parameterize ([global-port-print-handler dssl-print]
+                   [current-directory temp-directory])
+      (dynamic-require test-file #f)
+      no-exn-result)))
+
+(define (printf/flush fmt . args)
+  (apply printf fmt args)
+  (flush-output))
+
+(define (run-all-tests [fast? #t])
+  (for/fold ([pass-count 0] [fail-count 0])
+    ([test-file (glob (build-path TESTS "dssl2" "*.rkt"))])
     (define-values (_1 short-name _2) (split-path test-file))
-    (printf "~a... " short-name)
-    (define should-fail (regexp-match? #rx"fail[.]rkt$" test-file))
-    (define result
-      (with-handlers ([exn:fail?
-                        (λ (e)
-                           (if should-fail
-                             'okay
-                             (format "threw ~a" e)))])
-        (parameterize
-            ([global-port-print-handler dssl-print]
-             [current-directory temp-directory])
-          (dynamic-require test-file #f)
-          (if should-fail
-            (format "expected to throw but didn't")
-            'okay))))
     (cond
-      [(eq? result 'okay)
-       (set! pass-count (add1 pass-count))
-       (displayln "passed.")]
+      [(and fast? (slow-test? test-file))
+       (printf "skipping ~a.~n" short-name)
+       (values pass-count fail-count)]
+      [(begin
+         (printf/flush "running ~a... " short-name)
+         (run-one-test short-name test-file))
+       =>
+       (λ (message)
+          (printf/flush "failed.~n")
+          (eprintf " * failed test details: ~a~n" message)
+          (values pass-count (add1 fail-count)))]
       [else
-       (set! fail-count (add1 fail-count))
-       (displayln "failed.")
-       (eprintf "  Failed test details: ~a~n" result)])))
+        (printf "passed.~n")
+        (values (add1 pass-count) fail-count)])))
 
-(define (print-results)
+(define (print-results pass-count fail-count)
   (newline)
   (printf "Total tests:  ~a~n" (+ pass-count fail-count))
   (printf "Tests passed: ~a~n" pass-count)
   (printf "Tests failed: ~a~n" fail-count))
 
-(delete-directory/files temp-directory #:must-exist? #f)
-(make-directory temp-directory)
+(define-syntax with-fresh-temp-directory
+  (syntax-rules ()
+    [(_ body ...)
+     (dynamic-wind
+       (λ ()
+          (delete-directory/files temp-directory #:must-exist? #f)
+          (make-directory temp-directory))
+       (λ () body ...)
+       (λ ()
+          (delete-directory/files temp-directory #:must-exist? #f)))]))
 
-(run-all-tests)
-(print-results)
+(define (main fast?)
+  (with-fresh-temp-directory
+    (define-values (pass-count fail-count) (run-all-tests fast?))
+    (print-results pass-count fail-count)
+    (unless (zero? fail-count) (exit 1))))
 
-(delete-directory/files temp-directory)
+(define (process-arguments args)
+  (not (equal? args (vector "-a"))))
 
-(unless (zero? fail-count)
-  (exit 1))
+(main (process-arguments (current-command-line-arguments)))
 

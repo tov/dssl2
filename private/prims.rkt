@@ -157,31 +157,19 @@
     (- order)
     dssl-None))
 
-(define (max x . xs)
+(define ((build-find-extreme name prefer?) new old)
   (truthy-cond
-    [(null? xs) x]
-    [(cmp x (first xs))
+    [(cmp new old)
      =>
-     (λ (order)
-      (apply max
-             (if (eq? -1 order) (first xs) x)
-             (rest xs)))]
+     (λ (order) (if (prefer? order) new old))]
     [else
-      (dssl-error "max: not ordered: %p and %p"
-                  x (first xs))]))
+      (dssl-error "%s: not ordered: %p and %p" name old new)]))
+
+(define (max x . xs)
+  (foldl (build-find-extreme "max" positive?) x xs))
 
 (define (min x . xs)
-  (truthy-cond
-    [(null? xs) x]
-    [(cmp x (first xs))
-     =>
-     (λ (order)
-      (apply min
-             (if (eq? 1 order) (first xs) x)
-             (rest xs)))]
-    [else
-      (dssl-error "min: not ordered: %p and %p"
-                  x (first xs))]))
+  (foldl (build-find-extreme "min" negative?) x xs))
 
 ;; length
 

@@ -580,6 +580,10 @@ then it formats all the arguments with commas in between and a “call” to
 @racket[error] around it. This ensure that all calls to @racket[error]
 produce some kind of sensible output.
 
+@defprocform[len]{@proto[o:AnyC nat?]}
+
+Equivalent to @code{o.len()}.
+
 @defprocform[dir]{@proto[AnyC "VecC[str?]"]}
 
 Given an object, returns a vector of the names of its methods.

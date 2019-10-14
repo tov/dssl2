@@ -92,7 +92,8 @@
                      "names.rkt"
                      "errors.rkt"
                      "find-lib.rkt"
-                     "util.rkt"))
+                     "util.rkt"
+                     "syntax-classes.rkt"))
 
 (define dssl-assertion-timeout (make-parameter +inf.0))
 
@@ -150,10 +151,10 @@
 
 (define-syntax (dssl-lambda stx)
   (syntax-parse stx
-    [(_ (param:id ...) expr:expr ...)
+    [(_ (param:var ...) expr:expr ...)
      (quasisyntax/loc stx
        (with-masked-control
-         (lambda (param ...) (dssl-begin expr ...))))]))
+         (lambda (param.id ...) (dssl-begin expr ...))))]))
 
 (begin-for-syntax
   (define-syntax-class
@@ -234,12 +235,12 @@
                    #'(app
                        (check-not-unsafe-undefined real-var 'var)
                        . args))])))))]
-    [(_ [var:id ctc:expr])
+    [(_ [var:var ctc:expr])
      #'(begin
          (define real-var unsafe-undefined)
          (make-set!able real-var)
-         (dssl-provide var)
-         (define-syntax var
+         (dssl-provide var.id)
+         (define-syntax var.id
            (make-set!-transformer
             (λ (stx)
               (syntax-parse stx #:literals (set!)
@@ -251,27 +252,27 @@
                            ctc e
                            (format "assignment at ~a"
                                    (srcloc->string (get-srcloc e)))
-                           'var
-                           'var (get-srcloc ctc)))))]
+                           'var.id
+                           'var.id (get-srcloc ctc)))))]
                 [_:id
-                 #'(check-not-unsafe-undefined real-var 'var)]
+                 #'(check-not-unsafe-undefined real-var 'var.id)]
                 [(_:id . args)
                  (with-syntax ([app (datum->syntax stx '#%app)])
                    #'(app
-                       (check-not-unsafe-undefined real-var 'var)
+                       (check-not-unsafe-undefined real-var 'var.id)
                        . args))])))))]
-    [(_ var:id rhs:expr)
+    [(_ var:var rhs:expr)
      #'(begin
-         (dssl-provide var)
-         (define var rhs)
-         (make-set!able var))]
-    [(_ [var:id ctc:expr] rhs:expr)
+         (dssl-provide var.id)
+         (define var.id rhs)
+         (make-set!able var.id))]
+    [(_ [var:var ctc:expr] rhs:expr)
      #'(begin
-         (dssl-provide var)
-         (define/contract var
+         (dssl-provide var.id)
+         (define/contract var.id
                           (ensure-contract 'let ctc)
                           rhs)
-         (make-set!able var))]))
+         (make-set!able var.id))]))
 
 (define-syntax-rule (dssl-while test expr ...)
   (with-break
@@ -283,16 +284,16 @@
 
 (define-syntax (dssl-for stx)
   (syntax-parse stx
-    [(_ [(i:id j:id) v:expr] expr:expr ...+)
+    [(_ [(i:var j:var) v:expr] expr:expr ...+)
      #:fail-when (and (bound-identifier=? #'i #'j) #'j)
                  "duplicate variable name"
      #'(with-break
          (dssl-for/fun
            (get-srclocs v)
            v
-           (dssl-for-loop-body (i j) expr ...)))]
-    [(_ [i:id v:expr] expr:expr ...+)
-     #'(dssl-for [(_ i) v] expr ...)]))
+           (dssl-for-loop-body (i.id j.id) expr ...)))]
+    [(_ [i:var v:expr] expr:expr ...+)
+     #'(dssl-for [(_ i.id) v] expr ...)]))
 
 (define (dssl-for/fun srclocs obj body)
   (define next (get-try-advance srclocs obj "for loop"))
@@ -356,13 +357,13 @@
      #'(dssl-for/vec [(i j) v] #:when #true expr)]
     [(_ [j:id v:expr] #:when when:expr expr:expr)
      #'(dssl-for/vec [(_ j) v] #:when when expr)]
-    [(_ [(i:id j:id) v:expr] #:when when expr:expr)
-     #:fail-when (and (bound-identifier=? #'i #'j) #'j)
+    [(_ [(i:var j:var) v:expr] #:when when expr:expr)
+     #:fail-when (and (bound-identifier=? #'i.id #'j.id) #'j.id)
                  "duplicate variable name"
      #'(dssl-for/vec/fun (get-srclocs v)
                          v
-                         (λ (i j) when)
-                         (λ (i j) expr))]))
+                         (λ (i.id j.id) when)
+                         (λ (i.id j.id) expr))]))
 
 (define-syntax (dssl-import stx)
   (unless (memq (syntax-local-context) '(module top-level))

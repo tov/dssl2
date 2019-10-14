@@ -87,7 +87,7 @@ result to @racket[5].
 
 @defexpidform*[
   lambda @list{@term_[var_name]{1}, ..., @term_[var_name]{k}: @nt[simple]}
-  @list{@id-form[λ #:def] @term_[var_name]{1}, ..., @term_[var_name]{k}: @nt[simple]}
+  @list{@k[λ #:def] @term_[var_name]{1}, ..., @term_[var_name]{k}: @nt[simple]}
 ]
 
 Creates an anonymous function with parameters @term_[var_name]{1}, @c{...},
@@ -232,7 +232,7 @@ assert Foo { bar, baz: 9 } == Foo(4, 9)
 
 Operators are described in order from tighest to loosest precedence.
 
-@defexpform{@nt_[expr]{1} @id-form[** #:def] @nt_[expr]{2}}
+@defexpform{@nt_[expr]{1} @k[** #:def] @nt_[expr]{2}}
 
 Raises the value of @nt_[expr]{1} to the power of the value of
 @nt_[expr]{2}, both of which must be numbers.
@@ -240,8 +240,8 @@ Raises the value of @nt_[expr]{1} to the power of the value of
 The @racket[**] operator is right-associative.
 
 @defexpform*[
-  @list{@id-form[not #:def] @nt[expr]}
-  @list{@id-form[~ #:def]@nt[expr]}
+  @list{@k[not #:def] @nt[expr]}
+  @list{@k[~ #:def]@nt[expr]}
   @list{-@nt[expr]}
   @list{+@nt[expr]}
 ]
@@ -259,14 +259,14 @@ Boolean; it flips every bit of the number, or negates the Boolean.
 number. Then @c{-} negates the number, and @c{+} returns it unchanged.
 
 @defexpform*[
-  @list{@nt_[expr]{1} @id-form[* #:def] @nt_[expr]{2}}
-  @list{@nt_[expr]{1} @id-form[/ #:def] @nt_[expr]{2}}
-  @list{@nt_[expr]{1} @id-form[% #:def] @nt_[expr]{2}}
+  @list{@nt_[expr]{1} @k[* #:def] @nt_[expr]{2}}
+  @list{@nt_[expr]{1} @k[/ #:def] @nt_[expr]{2}}
+  @list{@nt_[expr]{1} @k[% #:def] @nt_[expr]{2}}
 ]
 
 Multiplies, divides, or modulos the values of the expressions, respectively.
 
-@defexpform{@nt_[expr]{1} @id-form[+ #:def] @nt_[expr]{2}}
+@defexpform{@nt_[expr]{1} @k[+ #:def] @nt_[expr]{2}}
 
 Addition:
 
@@ -279,39 +279,39 @@ Addition:
 
 Anything else is an error.
 
-@defexpform{@nt_[expr]{1} @id-form[- #:def] @nt_[expr]{2}}
+@defexpform{@nt_[expr]{1} @k[- #:def] @nt_[expr]{2}}
 
 Subtracts two numbers.
 
 @defexpform*[
-  @list{@nt_[expr]{1} @id-form[<< #:def] @nt_[expr]{2}}
-  @list{@nt_[expr]{1} @id-form[>> #:def] @nt_[expr]{2}}
+  @list{@nt_[expr]{1} @k[<< #:def] @nt_[expr]{2}}
+  @list{@nt_[expr]{1} @k[>> #:def] @nt_[expr]{2}}
 ]
 
 Left and right bitwise shift.
 
-@defexpform{@nt_[expr]{1} @id-form[& #:def] @nt_[expr]{2}}
+@defexpform{@nt_[expr]{1} @k[& #:def] @nt_[expr]{2}}
 
 Bitwise @emph{and} for integers; logical @emph{and} for Booleans.
 
-@defexpform{@nt_[expr]{1} @id-form[^ #:def] @nt_[expr]{2}}
+@defexpform{@nt_[expr]{1} @k[^ #:def] @nt_[expr]{2}}
 
 Bitwise @emph{xor} for integers; logical @emph{xor} for Booleans.
 
-@defexpform{@nt_[expr]{1} @id-form[\| #:def] @nt_[expr]{2}}
+@defexpform{@nt_[expr]{1} @k[\| #:def] @nt_[expr]{2}}
 
 Bitwise @emph{or} for integers; logical @emph{or} for Booleans.
 (Not written with the backslash.)
 
 @defexpform*[
-  @list{@nt_[expr]{1} @id-form[== #:def] @nt_[expr]{2}}
-  @list{@nt_[expr]{1} @id-form[!= #:def] @nt_[expr]{2}}
-  @list{@nt_[expr]{1} @id-form[is #:def] @nt_[expr]{2}}
-  @list{@nt_[expr]{1} @id-form[|is not| #:def] @nt_[expr]{2}}
-  @list{@nt_[expr]{1} @id-form[< #:def] @nt_[expr]{2}}
-  @list{@nt_[expr]{1} @id-form[<= #:def] @nt_[expr]{2}}
-  @list{@nt_[expr]{1} @id-form[> #:def] @nt_[expr]{2}}
-  @list{@nt_[expr]{1} @id-form[>= #:def] @nt_[expr]{2}}
+  @list{@nt_[expr]{1} @k[== #:def] @nt_[expr]{2}}
+  @list{@nt_[expr]{1} @k[!= #:def] @nt_[expr]{2}}
+  @list{@nt_[expr]{1} @k[is #:def] @nt_[expr]{2}}
+  @list{@nt_[expr]{1} @k[|is not| #:def] @nt_[expr]{2}}
+  @list{@nt_[expr]{1} @k[< #:def] @nt_[expr]{2}}
+  @list{@nt_[expr]{1} @k[<= #:def] @nt_[expr]{2}}
+  @list{@nt_[expr]{1} @k[> #:def] @nt_[expr]{2}}
+  @list{@nt_[expr]{1} @k[>= #:def] @nt_[expr]{2}}
 ]
 
 Operator @racket[==] is structural equality (except for classes that
@@ -325,14 +325,14 @@ Operators @racket[<], @racket[<=], @racket[>], and @racket[>=] are the
 standard inequalities for numbers and characters, and compare strings in
 lexicographic order.
 
-@defexpform{@nt_[expr]{1} @id-form[and #:def] @nt_[expr]{2}}
+@defexpform{@nt_[expr]{1} @k[and #:def] @nt_[expr]{2}}
 
 Short-circuiting logical @emph{and}. First evaluates @nt_[expr]{1}; if
 the result is @code{False} or @code{None} then the whole conjunction is
 @code{False}; otherwise, the result of the conjunction is the result of
 @nt_[expr]{2}.
 
-@defexpform{@nt_[expr]{1} @id-form[or #:def] @nt_[expr]{2}}
+@defexpform{@nt_[expr]{1} @k[or #:def] @nt_[expr]{2}}
 
 Short-circuiting logical @emph{or}. First evaluates @nt_[expr]{1}; if
 the result is non-false then the whole disjunction has that result;

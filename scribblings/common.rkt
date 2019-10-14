@@ -12,9 +12,9 @@
          defmethform defmethforms
          proto
          id-form
-         ~opt ~many ~many1 ~many-comma
+         ~opt ~many ~many1 ~many-comma ~... ~……
          c nt nt_ term term_
-         q m t
+         q m t (rename-out [id-form k])
          dssl2block code
          indent
          (for-label
@@ -248,7 +248,8 @@
            "Class " (tt (format "~a" 'name))))
 
 (define-syntax-rule (defconstform name chunk ...)
-  (*defforms "constant" (list (list (id-form name #:def) ": " chunk ...))))
+  (*defforms "constant"
+             (list (list (id-form name #:def) ": " chunk ...))))
 
 (define-syntax-rule (defprocform name chunk ...)
   (defidform #:proc name chunk ...))
@@ -305,7 +306,7 @@
      (define method-name (class-qualify #'name #'sel))
      #`(*defforms "method"
                   (list (list (id-form #,method-name #:def) chunk0 ...)
-                        (link (id-form #,method-name) chunk ...)
+                        (link (id-form #,method-name #:re ) chunk ...)
                         ...))]))
 
 (define (*defforms kind forms)
@@ -334,6 +335,9 @@
 (define-syntax-rule (code str-expr ...)
   (scribble:code #:lang "dssl2" str-expr ...))
 
+(define ~... (m "⋮"))
+(define ~…… (racketoutput "..."))
+
 (define (indent . chunks)
-  (cons ~ (cons ~ (cons ~ (cons ~ chunks)))))
+  (list* ~ ~ ~ ~ chunks))
 

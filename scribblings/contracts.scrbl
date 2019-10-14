@@ -86,9 +86,9 @@ brackets, the contracts both default to @racket[AnyC].
 
 @defcmpdidform*[
     struct #:link @list{@term[name]:}
-    @indent{@id-form[let] @term_[field_name]{1}: @nt_[ctc]{1}}
+    @indent{@k[let] @term_[field_name]{1}: @nt_[ctc]{1}}
     @indent{...}
-    @indent{@id-form[let] @term_[field_name]{k}: @nt_[ctc]{k}}
+    @indent{@k[let] @term_[field_name]{k}: @nt_[ctc]{k}}
 ]
 
 Defines a structure @term[name] with the given contracts @nt_[ctc]{i}
@@ -110,12 +110,12 @@ on all, and the fields with omitted contracts default to @racket[AnyC].
 
 @defcmpdidform*[
     class #:link @list{@term[name] @~opt["[" @~many-comma[@term[cvar]] "]"] @~opt["(" @~many-comma[@term[interface_name]] ")"]:}
-    @indent{@id-form[let] @term_[field_name]{1}: @nt_[ctc]{field_1}}
+    @indent{@k[let] @term_[field_name]{1}: @nt_[ctc]{field_1}}
     @indent{...}
-    @indent{@id-form[let] @term_[field_name]{k}: @nt_[ctc]{field_k}}
-    @indent{@id-form[def] @term_[meth_name]{0}(@term_[self]{0} @~many["," @list{@term_[arg_name]{0}:} @nt_[ctc]{arg_0}]) -> @nt_[ctc]{res_0}: @nt_[block]{0}}
+    @indent{@k[let] @term_[field_name]{k}: @nt_[ctc]{field_k}}
+    @indent{@k[def] @term_[meth_name]{0}(@term_[self]{0} @~many["," @list{@term_[arg_name]{0}:} @nt_[ctc]{arg_0}]) -> @nt_[ctc]{res_0}: @nt_[block]{0}}
     @indent{...}
-    @indent{@id-form[def] @term_[meth_name]{n}(@term_[self]{n} @~many["," @list{@term_[arg_name]{n}:} @nt_[ctc]{arg_n}]) -> @nt_[ctc]{res_n}: @nt_[block]{n}}
+    @indent{@k[def] @term_[meth_name]{n}(@term_[self]{n} @~many["," @list{@term_[arg_name]{n}:} @nt_[ctc]{arg_n}]) -> @nt_[ctc]{res_n}: @nt_[block]{n}}
 ]
 
 Defines a class with contracts. See @racket[class] for the basics of
@@ -215,9 +215,9 @@ assert Posn?[AnyC](r)
 
 @defcmpdidform*[
     interface #:link @list{@term[name] @~opt["[" @~many-comma[@term[cvar]] "]" ]:}
-    @indent{@id-form[def] @term_[meth_name]{1}(@term_[self]{1} @~many["," @list{@term_[arg_name]{1}:} @nt_[ctc]{arg_1}]) -> @nt_[ctc]{res_1}}
+    @indent{@k[def] @term_[meth_name]{1}(@term_[self]{1} @~many["," @list{@term_[arg_name]{1}:} @nt_[ctc]{arg_1}]) -> @nt_[ctc]{res_1}}
     @indent{...}
-    @indent{@id-form[def] @term_[meth_name]{k}(@term_[self]{n} @~many["," @list{@term_[arg_name]{k}:} @nt_[ctc]{arg_n}]) -> @nt_[ctc]{res_k}}
+    @indent{@k[def] @term_[meth_name]{k}(@term_[self]{n} @~many["," @list{@term_[arg_name]{k}:} @nt_[ctc]{arg_n}]) -> @nt_[ctc]{res_k}}
 ]
 
 Defines a interface with contracts. See @racket[interface] for the

@@ -36,7 +36,7 @@ println(x)
 
 Accessing an undefined variable is an error.
 
-@defsmplform{@nt[lvalue] @id-form[= #:def] @nt_[expr]{rhs}}
+@defsmplform{@nt[lvalue] @k[= #:def] @nt_[expr]{rhs}}
 
 Assigns the value of @nt_[expr]{rhs} to an @nt[lvalue].
 The assigned @nt[lvalue] can be in one of three forms:
@@ -70,7 +70,7 @@ def insert(self, key, value):
     self._buckets[index] = cons(sc_entry(key, value), self._buckets[index])
 }|
 
-@defcmpdidform[def]{@term[fun_name](@term_[var_name]{1}, ... @term_[var_name]{k}): @nt[block]}
+@defcmpdidform[def]{@term[fun_name](@term_[var_name]{1}, @~……, @term_[var_name]{k}): @nt[block]}
 
 Defines @term[fun_name] to be a function with formal parameters
 @term_[var_name]{1}, @c{...}, @term_[var_name]{k} and with body
@@ -131,7 +131,7 @@ def rbt_insert(key, tree):
 
 @defsmplidform[pass]
 
-Does nothing.
+Does nothing; produces @racket[None].
 
 @dssl2block|{
 # account_credit : num? account? -> NoneC
@@ -143,8 +143,8 @@ def account_credit(amount, account):
 
 @defcmpdidform*[if
     @list{@nt_[expr]{if}: @nt_[block]{if}}
-    @~many[@id-form[elif #:def] @list{@nt_[expr]{elif}:} @nt_[block]{elif}]
-    @~opt[@list{@id-form[else #:def]:} @nt_[block]{else}]
+    @~many[@k[elif #:def] @list{@nt_[expr]{elif}:} @nt_[block]{elif}]
+    @~opt[@list{@k[else #:def]:} @nt_[block]{else}]
 ]
 
 The DSSL2 conditional statement contains an @racket[if], 0 or more
@@ -201,7 +201,7 @@ def rebalance_left_(key, balance, left0, right):
     else: error('Cannot happen')
 }|
 
-@defcmpdidform[for]{@term[var_name] @racket[in] @nt[expr]: @nt[block]}
+@defcmpdidform[for]{@term[var_name] @k[in] @nt[expr]: @nt[block]}
 
 Loops over the values of the given @nt[expr], evaluating the
 @nt[block] for each. The @nt[expr] can evaluate to a vector, a string,
@@ -233,7 +233,7 @@ def make_sbox_hash(n):
     hash
 }|
 
-@defcmpdidform[for #:re]{@term_[var_name]{1}, @term_[var_name]{2} in @nt[expr]: @nt[block]}
+@defcmpdidform[for #:re]{@term_[var_name]{1}, @term_[var_name]{2} @k[in] @nt[expr]: @nt[block]}
 
 Loops over the indices and values of the given @nt[expr], evaluating
 the @nt[block] for each. The @nt[expr] can evaluate to a vector, a
@@ -335,9 +335,9 @@ Returns @racket[None] from the current function.
 
 @defcmpdidform*[struct
     @list{@term[name]:}
-    @indent{@id-form[let] @term_[field_name]{1}}
-    @indent{...}
-    @indent{@id-form[let] @term_[field_name]{k}}
+    @indent{@k[let] @term_[field_name]{1}}
+    @indent[~...]
+    @indent{@k[let] @term_[field_name]{k}}
 ]
 
 Defines a new structure type @term[struct_name] with fields given by
@@ -397,12 +397,12 @@ def fix_size(node):
 
 @defcmpdidform*[
     class @list{@term[name] @~opt["(" @~many-comma[@term[interface_name]] ")"]}
-    @indent{@id-form[let] @term_[field_name]{1}}
-    @indent{...}
-    @indent{@id-form[let] @term_[field_name]{k}}
-    @indent{@id-form[def] @term_[meth_name]{0}(@term_[self]{0} @~many["," @term_[param_name]{0}]): @nt_[block]{0}}
-    @indent{...}
-    @indent{@id-form[def] @term_[meth_name]{n}(@term_[self]{n} @~many["," @term_[param_name]{n}]): @nt_[block]{n}}
+    @indent{@k[let] @term_[field_name]{1}}
+    @indent[~...]
+    @indent{@k[let] @term_[field_name]{k}}
+    @indent{@k[def] @term_[meth_name]{0}(@term_[self]{0} @~many["," @term_[param_name]{0}]): @nt_[block]{0}}
+    @indent[~...]
+    @indent{@k[def] @term_[meth_name]{n}(@term_[self]{n} @~many["," @term_[param_name]{n}]): @nt_[block]{n}}
 ]
 
 Defines a class named @term[name] with private fields
@@ -521,9 +521,9 @@ Note that @code{VerticalMovingPosn} takes two parameters because
 
 @defcmpdidform*[
     interface @list{@term[name]:}
-    @indent{@id-form[def] @term_[meth_name]{1}(@term_[self]{1} @~many["," @term_[param_name]{1}]}
-    @indent{...}
-    @indent{@id-form[def] @term_[meth_name]{k}(@term_[self]{k} @~many["," @term_[param_name]{k}])}
+    @indent{@k[def] @term_[meth_name]{1}(@term_[self]{1} @~many["," @term_[param_name]{1}]}
+    @indent[~...]
+    @indent{@k[def] @term_[meth_name]{k}(@term_[self]{k} @~many["," @term_[param_name]{k}])}
 ]
 
 Defines an interface named @term[name] with methods @term_[meth_name]{1}
@@ -703,7 +703,7 @@ test 'first_char_hasher works':
     assert first_char_hasher('apple') == 97
 }|
 
-@defsmplidform[assert #:re]{@nt_[expr]{test}, time < @nt_[expr]{sec}}
+@defsmplidform[assert #:re]{@nt_[expr]{test}, @k[time] @k[<] @nt_[expr]{sec}}
 
 Asserts that @nt_[expr]{test} evaluates to a truthy value in less than
 @nt_[expr]{sec} seconds.
@@ -711,8 +711,8 @@ Asserts that @nt_[expr]{test} evaluates to a truthy value in less than
 @defsmplidform*[assert_error
     @nt_[expr]{fail}
     @list{@assert_error @nt_[expr]{fail}, @nt_[expr]{str}}
-    @list{@assert_error @nt_[expr]{fail}, time < @nt_[expr]{sec}}
-    @list{@assert_error @nt_[expr]{fail}, @nt_[expr]{str}, time < @nt_[expr]{sec}}
+    @list{@assert_error @nt_[expr]{fail}, @k[time] @k[<] @nt_[expr]{sec}}
+    @list{@assert_error @nt_[expr]{fail}, @nt_[expr]{str}, @k[time] @k[<] @nt_[expr]{sec}}
 ]
 
 Asserts that evaluating @nt_[expr]{fail} results in an error. If

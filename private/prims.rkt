@@ -26,6 +26,9 @@
          proc proc?
          ; ** range_iterator
          range_iterator range_iterator?
+         (contract-out [range (case->
+                                (-> int? int? AnyC)
+                                (-> int? AnyC))])
          ; ** string
          str str?
          ; ** vector
@@ -356,6 +359,11 @@
             (visit (dssl-self _current))
             (dssl-self _current (add1 (dssl-self _current)))
             #true))]))
+
+(define range
+  (case-lambda
+    [(start limit) (range_iterator start limit)]
+    [(limit)       (range_iterator 0 limit)]))
 
 (define (index-ref indexable ix)
   (cond

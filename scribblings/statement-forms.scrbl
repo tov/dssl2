@@ -707,28 +707,26 @@ test 'first_char_hasher works':
 
 Asserts that @nt_[expr]{test} evaluates to a truthy value in less than
 @nt_[expr]{sec} seconds.
+  
+@defsmplidform*[assert_error
+    @nt_[expr]{fail}
+    @list{@assert_error @nt_[expr]{fail}, @nt_[expr]{str}}
+    @list{@assert_error @nt_[expr]{fail}, time < @nt_[expr]{sec}}
+    @list{@assert_error @nt_[expr]{fail}, @nt_[expr]{str}, time < @nt_[expr]{sec}}
+]
 
-@defsmplidform[assert_error]{@nt_[expr]{fail}, @nt_[expr]{str}}
-@defsmplidform[assert_error #:re]{@nt_[expr]{fail}}
+Asserts that evaluating @nt_[expr]{fail} results in an error. If
+@nt_[expr]{fail} evaluates without producing an error, the assertion
+fails. Allows specifying an expected error message or timeout duration.
 
-Asserts that evaluating @nt_[expr]{fail} errors, without specifying a
-particular error message to check for.
+In the 2nd and 4th forms, expression @nt_[expr]{str} must evaluate to a
+string, which must be a substring of the resulting error message for the
+assertion to succeed. (The 1st and 3rd forms do not specify an error
+message, so any error will cause the assertions to succeed.)
 
-
-Asserts that evaluating @nt_[expr]{fail} errors, and that the resulting
-error message contains the value of @nt_[expr]{str} as a substring.
-
-@defsmplidform[assert_error #:re]{@nt_[expr]{fail}, @nt_[expr]{str}, time < @nt_[expr]{sec}}
-
-Asserts that evaluating @nt_[expr]{fail} errors in less than
-@nt_[expr]{sec} seconds, and that the resulting
-error message contains the value of @nt_[expr]{str} as a substring.
-
-@defsmplidform[assert_error #:re]{@nt_[expr]{fail}, time < @nt_[expr]{sec}}
-
-Asserts that evaluating @nt_[expr]{fail} errors in less than
-@nt_[expr]{sec} seconds, without specifying a particular error message
-to check for.
+The 3rd and 4rd forms allow giving a timeout, in seconds, for evaluating
+@nt_[expr]{fail}. Thus, expression @nt_[expr]{sec} must evaluate to a
+positive number.
 
 @defcmpdidform[test]{@nt[expr]: @nt[block]}
 

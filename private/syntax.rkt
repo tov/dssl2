@@ -95,8 +95,6 @@
                      "util.rkt"
                      "syntax-classes.rkt"))
 
-(define dssl-assertion-timeout (make-parameter +inf.0))
-
 (define-syntax (dssl-module-begin stx)
   (syntax-case stx ()
     [(_ expr ...)
@@ -156,53 +154,8 @@
        (with-masked-control
          (lambda (param.id ...) (dssl-begin expr ...))))]))
 
-(begin-for-syntax
-  (define-syntax-class
-    var&ctc
-    #:description "association of identifier with contract"
-    (pattern [var:id ctc:expr])
-    (pattern var:id
-             #:with ctc #'AnyC))
-
-  (define-syntax-class
-    unique-identifiers
-    #:description "sequence of unique identifiers"
-    (pattern (var:id ...)
-             #:fail-when (check-duplicate-identifier
-                           (syntax->list #'(var ...)))
-             "duplicate identifier name"))
-
-  (define-syntax-class
-    super-interface
-    #:description "a superinterface, possibly with parameters"
-    (pattern (name:id params:expr ...))
-    (pattern name:id
-             #:with (params ...) #'()))
-
-  (define-splicing-syntax-class
-    opt-implements
-    #:description "optional implements clause"
-    (pattern (~seq #:implements (interface:id ...)))
-    (pattern (~seq)
-             #:with (interface:id ...) #'()))
-
-  (define-splicing-syntax-class
-    opt-return-ctc
-    #:description "optional return contract"
-    (pattern (~seq #:-> result:expr))
-    (pattern (~seq)
-             #:with result #'AnyC))
-
-  (define-splicing-syntax-class
-    opt-ctc-vars
-    #:description "optional forall-quantified contract variables"
-    (pattern (~seq (~or #:forall #:∀) vars:unique-identifiers)
-             #:with (var ...) #'(vars.var ...))
-    (pattern (~seq)
-             #:with (var ...) #'())))
-
 (define-simple-macro
-  (dssl-def (f:id cvs:opt-ctc-vars bs:var&ctc ...)
+  (dssl-def (f:real-id cvs:opt-ctc-vars bs:var&ctc ...)
             result-ctc:opt-return-ctc
             expr:expr ...)
   #:fail-when (check-duplicate-identifier
@@ -217,7 +170,7 @@
 
 (define-syntax (dssl-let stx)
   (syntax-parse stx
-    [(_ var:id)
+    [(_ var:real-id)
      #'(begin
          (define real-var unsafe-undefined)
          (make-set!able real-var)
@@ -235,12 +188,12 @@
                    #'(app
                        (check-not-unsafe-undefined real-var 'var)
                        . args))])))))]
-    [(_ [var:var ctc:expr])
+    [(_ [var:real-id ctc:expr])
      #'(begin
          (define real-var unsafe-undefined)
          (make-set!able real-var)
-         (dssl-provide var.id)
-         (define-syntax var.id
+         (dssl-provide var)
+         (define-syntax var
            (make-set!-transformer
             (λ (stx)
               (syntax-parse stx #:literals (set!)
@@ -252,14 +205,14 @@
                            ctc e
                            (format "assignment at ~a"
                                    (srcloc->string (get-srcloc e)))
-                           'var.id
-                           'var.id (get-srcloc ctc)))))]
+                           'var
+                           'var (get-srcloc ctc)))))]
                 [_:id
-                 #'(check-not-unsafe-undefined real-var 'var.id)]
+                 #'(check-not-unsafe-undefined real-var 'var)]
                 [(_:id . args)
                  (with-syntax ([app (datum->syntax stx '#%app)])
                    #'(app
-                       (check-not-unsafe-undefined real-var 'var.id)
+                       (check-not-unsafe-undefined real-var 'var)
                        . args))])))))]
     [(_ var:var rhs:expr)
      #'(begin
@@ -285,7 +238,7 @@
 (define-syntax (dssl-for stx)
   (syntax-parse stx
     [(_ [(i:var j:var) v:expr] expr:expr ...+)
-     #:fail-when (and (bound-identifier=? #'i #'j) #'j)
+     #:fail-when (and (bound-identifier=? #'i.id #'j.id) #'j.id)
                  "duplicate variable name"
      #'(with-break
          (dssl-for/fun
@@ -301,7 +254,7 @@
     (when (next (body my-i))
       (loop (add1 my-i)))))
 
-(define-simple-macro (dssl-for-loop-body (i:id j:id) body:expr ...)
+(define-simple-macro (dssl-for-loop-body (i j) body:expr ...)
   (λ (i)
      (λ (j)
         (with-continue
@@ -384,7 +337,7 @@
   (syntax-parse stx #:literals (dssl-vec-ref dssl-struct-ref)
     [(_ (dssl-vec-ref v:expr i:expr ...+) rhs:expr)
      #'(dssl-vec-set! v (list i ...) rhs)]
-    [(_ (dssl-struct-ref s:expr f:id) rhs:expr)
+    [(_ (dssl-struct-ref s:expr f:real-id) rhs:expr)
      #'(dssl-struct-set! s f rhs)]
     [(_ i:id rhs:expr)
      (cond
@@ -475,7 +428,7 @@
 
 (define-syntax (dssl-struct/late stx)
   (syntax-parse stx
-    [(_ (name:id internal-name:id) (formal-field:id ctc:expr) ...)
+    [(_ (name:id internal-name:id) (formal-field:real-id ctc:expr) ...)
      (define name-length (string-length (~a (syntax-e #'name))))
      (with-syntax ([s:cons #'internal-name]
                    [(setter-name ...)
@@ -646,51 +599,22 @@
     [e1   e2]
     [else e3]))
 
-(begin-for-syntax
-  (define-splicing-syntax-class req-timeout
-    #:attributes (seconds)
-    (pattern (~seq #:timeout raw-seconds)
-             #:declare raw-seconds
-             (expr/c #'positive?
-                     #:name "*assertion timeout seconds*")
-             #:attr seconds #'raw-seconds.c))
-
-  (define-splicing-syntax-class opt-timeout
-    #:attributes (seconds)
-    (pattern (~seq :req-timeout))
-    (pattern (~seq)
-             #:attr seconds #'(dssl-assertion-timeout)))
-
-  (define-syntax-class unary-operator
-    #:attributes (name)
-    (pattern (~literal not)
-             #:attr name #'"not"))
-
-  (define-syntax-class binary-operator
-    #:attributes (name)
-    (pattern (~and lit
-                   (~or (~literal ==)
-                        (~literal !=)
-                        (~literal <=)
-                        (~literal <)
-                        (~literal >=)
-                        (~literal >)
-                        (~literal is)
-                        (~literal |is not|)))
-             #:attr name #`#,(~a (syntax-e #'lit)))))
+(define current-dssl-assertion-timeout
+  (make-parameter +inf.0))
 
 (define (call-with-timeout srclocs seconds thunk)
-  (cond
-    [(= +inf.0 seconds) (thunk)]
-    [else
-      (with-handlers
-        ([exn:fail:resource?
-           (λ (_exn)
-              (assertion-error
-                #:srclocs srclocs
-                "out of time\n timeout: %p seconds"
-                seconds))])
-        (call-with-limits seconds #f thunk))]))
+  (let ([seconds (or seconds (current-dssl-assertion-timeout))])
+    (cond
+      [(= +inf.0 seconds) (thunk)]
+      [else
+        (with-handlers
+          ([exn:fail:resource?
+             (λ (_exn)
+                (assertion-error
+                  #:srclocs srclocs
+                  "out of time\n timeout: %p seconds"
+                  seconds))])
+          (call-with-limits seconds #f thunk))])))
 
 (define-simple-macro (with-timeout loc time:expr body:expr ...+)
   (call-with-timeout (get-srclocs loc) time (λ () body ...)))
@@ -698,7 +622,7 @@
 (define-syntax-parser dssl-assert
   ; changing the default timeout
   [(_ timeout:req-timeout)
-   #'(dssl-assertion-timeout timeout.seconds)]
+   #'(current-dssl-assertion-timeout timeout.seconds)]
   ; binary operators:
   [(_ (~and e (op:binary-operator e1:expr e2:expr))
       timeout:opt-timeout)
@@ -750,12 +674,12 @@
 (define-syntax (dssl-interface stx)
   (syntax-parse stx
     #:literals (dssl-def)
-    [(_ name:id
+    [(_ name:real-id
         cvs:opt-ctc-vars
         (super:super-interface ...)
-        (dssl-def (method-name:id
+        (dssl-def (method-name:real-id
                     method-cvs:opt-ctc-vars
-                    method-self:id
+                    method-self:var
                     method-params:var&ctc ...)
                   method-result:opt-return-ctc) ...)
      #'(define-dssl-interface
@@ -771,13 +695,13 @@
 (define-syntax (dssl-class stx)
   (syntax-parse stx
     #:literals (dssl-let dssl-def)
-    [(_ name:id
+    [(_ name:real-id
         cvs:opt-ctc-vars
         interfaces:opt-implements
         (dssl-let field:var&ctc) ...
-        (dssl-def (method-name:id
+        (dssl-def (method-name:real-id
                     method-cvs:opt-ctc-vars
-                    method-self:id
+                    method-self:var
                     method-params:var&ctc ...)
                   method-result:opt-return-ctc
                   method-body:expr ...) ...)
@@ -789,7 +713,7 @@
           ...)
          ([method-name
             (method-cvs.var ...)
-            method-self
+            method-self.id
             ([method-params.var method-params.ctc]
              ...)
             method-result.result

@@ -1,11 +1,110 @@
 #lang racket/base
 
-(provide var)
-(require syntax/parse)
+(provide req-timeout
+         opt-timeout
+         unary-operator
+         binary-operator
+         real-id
+         var
+         var&ctc
+         unique-identifiers
+         super-interface
+         opt-implements
+         opt-return-ctc
+         opt-ctc-vars)
+
+(require syntax/parse
+         (only-in racket/format
+                  ~a)
+         (for-template
+           racket/base
+           (only-in racket/contract/base
+                    any/c)))
+
+(define-splicing-syntax-class req-timeout
+  #:attributes (seconds)
+  (pattern (~seq #:timeout raw-seconds)
+           #:declare raw-seconds
+           (expr/c #'positive?
+                   #:name "*assertion timeout seconds*")
+           #:attr seconds #'raw-seconds.c))
+
+(define-splicing-syntax-class opt-timeout
+  #:attributes (seconds)
+  (pattern (~seq :req-timeout))
+  (pattern (~seq) #:attr seconds #'#f))
+
+(define-syntax-class unary-operator
+  #:attributes (name)
+  (pattern (~literal not)
+           #:attr name #'"not"))
+
+(define-syntax-class binary-operator
+  #:attributes (name)
+  (pattern (~and lit
+                 (~or (~literal ==)
+                      (~literal !=)
+                      (~literal <=)
+                      (~literal <)
+                      (~literal >=)
+                      (~literal >)
+                      (~literal is)
+                      (~literal |is not|)))
+           #:attr name #`#,(~a (syntax-e #'lit))))
+
+(define (stx-underscore? stx)
+  (eq? '_ (syntax-e stx)))
+
+(define-syntax-class real-id
+  (pattern id:id
+           #:fail-when (stx-underscore? #'id)
+           "_ is not a real identifier"))
 
 (define-syntax-class var
-  #:attributes (id)
   (pattern raw:id
-           #:attr id (if (eq? '_ (syntax-e #'raw))
+           #:attr id (if (stx-underscore? #'raw)
                        #`#,(gensym '_)
                        #'raw)))
+
+(define-syntax-class var&ctc
+  #:attributes (var ctc)
+  #:description "association of identifier with contract"
+  (pattern [v:var ctc:expr]
+           #:attr var #'v.id)
+  (pattern v:var
+           #:attr var #'v.id
+           #:attr ctc #'any/c))
+
+(define-syntax-class unique-identifiers
+  #:attributes ([var 1])
+  #:description "sequence of unique identifiers"
+  (pattern (var:real-id ...)
+           #:fail-when (check-duplicate-identifier
+                         (syntax->list #'(var ...)))
+           "duplicate identifier name"))
+
+(define-syntax-class super-interface
+  #:description "a superinterface, possibly with parameters"
+  (pattern (name:id params:expr ...))
+  (pattern name:id
+           #:with (params ...) #'()))
+
+(define-splicing-syntax-class opt-implements
+  #:description "optional implements clause"
+  (pattern (~seq #:implements (interface:id ...)))
+  (pattern (~seq)
+           #:with (interface:id ...) #'()))
+
+(define-splicing-syntax-class opt-return-ctc
+  #:description "optional return contract"
+  (pattern (~seq #:-> result:expr))
+  (pattern (~seq)
+           #:with result #'any/c))
+
+(define-splicing-syntax-class opt-ctc-vars
+  #:description "optional forall-quantified contract variables"
+  (pattern (~seq (~or #:forall #:∀) vars:unique-identifiers)
+           #:with (var ...) #'(vars.var ...))
+  (pattern (~seq)
+           #:with (var ...) #'()))
+

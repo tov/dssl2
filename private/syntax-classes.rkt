@@ -13,11 +13,16 @@
          opt-return-ctc
          opt-ctc-vars)
 
-(require syntax/parse
+(require (for-syntax
+           racket/base
+           syntax/parse)
+         syntax/parse
          (only-in racket/format
                   ~a)
          (for-template
-           racket/base
+           (only-in racket/base
+                    positive?
+                    #%datum)
            (only-in racket/contract/base
                     any/c)))
 
@@ -34,22 +39,26 @@
   (pattern (~seq :req-timeout))
   (pattern (~seq) #:attr seconds #'#f))
 
+(define-syntax ~datums
+  (pattern-expander
+    (λ (stx)
+       (syntax-parse stx
+         [(_ datum:id ...)
+          #'(~or (~datum datum) ...)]))))
+
 (define-syntax-class unary-operator
   #:attributes (name)
-  (pattern (~literal not)
-           #:attr name #'"not"))
+  (pattern (~and lit (~datums not ~))
+           #:attr name #`#,(~a (syntax-e #'lit))))
 
 (define-syntax-class binary-operator
   #:attributes (name)
   (pattern (~and lit
-                 (~or (~literal ==)
-                      (~literal !=)
-                      (~literal <=)
-                      (~literal <)
-                      (~literal >=)
-                      (~literal >)
-                      (~literal is)
-                      (~literal |is not|)))
+                 (~datums == != ≠
+                          <= ≤ <
+                          >= ≥ >
+                          in ∈ |not in| ∉
+                          is |is not|))
            #:attr name #`#,(~a (syntax-e #'lit))))
 
 (define (stx-underscore? stx)

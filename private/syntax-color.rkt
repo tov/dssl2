@@ -5,18 +5,26 @@
 (require "lexer.rkt"
          parser-tools/lex
          (prefix-in : parser-tools/lex-sre)
-         (for-syntax racket/base))
+         syntax/parse/define
+         (for-syntax racket/base
+                     (only-in racket/syntax
+                              format-id)
+                     syntax/parse))
 
 (define-syntax (token stx)
-  (syntax-case stx ()
+  (syntax-parse stx
+    [(_ type data:string)
+     (with-syntax
+       ([data-sym  (format-id stx "~a" (syntax-e #'data))])
+       #'(token type data-sym))]
     [(_ type data)
-     (let
-       ([lexeme         (datum->syntax stx 'lexeme)]
-        [start-pos      (datum->syntax stx 'start-pos)]
-        [end-pos        (datum->syntax stx 'end-pos)])
-       #`(values #,lexeme 'type 'data
-                 (position-offset #,start-pos)
-                 (position-offset #,end-pos)))]
+     (with-syntax
+       ([lexeme    (datum->syntax stx 'lexeme)]
+        [start-pos (datum->syntax stx 'start-pos)]
+        [end-pos   (datum->syntax stx 'end-pos)])
+       #'(values lexeme 'type 'data
+                 (position-offset start-pos)
+                 (position-offset end-pos)))]
     [(_ type)
      #'(token type #f)]))
 
@@ -28,8 +36,8 @@
     [(:or "λ" "lambda" "let" "assert" "assert_eq" "assert_error"
           "if" "elif" "else"
           "class" "interface" "break" "continue"
-          "while" "for" "in" "return" "pass" "def" "struct" "test"
-          "time" "import")
+          "while" "for" "in" "∈" "∉" "return" "pass" "def" "struct"
+          "test" "time" "import")
                                 (token keyword)]
     [comment                    (token comment)]
     [(:or float hexadecimal octal binary natural "inf" "nan")
@@ -42,15 +50,16 @@
     [(:: #\' (:* sq-str-char))                  (token error)]
     [(:: #\" (:* dq-str-char) #\")              (token string)]
     [(:: #\" (:* dq-str-char))                  (token error)]
-    [#\(                        (token parenthesis |(|)]
-    [#\)                        (token parenthesis |)|)]
-    [#\[                        (token parenthesis |[|)]
-    [#\]                        (token parenthesis |]|)]
-    [#\{                        (token parenthesis |{|)]
-    [#\}                        (token parenthesis |}|)]
+    [#\(                        (token parenthesis "(")]
+    [#\)                        (token parenthesis ")")]
+    [#\[                        (token parenthesis "[")]
+    [#\]                        (token parenthesis "]")]
+    [#\{                        (token parenthesis "{")]
+    [#\}                        (token parenthesis "}")]
     ["is"                       (token keyword)]
     [(:or "or" "and" "not")     (token keyword)]
-    [(:or "==" #\< #\> "<=" ">=" "!=" #\| #\^ #\&
+    [(:or "==" #\< #\> "<=" #\≤ ">=" #\≥ "!=" #\≠
+          #\| #\^ #\&
           "<<" ">>" #\* #\/ #\% #\~ "**" #\+ #\-)
                                 (token hash-colon-keyword)]
     [(:or #\, #\: #\; #\=)      (token parenthesis)]

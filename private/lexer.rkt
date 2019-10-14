@@ -28,6 +28,7 @@
    EQUALS
    IS
    NOT
+   NOT-IN       ; ∉
    PLUS         ; two different precedences
    MINUS        ; two different precedences
    ARROW
@@ -59,7 +60,7 @@
    OP0  ; or
    OP1  ; and
    OP2  ; not
-   OP3  ; == >= != > (<= < is "is not")
+   OP3  ; == != ≠ >= ≥ > (<= ≤ < is "is not")
    OP4  ; (|)
    OP5  ; ^
    OP6  ; &
@@ -217,6 +218,7 @@
       [#\=                      (token-EQUALS)]
       ["is"                     (token-IS)]
       ["not"                    (token-NOT)]
+      [#\∉                      (token-NOT-IN)]
       [#\+                      (token-PLUS)]
       [#\-                      (token-MINUS)]
       ["->"                     (token-ARROW)]
@@ -229,7 +231,7 @@
       ["else"                   (token-ELSE)]
       ["while"                  (token-WHILE)]
       ["for"                    (token-FOR)]
-      ["in"                     (token-IN)]
+      [(:or "in" "∈")           (token-IN)]
       ["break"                  (token-BREAK)]
       ["continue"               (token-CONTINUE)]
       ["import"                 (token-IMPORT)]
@@ -248,9 +250,9 @@
       ["time"                   (token-TIME)]
       ["or"                     (token-OP0 (string->symbol lexeme))]
       ["and"                    (token-OP1 (string->symbol lexeme))]
-      [(:or "==" #\> ">=" "!=")
+      [(:or "==" #\> ">=" #\≥ "!=" #\≠)
                                 (token-OP3 (string->symbol lexeme))]
-      [(:or #\< "<=")           (token-OP-LESS (string->symbol lexeme))]
+      [(:or #\< "<=" #\≤)       (token-OP-LESS (string->symbol lexeme))]
       [#\|                      (token-OP4 (string->symbol lexeme))]
       [#\^                      (token-OP5 (string->symbol lexeme))]
       [#\&                      (token-OP6 (string->symbol lexeme))]

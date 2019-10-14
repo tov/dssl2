@@ -49,7 +49,7 @@
          "stxparams.rkt"
          "singletons.rkt"
          "struct.rkt"
-         (prefix-in d: "prims.rkt")
+         (prefix-in p: "prims.rkt")
          (only-in syntax/parse/define
                   define-simple-macro
                   define-syntax-parser)
@@ -249,7 +249,7 @@
      #'(dssl-for [(_ i.id) v] expr ...)]))
 
 (define (dssl-for/fun srclocs obj body)
-  (define next (get-try-advance srclocs obj "for loop"))
+  (define next (p:get-try-advance srclocs obj "for loop"))
   (let loop ([my-i 0])
     (when (next (body my-i))
       (loop (add1 my-i)))))
@@ -259,14 +259,6 @@
      (λ (j)
         (with-continue
           (dssl-begin body ...)))))
-
-(define (get-try-advance srclocs obj who)
-  (define iterator
-    (d:dssl-send obj 'iterator
-                 #:or-else
-                 (type-error #:srclocs srclocs who obj
-                             "object responding to .iterator()")))
-  (get-method-value/or-else #:srclocs srclocs iterator 'try_advance))
 
 (struct vector-builder (vector size) #:mutable)
 (define (make-vector-builder)
@@ -293,7 +285,7 @@
                 (λ (i) (vector-ref vector i))))
 
 (define (dssl-for/vec/fun srclocs v when? body)
-  (define next   (get-try-advance srclocs v "vector comprehension"))
+  (define next   (p:get-try-advance srclocs v "vector comprehension"))
   (define result (make-vector-builder))
   (let loop ([i 0])
     (when (next (λ (j)
@@ -361,7 +353,7 @@
 
 (define (dssl-vec-ref v i . rest)
   (cond
-    [(d:get-method-value v '__index_ref__)
+    [(p:get-method-value v '__index_ref__)
      =>
      (λ (index) (apply index i rest))]
     [(generic-base? v)
@@ -371,7 +363,7 @@
 
 (define (dssl-vec-set! v is a)
   (cond
-    [(d:get-method-value v '__index_set__)
+    [(p:get-method-value v '__index_set__)
      =>
      (λ (set) (apply set (append is (list a))))]
     [else
@@ -506,17 +498,6 @@
                      "struct %p does not have field %s"
                      struct field)))
 
-(define-syntax (get-method-value/or-else stx)
-  (syntax-parse stx #:literals (quote)
-    [(_ #:srclocs srclocs:expr object:expr (quote method:id))
-     #'(let ([value object])
-         (or (d:get-method-value value 'method)
-             (runtime-error #:srclocs srclocs
-                            "object %p does not have method %s"
-                            object 'method)))]
-    [(_ object:expr (quote method:id))
-     #'(get-method-value/or-else #:srclocs '() object 'method)]))
-
 (define-syntax (dssl-struct-ref stx)
   (syntax-parse stx
     [(_ target0:expr property:id)
@@ -537,8 +518,8 @@
                                       value 'property))
                  value)]
                [else
-                (get-method-value/or-else #:srclocs (get-srclocs expr)
-                                          value 'property)]))])]))
+                (p:get-method-value/or-else #:srclocs (get-srclocs expr)
+                                            value 'property)]))])]))
 
 (define-syntax (dssl-struct-set! stx)
   (syntax-parse stx
@@ -588,7 +569,7 @@
          (printf "~a: cpu: ~a real: ~a gc: ~a\n" lab cpu real gc))]))
 
 (define/contract (dssl-make-vec a b)
-  (-> d:nat? AnyC d:vec?)
+  (-> p:nat? AnyC p:vec?)
   (make-vector a b))
 
 (define (vec-lit . elements)

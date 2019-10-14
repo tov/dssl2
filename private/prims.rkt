@@ -3,8 +3,9 @@
 (require (only-in racket/contract/base contract-out))
 
 (provide ; helpers for other modules
-         get-method-list
          get-method-value
+         get-method-value/or-else
+         get-try-advance
          dssl-send
          dssl-equal?
          ; values
@@ -806,6 +807,17 @@
               ...
               [else #f]))])]))
 
+(define-syntax (get-method-value/or-else stx)
+  (syntax-parse stx #:literals (quote)
+    [(_ #:srclocs srclocs:expr object:expr (quote method:id))
+     #'(let ([value object])
+         (or (get-method-value value 'method)
+             (runtime-error #:srclocs srclocs
+                            "object %p does not have method %s"
+                            object 'method)))]
+    [(_ object:expr (quote method:id))
+     #'(get-method-value/or-else #:srclocs '() object 'method)]))
+
 (begin-for-syntax
   (define-splicing-syntax-class
     optional-and-then
@@ -836,6 +848,14 @@
             =>
             (λ (method) (and-then.expr (method arg ...)))]
            [else or-else-expr]))]))
+
+(define (get-try-advance srclocs obj who)
+  (define iterator
+    (dssl-send obj 'iterator
+               #:or-else
+               (type-error #:srclocs srclocs who obj
+                           "object responding to .iterator()")))
+  (get-method-value/or-else #:srclocs srclocs iterator 'try_advance))
 
 ;; Listing the methods of an object.
 

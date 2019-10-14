@@ -1,31 +1,42 @@
 #lang racket/base
 
-(provide %
-         **
+(provide #; comparisons
          ==
          !=
-         is
-         |is not|
-         &
-         \|
-         ^
-         ~
-         +
-         -
-         *
-         /
          <
          >
          <=
          >=
+         is
+         |is not|
+         in
+         |not in|
+         ;; arithmetic
+         +
+         -
+         *
+         /
+         %
+         **
+         ;; bitwise logic
+         &
+         \|
+         ^
          <<
          >>
+         ~
+         ;; Boolean logic
          not
-         ; syntax
-         and
-         or)
+         and    ; (syntax)
+         or)    ; (syntax)
 
-(require "prims.rkt"
+(provide (rename-out [!=        ≠]
+                     [<=        ≤]
+                     [>=        ≥]
+                     [in        ∈]
+                     [|not in|  ∉]))
+
+(require (prefix-in p: "prims.rkt")
          "errors.rkt"
          "singletons.rkt")
 (require (prefix-in racket: racket/base))
@@ -58,9 +69,9 @@
     [(_ name:id (quote lop:id) (quote rop:id) msg:str)
      #'(define (name a b)
          (cond
-           [(dssl-send a 'lop b #:and-then box #:or-else #f)
+           [(p:dssl-send a 'lop b #:and-then box #:or-else #f)
             => unbox]
-           [(dssl-send b 'rop a #:and-then box #:or-else #f)
+           [(p:dssl-send b 'rop a #:and-then box #:or-else #f)
             => unbox]
            [else
              (type-error 'name (vector a b)
@@ -72,7 +83,7 @@
     [(_ name:id (quote op:id) msg:str)
      #'(define (name a)
          (cond
-           [(dssl-send a 'op #:and-then box #:or-else #f)
+           [(p:dssl-send a 'op #:and-then box #:or-else #f)
             => unbox]
            [else
              (type-error 'name a
@@ -112,7 +123,7 @@
 (define-generic-binop /  '__div__ '__rdiv__ "nums")
 
 (define (== a b)
-  (dssl-equal? a b))
+  (p:dssl-equal? a b))
 
 (define (!= a b)
   (racket:not (== a b)))
@@ -123,16 +134,39 @@
 (define (|is not| a b)
   (racket:not (is a b)))
 
+(define (in/proc/iter srclocs v1 v2)
+  (define found? #f)
+  (define next (p:get-try-advance srclocs v2 "`in` operator"))
+  (define (body elt)
+    (when (p:dssl-equal? v1 elt)
+      (set! found? #t)))
+  (let loop ()
+    (when (and (not found?) (next body))
+      (loop)))
+  found?)
+
+(define (in/proc srclocs v1 v2)
+  (p:dssl-send v2 '__contains__ v1
+               #:or-else
+               (in/proc/iter srclocs v1 v2)))
+
+(define-simple-macro (in e1:expr e2:expr)
+  (in/proc (get-srclocs e2) e1 e2))
+
+(define-simple-macro (|not in| e1:expr e2:expr)
+  (not (in/proc (get-srclocs e2) e1 e2)))
+
+
 (define (< a b)
   (truthy-cond
-    [(cmp a b)
+    [(p:cmp a b)
      =>
      (λ (order) (racket:< order 0))]
     [else #f]))
 
 (define (<= a b)
   (truthy-cond
-    [(cmp a b)
+    [(p:cmp a b)
      =>
      (λ (order) (racket:<= order 0))]
     [else #f]))

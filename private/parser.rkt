@@ -421,8 +421,11 @@
       (<op3>
         [(OP3)          $1]
         [(OP-LESS)      $1]
+        [(IN)           'in]
         [(IS)           'is]
-        [(IS NOT)       '|is not|])
+        [(NOT-IN)       '∉]
+        [(IS NOT)       '|is not|]
+        [(NOT IN)       '|not in|])
 
       (<op8>
         [(OP8)          $1]

@@ -47,6 +47,10 @@ class Array[T] (ITERABLE):
         self._data[self._size] = None
         result
 
+    def push_back(self, value): self.push(value)
+
+    def pop_back(self): self.pop()
+
     def push_front(self, value: T) -> NoneC:
         let size = self._size
         self.ensure_capacity(size + 1)
@@ -113,6 +117,11 @@ def array() -> Array?:
 def array_of_vec(v: vec?) -> Array?:
     let a = Array(v.len())
     for i in v: a.push(i)
+    a
+
+def build_array(n: nat?, f) -> Array?:
+    let a = Array(n)
+    for i in range(n): a.push(f(i))
     a
 
 test "array":

@@ -3,15 +3,15 @@
 class Array[T] (ITERABLE):
     let _size: nat?
     let _data: vec?
-    
+
     def __init__(self, capacity: nat?):
         self._size = 0
-        self._data = [False; capacity]
+        self._data = vec(capacity)
 
     def empty?(self) -> bool?:
         self._size == 0
 
-    def size(self) -> nat?:
+    def len(self) -> nat?:
         self._size
 
     def capacity(self) -> nat?:
@@ -20,7 +20,7 @@ class Array[T] (ITERABLE):
     def ensure_capacity(self, req_cap: nat?) -> NoneC:
         if req_cap > self.capacity():
             let new_cap = max(req_cap, 2 * self.capacity())
-            self._data = [ self._data[i] if i < self._size else False
+            self._data = [ self._data[i] if i < self._size else None
                                for i in new_cap ]
 
     def _check_index(self, index):
@@ -40,13 +40,32 @@ class Array[T] (ITERABLE):
         self._data[self._size] = value
         self._size = self._size + 1
 
-    def pop(self) -> OrC(False, T):
-        if self._size == 0: return False
+    def pop(self) -> OrC(NoneC, T):
+        if self._size == 0: return None
         self._size = self._size - 1
         let result = self._data[self._size]
-        self._data[self._size] = False
+        self._data[self._size] = None
         result
-        
+
+    def push_front(self, value: T) -> NoneC:
+        let size = self._size
+        self.ensure_capacity(size + 1)
+        for rev_i in range(size):
+            let i = size - rev_i
+            self._data[i] = self._data[i - 1]
+        self._data[0] = value
+        self._size    = size + 1
+
+    def pop_front(self) -> OrC(NoneC, T):
+        let size = self._size - 1
+        if size < 0: return None
+        let result = self._data[0]
+        for i in range(size):
+            self._data[i] = self._data[i + 1]
+        self._data[size] = None
+        self._size       = size
+        result
+
     def clear(self) -> NoneC:
         self._size = 0
 
@@ -59,12 +78,12 @@ class Array[T] (ITERABLE):
         for i in self._size:
             result.push(self.get(i))
         result
-    
+
     def to_vec(self) -> vec?:
         [ self._data[i] for i in self._size ]
 
     def equals_with?(self, other, pred?) -> bool?:
-        if self._size != other.size(): return False
+        if self._size != other.len(): return False
         for i in self._size:
             if not pred?(self.get(i), other.get(i)):
                 return False
@@ -72,25 +91,25 @@ class Array[T] (ITERABLE):
 
     def equals?(self, other) -> bool?:
         self.equals_with?(other, lambda x, y: x == y)
-    
+
     def iterator(self) -> index_iterator?:
-        index_iterator(self, 0, self.size())
+        index_iterator(self, 0, self.len())
 
     def __eq__(self, other) -> bool?:
         self.equals?(other)
-        
+
     def __print__(self, print):
         print("array_of_vec(%p)", self.to_vec())
-        
+
     def __index_ref__(self, n):
         self.get(n)
-        
+
     def __index_set__(self, n, v):
         self.set(n, v)
 
 def array() -> Array?:
     Array(8)
-    
+
 def array_of_vec(v: vec?) -> Array?:
     let a = Array(v.len())
     for i in v: a.push(i)
@@ -100,5 +119,5 @@ test "array":
     let a = array()
     a.push(5)
     a.push('hello')
-    assert_eq a.size(), 2
+    assert_eq a.len(), 2
     assert_eq a.to_vec(), [5, 'hello']

@@ -124,9 +124,3 @@ def build_array(n: nat?, f) -> Array?:
     for i in range(n): a.push(f(i))
     a
 
-test "array":
-    let a = array()
-    a.push(5)
-    a.push('hello')
-    assert_eq a.len(), 2
-    assert_eq a.to_vec(), [5, 'hello']

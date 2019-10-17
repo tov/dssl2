@@ -1,10 +1,11 @@
 #lang dssl2
 
 import dll
+import adt
 
 def _MaybeC(X): OrC(X, NoneC)
 
-class Fifo[X]:
+class Fifo[X] (QUEUE):
     let repr_
 
     def __init__(self):
@@ -16,8 +17,8 @@ class Fifo[X]:
     def empty?(self) -> bool?:
         self.repr_.empty?()
 
-    def size(self) -> nat?:
-        self.repr_.size()
+    def len(self) -> nat?:
+        self.repr_.len()
 
     def peek(self) -> _MaybeC(X):
         self.repr_.front()

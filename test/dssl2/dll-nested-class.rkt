@@ -4,8 +4,8 @@ def MaybeC(X): OrC(False, X)
 
 class Dll[X]:
     let Node_
-    let sentinel_
-    let size_
+    let _sentinel
+    let _len
 
     def __init__(self):
         class Node:
@@ -29,32 +29,32 @@ class Dll[X]:
             def next!(self, next): self.next_ = next
 
         self.Node_     = Node
-        self.sentinel_ = self.Node_(False, False, False)
-        self.size_     = 0
+        self._sentinel = self.Node_(False, False, False)
+        self._len     = 0
 
     # Is this list empty?
     def empty?(self) -> bool?:
-        self.sentinel_.next() is self.sentinel_
+        self._sentinel.next() is self._sentinel
 
     # Returns the number of elements in this list.
-    def size(self) -> nat?:
-        self.size_
+    def len(self) -> nat?:
+        self._len
 
     # Gets the sentinel node (violating encapsulation), which can be used
     # in combination with `set_sentinel_and_size!` to do advanced list
     # manipulations.
-    def get_sentinel!(self): self.sentinel_
+    def get_sentinel!(self): self._sentinel
 
     # Sets the sentinel node and size, violating encapsulation.
     def set_sentinel_and_size!(self, sentinel: AnyC, size: nat?) -> NoneC:
-        self.sentinel_ = sentinel
-        self.size_ = size
+        self._sentinel = sentinel
+        self._len = size
 
     # Swaps the elements of this list with another in constant time.
     def swap(self, other: Dll?) -> NoneC:
         let sentinel = other.get_sentinel!()
-        let size = other.size()
-        other.set_sentinel_and_size!(self.sentinel_, self.size_)
+        let size = other.len()
+        other.set_sentinel_and_size!(self._sentinel, self._len)
         self.set_sentinel_and_size!(sentinel, size)
 
     # Precondition: count is number of nodes in [start, limit)
@@ -66,7 +66,7 @@ class Dll[X]:
         limit.prev().next!(limit)
         new_sentinel.next().prev!(new_sentinel)
         new_sentinel.prev().next!(new_sentinel)
-        self.size_ = self.size_ - count
+        self._len = self._len - count
         result.set_sentinel_and_size!(new_sentinel, count)
         result
 
@@ -74,91 +74,91 @@ class Dll[X]:
     # (If there are fewer than `n` elements, removes all of them.)
     def detach_front(self, n: nat?) -> Dll?:
         let count = 0
-        let limit = self.sentinel_
-        while limit.next() is not self.sentinel_ and count < n:
+        let limit = self._sentinel
+        while limit.next() is not self._sentinel and count < n:
             limit = limit.next()
             count = count + 1
-        self._detach(self.sentinel_.next(), limit.next(), count)
+        self._detach(self._sentinel.next(), limit.next(), count)
 
     # Removes the last `n` elements of the list into a new list.
     # (If there are fewer than `n` elements, removes all of them.)
     def detach_back(self, n: nat?) -> Dll?:
         let count = 0
-        let start = self.sentinel_
-        while start.prev() is not self.sentinel_ and count < n:
+        let start = self._sentinel
+        while start.prev() is not self._sentinel and count < n:
             start = start.prev()
             count = count + 1
-        self._detach(start, self.sentinel_, count)
+        self._detach(start, self._sentinel, count)
 
     # Moves the elements from another list to the end of this list
     # in constant time. The other list is left empty.
     def splice(self, other: Dll?) -> NoneC:
         let other_sentinel = other.get_sentinel!()
-        self.sentinel_.prev().next!(other_sentinel.next())
-        other_sentinel.next().prev!(self.sentinel_.prev())
-        self.sentinel_.prev!(other_sentinel.prev())
-        self.sentinel_.prev().next!(self.sentinel_)
-        self.size_ = self.size_ + other.size()
+        self._sentinel.prev().next!(other_sentinel.next())
+        other_sentinel.next().prev!(self._sentinel.prev())
+        self._sentinel.prev!(other_sentinel.prev())
+        self._sentinel.prev().next!(self._sentinel)
+        self._len = self._len + other.len()
         other_sentinel.next!(other_sentinel)
         other_sentinel.prev!(other_sentinel)
         other.set_sentinel_and_size!(other_sentinel, 0)
 
     # Adds an element to the front of this list.
     def push_front(self, value: X) -> NoneC:
-        let new_node = self.Node_(self.sentinel_, value, self.sentinel_.next())
+        let new_node = self.Node_(self._sentinel, value, self._sentinel.next())
         new_node.next().prev!(new_node)
         new_node.prev().next!(new_node)
-        self.size_ = self.size_ + 1
+        self._len = self._len + 1
 
     # Adds an element to the back of this list.
     def push_back(self, value: X) -> NoneC:
-        let new_node = self.Node_(self.sentinel_.prev(), value, self.sentinel_)
+        let new_node = self.Node_(self._sentinel.prev(), value, self._sentinel)
         new_node.next().prev!(new_node)
         new_node.prev().next!(new_node)
-        self.size_ = self.size_ + 1
+        self._len = self._len + 1
 
     # Removes and returns the first element of this list; if this
     # list is empty, returns False instead.
     def pop_front(self) -> MaybeC(X):
-        if self.sentinel_.next() is self.sentinel_: return False
-        let result = self.sentinel_.next().data()
-        self.sentinel_.next!(self.sentinel_.next().next())
-        self.sentinel_.next().prev!(self.sentinel_)
-        self.size_ = self.size_ - 1
+        if self._sentinel.next() is self._sentinel: return False
+        let result = self._sentinel.next().data()
+        self._sentinel.next!(self._sentinel.next().next())
+        self._sentinel.next().prev!(self._sentinel)
+        self._len = self._len - 1
         result
 
     # Removes and returns the last element of this list; if this
     # list is empty, returns False instead.
     def pop_back(self) -> MaybeC(X):
-        if self.sentinel_.prev() is self.sentinel_: return False
-        let result = self.sentinel_.prev().data()
-        self.sentinel_.prev!(self.sentinel_.prev().prev())
-        self.sentinel_.prev().next!(self.sentinel_)
-        self.size_ = self.size_ - 1
+        if self._sentinel.prev() is self._sentinel: return False
+        let result = self._sentinel.prev().data()
+        self._sentinel.prev!(self._sentinel.prev().prev())
+        self._sentinel.prev().next!(self._sentinel)
+        self._len = self._len - 1
         result
 
     # Returns the first element of the list, or False if empty.
     def front(self) -> MaybeC(X):
-        if self.sentinel_.next() is self.sentinel_: False
-        else: self.sentinel_.next().data()
+        if self._sentinel.next() is self._sentinel: False
+        else: self._sentinel.next().data()
 
     # Returns the last element of the list, or False if empty.
     def back(self) -> MaybeC(X):
-        if self.sentinel_.prev() is self.sentinel_: False
-        else: self.sentinel_.prev().data()
+        if self._sentinel.prev() is self._sentinel: False
+        else: self._sentinel.prev().data()
 
     # Processes the list elements in order, accumulating a result.
     def foldl[Y](self, f: FunC[Y, X, Y], z: Y) -> Y:
-        let current = self.sentinel_.next()
-        while current is not self.sentinel_:
+        let current = self._sentinel.next()
+        while current is not self._sentinel:
             z = f(z, current.data())
             current = current.next()
         return z
 
     # Processes the list elements in reverse order, accumulating a result.
     def foldr[Y](self, f: FunC[X, Y, Y], z: Y) -> Y:
-        let current = self.sentinel_.prev()
-        while current is not self.sentinel_:
+        let current = self._sentinel.prev()
+        while current is not self._sentinel:
             z = f(current.data(), z)
             current = current.prev()
         return z
@@ -172,7 +172,7 @@ class Dll[X]:
     # Returns the elements of the list in a new vector.
     # : Self -> VectorOf<X>
     def to_vec(self) -> vec?:
-        let v = [False; self.size()]
+        let v = [False; self.len()]
         self.each_with_index(lambda i, x: v[i] = x)
         v
 

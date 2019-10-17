@@ -1,18 +1,18 @@
 #lang dssl2
 
 class Array[T] (ITERABLE):
-    let _size: nat?
+    let _len: nat?
     let _data: vec?
 
     def __init__(self, capacity: nat?):
-        self._size = 0
+        self._len = 0
         self._data = vec(capacity)
 
     def empty?(self) -> bool?:
-        self._size == 0
+        self._len == 0
 
     def len(self) -> nat?:
-        self._size
+        self._len
 
     def capacity(self) -> nat?:
         self._data.len()
@@ -20,12 +20,12 @@ class Array[T] (ITERABLE):
     def ensure_capacity(self, req_cap: nat?) -> NoneC:
         if req_cap > self.capacity():
             let new_cap = max(req_cap, 2 * self.capacity())
-            self._data = [ self._data[i] if i < self._size else None
+            self._data = [ self._data[i] if i < self._len else None
                                for i in new_cap ]
 
     def _check_index(self, index):
-        if index >= self._size:
-            error("Array index out of bounds: ~a >= ~a", index, self._size)
+        if index >= self._len:
+            error("Array index out of bounds: ~a >= ~a", index, self._len)
 
     def get(self, index: nat?):
         self._check_index(index)
@@ -36,15 +36,15 @@ class Array[T] (ITERABLE):
         self._data[index] = value
 
     def push(self, value: T) -> NoneC:
-        self.ensure_capacity(self._size + 1)
-        self._data[self._size] = value
-        self._size = self._size + 1
+        self.ensure_capacity(self._len + 1)
+        self._data[self._len] = value
+        self._len = self._len + 1
 
     def pop(self) -> OrC(NoneC, T):
-        if self._size == 0: return None
-        self._size = self._size - 1
-        let result = self._data[self._size]
-        self._data[self._size] = None
+        if self._len == 0: return None
+        self._len = self._len - 1
+        let result = self._data[self._len]
+        self._data[self._len] = None
         result
 
     def push_back(self, value): self.push(value)
@@ -52,43 +52,43 @@ class Array[T] (ITERABLE):
     def pop_back(self): self.pop()
 
     def push_front(self, value: T) -> NoneC:
-        let size = self._size
-        self.ensure_capacity(size + 1)
-        for rev_i in range(size):
-            let i = size - rev_i
+        let len = self._len
+        self.ensure_capacity(len + 1)
+        for rev_i in range(len):
+            let i = len - rev_i
             self._data[i] = self._data[i - 1]
         self._data[0] = value
-        self._size    = size + 1
+        self._len     = len + 1
 
     def pop_front(self) -> OrC(NoneC, T):
-        let size = self._size - 1
-        if size < 0: return None
+        let len = self._len - 1
+        if len < 0: return None
         let result = self._data[0]
-        for i in range(size):
+        for i in range(len):
             self._data[i] = self._data[i + 1]
-        self._data[size] = None
-        self._size       = size
+        self._data[len] = None
+        self._len       = len
         result
 
     def clear(self) -> NoneC:
-        self._size = 0
+        self._len = 0
 
     def shrink_to_fit(self) -> NoneC:
-        if self._data.len() > self._size:
-            self._data = [ self._data[i] for i in self._size ]
+        if self._data.len() > self._len:
+            self._data = [ self._data[i] for i in self._len ]
 
     def clone(self) -> Array?:
-        let result = Array(T, self._size)
-        for i in self._size:
+        let result = Array(T, self._len)
+        for i in self._len:
             result.push(self.get(i))
         result
 
     def to_vec(self) -> vec?:
-        [ self._data[i] for i in self._size ]
+        [ self._data[i] for i in self._len ]
 
     def equals_with?(self, other, pred?) -> bool?:
-        if self._size != other.len(): return False
-        for i in self._size:
+        if self._len != other.len(): return False
+        for i in self._len:
             if not pred?(self.get(i), other.get(i)):
                 return False
         return True

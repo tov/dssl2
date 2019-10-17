@@ -48,7 +48,7 @@
          "provide.rkt"
          "stxparams.rkt"
          "singletons.rkt"
-         "struct.rkt"
+         "run-time/struct.rkt"
          (prefix-in p: "prims.rkt")
          (only-in syntax/parse/define
                   define-simple-macro
@@ -374,8 +374,7 @@
     #:context 'struct
     [(_ (name:id internal-name:id) . fields:unique-identifiers)
      #`(begin
-         (struct internal-name struct-base (fields.var ...)
-           #:mutable
+         (struct internal-name struct-base ()
            #:transparent)
          (dssl-provide #,(struct-predicate-name #'name))
          (define (#,(struct-predicate-name #'name) value)
@@ -395,7 +394,8 @@
          (with-syntax ([s:cons (format-id #f "s:~a" #'name)])
            (loop
             #'rest
-            (cons #'(dssl-struct/early (name s:cons) var ...)
+            (cons (expand-dssl-struct/early
+                    #'name #'s:cons (struct-predicate-name #'name))
                   early)
             (cons #'(dssl-struct/late (name s:cons) (var ctc) ...)
                   late)))]
@@ -493,6 +493,7 @@
                  0 name-length 0.5 0.5)))]))
 
 (define (get-field-info/or-else #:srclocs [srclocs '()] struct field)
+  0 #;; TODO
   (or (get-field-info struct field)
       (runtime-error #:srclocs srclocs
                      "struct %p does not have field %s"

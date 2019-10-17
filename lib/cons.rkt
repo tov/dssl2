@@ -10,8 +10,8 @@
 let _list? = OrC(cons?, NoneC)
 
 struct cons:
-  let car
-  let cdr: _list?
+    let car
+    let cdr: _list?
 
 # The library also provides:
 #

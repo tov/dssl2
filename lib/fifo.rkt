@@ -2,7 +2,7 @@
 
 import dll
 
-def MaybeC(X): OrC(False, X)
+def _MaybeC(X): OrC(X, NoneC)
 
 class Fifo[X]:
     let repr_
@@ -19,12 +19,12 @@ class Fifo[X]:
     def size(self) -> nat?:
         self.repr_.size()
 
-    def peek(self) -> MaybeC(X):
+    def peek(self) -> _MaybeC(X):
         self.repr_.front()
 
     def enqueue(self, value: X) -> NoneC:
         self.repr_.push_back(value)
 
-    def dequeue(self) -> MaybeC(X):
+    def dequeue(self) -> _MaybeC(X):
         self.repr_.pop_front()
 

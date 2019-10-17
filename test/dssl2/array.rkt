@@ -5,14 +5,14 @@ import array
 let a = array()
 
 assert a.empty?()
-assert_eq a.size(), 0
+assert_eq a.len(), 0
 
 a.push(2)
-assert_eq a.size(), 1
+assert_eq a.len(), 1
 a.push(3)
-assert_eq a.size(), 2
+assert_eq a.len(), 2
 a.push(4)
-assert_eq a.size(), 3
+assert_eq a.len(), 3
 
 assert_eq a.get(0), 2
 assert_eq a.get(1), 3

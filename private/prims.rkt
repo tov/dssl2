@@ -81,6 +81,8 @@
          (contract-out
            [print (-> str? AnyC ... NoneC)]
            [println (-> AnyC ... NoneC)]
+           [eprint (-> str? AnyC ... NoneC)]
+           [eprintln (-> AnyC ... NoneC)]
            [current_directory (case->
                                (-> str?)
                                (-> str? bool?))]
@@ -298,18 +300,27 @@
 (define (print arg0 . args)
   (apply dssl-printf arg0 args))
 
-(define (println . args)
+(define (eprint arg0 . args)
+  (apply dssl-fprintf (current-error-port) arg0 args))
+
+(define (fprintln port . args)
   (cond
     [(null? args)
-     (newline)]
+     (newline port)]
     [(string? (car args))
-     (apply dssl-printf args)
-     (newline)]
+     (apply dssl-fprintf port args)
+     (newline port)]
     [else
-      (dssl-printf "%p" (car args))
+      (dssl-fprintf port "%p" (car args))
       (for ([arg (in-list (cdr args))])
-        (dssl-printf ", %p" arg))
-      (newline)]))
+        (dssl-fprintf port ", %p" arg))
+      (newline port)]))
+
+(define (eprintln . args)
+  (apply fprintln (current-error-port) args))
+
+(define (println . args)
+  (apply fprintln (current-output-port) args))
 
 (define (sleep sec)
   (r:sleep sec))

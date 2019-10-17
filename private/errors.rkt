@@ -73,7 +73,7 @@
 (define dssl-error error)
 
 (define (runtime-error #:srclocs [srclocs '()] fmt . args)
-  (apply dssl-error #:srclocs srclocs
+  (apply error #:srclocs srclocs
          (string-append "Runtime error: " fmt)
          args))
 

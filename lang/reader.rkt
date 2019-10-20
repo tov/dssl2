@@ -5,8 +5,8 @@ dssl2/language
 #:info info
 
 (require "../private/parser.rkt"
-         "../private/indent.rkt"
-         "../private/syntax-color.rkt")
+         "../private/drracket/indent.rkt"
+         "../private/drracket/syntax-color.rkt")
 (require (only-in racket/class send))
 
 (define (my-read in)

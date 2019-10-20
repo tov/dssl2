@@ -2,7 +2,7 @@
 
 (provide get-syntax-token)
 
-(require "lexer.rkt"
+(require "../lexer.rkt"
          parser-tools/lex
          (prefix-in : parser-tools/lex-sre)
          syntax/parse/define

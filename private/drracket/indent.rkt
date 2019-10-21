@@ -5,149 +5,93 @@
          find-current-indent
          do-indent
          do-dedent)
-(require (only-in racket/class send))
+(require "editor-helpers.rkt"
+         "line-summary.rkt"
+         (only-in racket/class send))
 
-
-; text% natural? -> natural?
-; Returns the current indent of the line.
-(define (find-current-indent text position)
-  (find-current-indent/ls text (find-line-start text position)))
-
-; text% natural? -> natural?
-; Returns the current indent of the line.
-; PRECONDITION: `line-start` is a line start
-(define (find-current-indent/ls text line-start)
-  (- (find-next-non-space text line-start) line-start))
-
-; text% natural? -> natural?
-(define (find-first-non-space text position)
-  (find-next-non-space text (find-line-start text position)))
-
-; text% natural? -> natural?
-; Returns the position of the next non-space character from `start`.
-(define (find-next-non-space text start)
-  (find-forward text (≠char? #\space) start))
-
-; text% natural? -> natural?
-; Finds the position where the current line begins
-(define (find-line-start text position)
-  (or (send text find-newline 'backward position 0)
-      0))
-
-; text% [char? -> boolean?] (natural? integer?) -> natural?
-(define (find-backward text pred
-                       [i (send text get-start-position)]
-                       [limit -1])
-  (cond
-    [(<= i limit)
-     limit]
-    [(pred (send text get-character i))
-     i]
-    [else
-     (find-backward text pred (sub1 i) limit)]))
-
-; text% [char? -> boolean?] (natural? integer?) -> natural?
-(define (find-forward text pred
-                      [i (send text get-end-position)]
-                      [limit (send text last-position)])
-  (cond
-    [(>= i limit)
-     limit]
-    [(pred (send text get-character i))
-     i]
-    [else
-     (find-forward text pred (add1 i) limit)]))
-
-; text% (natural? natural?) -> [listof natural?]
-; Gets the positions of the starts of all lines touched by the two positions.
-(define (find-starts text
-                     [start (send text get-start-position)]
-                     [end   (send text get-end-position)])
-  (let loop ([next end] [acc '()])
-    (if (< next start)
-        acc
-        (let ([line-start (find-line-start text next)])
-          (loop (sub1 line-start) (cons line-start acc))))))
-
-; text% (natural? natural?) -> [listof [list natural? natural?]]
-; Gets the starts and indents of all lines touched by the two positions.
-(define (find-starts-and-indents text
-                                 [start (send text get-start-position)]
-                                 [end   (send text get-end-position)])
-  (for/list ([line-start (find-starts text start end)])
-    (list line-start (find-current-indent/ls text line-start))))
-
-; text% natural? -> boolean?
-; Is the current line only spaces?
-(define (current-line-is-blank? text position)
-  (current-line-is-blank/ls? text (find-line-start text position)))
-
-; text% natural? -> boolean?
-; Is the current line only spaces?
-; PRECONDITION: `line-start` is a line start
-(define (current-line-is-blank/ls? text line-start)
-  (eol-char?
-   (send text get-character (find-next-non-space text line-start))))
 
 (define *indent-size*     4)
 (define *indent-string*   (make-string *indent-size* #\space))
 (define *max-columns*     80)
 (define *max-col-spaces*  (make-string *max-columns* #\space))
 
+
 ; text% ->
 ; indents the selected lines *indent-size*
 (define (do-indent text)
-  (send text begin-edit-sequence)
-  (for ([line-start (in-list (find-starts text))]
-        [line-count (in-naturals)])
-    (define adj-line-start (+ line-start (* *indent-size* line-count)))
-    (send text insert *indent-size* *indent-string* adj-line-start))
-  (send text end-edit-sequence))
+  (define starts (if (get-single-cursor text)
+                     (find-starts text)
+                     (find-non-blank-starts text)))
+  (with-edit-sequence (text)
+    (for ([line-start (in-list starts)]
+          [line-count (in-naturals)])
+      (define adj-line-start (+ line-start (* *indent-size* line-count)))
+      (send text insert *indent-size* *indent-string* adj-line-start))))
 
 ; text% ->
 ; dedents the selected lines *indent-size*, if possible
 (define (do-dedent text)
-  (let* ([line-starts (find-starts text)]
+  (let* ([summaries   (summarize-span text)]
          [dedent-size (for/fold ([dedent-size *indent-size*])
-                                ([line-start (in-list line-starts)])
+                                ([summary     (in-list summaries)])
                         (min dedent-size
-                             (find-current-indent/ls text line-start)))])
+                             (if (line-summary-blank? summary)
+                                 dedent-size
+                                 (line-summary-indent summary))))])
     (when (> dedent-size 0)
-      (send text begin-edit-sequence)
-      (for ([line-start (in-list (find-starts text))]
-            [line-count (in-naturals)])
-        (define adj-line-start (- line-start (* dedent-size line-count)))
-        (send text delete adj-line-start (+ adj-line-start dedent-size)))
-      (send text end-edit-sequence))))
+      (with-edit-sequence (text)
+        (for/fold ([adjustment 0])
+                  ([summary    (in-list summaries)])
+          (define change (min dedent-size (line-summary-indent summary)))
+          (define line-start (- (line-summary-start summary) adjustment))
+          (send text delete line-start (+ line-start change))
+          (+ adjustment change))))))
 
 ; text% ->
 ; Inserts a newline and indents.
 (define (enter-and-indent text)
-  (let* ([text-end   (find-backward text non-whitespace-char?
-                                    (sub1 (send text get-start-position)))]
-         [line-start (find-line-start text text-end)]
-         [new-block? (char=? #\: (send text get-character text-end))]
-         [old-indent (find-current-indent/ls text line-start)]
+  (let* ([cursor     (send text get-start-position)]
+         [summary    (find-non-blank-summary/backward text cursor)]
+         [new-block? (and (block-start? text (line-summary-text-limit summary))
+                          (>= cursor (line-summary-text-limit summary)))]
+         [old-indent (line-summary-indent summary)]
          [new-indent (+ old-indent (if new-block? *indent-size* 0))])
-    (send text begin-edit-sequence)
-    (send text insert #\newline)
-    (unless (zero? new-indent)
-      (send text insert (min new-indent *max-columns*) *max-col-spaces*))
-    (send text end-edit-sequence)))
+    (with-edit-sequence (text)
+      (send text insert #\newline)
+      (unless (zero? new-indent)
+        (send text insert (min new-indent *max-columns*) *max-col-spaces*)))))
+
+; text% nat -> Line-summary
+; Finds the nearest non-blank/non-comment-only line preceding `position`
+; and returns its summary.
+(define (find-non-blank-summary/backward text position)
+  (define summary (summarize-line text (sub1 position)))
+  (if (or (zero? (line-summary-start summary))
+          (line-summary-text-limit summary))
+      summary
+      (find-non-blank-summary/backward text (line-summary-start summary))))
+
+; text% opt-nat -> boolean
+; Does this line start a new block?
+; PRECONDITION: `text-limit` is the first position after the line's
+; non-comment, non-space text.
+(define (block-start? text text-limit)
+  (and text-limit
+       (char=? #\: (send text get-character (sub1 text-limit)))))
+  
 
 ; text% ->
 (define (backspace-and-align text)
-  (let/ec escape
-    (define (bail) (escape (void)))
-    (define position (send text get-start-position))
-    (when (< position (send text get-end-position))
+  (let/ec bail
+    (define position (get-single-cursor text))
+    (unless position
       (send text delete)
-      (bail))
+      (bail (void)))
     (define line-start (find-line-start text position))
     (when (or (= position line-start)
               (> position (find-next-non-space text line-start)))
       (send text delete 'start 'back)
-      (bail))
+      (bail (void)))
     (define change (compute-dedent (- position line-start)))
     (send text delete (- position change) position)))
 
@@ -156,215 +100,3 @@
   (define extra (modulo current-indent *indent-size*))
   (if (zero? extra) *indent-size* extra))
 
-; char? -> boolean?
-(define (non-whitespace-char? c)
-  (not (whitespace-char? c)))
-
-; char? -> boolean?
-(define (whitespace-char? c)
-  (or (char=? c #\newline) (char=? c #\space)))
-
-; char? -> boolean?
-(define (eol-char? c)
-  (or (char=? c #\newline) (char=? c #\nul)))
-
-; char? -> [char? -> boolean?]
-(define ((=char? c) d)
-  (char=? c d))
-
-; char? -> [char? -> boolean?]
-(define ((≠char? c) d)
-  (not (char=? c d)))
-
-(module+ test
-  (require racket/gui
-           rackunit
-           syntax/parse/define
-           (for-syntax racket/base))
-
-  (define-simple-macro (table (same:expr ...+) [diff:expr ...] ...)
-    (begin (same ... diff ...) ...))
-
-  (define (text-check/proc actual-proc contents expected)
-    (define text (new text%))
-    (send text insert contents)
-    (define actual (actual-proc text))
-    (unless (equal? actual expected)
-      (fail-check
-       (format "got ~s where ~s expected" actual expected))))
-  
-  (define-simple-macro
-    (define-text%-check (check:id text:id args:id ...) actual-e:expr)
-    (define-check (check text args ... expected)
-      (text-check/proc (λ (text) actual-e) text expected)))
-
-  (define-text%-check (check-find-forward text c start)
-    (find-forward text (=char? c) start (send text last-position)))
-
-  (table (check-find-forward "abcdeabcde")
-         [#\a 0  0]
-         [#\b 0  1]
-         [#\e 0  4]
-         [#\f 0 10]
-         [#\a 1  5]
-         [#\c 2  2]
-         [#\c 3  7]
-         [#\c 7  7]
-         [#\c 8 10])
-
-  (define-text%-check (check-find-backward text c start)
-    (find-backward text (=char? c) start))
-
-  (table (check-find-backward "abcdeabcde")
-         [#\e 9  9]
-         [#\a 9  5]
-         [#\b 6  6]
-         [#\b 5  1]
-         [#\b 0 -1]
-         [#\x 5 -1])
-
-  (define-text%-check (check-find-beginning-of-line text start)
-    (find-line-start text start))
-
-  (table (check-find-beginning-of-line "abcde\n")
-         [0 0]
-         [1 0]
-         [2 0]
-         [3 0]
-         [4 0]
-         [5 0]
-         [6 6])
-  (table (check-find-beginning-of-line "abcde\nabcde")
-         [ 0 0]
-         [ 1 0]
-         [ 4 0]
-         [ 5 0]
-         [ 6 6]
-         [ 7 6]
-         [10 6])
-  (table (check-find-beginning-of-line "\nabcde\nabcde")
-         [3 1]
-         [2 1]
-         [1 1]
-         [0 0])
-
-  (define-text%-check (check-find-current-indent text start)
-    (find-current-indent text start))
-
-  (table (check-find-current-indent "XX\n  YYY\n    ZZZZ")
-         [ 0 0]
-         [ 1 0]
-         [ 2 0]
-         [ 3 2]
-         [ 4 2]
-         [ 5 2]
-         [ 6 2]
-         [ 7 2]
-         [ 8 2]
-         [ 9 4]
-         [10 4]
-         [11 4]
-         [12 4]
-         [13 4]
-         [14 4]
-         [15 4]
-         [16 4])
-  (table (check-find-current-indent "\n   \n  ")
-         [0 0]
-         [1 3]
-         [2 3]
-         [3 3]
-         [4 3]
-         [5 2]
-         [6 2]
-         [7 2])
-
-  (define-text%-check (check-find-starts text start end)
-    (find-starts text start end))
-
-  (define (line n [indent 0])
-    (~a (make-string indent #\space)
-        (make-string (- n indent 1) #\o)
-        #\newline))
-  
-  (table (check-find-starts (~a (line 2) (line 4) (line 7) (line 1) (line 6 4)))
-         [0 0 '(0)] [0 1 '(0)] [0 2 '(0 2)] [0 3 '(0 2)] [0 5 '(0 2)] [0 6 '(0 2 6)] [0 12 '(0 2 6)] [0 13 '(0 2 6 13)]
-         [1 1 '(0)] [1 2 '(0 2)] [1 3 '(0 2)] [1 5 '(0 2)] [1 6 '(0 2 6)] [1 12 '(0 2 6)] [1 13 '(0 2 6 13)]
-         [2 2 '(2)] [2 3 '(2)] [2 5 '(2)] [2 6 '(2 6)] [2 12 '(2 6)] [2 13 '(2 6 13)] [2 14 '(2 6 13 14)] [2 15 '(2 6 13 14)]
-         [3 3 '(2)] [3 5 '(2)] [3 6 '(2 6)] [3 12 '(2 6)] [3 13 '(2 6 13)] [3 14 '(2 6 13 14)] [3 15 '(2 6 13 14)]
-         [6 6 '(6)] [6 12 '(6)] [6 13 '(6 13)] [6 14 '(6 13 14)] [6 15 '(6 13 14)] [6 16 '(6 13 14)] [6 17 '(6 13 14)]
-         [13 13 '(13)] [13 14 '(13 14)] [13 15 '(13 14)] [13 16 '(13 14)] [13 17 '(13 14)] [13 20 '(13 14 20)])
-
-  (define-text%-check (check-find-starts-and-indents text)
-    (find-starts-and-indents text 0 (send text last-position)))
-
-  (check-find-starts-and-indents "abc\ndef\nghi"
-                                 '(( 0 0)
-                                   ( 4 0)
-                                   ( 8 0)))
-  (check-find-starts-and-indents "abc\ndef\nghi\n"
-                                 '(( 0 0)
-                                   ( 4 0)
-                                   ( 8 0)
-                                   (12 0)))
-  (check-find-starts-and-indents "abc\n    def\n  ghi"
-                                 '(( 0 0)
-                                   ( 4 4)
-                                   (12 2)))
-  (check-find-starts-and-indents "  abc\ndef"
-                                 '(( 0 2)
-                                   ( 6 0)))
-  (check-find-starts-and-indents "a\n    "
-                                 '(( 0 0)
-                                   ( 2 4)))
-  (check-find-starts-and-indents "a\n    \nb"
-                                 '(( 0 0)
-                                   ( 2 4)
-                                   ( 7 0)))
-  (check-find-starts-and-indents "a\n    \n b"
-                                 '(( 0 0)
-                                   ( 2 4)
-                                   ( 7 1)))
-  (check-find-starts-and-indents "a\n    \n b\n"
-                                 '(( 0 0)
-                                   ( 2 4)
-                                   ( 7 1)
-                                   (10 0)))
-
-  (define-text%-check (check-current-line-is-blank? text pos)
-    (current-line-is-blank? text pos))
-
-  (table (check-current-line-is-blank? "ab\n  c\n  \nd  ")
-         [ 0 #false]
-         [ 1 #false]
-         [ 2 #false]
-         [ 3 #false]
-         [ 4 #false]
-         [ 5 #false]
-         [ 6 #false]
-         [ 7 #true]
-         [ 8 #true]
-         [ 9 #true]
-         [10 #false]
-         [11 #false]
-         [12 #false]
-         [13 #false])
-  (table (check-current-line-is-blank? "a\n  \n\n\nb\n  e  \n")
-         [ 0 #false]
-         [ 1 #false]
-         [ 2 #true]
-         [ 3 #true]
-         [ 4 #true]
-         [ 5 #true]
-         [ 6 #true]
-         [ 7 #false]
-         [ 8 #false]
-         [ 9 #false]
-         [10 #false]
-         [11 #false]
-         [12 #false]
-         [13 #false]
-         [14 #false])
-               
-                           
-  )

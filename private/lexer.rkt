@@ -60,7 +60,7 @@
    OP0  ; or
    OP1  ; and
    OP2  ; not
-   OP3  ; == != ≠ >= ≥ > (<= ≤ < is "is not")
+   OP3  ; == != ≠ <= ≤ >= ≥ > (< is "is not")
    OP4  ; (|)
    OP5  ; ^
    OP6  ; &
@@ -250,9 +250,9 @@
       ["time"                   (token-TIME)]
       ["or"                     (token-OP0 (string->symbol lexeme))]
       ["and"                    (token-OP1 (string->symbol lexeme))]
-      [(:or "==" #\> ">=" #\≥ "!=" #\≠)
+      [(:or "==" "<=" #\≤ #\> ">=" #\≥ "!=" #\≠)
                                 (token-OP3 (string->symbol lexeme))]
-      [(:or #\< "<=" #\≤)       (token-OP-LESS (string->symbol lexeme))]
+      [#\<                      (token-OP-LESS (string->symbol lexeme))]
       [#\|                      (token-OP4 (string->symbol lexeme))]
       [#\^                      (token-OP5 (string->symbol lexeme))]
       [#\&                      (token-OP6 (string->symbol lexeme))]

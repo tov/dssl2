@@ -32,20 +32,15 @@
 ; dedents the selected lines *indent-size*, if possible
 (define (do-dedent text)
   (let* ([summaries   (summarize-span text)]
-         [dedent-size (for/fold ([dedent-size *indent-size*])
-                                ([summary     (in-list summaries)])
-                        (min dedent-size
-                             (if (line-summary-blank? summary)
-                                 dedent-size
-                                 (line-summary-indent summary))))])
+         [dedent-size (min *indent-size* (find-span-indent summaries))])
     (when (> dedent-size 0)
       (with-edit-sequence (text)
-        (for/fold ([adjustment 0])
-                  ([summary    (in-list summaries)])
+        (for/fold ([adjust   0])
+                  ([summary  (in-list summaries)])
           (define change (min dedent-size (line-summary-indent summary)))
-          (define line-start (- (line-summary-start summary) adjustment))
+          (define line-start (- (line-summary-start summary) adjust))
           (send text delete line-start (+ line-start change))
-          (+ adjustment change))))))
+          (+ adjust change))))))
 
 ; text% ->
 ; Inserts a newline and indents.

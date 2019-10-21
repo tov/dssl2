@@ -1,15 +1,19 @@
 #lang racket/base
 
 (provide (struct-out line-summary)
+         find-span-indent
          line-summary-indent
          line-summary-blank?
          summarize-span
          summarize-line
-         summarize-line/ls)
+         summarize-line/ls
+         classify-span
+         classify-line)
 
 (require "editor-helpers.rkt"
          (only-in racket/class send))
 
+; A Line-class is (or/c 'code 'comment 'hash 'blank)
 
 ; An opt-nat is (or/c nat #f]
 
@@ -26,6 +30,15 @@
   #:transparent)
 
 
+; [listof Line-summary] -> nat
+; Finds the minimum indent of the non-blank lines.
+(define (find-span-indent summaries)
+  (for/fold ([acc      80])
+            ([summary  (in-list summaries)])
+    (if (line-summary-blank? summary)
+        acc
+        (min acc (line-summary-indent summary)))))
+
 ; Line-summary -> nat
 ; Gets the summarized line's indent.
 (define (line-summary-indent summary)
@@ -41,6 +54,33 @@
 (define (line-summary-blank? summary)
   (and (not (line-summary-text summary))
        (not (line-summary-hash summary))))
+
+; Line-summary -> Line-class
+(define (classify-line summary)
+  (cond
+    [(line-summary-text summary) 'code]
+    [(line-summary-comm summary) 'comment]
+    [(line-summary-hash summary) 'hash]
+    [else                        'blank]))
+
+; [listof Line-summary] -> Line-class
+(define (classify-span summaries)
+  (for/fold ([acc     'blank])
+            ([summary (in-list summaries)])
+    (join-type acc (classify-line summary))))
+
+; Line-class Line-class -> Line-class
+(define (join-type a b)
+  (cond
+    [(or (eq? a 'code)    (eq? b 'code))
+     'code]
+    [(or (eq? a 'comment) (eq? b 'comment))
+     'comment]
+    [(or (eq? a 'hash)    (eq? b 'hash))
+     'hash]
+    [else
+     'blank]))
+
 
 
 ; summarize-span : text% (nat nat) -> [listof Line-summary]

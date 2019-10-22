@@ -19,35 +19,25 @@
          (only-in racket/string
                   string-split))
 
-(define grader-read-directories
-  (make-parameter '("/Applications/Racket")))
+(define grader-read-directories (make-parameter '()))
 (define grader-time-limit (make-parameter 30))
 (define grader-memory-limit (make-parameter 256))
 
-(define (eprint/boxed msg
-                      #:char [char #\*]
-                      #:thickness [thickness 3]
-                      #:surround? [surround? #t])
-  (define lines    (string-split msg "\n" #:trim? #f))
-  (define width    (foldl max 0 (map string-length lines)))
-  (define chars    (make-string thickness char))
-  (define heading  (make-string (+ width 2 (* 2 thickness)) char))
-  (when surround? (eprintf "~a\n" heading))
-  (for ([line lines])
-    (eprintf "~a ~a ~a\n"
-             chars
-             (~a line #:min-width width #:align 'left)
-             chars))
-  (when surround? (eprintf "~a\n" heading)))
+(define (eprint/hanging head msg [char #\*])
+  (define rule (make-string 80 char))
+  (eprintf "~a\n~a ~a\n" rule char head)
+  (for ([line (string-split msg "\n" #:trim? #f)])
+    (eprintf "~a   ~a\n" char line))
+  (eprintf "~a\n" rule))
 
 (define (grade-file/values subject)
   (define (test-error . args)
     (eprintf "\n")
-    (eprint/boxed (apply ~a "ERROR WHILE TESTING\n  " args))
+    (eprint/hanging "ERROR WHILE TESTING:" (apply ~a args))
     (eprintf "\n")
     (values 0 0))
   (define (handle-other-fail exn)
-    (test-error "~s" (exn-message exn)))
+    (test-error (exn-message exn)))
   (define (handle-resource-fail exn)
     (case (exn:fail:resource-resource exn)
       [(memory)
@@ -77,12 +67,13 @@
                    ; Redirecting error to output seems to prevent messages
                    ; from being reordered.
                    [sandbox-error-output current-output-port])
-      ((make-evaluator 'racket/base
-                       `(require (file ,(~a subject))
-                                 (submod (file ,(~a subject)) test-info))
-                       #:allow-read (cons
-                                      (current-directory)
-                                      (grader-read-directories)))
+      ((make-evaluator
+         'racket/base
+         `(require (file ,(~a subject))
+                   (submod (file ,(~a subject)) test-info))
+         #:allow-read (cons
+                        (current-directory)
+                        (grader-read-directories)))
        '(values passed-tests total-tests)))))
 
 (define (grade-file subject)

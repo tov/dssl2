@@ -80,6 +80,8 @@
 
 (require (for-syntax racket/base
                      syntax/parse
+                     (only-in racket/exn
+                              exn->string)
                      (only-in racket/format
                               ~a)
                      (only-in racket/sequence
@@ -315,13 +317,31 @@
     (syntax-error stx "import can only appear at top-level"))
   (define filename
     (syntax-parse stx
-      [(_ lib:string) (syntax-e #'lib)]
+      [(_ lib:string)
+       (ensure-readable
+        (syntax-e #'lib)
+        (λ (msg)
+           (format "import: required file does not exist: ~s\n  reason: ~a"
+                   (syntax-e #'lib)
+                   msg)))]
       [(_ lib:id)
-       (path->string
-        (build-path
-         lib-directory
-         (format "~a.rkt" (syntax-e #'lib))))]))
+       (ensure-readable
+         (path->string
+          (build-path
+           lib-directory
+           (format "~a.rkt" (syntax-e #'lib))))
+         (λ (msg)
+            (format "import: library module does not exist: ~a\n  reason: ~a"
+                    (syntax-e #'lib)
+                    msg)))]))
   (datum->syntax stx `(#%require (file ,filename))))
+
+; path-string [string -> string] -> path-string
+(define-for-syntax (ensure-readable filename fmt-msg)
+  (with-handlers ([exn:fail? (compose error fmt-msg exn-message)])
+    (close-input-port (open-input-file filename))
+    filename))
+
 
 ; setf! is like Common Lisp setf, but it just recognizes three forms. We
 ; use this to translate assignments.

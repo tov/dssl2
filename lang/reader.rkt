@@ -26,6 +26,7 @@ dssl2/language
      find-current-indent]
     [(drracket:keystrokes)
      `(["["             ,(λ (text e) (send text insert #\[))]
+       ["c:semicolon"   ,(λ (text e) (do-toggle-comment text))]
        ["d:semicolon"   ,(λ (text e) (do-toggle-comment text))]
        ["tab"           ,(λ (text e) (do-indent text))]
        ["s:tab"         ,(λ (text e) (do-dedent text))]

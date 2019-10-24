@@ -584,9 +584,15 @@
   (syntax-parse stx
     [(_ name:expr body:expr ...)
      #'(let ([lab name])
+         (prepare-for-timing)
          (define-values (_lst cpu real gc)
            (time-apply (λ () (dssl-begin body ...)) '()))
          (printf "~a: cpu: ~a real: ~a gc: ~a\n" lab cpu real gc))]))
+
+(define (prepare-for-timing)
+  (collect-garbage)
+  (collect-garbage)
+  (collect-garbage))
 
 (define/contract (dssl-make-vec a b)
   (-> p:nat? AnyC p:vec?)
@@ -618,6 +624,7 @@
   (cond
     [(= +inf.0 seconds) (thunk)]
     [else
+     (prepare-for-timing)
      (with-handlers ([exn:fail:resource? handle])
        (call-with-deep-time-limit/exceptions seconds thunk))]))
 

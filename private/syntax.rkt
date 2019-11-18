@@ -315,27 +315,25 @@
 (define-syntax (dssl-import stx)
   (unless (memq (syntax-local-context) '(module top-level))
     (syntax-error stx "import can only appear at top-level"))
-  (define filename
+  (define spec
     (syntax-parse stx
       [(_ lib:string)
-       (syntax-e #'lib)]
+       `(file ,#'lib)]
       [(_ lib:id)
+       (define basename (~a (syntax-e #'lib) ".rkt"))
        (ensure-readable
-         (path->string
-          (build-path
-           lib-directory
-           (format "~a.rkt" (syntax-e #'lib))))
+         (build-path lib-directory basename)
          (λ (msg)
             (format "import: library module does not exist: ~a\n  reason: ~a"
                     (syntax-e #'lib)
-                    msg)))]))
-  (datum->syntax stx `(#%require (file ,filename))))
+                    msg)))
+       `(lib ,basename "dssl2/lib")]))
+  (datum->syntax stx `(#%require ,spec)))
 
-; path-string [string -> string] -> path-string
+; path [string -> string] ->
 (define-for-syntax (ensure-readable filename fmt-msg)
   (with-handlers ([exn:fail? (compose error fmt-msg exn-message)])
-    (close-input-port (open-input-file filename))
-    filename))
+    (close-input-port (open-input-file filename))))
 
 
 ; setf! is like Common Lisp setf, but it just recognizes three forms. We

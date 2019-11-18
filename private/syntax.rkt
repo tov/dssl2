@@ -318,12 +318,7 @@
   (define filename
     (syntax-parse stx
       [(_ lib:string)
-       (ensure-readable
-        (syntax-e #'lib)
-        (λ (msg)
-           (format "import: required file does not exist: ~s\n  reason: ~a"
-                   (syntax-e #'lib)
-                   msg)))]
+       (syntax-e #'lib)]
       [(_ lib:id)
        (ensure-readable
          (path->string

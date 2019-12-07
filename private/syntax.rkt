@@ -617,7 +617,6 @@
   (cond
     [(= +inf.0 seconds) (thunk)]
     [else
-     (prepare-for-timing)
      (with-handlers ([exn:fail:resource? handle])
        (call-with-deep-time-limit/exceptions seconds thunk))]))
 

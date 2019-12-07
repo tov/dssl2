@@ -564,14 +564,23 @@
                               "value ‘%p’ is not a struct"
                               #,target)])))])]))
 
+(define current-dssl-test-timeout
+  (make-parameter +inf.0))
+
+(define-simple-macro (with-test-timeout loc time:expr body:expr ...+)
+  (with-timeout loc (or time (current-dssl-test-timeout)) body ...))
+
 (define-syntax (dssl-test stx)
   (syntax-parse stx
-    [(_ name:expr body:expr ...+)
+    [(_ timeout:req-timeout)
+     #'(current-dssl-test-timeout timeout.seconds)]
+    [(_ name:expr timeout:opt-timeout body:expr ...+)
      #`(test-case
         (format "~a (line ~a)" name '#,(syntax-line stx))
-        (inc-total-tests!)
-        (dssl-begin body ...)
-        (inc-passed-tests!))]))
+        (with-test-timeout name timeout.seconds
+          (inc-total-tests!)
+          (dssl-begin body ...)
+          (inc-passed-tests!)))]))
 
 (define-syntax (dssl-time stx)
   (syntax-parse stx
@@ -599,35 +608,11 @@
    [e1   e2]
    [else e3]))
 
-
 (define current-dssl-assertion-timeout
   (make-parameter +inf.0))
 
-(define-simple-macro (with-timeout loc time:expr body:expr ...+)
-  (call-with-timeout (get-srclocs loc) time (λ () body ...)))
-
-(define (call-with-timeout srclocs seconds0 thunk)
-  (define seconds
-    (or seconds0 (current-dssl-assertion-timeout)))
-  (define (handle _)
-    (assertion-error
-     #:srclocs srclocs
-     "out of time\n timeout: %p seconds"
-     seconds))
-  (cond
-    [(= +inf.0 seconds) (thunk)]
-    [else
-     (with-handlers ([exn:fail:resource? handle])
-       (call-with-deep-time-limit/exceptions seconds thunk))]))
-
-(define (call-with-deep-time-limit/exceptions seconds thunk)
-  (define finish (λ () (error "IMPOSSIBLE! Please report this bug.")))
-  (define (handle exn) (set! finish (λ () (raise exn))))
-  (with-deep-time-limit seconds
-    (with-handlers ([(λ (_) #t) handle])
-      (define result (thunk))
-      (set! finish (λ () result))))
-  (finish))
+(define-simple-macro (with-assertion-timeout loc time:expr body:expr ...+)
+  (with-timeout loc (or time (current-dssl-assertion-timeout)) body ...))
 
 (define-syntax-parser dssl-assert
   ; changing the default timeout
@@ -636,7 +621,7 @@
   ; binary operators:
   [(_ (~and e (op:binary-operator e1:expr e2:expr))
       timeout:opt-timeout)
-   #'(with-timeout e timeout.seconds
+   #'(with-assertion-timeout e timeout.seconds
        (define v1 e1)
        (define v2 e2)
        (when (falsy? (op v1 v2))
@@ -645,14 +630,14 @@
   ; unary operators:
   [(_ (~and e (op:unary-operator e1:expr))
       timeout:opt-timeout)
-   #'(with-timeout e timeout.seconds
+   #'(with-assertion-timeout e timeout.seconds
        (define v1 e1)
        (when (falsy? (op v1))
          (assertion-error #:srclocs (get-srclocs e)
                           "%s %p" op.name v1)))]
   ; arbitrary expressions:
   [(_ e:expr timeout:opt-timeout)
-   #'(with-timeout e timeout.seconds
+   #'(with-assertion-timeout e timeout.seconds
        (define v e)
        (when (falsy? v)
          (assertion-error #:srclocs (get-srclocs e)
@@ -674,12 +659,36 @@
 (define-syntax (dssl-assert-error stx)
   (syntax-parse stx
     [(_ code:expr msg:expr timeout:opt-timeout)
-     #`(with-timeout code timeout.seconds
+     #`(with-assertion-timeout code timeout.seconds
          (dssl-assert-error/thunk (get-srclocs code)
                                   (λ () code)
                                   msg))]
     [(_ code:expr timeout:opt-timeout)
      #'(dssl-assert-error code "" . timeout)]))
+
+(define-simple-macro (with-timeout loc time:expr body:expr ...+)
+  (call-with-timeout (get-srclocs loc) time (λ () body ...)))
+
+(define (call-with-timeout srclocs seconds thunk)
+  (define (handle _)
+    (assertion-error
+     #:srclocs srclocs
+     "out of time\n timeout: %p seconds"
+     seconds))
+  (cond
+    [(= +inf.0 seconds) (thunk)]
+    [else
+     (with-handlers ([exn:fail:resource? handle])
+       (call-with-deep-time-limit/exceptions seconds thunk))]))
+
+(define (call-with-deep-time-limit/exceptions seconds thunk)
+  (define finish (λ () (error "IMPOSSIBLE! Please report this bug.")))
+  (define (handle exn) (set! finish (λ () (raise exn))))
+  (with-deep-time-limit seconds
+    (with-handlers ([(λ (_) #t) handle])
+      (define result (thunk))
+      (set! finish (λ () result))))
+  (finish))
 
 (define-syntax (dssl-interface stx)
   (syntax-parse stx

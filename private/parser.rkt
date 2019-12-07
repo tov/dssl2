@@ -138,10 +138,12 @@
         [(INTERFACE <ident> <foralls> <extended-interfaces> COLON
                     <interface-suite>)
          (loc/1 `(interface ,$2 ,@$3 ,$4 ,@$6))]
-        [(TEST <expr> COLON <suite>)
-         (loc/1 `(test ,$2 ,@$4))]
-        [(TEST COLON <suite>)
-         (loc/1 `(test "<anonymous-test>" ,@$3))]
+        [(TEST <timeout>)
+         (loc/1 `(test ,@$2))]
+        [(TEST <expr> <opt-timeout> COLON <suite>)
+         (loc/1 `(test ,$2 ,@$3 ,@$5))]
+        [(TEST <opt-timeout> COLON <suite>)
+         (loc/1 `(test "<anonymous-test>" ,@$2 ,@$4))]
         [(TIME <expr> COLON <suite>)
          (loc/1 `(time ,$2 ,@$4))]
         [(TIME COLON <suite>)

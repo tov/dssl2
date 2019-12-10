@@ -14,6 +14,7 @@
                   sandbox-memory-limit
                   sandbox-output
                   sandbox-error-output
+                  sandbox-make-code-inspector
                   exn:fail:resource?
                   exn:fail:resource-resource)
          (only-in racket/string
@@ -62,6 +63,9 @@
     (parameterize ([current-output-port (current-error-port)]
                    [sandbox-eval-limits (list (grader-time-limit)
                                               (grader-memory-limit))]
+                   [sandbox-make-code-inspector
+                     (let ([inspector (current-code-inspector)])
+                       (λ () inspector))]
                    [sandbox-memory-limit (grader-memory-limit)]
                    [sandbox-output current-output-port]
                    ; Redirecting error to output seems to prevent messages

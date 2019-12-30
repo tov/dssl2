@@ -645,7 +645,7 @@
 (define vec
   (case-lambda
     [() (vector)]
-    [(size) (make-vector size dssl-False)] ; TODO: change after Fall 2019
+    [(size) (make-vector size dssl-None)]
     [(size init) (build-vector size init)]))
 
 (define-unwrapped-class vec-class vec vec?

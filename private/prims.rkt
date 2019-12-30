@@ -503,7 +503,13 @@
    [floor       (λ (self) self)]
    [iterator    (λ (self) (range_iterator 0 self))]
    [ceiling     (λ (self) self)]
-   [sqrt        (λ (self) (real-sqrt self))]))
+   [sqrt        (λ (self) (real-sqrt self))]
+   [sin         (λ (self) (r:sin self))]
+   [cos         (λ (self) (r:cos self))]
+   [tan         (λ (self) (r:tan self))]
+   [asin        (λ (self) (r:asin self))]
+   [acos        (λ (self) (r:acos self))]
+   [atan        (λ (self . other) (apply r:atan self other))]))
 
 (define (real-sqrt n)
   (if (< n 0)
@@ -548,7 +554,13 @@
    [abs         (λ (self) (r:abs self))]
    [floor       (λ (self) (inexact->exact (r:floor self)))]
    [ceiling     (λ (self) (inexact->exact (r:ceiling self)))]
-   [sqrt        (λ (self) (real-sqrt self))]))
+   [sqrt        (λ (self) (real-sqrt self))]
+   [sin         (λ (self) (r:sin self))]
+   [cos         (λ (self) (r:cos self))]
+   [tan         (λ (self) (r:tan self))]
+   [asin        (λ (self) (r:asin self))]
+   [acos        (λ (self) (r:acos self))]
+   [atan        (λ (self . other) (apply r:atan self other))]))
 
 (define proc
   (case-lambda

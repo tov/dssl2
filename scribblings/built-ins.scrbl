@@ -127,6 +127,35 @@ Returns the same integer.
 
 Returns the square root of the receiving integer, as a @racket[float].
 
+@defmethform[int cos]{@proto[float?]}
+
+The cosine function.
+
+@defmethform[int sin]{@proto[float?]}
+
+The sine function.
+
+@defmethform[int tan]{@proto[float?]}
+
+The tangent function.
+
+@defmethform[int acos]{@proto[float?]}
+
+The inverse cosine function.
+
+@defmethform[int asin]{@proto[float?]}
+
+The inverse sine function.
+
+@defmethforms[int atan
+              [@proto[float?]]
+              [@proto[num? float?]]]
+
+The inverse tangent function.
+
+Optionally takes an argument, in which case @code{y.atan(x)} computes the
+angle from the origin to the Cartesian point (@code{x}, @code{y}).
+
 @defclassform[float]
 
 The primitive class for representing approximations of real numbers (as
@@ -176,6 +205,35 @@ That is, it rounds down to the nearest integer.
 @defmethform[float sqrt]{@proto[float?]}
 
 Returns the square root of the receiving float.
+
+@defmethform[float cos]{@proto[float?]}
+
+The cosine function.
+
+@defmethform[float sin]{@proto[float?]}
+
+The sine function.
+
+@defmethform[float tan]{@proto[float?]}
+
+The tangent function.
+
+@defmethform[float acos]{@proto[float?]}
+
+The inverse cosine function.
+
+@defmethform[float asin]{@proto[float?]}
+
+The inverse sine function.
+
+@defmethforms[float atan
+              [@proto[float?]]
+              [@proto[num? float?]]]
+
+The inverse tangent function.
+
+Optionally takes an argument, in which case @code{y.atan(x)} computes the
+angle from the origin to the Cartesian point (@code{x}, @code{y}).
 
 @defclassform[proc]
 

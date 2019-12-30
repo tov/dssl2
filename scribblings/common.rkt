@@ -306,7 +306,7 @@
      (define method-name (class-qualify #'name #'sel))
      #`(*defforms "method"
                   (list (list (id-form #,method-name #:def) chunk0 ...)
-                        (link (id-form #,method-name #:re ) chunk ...)
+                        (list (id-form #,method-name #:re ) chunk ...)
                         ...))]))
 
 (define (*defforms kind forms)

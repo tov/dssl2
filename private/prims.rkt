@@ -503,10 +503,12 @@
    [floor       (λ (self) self)]
    [iterator    (λ (self) (range_iterator 0 self))]
    [ceiling     (λ (self) self)]
-   [sqrt        (λ (self)
-                   (if (< self 0)
-                     (dssl-error "sqrt: cannot handle a negative")
-                     (sqrt self)))]))
+   [sqrt        (λ (self) (real-sqrt self))]))
+
+(define (real-sqrt n)
+  (if (< n 0)
+    (dssl-error "sqrt: cannot handle a negative")
+    (sqrt n)))
 
 (define float
   (case-lambda
@@ -546,7 +548,7 @@
    [abs         (λ (self) (r:abs self))]
    [floor       (λ (self) (inexact->exact (r:floor self)))]
    [ceiling     (λ (self) (inexact->exact (r:ceiling self)))]
-   [sqrt        (λ (self) (sqrt self))]))
+   [sqrt        (λ (self) (real-sqrt self))]))
 
 (define proc
   (case-lambda

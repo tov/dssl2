@@ -51,6 +51,6 @@ class SboxHash64 (HASHER):
     def __print__(self, print):
         print("#<object:SboxHash _start=%p _sbox=...>", self._start)
 
-def SboxHash(_ignored): SboxHash64()
+def SboxHash(): SboxHash64()
 
-def make_sbox_hash(): SboxHash().hash
+def make_sbox_hash(): SboxHash64().hash

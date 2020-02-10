@@ -141,11 +141,15 @@
                       offset
                       (and offset (max 1 (- (file-position port) offset)))))
 
+  (define (lexical-unexpected pos descr culprit)
+    (cond
+      [culprit (lexical-error pos "Unexpected ~a ‘~a’" descr culprit)]
+      [else    (lexical-error pos "Unexpected ~a"      descr)]))
+
   (define (closing closer token pos)
     (cond
       [(number? (first stack))
-       (lexical-error pos "Unexpected closing delimeter ‘~a’"
-                      closer)]
+       (lexical-unexpected pos "closing delimeter" closer)]
       [(eq? (first stack) closer)
        (pop)
        (enq token pos pos)
@@ -304,9 +308,9 @@
        (lexical-error start-pos "Unexpected character ‘~a’ (~a)"
                       lexeme (char->integer (string-ref lexeme 0)))]
       [(special)
-       (lexical-error start-pos "Unexpected special" lexeme)]
+       (lexical-unexpected start-pos "special" lexeme)]
       [(special-comment)
-       (lexical-error start-pos "Unexpected special comment" lexeme)]))
+       (lexical-unexpected start-pos "special comment" lexeme)]))
 
   (port-count-lines! port)
 

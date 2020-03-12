@@ -173,49 +173,51 @@
 (define-syntax (dssl-let stx)
   (syntax-parse stx
     [(_ var:real-id)
-     #'(begin
-         (define real-var unsafe-undefined)
-         (make-set!able real-var)
-         (dssl-provide var)
-         (define-syntax var
-           (make-set!-transformer
-            (λ (stx)
-              (syntax-parse stx #:literals (set!)
-                [(set! _:id e:expr)
-                 #'(set! real-var e)]
-                [_:id
-                 #'(check-not-unsafe-undefined real-var 'var)]
-                [(_:id . args)
-                 (with-syntax ([app (datum->syntax stx '#%app)])
-                   #'(app
-                      (check-not-unsafe-undefined real-var 'var)
-                      . args))])))))]
+     (with-syntax ([real-var (syntax-e #'var)])
+       #'(begin
+           (define real-var unsafe-undefined)
+           (make-set!able real-var)
+           (dssl-provide var)
+           (define-syntax var
+             (make-set!-transformer
+              (λ (stx)
+                (syntax-parse stx #:literals (set!)
+                  [(set! _:id e:expr)
+                   #'(set! real-var e)]
+                  [_:id
+                   #'(check-not-unsafe-undefined real-var 'var)]
+                  [(_:id . args)
+                   (with-syntax ([app (datum->syntax stx '#%app)])
+                     #'(app
+                        (check-not-unsafe-undefined real-var 'var)
+                        . args))]))))))]
     [(_ [var:real-id ctc:expr])
-     #'(begin
-         (define real-var unsafe-undefined)
-         (make-set!able real-var)
-         (dssl-provide var)
-         (define-syntax var
-           (make-set!-transformer
-            (λ (stx)
-              (syntax-parse stx #:literals (set!)
-                [(set! _:id e:expr)
-                 (quasisyntax/loc #'ctc
-                   (set! real-var
-                         #,(quasisyntax/loc #'e
-                             (contract
-                              ctc e
-                              (format "assignment at ~a"
-                                      (srcloc->string (get-srcloc e)))
-                              'var
-                              'var (get-srcloc ctc)))))]
-                [_:id
-                 #'(check-not-unsafe-undefined real-var 'var)]
-                [(_:id . args)
-                 (with-syntax ([app (datum->syntax stx '#%app)])
-                   #'(app
-                      (check-not-unsafe-undefined real-var 'var)
-                      . args))])))))]
+     (with-syntax ([real-var (syntax-e #'var)])
+       #'(begin
+           (define real-var unsafe-undefined)
+           (make-set!able real-var)
+           (dssl-provide var)
+           (define-syntax var
+             (make-set!-transformer
+              (λ (stx)
+                (syntax-parse stx #:literals (set!)
+                  [(set! _:id e:expr)
+                   (quasisyntax/loc #'ctc
+                     (set! real-var
+                           #,(quasisyntax/loc #'e
+                               (contract
+                                ctc e
+                                (format "assignment at ~a"
+                                        (srcloc->string (get-srcloc e)))
+                                'var
+                                'var (get-srcloc ctc)))))]
+                  [_:id
+                   #'(check-not-unsafe-undefined real-var 'var)]
+                  [(_:id . args)
+                   (with-syntax ([app (datum->syntax stx '#%app)])
+                     #'(app
+                        (check-not-unsafe-undefined real-var 'var)
+                        . args))]))))))]
     [(_ var:var rhs:expr)
      #'(begin
          (dssl-provide var.id)

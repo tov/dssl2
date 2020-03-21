@@ -25,7 +25,7 @@ class Array[T] (ITERABLE):
 
     def _check_index(self, index):
         if index >= self._len:
-            error("Array index out of bounds: ~a >= ~a", index, self._len)
+            error("Array index out of bounds: %p >= %p", index, self._len)
 
     def get(self, index: nat?):
         self._check_index(index)

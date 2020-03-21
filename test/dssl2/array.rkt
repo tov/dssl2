@@ -23,3 +23,5 @@ a.set(1, 10)
 assert a.get(0) == 2
 assert a.get(1) == 10
 assert a.get(2) == 4
+
+assert_error array()[0], 'Array index out of bounds: 0 >= 0'

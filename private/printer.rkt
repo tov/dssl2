@@ -18,7 +18,9 @@
                   set-add!)
          (only-in racket/contract/base contract-name)
          (only-in racket/string string-contains?)
-         (only-in racket/math nan?))
+         (only-in racket/math nan?)
+         (only-in racket/class is-a?)
+         (only-in racket/snip snip%))
 
 (define current-printer-state (make-parameter #f))
 
@@ -166,6 +168,7 @@
         [(contract? value)
          (fprintf port "#<contract:~a>" (contract-name value))]
         [(void? value)              (display "None" port)]
+        [(is-a? value snip%)        (display value port)]
         [else                       (display "#<unprintable>" port)]))))
 
 (define (make-print port)

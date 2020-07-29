@@ -51,3 +51,4 @@ Extraneous indentation is an error.
 @include-section["expression-forms.scrbl"]
 @include-section["built-ins.scrbl"]
 @include-section["contracts.scrbl"]
+@include-section["cons.scrbl"]

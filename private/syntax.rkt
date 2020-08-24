@@ -112,7 +112,7 @@
           (define (inc-total!) (set! total-tests (add1 total-tests))))
         (require 'test-info)
         (with-test-counters [inc-passed! inc-total!]
-          (dssl-begin expr ...))
+          #,(expand-dssl-begin #'stx #'(expr ...) #t))
         (print-test-results passed-tests total-tests))]))
 
 (define (print-test-results passed total)
@@ -419,13 +419,22 @@
     (define-values (early late) (loop stx0 '() '()))
     (values (reverse early) (reverse late)))
 
-  (define (expand-dssl-begin stx)
+  (define (expand-dssl-begin orig-stx stx all-defs-ok?)
     (define-values (early late) (split-dssl-definitions stx))
+    (unless all-defs-ok?
+      (syntax-parse late
+        [(_ ... ((~literal dssl-def) _2 ...))
+         (syntax-error
+          orig-stx
+          (~a "body must end with an expression or statement,"
+              "not a definition; are you forgetting something?"))]
+        [else
+         (void)])) ; all clear
     #`(begin #,@early #,@late)))
 
 (define-syntax-parser dssl-begin
-  [(_ . defns)
-   (expand-dssl-begin #'defns)])
+  [(~and stx (_ . defns))
+   (expand-dssl-begin #'stx #'defns #f)])
 
 (define-syntax (dssl-struct stx)
   (syntax-error

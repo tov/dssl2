@@ -45,8 +45,8 @@ struct cons:
 #         Finds the length of a list. O(lst) time and O(1) space.
 #
 #       - app(before: list?, after: list?) -> list?
-#         Appends to lists, functionally. The resulting list will share
-#         structire with `after`. O(before) time and space.
+#         Appends two lists, functionally. The resulting list will share
+#         structure with `after`. O(before) time and space.
 #
 #       - rev(lst: list?) -> list?
 #         Reverses a list, functionally. O(lst) time and space.

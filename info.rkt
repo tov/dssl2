@@ -3,7 +3,7 @@
 (define categories '(devtools))
 (define can-be-loaded-with 'all)
 (define required-core-version "6.10")
-(define version "2.20.4")
+(define version "2.20.5")
 (define deps '("base"
                "gui-lib"
                "rackunit-lib"

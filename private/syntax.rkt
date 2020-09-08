@@ -157,8 +157,8 @@
   (syntax-parse stx
     [(_ (param:var ...) expr:expr ...)
      (quasisyntax/loc stx
-       (with-masked-control
-           (lambda (param.id ...) (dssl-begin expr ...))))]))
+       (lambda (param.id ...)
+         (wrap-procedure-body (dssl-begin expr ...))))]))
 
 (define-simple-macro
   (dssl-def (f:real-id cvs:opt-ctc-vars bs:var&ctc ...)

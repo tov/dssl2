@@ -120,6 +120,12 @@
   (check-parse? "def f(x: y, z): True"
                 (def (f [x y] z) #t))
 
+  ; expressions that contain statements!
+  (check-parse? "let x = if a:\n  0\nelse:\n  let y = 6\n  y + 1\n"
+                (let x (if [a 0]
+                           [else (let y 6) (+ y 1)])))
+
+  ; trailing newlines
   (check-parse? "pass"
                 (pass))
   (check-parse? "pass    "

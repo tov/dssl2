@@ -16,7 +16,6 @@
   ((dssl2-parser src)
    (new-dssl2-lexer src port interactive?)))
 
-
 (define (dssl2-parser src)
   (define (parser-error tok-ok? tok-name tok-value start-pos end-pos)
     (raise-read-error (format "Syntax error: unexpected token ‘~a’"
@@ -114,14 +113,14 @@
          #true])
 
       (<statement>
-        [(<simple-statement>)
+        [(<simple-statements> NEWLINE)
          $1]
         [(<compound-statement>)
          (list $1)])
 
       (<compound-statement>
-        [(IF <expr0> COLON <suite> <elifs> <maybe-else>)
-         (loc/1 `(if [,$2 ,@$4] ,@$5 ,$6))]
+        [(<mix-statement/large>)
+         $1]
         [(WHILE <expr0> COLON <suite>)
          (loc/1 `(while ,$2 ,@$4))]
         [(FOR <ident> IN <expr> COLON <suite>)
@@ -143,11 +142,67 @@
         [(TEST <expr> <opt-timeout> COLON <suite>)
          (loc/1 `(test ,$2 ,@$3 ,@$5))]
         [(TEST <opt-timeout> COLON <suite>)
-         (loc/1 `(test "<anonymous-test>" ,@$2 ,@$4))]
-        [(TIME <expr> COLON <suite>)
-         (loc/1 `(time ,$2 ,@$4))]
-        [(TIME COLON <suite>)
-         (loc/1 `(time "<anonymous-time>" ,@$3))])
+         (loc/1 `(test ,(anonymous-block 'test $1-start-pos) ,@$2 ,@$4))])
+
+      (<simple-statements>
+        [(<simple-statement> <more-simple-statements>)
+         (cons $1 $2)])
+
+      (<more-simple-statements>
+        [()
+         `()]
+        [(SEMICOLON <simple-statement> <more-simple-statements>)
+         (cons $2 $3)])
+
+      (<simple-statement>
+        [(<mix-statement/small>)
+         $1]
+        [(LET <contract-formal>)
+         (loc/1 `(let ,$2))]
+        [(BREAK)
+         (loc/1 `(break))]
+        [(CONTINUE)
+         (loc/1 `(continue))]
+        [(IMPORT <ident>)
+         (loc/1 `(import ,$2))]
+        [(IMPORT STRING-LITERAL)
+         (loc/1 `(import ,$2))]
+        [(RETURN)
+         (loc/1 `(return))]
+        [(ASSERT <timeout>)
+         (loc/1 `(assert ,@$2))]
+        [(ASSERT <expr> <opt-timeout>)
+         (loc/1 `(assert ,$2 ,@$3))]
+        [(ASSERT-EQ <expr> COMMA <expr> <opt-timeout>)
+         (loc/1 `(assert ,(loc/3 `(== ,$2 ,$4)) ,@$5))]
+        [(ASSERT-ERROR <expr> <opt-timeout>)
+         (loc/1 `(assert_error ,$2 ,@$3))]
+        [(ASSERT-ERROR <expr> COMMA STRING-LITERAL <opt-timeout>)
+         (loc/1 `(assert_error ,$2 ,$4 ,@$5))]
+        [(PASS)
+         (loc/1 `(pass))])
+
+      ; These statements are large if they contain large expressions…
+      (<mix-statement/large>
+        [(<large-expression>)
+         $1]
+        [(LET <contract-formal> EQUALS <large-expression>)
+         (loc/1 `(let ,$2 ,$4))]
+        [(RETURN <large-expression>)
+         (loc/1 `(return ,$2))]
+        [(<lvalue> EQUALS <large-expression>)
+         (loc/2 `(= ,$1 ,$3))])
+
+      ; …but small if they contain small expressions.
+      (<mix-statement/small>
+        [(<expr>)
+         $1]
+        [(LET <contract-formal> EQUALS <expr>)
+         (loc/1 `(let ,$2 ,$4))]
+        [(RETURN <expr>)
+         (loc/1 `(return ,$2))]
+        [(<lvalue> EQUALS <expr>)
+         (loc/2 `(= ,$1 ,$3))])
 
       (<elifs>
         [()
@@ -191,7 +246,7 @@
                                    (loc (cons $1 $3))])
 
       (<suite>
-        [(<simple-statement>)
+        [(<simple-statements> NEWLINE)
          $1]
         [(NEWLINE INDENT <statements> DEDENT)
          $3])
@@ -259,54 +314,6 @@
       (<interface-method>
         [(DEF <ident> <foralls> LPAREN <method-formals> RPAREN <result>)
          (loc/1 `(def (,$2 ,@$3 ,@$5) ,@$7))])
-
-      (<simple-statement>
-        [(<single-line-statement> NEWLINE)
-         $1])
-
-      (<single-line-statement>
-        [(<small-statement> <more-small-statements>)
-         (cons $1 $2)])
-
-      (<more-small-statements>
-        [()
-         `()]
-        [(SEMICOLON <small-statement> <more-small-statements>)
-         (cons $2 $3)])
-
-      (<small-statement>
-        [(<expr>)
-         $1]
-        [(LET <contract-formal>)
-         (loc/1 `(let ,$2))]
-        [(LET <contract-formal> EQUALS <expr>)
-         (loc/1 `(let ,$2 ,$4))]
-        [(BREAK)
-         (loc/1 `(break))]
-        [(CONTINUE)
-         (loc/1 `(continue))]
-        [(IMPORT <ident>)
-         (loc/1 `(import ,$2))]
-        [(IMPORT STRING-LITERAL)
-         (loc/1 `(import ,$2))]
-        [(RETURN <expr>)
-         (loc/1 `(return ,$2))]
-        [(RETURN)
-         (loc/1 `(return))]
-        [(<lvalue> EQUALS <expr>)
-         (loc/2 `(= ,$1 ,$3))]
-        [(ASSERT <timeout>)
-         (loc/1 `(assert ,@$2))]
-        [(ASSERT <expr> <opt-timeout>)
-         (loc/1 `(assert ,$2 ,@$3))]
-        [(ASSERT-EQ <expr> COMMA <expr> <opt-timeout>)
-         (loc/1 `(assert ,(loc/3 `(== ,$2 ,$4)) ,@$5))]
-        [(ASSERT-ERROR <expr> <opt-timeout>)
-         (loc/1 `(assert_error ,$2 ,@$3))]
-        [(ASSERT-ERROR <expr> COMMA STRING-LITERAL <opt-timeout>)
-         (loc/1 `(assert_error ,$2 ,$4 ,@$5))]
-        [(PASS)
-         (loc/1 `(pass))])
 
       (<foralls>
         [()
@@ -439,8 +446,22 @@
         [(PLUS)         '+]
         [(MINUS)        '-])
 
+      (<large-expression>
+        [(TIME <expr> COLON <suite>)
+         (loc/1 `(time ,$2 ,@$4))]
+        [(TIME COLON <suite>)
+         (loc/1 `(time ,(anonymous-block 'time $1-start-pos) ,@$3))]
+        [(LAMBDA <formals> COLON <suite>)
+         (loc/1 `(lambda ,$2 ,@$4))]
+        [(IF <expr0> COLON <suite> <elifs> <maybe-else>)
+         (loc/1 `(if [,$2 ,@$4] ,@$5 ,$6))])
+
       (<expr>
-        [(LAMBDA <formals> COLON <single-line-statement>)
+        [(TIME <expr> COLON <simple-statements>)
+         (loc/1 `(time ,$2 ,@$4))]
+        [(TIME COLON <simple-statements>)
+         (loc/1 `(time ,(anonymous-block 'time $1-start-pos) ,@$3))]
+        [(LAMBDA <formals> COLON <simple-statements>)
          (loc/1 `(lambda ,$2 ,@$4))]
         [(<expr0> IF <expr0> ELSE <expr>)
          (loc `(if-e ,$3 ,$1 ,$5))]
@@ -518,3 +539,6 @@
          (loc/2 `(,$2 ,$1 ,$3))]
         [(<atom>)
          $1]))))
+
+(define (anonymous-block kind pos)
+  (format "<~a@~a>" kind (position-line pos)))

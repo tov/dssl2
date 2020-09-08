@@ -591,15 +591,9 @@
   (syntax-parse stx
     [(_ name:expr body:expr ...)
      #'(let ([lab name])
-         (prepare-for-timing)
          (define-values (_lst cpu real gc)
            (time-apply (λ () (dssl-begin body ...)) '()))
          (printf "~a: cpu: ~a real: ~a gc: ~a\n" lab cpu real gc))]))
-
-(define (prepare-for-timing)
-  (collect-garbage)
-  (collect-garbage)
-  (collect-garbage))
 
 (define/contract (dssl-make-vec a b)
   (-> p:nat? AnyC p:vec?)

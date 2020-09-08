@@ -155,21 +155,22 @@
                   (generic-proc-tag value)
                   (generic-base-name value))]
         [(procedure? value)
-         (cond
-           [(contract? value)
-            (define name (format "~a" (contract-name value)))
-            (if (string=? name "???")
-              (fprintf port "#<proc>")
-              (fprintf port "#<proc:~a>" name))]
-           [(object-name value)
-            (fprintf port "#<proc:~a>" (object-name value))]
-           [else
-             (fprintf port "#<proc>")])]
+         (define name (procedure-name value))
+         (if name
+             (fprintf port "#<proc:~a>" name)
+             (fprintf port "#<proc>"))]
         [(contract? value)
          (fprintf port "#<contract:~a>" (contract-name value))]
         [(void? value)              (display "None" port)]
         [(is-a? value snip%)        (display value port)]
         [else                       (display "#<unprintable>" port)]))))
+
+(define (procedure-name value)
+  (cond
+    [(contract? value)
+     (define name (contract-name value))
+     (if (eq? name '???) #f name)]
+    [else (object-name value)]))
 
 (define (make-print port)
   (λ (fmt . args)

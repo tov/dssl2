@@ -7,7 +7,7 @@ import plot
 def _fn_time(fn, n):
     eprint(' %p…', n)
     let cpu = (time: fn(n)).cpu
-    cpu if cpu > 0 else 1e-5
+    return max(cpu, 1e-5)
 
 # _fn_times : FunC[real?, AnyC] VecC[real?] -> VecC[Vec[real?, nat?]]
 # Times `fn` (noisily) applied to each number in `ns`.

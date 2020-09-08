@@ -130,6 +130,9 @@
 (define-syntax-rule (dssl-top-interaction . expr)
   (dssl-begin expr))
 
+(define-syntax-rule (begin-void stmt ...)
+  (begin stmt ... (void)))
+
 ; This is so that the documentation will consider elif a keyword.
 (define-syntax (dssl-elif stx)
   (syntax-error stx "bad use of elif keyword"))
@@ -163,7 +166,7 @@
   #:fail-when (check-duplicate-identifier
                (syntax->list #'(cvs.var ... bs.var ...)))
   "duplicate argument name"
-  (begin
+  (begin-void
     (dssl-provide f)
     (define-square-bracket-proc
       ((f cvs.var ...) [bs.var (ensure-contract 'def bs.ctc)] ...)
@@ -174,7 +177,7 @@
   (syntax-parse stx
     [(_ var:real-id)
      (with-syntax ([real-var (syntax-e #'var)])
-       #'(begin
+       #'(begin-void
            (define real-var unsafe-undefined)
            (make-set!able real-var)
            (dssl-provide var)
@@ -193,7 +196,7 @@
                         . args))]))))))]
     [(_ [var:real-id ctc:expr])
      (with-syntax ([real-var (syntax-e #'var)])
-       #'(begin
+       #'(begin-void
            (define real-var unsafe-undefined)
            (make-set!able real-var)
            (dssl-provide var)
@@ -219,12 +222,12 @@
                         (check-not-unsafe-undefined real-var 'var)
                         . args))]))))))]
     [(_ var:var rhs:expr)
-     #'(begin
+     #'(begin-void
          (dssl-provide var.id)
          (define var.id rhs)
          (make-set!able var.id))]
     [(_ [var:var ctc:expr] rhs:expr)
-     #'(begin
+     #'(begin-void
          (dssl-provide var.id)
          (define/contract var.id
            (ensure-contract 'let ctc)
@@ -446,7 +449,7 @@
                     (generate-temporaries
                      (syntax->list #'(formal-field ...)))])
        (syntax-property
-        #`(begin
+        #`(begin-void
             (define ctc-name (ensure-contract 'struct ctc))
             ...
             (define the-struct-info
@@ -703,15 +706,16 @@
                    method-self:var
                    method-params:var&ctc ...)
                   method-result:opt-return-ctc) ...)
-     #'(define-dssl-interface
-         name
-         (cvs.var ...)
-         ((super.name super.params ...) ...)
-         ([method-name
-           (method-cvs.var ...)
-           (method-params.ctc ...)
-           method-result.result]
-          ...))]))
+     #'(begin-void
+         (define-dssl-interface
+           name
+           (cvs.var ...)
+           ((super.name super.params ...) ...)
+           ([method-name
+             (method-cvs.var ...)
+             (method-params.ctc ...)
+             method-result.result]
+            ...)))]))
 
 (define-syntax (dssl-class stx)
   (syntax-parse stx
@@ -726,18 +730,19 @@
                    method-params:var&ctc ...)
                   method-result:opt-return-ctc
                   method-body:expr ...) ...)
-     #'(define-dssl-class
-         name
-         (cvs.var ...)
-         (interfaces.interface ...)
-         ([field.var field.ctc]
-          ...)
-         ([method-name
-           (method-cvs.var ...)
-           method-self.id
-           ([method-params.var method-params.ctc]
+     #'(begin-void
+         (define-dssl-class
+           name
+           (cvs.var ...)
+           (interfaces.interface ...)
+           ([field.var field.ctc]
             ...)
-           method-result.result
-           (dssl-begin method-body ...)]
-          ...))]))
+           ([method-name
+             (method-cvs.var ...)
+             method-self.id
+             ([method-params.var method-params.ctc]
+              ...)
+             method-result.result
+             (dssl-begin method-body ...)]
+            ...)))]))
 

@@ -60,6 +60,7 @@
                   test-case)
          (only-in racket/contract/base
                   ->
+                  any/c
                   contract
                   rename-contract)
          (only-in racket/contract/parametric
@@ -587,13 +588,22 @@
           (dssl-begin body ...)
           (inc-passed-tests!)))]))
 
+(dssl-begin
+ (dssl-struct timing
+              (dssl-let [label   string?])
+              (dssl-let [cpu     natural?])
+              (dssl-let [real    natural?])
+              (dssl-let [gc      natural?])
+              (dssl-let [result  any/c])))
+
 (define-syntax (dssl-time stx)
   (syntax-parse stx
     [(_ name:expr body:expr ...)
-     #'(let ([lab name])
-         (define-values (_lst cpu real gc)
+     #'(let ()
+         (define label name)
+         (define-values (lst cpu real gc)
            (time-apply (λ () (dssl-begin body ...)) '()))
-         (printf "~a: cpu: ~a real: ~a gc: ~a\n" lab cpu real gc))]))
+         (timing label cpu real gc (car lst)))]))
 
 (define/contract (dssl-make-vec a b)
   (-> p:nat? AnyC p:vec?)

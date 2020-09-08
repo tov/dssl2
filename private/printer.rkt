@@ -76,7 +76,7 @@
          (display command port)
          (loop (cdr commands) params)]))))
 
-; String -> (List-of (Or 'debug 'print String))
+; String -> (List-of (Or 'debug 'print 'string String))
 (define (parse-format-string s)
   (for/list ([chunk (in-list (regexp-match* #rx"[^%]+|%.|%$" s))])
     (cond
@@ -88,7 +88,7 @@
        (dssl-error "dssl-printer: bad format string code ~s" chunk)]
       [else chunk])))
 
-; Dssl2Value OutputPort -> Void
+; Dssl2Value (OutputPort Boolean) -> Void
 (define (dssl-print value0 [port (current-output-port)] [debug? #f])
   (parameterize
     ([current-printer-state (or (current-printer-state)

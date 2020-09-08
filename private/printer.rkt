@@ -61,10 +61,7 @@
       (define command (car commands))
       (cond
         [(eq? command 'string)
-         (define param (car params))
-         (if (or (string? param) (char? param) (symbol? param))
-           (display param port)
-           (dssl-print param port #f))
+         (dssl-display-string (car params) port)
          (loop (cdr commands) (cdr params))]
         [(eq? command 'debug)
          (dssl-print (car params) port #t)
@@ -87,6 +84,15 @@
       [(regexp-match? #rx"^%" chunk)
        (dssl-error "dssl-printer: bad format string code ~s" chunk)]
       [else chunk])))
+
+; Dssl2Value (OutputPort) -> Void
+(define (dssl-display-string value [port (current-output-port)])
+  (cond
+    [(or (string? value) (char? value) (symbol? value))
+     (display value port)]
+    [(procedure? value)
+     (display (or (procedure-name value) "#<proc>") port)]
+    [else (dssl-print value port #f)]))
 
 ; Dssl2Value (OutputPort Boolean) -> Void
 (define (dssl-print value0 [port (current-output-port)] [debug? #f])

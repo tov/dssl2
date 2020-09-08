@@ -19,7 +19,7 @@ class SboxHash64 (HASHER):
 
     def __init__(self):
         self._start   = _random_uint64()
-        self._sbox    = [ _random_uint64() for _ in 256 ]
+        self._sbox    = [ _random_uint64() for _ in range(256) ]
 
     # Maps a character to its randomized hash code.
     def _substitute(self, c: char?) -> uint64?:

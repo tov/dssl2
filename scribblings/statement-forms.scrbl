@@ -206,9 +206,8 @@ def rebalance_left_(key, balance, left0, right):
 Loops over the values of the given @nt[expr], evaluating the
 @nt[block] for each. The @nt[expr] can evaluate to a vector, a string,
 or a natural number. If a vector, then this form iterates over the
-element values (not the indices) of the vector; if a string, this iterates over
-the characters; if a natural number @racket[n]
-then it counts from @racket[0] to @code{n - 1}.
+element values (not the indices) of the vector; if a string, this form
+iterates over its characters.
 
 @dssl2block|{
 for person in people_to_greet:
@@ -222,7 +221,7 @@ characters in a string:
 # make_sbox_hash : -> [str? -> nat?]
 # Returns a new n-bit string hash function.
 def make_sbox_hash(n):
-    let sbox = [ random_bits(n) for _ in 256 ]
+    let sbox = [ random_bits(n) for _ in range(256) ]
     def hash(input_string):
         let result = 0
         for c in input_string:

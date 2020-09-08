@@ -27,8 +27,9 @@
          ; ** range_iterator
          range_iterator range_iterator?
          (contract-out [range (case->
-                                (-> int? int? AnyC)
-                                (-> int? AnyC))])
+                                (-> num? num? num? AnyC)
+                                (-> num? num? AnyC)
+                                (-> num? AnyC))])
          ; ** string
          str str?
          ; ** vector
@@ -350,31 +351,44 @@
 (define-dssl-interface ITERATOR () ((ITERABLE))
   ([try_advance () (AnyC) AnyC]))
 
+(define (range-non-empty? current step limit)
+  (cond
+    [(positive? step) (< current limit)]
+    [(negative? step) (> current limit)]
+    [else             #false]))
+
 (define-dssl-class range_iterator () (ITERATOR)
-  ([_current AnyC] [_limit AnyC])
-  ([__init__ () self ([current AnyC] [limit AnyC]) AnyC
+  ([_cur AnyC] [_step AnyC] [_lim AnyC])
+  ([__init__ () self ([cur AnyC] [step AnyC] [lim AnyC]) AnyC
      (begin
-       (dssl-self _current current)
-       (dssl-self _limit limit))]
+       (dssl-self _cur cur)
+       (dssl-self _step step)
+       (dssl-self _lim lim))]
    [current () self () AnyC
-     (dssl-self _current)]
+     (dssl-self _cur)]
+   [step () self () AnyC
+     (dssl-self _step)]
    [limit () self () AnyC
-     (dssl-self _limit)]
+     (dssl-self _lim)]
+   [empty? () self () AnyC
+     (not (range-non-empty? (dssl-self _cur)
+                            (dssl-self _step)
+                            (dssl-self _lim)))]
    [iterator () self () AnyC
-     (range_iterator (dssl-self _current)
-                    (dssl-self _limit))]
+     (range_iterator (dssl-self _cur) (dssl-self _step) (dssl-self _lim))]
    [try_advance () self ([visit AnyC]) AnyC
-     (and (< (dssl-self _current)
-             (dssl-self _limit))
-          (begin
-            (visit (dssl-self _current))
-            (dssl-self _current (add1 (dssl-self _current)))
-            #true))]))
+     (and
+      (range-non-empty? (dssl-self _cur) (dssl-self _step) (dssl-self _lim))
+      (begin
+        (visit (dssl-self _cur))
+        (dssl-self _cur (+ (dssl-self _cur) (dssl-self _step)))
+        #true))]))
 
 (define range
   (case-lambda
-    [(start limit) (range_iterator start limit)]
-    [(limit)       (range_iterator 0 limit)]))
+    [(start step limit) (range_iterator start step limit)]
+    [(start limit)      (range_iterator start 1    limit)]
+    [(limit)            (range_iterator 0     1    limit)]))
 
 (define (index-ref indexable ix)
   (cond
@@ -501,7 +515,7 @@
    ; public methods
    [abs         (λ (self) (r:abs self))]
    [floor       (λ (self) self)]
-   [iterator    (λ (self) (range_iterator 0 self))]
+   [iterator    (λ (self) (range_iterator 0 1 self))]
    [ceiling     (λ (self) self)]
    [sqrt        (λ (self) (real-sqrt self))]
    [sin         (λ (self) (r:sin self))]

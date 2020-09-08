@@ -393,6 +393,11 @@ is equivalent to
 [ f(x) for x in v ]
 }|
 
+@defclassform[range_iterator]
+
+An iterator over a range of numbers, constructed by
+@racket[range].
+
 @section{Predicates}
 
 @subsection{Basic type predicates}
@@ -446,6 +451,10 @@ Determines whether its argument is an instance of @linkclass[str].
 @defprocform[vec?]{@proto[AnyC bool?]}
 
 Determines whether its argument is an instance of @linkclass[vec].
+
+@defprocform[range_iterator?]{@proto[AnyC bool?]}
+
+Determines whether its argument is an instance of @linkclass[range_iterator].
 
 @subsection{Numeric predicates}
 
@@ -641,6 +650,42 @@ produce some kind of sensible output.
 @defprocform[len]{@proto[o:AnyC nat?]}
 
 Equivalent to @code{o.len()}.
+
+@defprocforms[range
+    @proto[start:num? step:num? limit:num? range_iterator?]
+    @proto[start:num? limit:num? range_iterator?]
+    @proto[limit:num? range_iterator?]
+]
+
+Returns an iterator over the closed-open interval from
+@racket[start] to @racket[stop] in increments of
+@racket[step].
+
+For example, @code|{range(0, 2, 10)}| counts upward from 0 to 10
+by 2s, producing five values:
+
+@dssl2block|{
+assert [ n for n in range(0, 2, 10) ] == [ 0, 2, 4, 6, 8 ]
+}|
+
+Whereas @code|{range(50, -15, 0)}| counts downward from 50 to 0
+by 15s, producing four values:
+
+@dssl2block|{
+assert [ n for n in range(50, -15, 0) ] == [ 50, 35, 20, 5 ]
+}|
+
+If two arguments are given then they are the start and the
+limit, and if only one argument is given then it's the
+limit. In the two- and one-argument forms the step defaults
+to 1. In the one-argument form, the start defaults to 0. For
+example:
+
+@dssl2block|{
+assert [ n for n in range(3, 7) ] == [ 3, 4, 5, 6 ]
+assert [ n for n in range(7, 3) ] == []
+assert [ n for n in range(7) ]    == [ 0, 1, 2, 3, 4, 5, 6 ]
+}|
 
 @defprocform[dir]{@proto[AnyC "VecC[str?]"]}
 

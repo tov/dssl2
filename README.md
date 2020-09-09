@@ -14,7 +14,7 @@ To install via DrRacket, go to *File* > *Install Package…*, paste
     https://docs.racket-lang.org/dssl2/
 
 [build status badge]:
-    https://travis-ci.org/tov/dssl2.svg?branch=master
+    https://travis-ci.org/tov/dssl2.svg?branch=main
 
 [build status page]:
     https://travis-ci.org/tov/dssl2

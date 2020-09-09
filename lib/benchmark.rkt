@@ -3,11 +3,17 @@
 import plot
 
 # _fn_time : FunC[real?, AnyC] real? -> positive?
-# Times `fn(n)`, noisily.
+# _fn_time : FunC[real?, FunC[AnyC]] real? -> positive?
+#
+# Times `fn(n)`, noisily. In the second case, where `fn` returns a procedure,
+# that procedure is applied (to 0 arguments), and that application is timed
+# instead.
 def _fn_time(fn, n):
     eprint(' %p…', n)
-    let cpu = (time: fn(n)).cpu
-    return max(cpu, 1e-5)
+    let res = time: fn(n)
+    if proc?(res.result):
+        res = time: (res.result)()
+    return max(res.cpu, 1e-5)
 
 # _fn_times : FunC[real?, AnyC] VecC[real?] -> VecC[Vec[real?, nat?]]
 # Times `fn` (noisily) applied to each number in `ns`.

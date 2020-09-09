@@ -8,6 +8,8 @@
                "gui-lib"
                "rackunit-lib"
                "parser-tools-lib"
+               "plot"
+               "snip"
                "sandbox-lib"))
 (define build-deps '("scribble-lib" "racket-doc"))
 (define scribblings '(("scribblings/dssl2.scrbl" (multi-page))))

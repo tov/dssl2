@@ -271,7 +271,7 @@ The primitive class for representing textual data.
 The type predicate for @linkclass[str] is @racket[str?].
 
 A string can be indexed with square bracket notation, which returns an
-instance of @linkclass{char}. Strings may be concatenated with the
+instance of @linkclass[char]. Strings may be concatenated with the
 @racket[+] operator. Concatenating a string with a non-string using
 @racket[+] converts the non-string to a string first.
 
@@ -489,7 +489,7 @@ Determines whether its argument is an odd number.
 
 @defprocform[nan?]{@proto[AnyC bool?]}
 
-Determines whether its argument is the special @linkclass{float}
+Determines whether its argument is the special @linkclass[float]
 not-a-number value. This is useful, since @code{nan} is not necessarily
 @racket[==] to other instances of @code{nan}.
 

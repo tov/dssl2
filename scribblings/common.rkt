@@ -239,13 +239,19 @@
                  "Class "
                  (c (symbol->string 'name))))
 
-(define-syntax-rule (linkclass name)
-  (seclink (format "class:~a" 'name)
-           "class " (tt (format "~a" 'name))))
+(define-syntax (linkclass stx)
+  (syntax-parse stx
+    [(_ name:id title:expr ...+)
+     #'(seclink (format "class:~a" 'name) title ...)]
+    [(_ name:id)
+     #'(linkclass name "class " (tt (format "~a" 'name)))]))
 
-(define-syntax-rule (Linkclass name)
-  (seclink (format "class:~a" 'name)
-           "Class " (tt (format "~a" 'name))))
+(define-syntax (Linkclass stx)
+  (syntax-parse stx
+    [(_ name:id title:expr ...+)
+     #'(linkclass name title ...)]
+    [(_ name:id)
+     #'(linkclass name "Class " (tt (format "~a" 'name)))]))
 
 (define-syntax-rule (defconstform name chunk ...)
   (*defforms "constant"

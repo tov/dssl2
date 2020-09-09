@@ -214,6 +214,17 @@ for person in people_to_greet:
     println("Hello, %s!", person)
 }|
 
+To count, iterate over a @linkclass[range_iterator]{@tt{range_iterator}},
+which is most easily constructed using the @racket[range] function.
+For example:
+
+@dssl2block|{
+# Replaces every element of vector `v` with its square.
+def sqr_vec(v):
+    for i in range(len(v)):
+        v[i] = v[i] * v[i]
+}|
+
 In this example hash function producer, the @racket[for] loops over the
 characters in a string:
 

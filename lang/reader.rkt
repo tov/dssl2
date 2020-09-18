@@ -21,7 +21,7 @@ dssl2/language
     [(color-lexer)
      get-syntax-token]
     [(drracket:opt-out-toolbar-buttons)
-     '(debug-tool drracket:syncheck)] ; macro-stepper?
+     '(debug-tool drracket:syncheck macro-stepper)]
     [(drracket:indentation)
      find-current-indent]
     [(drracket:keystrokes)

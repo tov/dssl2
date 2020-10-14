@@ -22,19 +22,19 @@ tree insertion function written using indentation:
 @codeblock|{
 #lang dssl2
 
+struct node:
+    let data
+    let left
+    let right
+
 def insert(t, k):
-    if empty?(t): new_node(k)
-    elif zero?(random(size(t) + 1)):
-        root_insert(t, k)
+    if t is None:
+        t = node(k, None, None)
     elif k < t.key:
         t.left = insert(t.left, k)
-        fix_size(t)
-        t
     elif k > t.key:
         t.right = insert(t.right, k)
-        fix_size(t)
-        t
-    else: t
+    return t
 }|
 
 Each block follows a colon and newline, and is indented 4 spaces more

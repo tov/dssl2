@@ -327,9 +327,13 @@ Returns the length of the receiving string in characters.
 @defclassform[vec]
 
 The primitive vector class, for representing sequence of values of fixed size.
-The type predicate for @linkclass[vec] is @racket[vec?].
 
-A vector can be indexed and assigned with square bracket notation.
+This section documents only the methods of the vector class.
+Vector-specific syntax (@emph{i.e.,} square brackets for indexing and
+construction) is @seclink["indexing"]{documented with the other
+expression syntax}.
+
+The type predicate for @linkclass[vec] is @racket[vec?].
 
 @defprocforms[vec
     @proto[vec?]

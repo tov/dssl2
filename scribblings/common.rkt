@@ -25,8 +25,7 @@
                     (prefix-in racket: racket))
          (for-syntax racket/base
                      "../private/names.rkt"
-                     "util.rkt"
-                     (only-in racket/syntax format-id))
+                     "util.rkt")
          (except-in scribble/manual
                     defform defform*
                     defidform defidform/inline)
@@ -52,12 +51,6 @@
 (begin-for-syntax
   (define current-grammar-qual (make-parameter "nt"))
 
-  (define-simple-macro
-    (with-grammar-qual new-tag:expr body:expr ...+)
-    (parameterize
-      ([current-grammar-qual new-tag])
-      body ...))
-
   (define (format-grammar-tag name)
     (format "~a-~a" (current-grammar-qual) name))
 
@@ -71,38 +64,44 @@
     #`(list "⟨"
             (italic #,elem)
             #,(if sub #`(subscript #,sub) #'"")
-            "⟩")))
+            "⟩"))
 
-(define-syntax (parse-rhs stx)
-  (syntax-parse stx
-    #:literals (~opt ~many ~many1 ~many-comma quote)
-    [(_ (nt:id ...) #f)
-     #'""]
-    [(_ (nt:id ...) name:id)
-     #:when (memq (syntax-e #'name) (syntax->datum #'(nt ...)))
-     (~nonterminal #'name)]
-    [(_ (nt:id ...) name:id)
-     #'(scribble:racket name)]
-    [(_ (nt:id ...) token:str)
-     #'(q token)]
-    [(_ (nt:id ...) (quote token:id))
-     #`(t #,(symbol->string (syntax-e #'token)))]
-    [(_ (nt:id ...) (~opt arg:expr ...))
-     #'(~opt (parse-rhs (nt ...) arg) ...)]
-    [(_ (nt:id ...) (~many arg:expr ...))
-     #'(~many (parse-rhs (nt ...) arg) ...)]
-    [(_ (nt:id ...) (~many1 arg:expr ...))
-     #'(~many1 (parse-rhs (nt ...) arg) ...)]
-    [(_ (nt:id ...) (~many-comma arg:expr ...))
-     #'(~many-comma (parse-rhs (nt ...) arg) ...)]
-    [(_ (nt:id ...) (sub:expr ...))
-     #'(~list (parse-rhs (nt ...) sub) ...)]))
+  (define (expand-rhs nts prod)
+    (define (recur oper args)
+      (cons oper
+            (for/list ([arg (in-syntax args)])
+              (expand-rhs nts arg))))
+    (syntax-parse prod
+      #:literals (~opt ~many ~many1 ~many-comma quote)
+      [#f
+       #'""]
+      [name:id
+        #:when (memq (syntax-e #'name) (syntax->datum nts))
+        (~nonterminal #'name)]
+      [name:id
+        #'(scribble:racket name)]
+      [token:str
+        #'(q token)]
+      [(quote token:id)
+       (with-syntax ([token (symbol->string (syntax-e #'token))])
+         #'(t token))]
+      [(op:~opt . rest:expr)
+       (recur #'op #'rest)]
+      [(op:~many . rest:expr)
+       (recur #'op #'rest)]
+      [(op:~many1 . rest:expr)
+       (recur #'op #'rest)]
+      [(op:~many-comma . rest:expr)
+       (recur #'op #'rest)]
+      [(~and (:expr ...) subs)
+       (recur #'~list #'subs)])))
 
-(define-syntax (grammar stx)
+
+(define-for-syntax (expand-grammar stx)
   (syntax-parse stx
     [(_ qual:str rule ...+)
-     (with-grammar-qual (syntax-e #'qual)
-       #'(grammar rule ...))]
+     (parameterize ([current-grammar-qual (syntax-e #'qual)])
+       (expand-grammar #'(rule ...)))]
     [(_ [non-terminal:id production0:expr production:expr ...]
         ...)
      (define (interpret-nt nt)
@@ -116,7 +115,7 @@
        (set! rows
          (cons #`(list #,(interpret-nt nt)
                        #,(interpret-sym sym)
-                       (parse-rhs (non-terminal ...) #,rhs))
+                       #,(expand-rhs #'(non-terminal ...) rhs))
                rows)))
      (for ([non-terminal (in-syntax #'(non-terminal ...))]
            [productions  (in-syntax #'((production0 production ...) ...))])
@@ -129,6 +128,9 @@
          #:sep (tt ~)
          #:column-properties '(right center left)
          (list #,@(reverse rows)))]))
+
+(define-syntax (grammar stx)
+  (expand-grammar stx))
 
 (define (q x)
   (elem (racketvalfont x)))

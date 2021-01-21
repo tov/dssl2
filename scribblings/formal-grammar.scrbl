@@ -5,9 +5,12 @@
 @title{Formal grammar}
 
 The DSSL2 language has a number of statement and expression forms, which
-are described in more depth below. Here they are summarized in
+are described in more depth below.
+Here they are summarized in
 @hyperlink["https://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_form"]{
     Extended Backus-Naur Form}.
+You can also find a simplified version of this grammar that omits
+contracts in @seclink["simplified-grammar"]{the next section}.
 
 Non-terminal symbols are written in ⟨@emph{italic_with_pointies}⟩, whereas
 terminal symbols are in @term[|colored typewriter|]. Conventions include:
@@ -119,4 +122,75 @@ by a newline, or a compound statement.
 ]
 
 @t{unop}s are @racket[~], @racket[+], @racket[-], and @racket[not].
+
+@section[#:tag "simplified-grammar"]{Simplified grammar}
+
+This section presents a version of the DSSL2 grammar that is simplified
+by omitting contracts:
+
+@grammar["no-ctc-nt"
+  [program   (~many statement)]
+  [statement (simple 'NEWLINE)
+             compound]
+  [expr     'number
+            'string
+            True
+            False
+            None
+            lvalue
+            (expr "if" expr "else" expr)
+            (expr "(" (~many-comma expr) ")")
+            (lambda (~many-comma 'name) ":" simple)
+            (λ (~many-comma 'name) ":" simple)
+            ('struct_name "{" (~many-comma 'name ":" expr) "}")
+            ("[" (~many-comma expr) "]")
+            ("[" expr ";" expr "]")
+            ("[" expr "for" (~opt 'name ",") 'name "in" expr (~opt "if" expr) "]")
+            (expr 'binop expr)
+            ('unop expr)]
+  [simple    (assert expr (~opt "," "time" "<" expr))
+             (assert_error expr (~opt "," expr) (~opt "," "time" "<" expr))
+             break
+             continue
+             (lvalue = expr)
+             expr
+             (import mod_spec)
+             (let 'name (~opt "=" expr))
+             pass
+             (return (~opt expr))
+             (simple ";" simple)]
+  [lvalue    'name
+             (expr "." 'name)
+             (expr "[" expr "]")]
+  [compound  (class 'name (~opt "(" (~many-comma 'interface_name) ")") : class_block)
+             (def 'name "(" (~many-comma 'name ) ")"
+               : block)
+             (if expr ":" block
+                 (~many elif expr ":" block)
+                 (~opt else ":" block))
+             (interface 'name ":" interface_block)
+             (for (~opt 'name ",") 'name "in" expr ":" block)
+             (struct 'name ":" struct_block)
+             (test (~opt expr) ":" block)
+             (time (~opt expr) ":" block)
+             (while expr ":" block)]
+  [block     (simple 'NEWLINE)
+             ('NEWLINE 'INDENT (~many1 statement) 'DEDENT)]
+  [class_block
+             ('NEWLINE 'INDENT (~many field_def) (~many1 meth_proto ":" block) 'DEDENT)]
+  ; [class_fields ]
+  ; [class_methods ]
+  [interface_block
+            pass
+            ('NEWLINE 'INDENT (~many1 meth_proto 'NEWLINE) 'DEDENT)]
+  [struct_block
+            pass
+            ('NEWLINE 'INDENT (~many1 field_def) 'DEDENT)]
+  [meth_proto
+            (def 'name "(" 'name (~many "," 'name) ")")]
+  [field_def
+            (let 'name 'NEWLINE)]
+  [mod_spec 'mod_name
+            'mod_string]
+]
 

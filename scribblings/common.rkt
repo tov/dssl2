@@ -35,6 +35,7 @@
          (prefix-in scribble: scribble/manual)
          syntax/parse/define
          (for-syntax syntax/parse
+                     syntax/parse/define
                      (only-in racket/string string-contains?)
                      (only-in racket/sequence in-syntax)))
 
@@ -48,17 +49,29 @@
 (define (~list . args)
   (intersperse (tt ~) args))
 
-(define-for-syntax (~nonterminal name0 #:def? [def? #f] #:sub [sub #f])
-  (define name   (symbol->string (syntax-e name0)))
-  (define tag    (format "nt:~a" name))
-  (define elem
-    (if def?
-      #`(elemtag #,tag #,name)
-      #`(elemref #,tag #,name #:underline? #f)))
-  #`(list "⟨"
-          (italic #,elem)
-          #,(if sub #`(subscript #,sub) #'"")
-          "⟩"))
+(begin-for-syntax
+  (define current-grammar-qual (make-parameter "nt"))
+
+  (define-simple-macro
+    (with-grammar-qual new-tag:expr body:expr ...+)
+    (parameterize
+      ([current-grammar-qual new-tag])
+      body ...))
+
+  (define (format-grammar-tag name)
+    (format "~a-~a" (current-grammar-qual) name))
+
+  (define (~nonterminal name0 #:def? [def? #f] #:sub [sub #f])
+    (define name   (symbol->string (syntax-e name0)))
+    (define tag    (format-grammar-tag name))
+    (define elem
+      (if def?
+        #`(elemtag #,tag #,name)
+        #`(elemref #,tag #,name #:underline? #f)))
+    #`(list "⟨"
+            (italic #,elem)
+            #,(if sub #`(subscript #,sub) #'"")
+            "⟩")))
 
 (define-syntax (parse-rhs stx)
   (syntax-parse stx
@@ -87,7 +100,11 @@
 
 (define-syntax (grammar stx)
   (syntax-parse stx
-    [(_ [non-terminal:id production0:expr production:expr ...] ...)
+    [(_ qual:str rule ...+)
+     (with-grammar-qual (syntax-e #'qual)
+       #'(grammar rule ...))]
+    [(_ [non-terminal:id production0:expr production:expr ...]
+        ...)
      (define (interpret-nt nt)
        (or (and nt (~nonterminal nt #:def? #t))
            ""))

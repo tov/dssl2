@@ -717,7 +717,7 @@ test 'first_char_hasher works':
 
 Asserts that @nt_[expr]{test} evaluates to a truthy value in less than
 @nt_[expr]{sec} seconds.
-  
+
 @defsmplidform*[assert_error
     @nt_[expr]{fail}
     @list{@assert_error @nt_[expr]{fail}, @nt_[expr]{str}}
@@ -779,6 +779,14 @@ test 'single-chaining hash table':
     assert not h.member?('hel')
     assert h.keys(h) == cons('hello', cons('helo', nil()))
 }|
+
+@defcmpdidform[test #:re]{
+  @nt_[expr]{name}, @k[time] @k[<] @nt_[expr]{sec}: @nt[block]}
+
+Runs the code in @nt[block] as a @emph{timed} test case named
+@nt_[expr]{name} (which is optional). The test fails if it takes longer
+than @nt_[expr]{sec} seconds to run, or if any of the assertions in
+@nt[block] fails.
 
 @defcmpdidform[time]{@nt[expr]: @nt[block]}
 

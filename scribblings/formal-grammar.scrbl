@@ -67,7 +67,7 @@ by a newline, or a compound statement.
              (interface 'name opt_cvars ":" interface_block)
              (for (~opt 'name ",") 'name "in" expr ":" block)
              (struct 'name ":" struct_block)
-             (test (~opt expr) ":" block)
+             (test (~opt expr) opt_timeout ":" block)
              (time (~opt expr) ":" block)
              (while expr ":" block)]
   [block     (simple 'NEWLINE)

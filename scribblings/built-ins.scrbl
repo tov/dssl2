@@ -337,8 +337,8 @@ The type predicate for @linkclass[vec] is @racket[vec?].
 
 @defprocforms[vec
     @proto[vec?]
-    @proto[len:nat?  vec?]
-    @proto[len:nat? "init:FunC[nat?, AnyC]" vec?]
+    @proto[n:nat?  vec?]
+    @proto[n:nat? "init:FunC[nat?, AnyC]" vec?]
 ]
 
 The constructor for @linkclass[vec].
@@ -349,15 +349,15 @@ Given no arguments, returns an empty, zero-length vector.
 }
 
 @item{
-Given one argument, returns a vector of the given size, filled with
+Given one argument, returns a vector of size @racket[n], filled with
 @code{None}.
 }
 
 @item{
 Given two arguments, returns a vector of the given size, with each
 element initialized by applying the given function to its index.
-That is, @code{vec(len, init)} is equivalent to
-@code{[ init(i) for i in len ]}.
+That is, @code{vec(n, init)} is equivalent to
+@code{[ init(i) for i in range(n) ]}.
 }
 ]
 

@@ -75,8 +75,9 @@
          'racket/base
          `(require (file ,(~a subject))
                    (submod (file ,(~a subject)) test-info))
-         #:allow-read (cons
+         #:allow-read (list*
                         (current-directory)
+                        (find-system-path 'pref-dir)  ;; why?
                         (grader-read-directories)))
        '(values passed-tests total-tests)))))
 

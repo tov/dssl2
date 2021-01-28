@@ -57,7 +57,7 @@
      [exn:fail?          handle-other-fail])
     (call-with-input-file subject
       (λ (port)
-        (unless (regexp-match? #px"^#lang dssl2 *\n" port)
+        (unless (regexp-match? #px"^#lang dssl2\\s" port)
           (error "Not a #lang dssl2 file!")))
       #:mode 'text)
     (parameterize ([current-output-port (current-error-port)]

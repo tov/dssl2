@@ -8,7 +8,9 @@
 (require parser-tools/lex
          (prefix-in : parser-tools/lex-sre)
          racket/list
-         syntax/readerr)
+         racket/match
+         syntax/readerr
+         (for-syntax racket/base))
 
 (define-empty-tokens dssl2-empty-tokens
   (EOF
@@ -74,7 +76,9 @@
    STRING-LITERAL))
 
 (define-lex-abbrevs
-  [space       (:or #\space #\uA0 #\return)]
+  [line-break  (:: (:? #\return) #\newline)]
+  [space       (:or #\space #\uA0)]
+  [not-eol     (:- any-char (:or #\return #\newline))]
   [natural     (:+ numeric)]
   [exponent    (:: (:or #\e #\E) (:? #\-) natural)]
   [pointfloat  (:or (:: natural #\. (:* numeric))
@@ -86,11 +90,11 @@
   [octdigit    (char-range #\0 #\7)]
   [octal       (:: (:? #\-) (:or "0o" "0O") (:+ octdigit))]
   [binary      (:: (:? #\-) (:or "0b" "0B") (:+ (:or #\0 #\1)))]
-  [comment     (:: #\# (:* (:- any-char #\newline)))]
-  [sq-str-char (:or (:- any-char (:or #\\ #\' #\newline))
-                    (:: #\\ any-char))]
-  [dq-str-char (:or (:- any-char (:or #\\ #\" #\newline))
-                    (:: #\\ any-char))]
+  [comment     (:: #\# (:* not-eol))]
+  [sq-str-char (:or (:- not-eol (:or #\\ #\'))
+                    (:: #\\ (:or not-eol line-break)))]
+  [dq-str-char (:or (:- not-eol (:or #\\ #\"))
+                    (:: #\\ (:or not-eol line-break)))]
   [lsq-str-contents
                (:- (:* (:or (:- any-char #\\)
                             (:: #\\ any-char)))
@@ -296,10 +300,10 @@
        (return-without-pos (the-lexer port))]
       [comment
        (return-without-pos (the-lexer port))]
-      [(:: #\\ #\newline)
+      [(:: #\\ line-break)
        (return-without-pos (the-lexer port))]
-      [(:: (:* (:: #\newline (:* space) (:? comment)))
-           #\newline (:* space))
+      [(:: (:* (:: line-break (:* space) (:? comment)))
+           line-break (:* space))
        (return-without-pos
          (on-indent (last-spaces lexeme) start-pos end-pos))]
       [#\tab
@@ -327,48 +331,83 @@
 (define (remove-first-and-last n str)
   (substring str n (- (string-length str) n)))
 
+; Expands to a match pattern that matches an octal digit.
+(define-match-expander digit/8
+  (λ (stx)
+     (syntax-case stx ()
+       [(_ pat ...)
+        #'(and (or #\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7)
+               pat
+               ...)])))
+; Expands to a match pattern that matches a hex digit.
+(define-match-expander digit/16
+  (λ (stx)
+     (syntax-case stx ()
+       [(_ pat ...)
+        #'(and (or #\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9
+                   #\A #\B #\C #\D #\E #\F
+                   #\a #\b #\c #\d #\e #\f)
+               pat
+               ...)])))
+
 ; string? -> string?
 ; Interprets the escapes in a string literal.
 (define (interpret-string lit)
-  (define (loop chars)
-    (cond
-      [(empty? chars)    '()]
-      [(eq? #\\ (first chars))
-       (define (the-rest) (loop (rest (rest chars))))
-       (case (second chars)
-         [(#\a)         (cons #\007 (the-rest))]
-         [(#\b)         (cons #\backspace (the-rest))]
-         [(#\f)         (cons #\page (the-rest))]
-         [(#\n)         (cons #\newline (the-rest))]
-         [(#\r)         (cons #\return (the-rest))]
-         [(#\t)         (cons #\tab (the-rest))]
-         [(#\v)         (cons #\vtab (the-rest))]
-         [(#\newline)   (the-rest)]
-         [(#\x)         (cons (hex->char (third chars) (fourth chars))
-                              (loop (list-tail chars 4)))]
-         [(#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7)
-                        (cons
-                          (oct->char (second chars)
-                                     (third chars)
-                                     (fourth chars))
-                          (loop (list-tail chars 4)))]
-         [else          (cons (second chars) (the-rest))])]
-      [else
-        (cons (first chars)
-              (loop (rest chars)))]))
-  (list->string (loop (string->list lit))))
+  (define (unescape chars)
+    (match chars
+      ; C-style escapes
+      [(cons #\a rst)   (values rst #\007)]
+      [(cons #\b rst)   (values rst #\backspace)]
+      [(cons #\f rst)   (values rst #\page)]
+      [(cons #\n rst)   (values rst #\newline)]
+      [(cons #\r rst)   (values rst #\return)]
+      [(cons #\t rst)   (values rst #\tab)]
+      [(cons #\v rst)   (values rst #\vtab)]
+      ; hexadecimal character escapes
+      [(list* #\x (digit/16 c1) (digit/16 c2) rst)
+       (values rst (hex->char c1 c2))]
+      [(list* #\x (digit/16 c1) rst)
+       (values rst (hex->char c1))]
+      ; octal character escapes
+      [(list* (digit/8 c1) (digit/8 c2) (digit/8 c3) rst)
+       (values rst (oct->char c1 c2 c3))]
+      [(list* (digit/8 c1) (digit/8 c2) rst)
+       (values rst (oct->char c1 c2))]
+      [(list* (digit/8 c1) rst)
+       (values rst (oct->char c1))]
+      ; escaped line breaks
+      [(or (list* #\return #\newline rst)
+           (list* #\newline rst))
+       (values rst #f)]
+      ; otherwise
+      [(cons c1 rst)
+       (values rst c1)]))
+  (define (loop chars acc)
+    (match chars
+      ['()
+       (reverse acc)]
+      [(cons #\\ escaped)
+        (define-values (rst c) (unescape escaped))
+        (if (eq? c #false)
+          (loop rst acc)
+          (loop rst (cons c acc)))]
+      [(list* #\return #\newline rst)
+       (loop rst (cons #\newline acc))]
+      [(cons c1 rst)
+       (loop rst (cons c1 acc))]))
+  (list->string (loop (string->list lit) '())))
 
-; char? char? -> char?
+; char? ... -> char?
 ; Converts two hex digits to the represented character.
-(define (hex->char digit1 digit2)
+(define (hex->char . digits)
   (integer->char
-    (read-string (list->string (list #\# #\x digit1 digit2)))))
+    (read-string (list->string (list* #\# #\x digits)))))
 
-; char? char? char? -> char?
-; Converts three octal digits to the represented character.
-(define (oct->char digit1 digit2 digit3)
+; char? ... -> char?
+; Converts octal digits to the represented character.
+(define (oct->char . digits)
   (integer->char
-    (read-string (list->string (list #\# #\o digit1 digit2 digit3)))))
+    (read-string (list->string (list* #\# #\o digits)))))
 
 ; string? -> number?
 ; Interprets a Python non-decimal number.

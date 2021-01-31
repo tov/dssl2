@@ -137,4 +137,54 @@
   (check-parse? "pass\n    "
                 (pass))
   (check-parse? "pass\n    \n"
-                (pass)))
+                (pass))
+
+  ; line continuations
+  (check-parse? "let x =\\\n  y"
+                (let x y))
+  (check-parse? "let x =\\\r\n  y"
+                (let x y))
+  (check-parse? "let x = (\n   y\n)"
+                (let x y))
+
+  ; string literals
+  (check-parse? "'abcde'"
+                "abcde")
+  (check-parse? "\"abcde\""
+                "abcde")
+  (check-parse? "'ab\"cde'"
+                "ab\"cde")
+  (check-parse? "\"ab\\\"cde\""
+                "ab\"cde")
+  (check-parse? "'ab\\'cde'"
+                "ab'cde")
+  (check-parse? "\"ab'cde\""
+                "ab'cde")
+  (check-parse? "\"ab\\'cde\""
+                "ab'cde")
+  (check-parse? "'ab\\\ncde'"
+                "abcde")
+  (check-parse? "'ab\\\r\ncde'"
+                "abcde")
+  (check-parse? "'''ab\ncde'''"
+                "ab\ncde")
+  (check-parse? "'''ab\r\ncde'''"
+                "ab\ncde")
+  (check-parse? "'''ab\\\ncde'''"
+                "abcde")
+  (check-parse? "'''ab\\\r\ncde'''"
+                "abcde")
+  (check-parse? "'\\t\\\\t'"
+                "\t\\t")
+  (check-parse? "'\1010'"
+                "A0")
+  (check-parse? "'\41\041\0041'"
+                "!!\x041")
+  (check-parse? "'\419'"
+                "!9")
+  (check-parse? "'\790'"
+                "\a90")
+  (check-parse? "'\x41'"
+                "A")
+  (check-parse? "'\x4e\x4E\x4g\x4G\x420'"
+                "NN\4g\4GB0"))

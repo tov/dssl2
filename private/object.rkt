@@ -15,6 +15,7 @@
          method-info-name
          method-info-getter
          write-object
+         get-method-getter-&-pred
          get-method-info
          get-method-value/fun
          define-unwrapped-class
@@ -116,6 +117,24 @@
            (define-for-syntax name
              (make-unwrapped-class class-name pred
                ([method.sel visible-method-name] ...)))))]))
+
+(define (get-object-method-infos obj)
+  (and (object-base? obj)
+       (object-info-method-infos (object-base-info obj))))
+
+(define (get-method-getter-&-pred obj sym)
+  (let/ec return
+    (cond
+      [(get-object-method-infos obj)
+       =>
+       (λ (method-infos)
+          (for ([info (in-vector method-infos)])
+            (when (eq? sym (method-info-name info))
+              (return (method-info-getter info)
+                      (λ (other)
+                         (eq? (get-object-method-infos other) method-infos))))))])
+    (values #false #false)))
+
 
 (define (get-method-info obj sym)
   (let/ec return

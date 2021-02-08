@@ -731,6 +731,9 @@
     str-class
     vec-class))
 
+(define-for-syntax (get-prim-methods sel)
+  (hash-ref (syntax-local-eval *method-table*) sel '()))
+
 ;; Primitive class helpers
 
 (define-syntax (int-binrop stx)
@@ -847,71 +850,82 @@
            ...
            [else #f]))]))
 
-(define-syntax (get-method-value stx)
-  (syntax-parse stx #:literals (quote)
-    [(_ receiver:expr (quote sel:id))
-     (define method-table (syntax-local-eval *method-table*))
-     (define candidates (hash-ref method-table (syntax-e #'sel) '()))
-     (syntax-parse candidates
-       [((pred . method) ...)
-        #`(let ([value receiver])
-            (cond
-              [(get-method-value/fun value 'sel)
-               => identity]
-              [(pred value)
-               (method value)]
-              ...
-              [else #f]))])]))
+(define-syntax-parser get-method-value #:literals (quote)
+  [(_ receiver:expr 'sel:id)
+   #'(get-method-value receiver 'sel #false)]
+  [(_ receiver:expr 'sel:id or-else:expr)
+   (with-syntax
+     ([pred/cache (syntax-local-lift-expression #'(λ (o) #false))]
+      [meth/cache (syntax-local-lift-expression #'#false)]
+      [((prim-pred . prim-meth) ...)
+       (get-prim-methods (syntax-e #'sel))])
+     #'(let ([value receiver])
+         (cond
+           [(pred/cache value)
+            (meth/cache value)]
+           [else
+             (define-values (getter pred)
+               (get-method-getter-&-pred value 'sel))
+             (cond
+               [getter
+                 (set! pred/cache pred)
+                 (set! meth/cache getter)
+                 (getter value)]
+               [(prim-pred value)
+                (set! pred/cache prim-pred)
+                (set! meth/cache prim-meth)
+                (prim-meth value)]
+               ...
+               [else or-else])])))])
 
 (define-syntax (get-method-value/or-else stx)
   (syntax-parse stx #:literals (quote)
     [(_ #:srclocs srclocs:expr object:expr (quote method:id))
      #'(let ([value object])
-         (or (get-method-value value 'method)
-             (runtime-error #:srclocs srclocs
-                            "object %p does not have method %s"
-                            object 'method)))]
+         (get-method-value
+           value
+           'method
+           (runtime-error #:srclocs srclocs
+                          "object %p does not have method %s"
+                          object 'method)))]
     [(_ object:expr (quote method:id))
      #'(get-method-value/or-else #:srclocs '() object 'method)]))
 
 (begin-for-syntax
   (define-splicing-syntax-class
     optional-and-then
-    (pattern (~seq #:and-then expr:expr))
-    (pattern (~seq)
-             #:with expr #'identity))
-
+    (pattern (~seq #:and-then op:expr))
+    (pattern (~seq) #:with op #'begin))
   (define-splicing-syntax-class
     optional-or-else
-    (pattern (~seq #:or-else expr:expr))
-    (pattern (~seq)
-             #:with expr #f)))
+    (pattern (~seq #:or-else _:expr))
+    (pattern (~seq))))
 
-(define-syntax (dssl-send stx)
-  (syntax-parse stx #:literals (quote)
-    [(_ obj:id (quote sel:id) arg:expr ...
-        and-then:optional-and-then
-        or-else:optional-or-else)
-     (with-syntax
-       ([or-else-expr
-          (syntax-parse #'or-else
-            [(#:or-else expr:expr) #'expr]
-            [() #'(type-error
-                    'send obj
-                    (r:format "object responding to ~a method" 'sel))])])
-       #'(cond
-           [(get-method-value obj 'sel)
-            =>
-            (λ (method) (and-then.expr (method arg ...)))]
-           [else or-else-expr]))]))
+(define-syntax-parser dssl-send #:literals (quote)
+  [(_ obj:id (quote sel:id) arg:expr ...
+      and-then:optional-and-then
+      or-else:optional-or-else)
+   (define (build or-else-expr)
+     #`(and-then.op
+         ((get-method-value obj 'sel #,or-else-expr) arg ...)))
+   (syntax-parse #'or-else
+     [(#:or-else expr)
+      #`(let/ec escape
+          #,(build #'(escape expr)))]
+     [()
+      (build
+        #'(type-error
+            'send obj
+            (r:format "object responding to method ~a" 'sel)))])])
 
-(define (get-try-advance srclocs obj who)
-  (define iterator
-    (dssl-send obj 'iterator
-               #:or-else
-               (type-error #:srclocs srclocs who obj
-                           "object responding to .iterator()")))
-  (get-method-value/or-else #:srclocs srclocs iterator 'try_advance))
+(define/cases get-try-advance
+  [(srclocs obj who)
+   (define iterator
+     (dssl-send obj 'iterator
+                #:or-else
+                (type-error #:srclocs srclocs who obj
+                            "object responding to .iterator()")))
+   (get-method-value/or-else #:srclocs srclocs iterator 'try_advance)])
 
 ;; Listing the methods of an object.
 

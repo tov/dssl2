@@ -95,6 +95,7 @@
 
 (require "class-system.rkt"
          "contract.rkt"
+         "defines.rkt"
          "errors.rkt"
          "object.rkt"
          "struct.rkt"
@@ -134,10 +135,6 @@
 (require (for-syntax racket/base
                      (only-in racket/syntax syntax-local-eval)
                      syntax/parse))
-
-(define-simple-macro (def-conj name:id pred?:expr ...+)
-  (define (name x)
-    (and (pred? x) ...)))
 
 ;;; Basic type predicates
 

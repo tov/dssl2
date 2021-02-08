@@ -67,28 +67,31 @@
 (define-syntax (define-generic-binop stx)
   (syntax-parse stx #:literals (quote)
     [(_ name:id (quote lop:id) (quote rop:id) msg:str)
-     #'(define (name a b)
-         (cond
-           [(p:dssl-send a 'lop b #:and-then box #:or-else #f)
-            => unbox]
-           [(p:dssl-send b 'rop a #:and-then box #:or-else #f)
-            => unbox]
-           [else
-             (type-error 'name (vector a b)
-                         (format "~a or object responding to ~a method"
-                                 msg 'lop))]))]))
+     #'(define-simple-macro (name a-expr:expr b-expr:expr)
+         (let ([a a-expr]
+               [b b-expr])
+           (cond
+             [(p:dssl-send a 'lop b #:and-then box #:or-else #f)
+              => unbox]
+             [(p:dssl-send b 'rop a #:and-then box #:or-else #f)
+              => unbox]
+             [else
+               (type-error 'name (vector a b)
+                           (format "~a or object responding to ~a method"
+                                   msg 'lop))])))]))
 
 (define-syntax (define-generic-unop stx)
   (syntax-parse stx #:literals (quote)
     [(_ name:id (quote op:id) msg:str)
-     #'(define (name a)
-         (cond
-           [(p:dssl-send a 'op #:and-then box #:or-else #f)
-            => unbox]
-           [else
-             (type-error 'name a
-                         (format "~a or object responding to ~a method"
-                                 msg 'op))]))]))
+     #'(define-simple-macro (name a-expr:expr)
+         (let ([a a-expr])
+           (cond
+             [(p:dssl-send a 'op #:and-then box #:or-else #f)
+              => unbox]
+             [else
+               (type-error 'name a
+                           (format "~a or object responding to ~a method"
+                                   msg 'op))])))]))
 
 (define-syntax (define-generic-un/binop stx)
   (syntax-parse stx #:literals (quote)
@@ -100,10 +103,9 @@
        #'(begin
            (define-generic-unop unop 'op msg1)
            (define-generic-binop binop 'lop 'rop msg2)
-           (define name
-             (case-lambda
-               [(a) (unop a)]
-               [(a b) (binop a b)]))))]))
+           (define-syntax-parser name
+             [(_ a:expr)        #'(unop a)]
+             [(_ a:expr b:expr) #'(binop a b)])))]))
 
 (define-generic-binop %  '__mod__ '__rmod__ "ints")
 (define-generic-binop ** '__pow__ '__rpow__ "nums")
@@ -122,10 +124,10 @@
 (define-generic-binop *  '__mul__ '__rmul__ "nums")
 (define-generic-binop /  '__div__ '__rdiv__ "nums")
 
-(define (== a b)
+(define-simple-macro (== a:expr b:expr)
   (p:dssl-equal? a b))
 
-(define (!= a b)
+(define-simple-macro (!= a:expr b:expr)
   (racket:not (== a b)))
 
 (define (is a b)

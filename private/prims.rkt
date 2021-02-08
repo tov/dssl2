@@ -148,12 +148,12 @@
 
 ;; Comparison functions
 
-(define (cmp a b)
-  (dssl-send a '__cmp__ b
-             #:or-else
-             (flip-order
-               (dssl-send b '__cmp__ a
-                          #:or-else dssl-None))))
+(define/cases cmp
+  [(a b) (dssl-send a '__cmp__ b
+                    #:or-else
+                    (flip-order
+                      (dssl-send b '__cmp__ a
+                                 #:or-else dssl-None)))])
 
 (define (flip-order order)
   (if (int? order)
@@ -176,8 +176,8 @@
 
 ;; length
 
-(define (len x)
-  (dssl-send x 'len))
+(define/cases len
+  [(x) (dssl-send x 'len)])
 
 ;; Numeric predicates
 
@@ -255,15 +255,14 @@
                 (falsy->false high))
     (format-fun 'IntInC low (list high))))
 
-(define apply_contract
-  (case-lambda
-    [(contract value pos neg)
-     (r:contract contract value pos neg)]
-    [(contract value pos)
-     (apply_contract contract value pos "the context")]
-    [(contract value)
-     (apply_contract contract value
-                     "the contracted value")]))
+(define/cases apply_contract
+  [(contract value pos neg)
+   (r:contract contract value pos neg)]
+  [(contract value pos)
+   (apply_contract contract value pos "the context")]
+  [(contract value)
+   (apply_contract contract value
+                   "the contracted value")])
 
 (define (make_contract name first-order? projection)
   (define real-check
@@ -294,10 +293,9 @@
 
 ;; I/O operations
 
-(define current_directory
-  (case-lambda
-    [()    (~a (current-directory))]
-    [(dir) (current-directory dir)]))
+(define/cases current_directory
+  [()    (~a (current-directory))]
+  [(dir) (current-directory dir)])
 
 (define (file_to_string filename)
   (file->string filename #:mode 'binary))
@@ -340,11 +338,10 @@
 ; This is the largest argument that `random` can take.
 (define RAND_MAX 4294967087)
 
-(define random
-  (case-lambda
-    [() (r:random)]
-    [(limit) (r:random limit)]
-    [(low high) (r:random low high)]))
+(define/cases random
+  [() (r:random)]
+  [(limit) (r:random limit)]
+  [(low high) (r:random low high)])
 
 (define (random_bits n)
   (cond
@@ -393,11 +390,10 @@
         (dssl-self _cur (+ (dssl-self _cur) (dssl-self _step)))
         #true))]))
 
-(define range
-  (case-lambda
-    [(start step limit) (range_iterator start step limit)]
-    [(start limit)      (range_iterator start 1    limit)]
-    [(limit)            (range_iterator 0     1    limit)]))
+(define/cases range
+  [(start step limit) (range_iterator start step limit)]
+  [(start limit)      (range_iterator start 1    limit)]
+  [(limit)            (range_iterator 0     1    limit)])
 
 (define (index-ref indexable ix)
   (cond
@@ -434,10 +430,9 @@
             (dssl-self _current (add1 (dssl-self _current)))
             #true))]))
 
-(define bool
-  (case-lambda
-    [() #f]
-    [(x) (truthy? x)]))
+(define/cases bool
+  [() #f]
+  [(x) (truthy? x)])
 
 (define-unwrapped-class bool-class bool bool?
   (; conversions
@@ -455,10 +450,9 @@
    [__xor__     prim:xor]
    [__rxor__    prim:xor]))
 
-(define char
-  (case-lambda
+(define/cases char
     [() (char 0)]
-    [(val) (char/internal 'char val)]))
+    [(val) (char/internal 'char val)])
 
 (define-unwrapped-class char-class char char?
   (; conversions
@@ -475,18 +469,18 @@
     [else
       (type-error who val "int code point or singleton string")]))
 
-(define int
-  (case-lambda
-    [() 0]
-    [(x)
-     (cond
-       [(int? x) x]
-       [(dssl-send x '__int__ #:and-then box #:or-else #f)
-        => unbox]
-       [else
+(define/cases int
+  [() 0]
+  [(x)
+   (cond
+     [(int? x) x]
+     [else
+       (dssl-send
+         x '__int__
+         #:or-else
          (type-error
            'int x
-           "number, string, Boolean, or object responding to __int__")])]))
+           "number, string, Boolean, or object responding to __int__"))])])
 
 (define-unwrapped-class int-class int int?
   (; conversions
@@ -539,18 +533,17 @@
     (dssl-error "sqrt: cannot handle a negative")
     (sqrt n)))
 
-(define float
-  (case-lambda
-    [() 0.0]
-    [(x)
-     (cond
-       [(float? x) x]
-       [(dssl-send x '__float__ #:and-then box #:or-else #f)
-        => unbox]
-       [else
-         (type-error
-           'float x
-           "number, string, Boolean, or object responding to __float__")])]))
+(define/cases float
+  [() 0.0]
+  [(x)
+   (cond
+     [(float? x) x]
+     [(dssl-send x '__float__ #:and-then box #:or-else #f)
+      => unbox]
+     [else
+       (type-error
+         'float x
+         "number, string, Boolean, or object responding to __float__")])])
 
 (define-unwrapped-class float-class float float?
   (; conversions
@@ -585,17 +578,16 @@
    [acos        (λ (self) (r:acos self))]
    [atan        (λ (self . other) (apply r:atan self other))]))
 
-(define proc
-  (case-lambda
-    [()    identity]
-    [(val)
-     (cond
-       [(proc? val) val]
-       [(dssl-send val '__proc__ #:and-then box #:or-else #f)
-        => unbox]
-       [else
-         (type-error 'proc val
-                     "proc or object responding to __proc__ method")])]))
+(define/cases proc
+  [()    identity]
+  [(val)
+   (cond
+     [(proc? val) val]
+     [(dssl-send val '__proc__ #:and-then box #:or-else #f)
+      => unbox]
+     [else
+       (type-error 'proc val
+                   "proc or object responding to __proc__ method")])])
 
 (define-unwrapped-class proc-class proc proc?
   ([compose           (λ (self other)
@@ -604,15 +596,14 @@
    [vec_apply         (λ (self v)
                          (apply self (vector->list v)))]))
 
-(define str
-  (case-lambda
-    [() ""]
-    [(val)
-     (cond
-       [(str? val) val]
-       [else       (dssl-format "%p" val)])]
-    [(len c)
-     (make-string len (char/internal 'str c))]))
+(define/cases str
+  [() ""]
+  [(val)
+   (cond
+     [(str? val) val]
+     [else       (dssl-format "%p" val)])]
+  [(len c)
+   (make-string len (char/internal 'str c))])
 
 (define-unwrapped-class str-class str str?
   (; conversions
@@ -665,11 +656,10 @@
   (bounds-check "str.__index_ref__" ix (string-length self))
   (string-ref self ix))
 
-(define vec
-  (case-lambda
-    [() (vector)]
-    [(size) (make-vector size dssl-None)]
-    [(size init) (build-vector size init)]))
+(define/cases vec
+  [() (vector)]
+  [(size) (make-vector size dssl-None)]
+  [(size init) (build-vector size init)])
 
 (define-unwrapped-class vec-class vec vec?
   ([__index_ref__ (-> nat? AnyC)

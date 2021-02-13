@@ -58,18 +58,13 @@
          FunC
          (contract-out
            [SquareBracketC (-> str? proc? AnyC)])
+         apply_contract
+         make_contract
          (contract-out
            [NotC (-> contract? contract?)]
            [OrC (-> contract? contract? ... contract?)]
            [AndC (-> contract? contract? ... contract?)]
-           [IntInC (-> (OrC int? NoneC) (OrC int? NoneC) contract?)]
-           [apply_contract (case-> (-> contract? AnyC AnyC)
-                                   (-> contract? AnyC str? AnyC)
-                                   (-> contract? AnyC str? str? AnyC))]
-           [make_contract (-> str?
-                              (OrC NoneC (-> AnyC AnyC))
-                              (OrC NoneC (-> (-> str? NoneC) AnyC AnyC))
-                              contract?)])
+           [IntInC (-> (OrC int? NoneC) (OrC int? NoneC) contract?)])
          ; * Randomness operations
          (contract-out
            [random (case->
@@ -123,6 +118,7 @@
                   new-∃/c
                   or/c
                   not/c
+                  blame?
                   raise-blame-error
                   rename-contract)
          (only-in racket/format
@@ -249,36 +245,39 @@
                 (falsy->false high))
     (format-fun 'IntInC low (list high))))
 
-(define apply_contract
-  (case-lambda
-    [(contract value pos neg)
-     (r:contract contract value pos neg)]
-    [(contract value pos)
-     (apply_contract contract value pos "the context")]
-    [(contract value)
-     (apply_contract contract value
-                     "the contracted value")]))
+(define-syntax-parser apply_contract
+  [(_ ctc:expr value:expr pos:expr neg:expr)
+   #'(r:contract ctc value pos neg)]
+  [(_ ctc:expr value:expr pos:expr)
+   #'(apply_contract ctc value pos "the context")]
+  [(_ ctc:expr value:expr)
+   #'(apply_contract ctc value "the contracted value")])
 
-(define (make_contract name first-order? projection)
-  (define real-check
-    (if (truthy? first-order?)
-      first-order?
-      (λ (_v) #t)))
-  (define real-projection
-    (and (truthy? projection)
-         (λ (blame)
-            (λ (value party)
-               (projection
-                 (λ (message)
-                    (raise-blame-error
-                      blame
-                      #:missing-party party
-                      value
-                      message))
-                 value)))))
-  (make-contract #:name name
-                 #:first-order real-check
-                 #:late-neg-projection real-projection))
+(define make_contract
+  (case-lambda
+    [(name first-order?)
+     (flat-named-contract first-order? name)]
+    [(name first-order? projection)
+     (define ((real-projection blame) value party)
+       (define blame!
+         (case-lambda
+           [(party message)
+            (raise-blame-error blame
+                               #:missing-party party
+                               value
+                               message)]
+           [(message)
+            (blame! party message)]))
+       (cond
+         [(not (first-order? value))
+          (blame! "f-o failed")]
+         [(procedure-arity-includes? projection 3)
+          (projection blame! party value)]
+         [else
+           (projection blame! value)]))
+     (make-contract #:name name
+                    #:first-order first-order?
+                    #:late-neg-projection real-projection)]))
 
 ;; I/O operations
 

@@ -7,12 +7,15 @@
 # A _list? is one of:
 # - cons(AnyC, _list?)
 # - None
-let _list? = OrC(cons?, NoneC)
+def _build_list?():
+    def Cons_list?(v): return cons?(v) or v is None
+    return Cons_list?
+
+let _list? = _build_list?()
 
 struct cons:
     let car
     let cdr: _list?
-
 
 class ConsBuilder:
     let head
@@ -29,10 +32,10 @@ class ConsBuilder:
     def snoc(self, x):
         let old_tail = self.tail
         self.tail = cons(x, None)
-        if old_tail is None:
-            self.head = self.tail
-        else:
+        if cons?(old_tail):
             old_tail.cdr = self.tail
+        else:
+            self.head = self.tail
 
     def take(self):
         let result = self.head
@@ -42,78 +45,78 @@ class ConsBuilder:
         
 # Builds the Cons singleton struct.
 def _build_Cons():
-    let Cons_list? = OrC(cons?, NoneC)
-   
-    def Cons_rev_app(before: _list?, acc: _list?) -> _list?:
+    let list? = _list?
+
+    def Cons_rev_app(before: list?, acc: list?) -> list?:
         if cons?(before):
             return Cons_rev_app(before.cdr, cons(before.car, acc))
         else:
             return acc
 
-    def Cons_rev(lst: _list?) -> _list?:
+    def Cons_rev(lst: list?) -> list?:
         return Cons_rev_app(lst, None)
 
-    def Cons_app(before: _list?, after: _list?) -> _list?:
+    def Cons_app(before: list?, after: list?) -> list?:
         if cons?(before):
             return cons(before.car, Cons_app(before.cdr, after))
         else:
             return after
 
-    def Cons_concat(before: _list?, after: _list?) -> _list?:
-        if before is None:
-            return after
-        else:
+    def Cons_concat(before: list?, after: list?) -> list?:
+        if cons?(before):
             let current = before
             while cons?(current.cdr):
                 current = current.cdr
             current.cdr = after
             return before
+        else:
+            return after
 
-    def Cons_len(lst: _list?) -> int?:
+    def Cons_len(lst: list?) -> int?:
         let result = 0
         while cons?(lst):
             lst = lst.cdr
             result = result + 1
         return result
 
-    def Cons_into_vec(lst: _list?, vec: vec?, where: int?) -> NoneC:
+    def Cons_into_vec(lst: list?, vec: vec?, where: int?) -> NoneC:
         while cons?(lst):
             vec[where] = lst.car
             lst = lst.cdr
             where = where + 1
 
-    def Cons_to_vec(lst: _list?) -> vec?:
+    def Cons_to_vec(lst: list?) -> vec?:
         let result = [False; Cons_len(lst)]
         Cons_into_vec(lst, result, 0)
         return result
 
-    def Cons_from_vec(vec: vec?) -> _list?:
+    def Cons_from_vec(vec: vec?) -> list?:
         let builder = ConsBuilder()
         for element in vec:
             builder.snoc(element)
         return builder.take()
 
-    def Cons_foreach(visit: FunC[AnyC, NoneC], lst: _list?) -> NoneC:
+    def Cons_foreach(visit: FunC[AnyC, NoneC], lst: list?) -> NoneC:
         while cons?(lst):
             visit(lst.car)
             lst = lst.cdr
 
-    def Cons_foldr[Y](f: FunC[AnyC, Y, Y], z: Y, lst: _list?) -> Y:
+    def Cons_foldr[Y](f: FunC[AnyC, Y, Y], z: Y, lst: list?) -> Y:
         if cons?(lst):
             return f(lst.car, Cons_foldr(f, z, lst.cdr))
         else:
             return z
 
-    def Cons_foldl[Y](f: FunC[Y, AnyC, Y], z: Y, lst: _list?) -> Y:
+    def Cons_foldl[Y](f: FunC[Y, AnyC, Y], z: Y, lst: list?) -> Y:
         Cons_foreach(λ element: z = f(z, element), lst)
         return z
 
-    def Cons_map(f: FunC[AnyC, AnyC], lst: _list?) -> _list?:
+    def Cons_map(f: FunC[AnyC, AnyC], lst: list?) -> list?:
         let builder = ConsBuilder()
         Cons_foreach(λ element: builder.snoc(f(element)), lst)
         return builder.take()
 
-    def Cons_filter(f: FunC[AnyC, AnyC], lst: _list?) -> _list?:
+    def Cons_filter(f: FunC[AnyC, AnyC], lst: list?) -> list?:
         let builder = ConsBuilder()
         def each(element):
             if f(element):
@@ -121,7 +124,7 @@ def _build_Cons():
         Cons_foreach(each, lst)
         return builder.take()
 
-    def Cons_andmap(f: FunC[AnyC, AnyC], lst: _list?) -> AnyC:
+    def Cons_andmap(f: FunC[AnyC, AnyC], lst: list?) -> AnyC:
         let result = True
         while cons?(lst):
             result = f(lst.car)
@@ -129,7 +132,7 @@ def _build_Cons():
             lst = lst.cdr
         return result
 
-    def Cons_ormap(f: FunC[AnyC, AnyC], lst: _list?) -> AnyC:
+    def Cons_ormap(f: FunC[AnyC, AnyC], lst: list?) -> AnyC:
         let result = False
         while cons?(lst):
             result = f(lst.car)
@@ -139,28 +142,34 @@ def _build_Cons():
 
     def Cons_sort[T](less_than?: FunC[T, T, AnyC],
                      lst: Cons_realListC(T)) \
-                    -> _list?:
+                    -> list?:
         def insert(element, link):
             if cons?(link) and less_than?(link.car, element):
                 return cons(link.car, insert(element, link.cdr))
             else:
                 return cons(element, link)
         def loop(link, acc):
-            if link is None:
-                return acc
-            else:
+            if cons?(link):
                 return loop(link.cdr, insert(link.car, acc))
+            else:
+                return acc
         return loop(lst, None)
 
     def Cons_realListC(CTC: contract?) -> contract?:
+        let name = 'ListC[%s]'.format(CTC)
+        def make(pred?):
+            def list_of_pred?(v):
+                return list?(v) and Cons_andmap(pred?, v)
+            return make_contract(name, list_of_pred?, None)
         if num?(CTC) or bool?(CTC) or str?(CTC) or char?(CTC):
-            return λ lst: Cons_andmap(λ x: x == CTC, lst)
+            return make(λ v: v == CTC)
         elif flat_contract?(CTC) and proc?(CTC):
-            return λ lst: Cons_andmap(CTC, lst)
+            return make(CTC)
         else:
-            def prj_elt(x: CTC): return x
-            def prj(blame!, value): return Cons_map(prj_elt, value)
-            return make_contract('ListC[%p]'.format(CTC), _list?, prj)
+            def prj(blame!, value):
+                def ListElementC(elt: CTC): return elt
+                return Cons_map(ListElementC, value)
+            return make_contract(name, list?, prj)
 
     let Cons_ListC = SquareBracketC('ListC', Cons_realListC)
 
@@ -185,7 +194,7 @@ def _build_Cons():
         let sort
 
     return ConsOperations {
-        list?:    Cons_list?,
+        list?:    list?,
         ListC:    Cons_ListC,
         rev_app:  Cons_rev_app,
         rev:      Cons_rev,

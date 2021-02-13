@@ -261,21 +261,27 @@
 
 (define (make_contract name first-order? projection)
   (define real-check
-    (if (truthy? first-order?)
-      first-order?
-      (λ (_v) #t)))
+    (if (eq? dssl-None first-order?)
+      (λ (_v) #t)
+      first-order?))
   (define real-projection
-    (and (truthy? projection)
-         (λ (blame)
-            (λ (value party)
-               (projection
-                 (λ (message)
-                    (raise-blame-error
-                      blame
-                      #:missing-party party
-                      value
-                      message))
-                 value)))))
+    (cond
+      [(eq? dssl-None projection)
+       #f]
+      [else
+        (λ (blame)
+           (λ (value party)
+              (define (blame! message . argv)
+                (apply raise-blame-error
+                       blame
+                       #:missing-party party
+                       value
+                       message
+                       argv))
+              (if (real-check value)
+                (projection blame! value)
+                (blame! '(given: "~a" expected: "~a")
+                        value name))))]))
   (make-contract #:name name
                  #:first-order real-check
                  #:late-neg-projection real-projection))

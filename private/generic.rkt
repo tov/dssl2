@@ -191,7 +191,6 @@
              #'(define (instantiate-contract opt-formal ...)
                  (-> formal-ctc ... result-ctc)))
          (define (instantiate neg-party opt-formal ...)
-           instantiate
            (instantiate-square-bracket-proc
              'name
              (instantiate-contract opt-formal ...)

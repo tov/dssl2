@@ -15,7 +15,9 @@
          build-square-bracket-contract
          special-square-bracket-contract)
 
-(require "errors.rkt")
+(require "errors.rkt"
+         (only-in "contract.rkt"
+                  AnyC))
 (require (for-syntax syntax/stx
                      "errors.rkt"
                      "util.rkt"))
@@ -26,7 +28,6 @@
                   define/contract)
          (only-in racket/contract/base
                   contract
-                  any/c
                   ->
                   ->i
                   contract-name
@@ -204,7 +205,7 @@
                    name
                    #:generic (opt-formal ...)
                              (instantiate neg-party opt-formal ...)
-                   #:default (let ([opt-formal any/c] ...)
+                   #:default (let ([opt-formal AnyC] ...)
                                (instantiate neg-party opt-formal ...)))))
          (define-syntax name
            (make-set!-transformer
@@ -249,7 +250,7 @@
     [(_ name:id [] formal:expr ... result:expr)
      #'(-> formal ... result)]
     [(_ name:id [opt-formal:id ...+] formal:expr ... result:expr)
-     (define default-actuals (stx-map (λ (_) #'any/c) #'(opt-formal ...)))
+     (define default-actuals (stx-map (λ (_) #'AnyC) #'(opt-formal ...)))
      #'(let ()
          (define first-order?
            (arities->sbp? #,(syntax-length #'(opt-formal ...))
@@ -328,7 +329,7 @@
         "  builder arity: %s")
       builder
       (format "~a" opt-arity)))
-  (define default-arguments (make-list opt-arity any/c))
+  (define default-arguments (make-list opt-arity AnyC))
   (define default-contract (apply builder default-arguments))
   (generic-contract
     (string->symbol name)

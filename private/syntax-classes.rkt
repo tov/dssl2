@@ -20,11 +20,11 @@
          (only-in racket/format
                   ~a)
          (for-template
+           (only-in "prims.rkt"
+                    AnyC)
            (only-in racket/base
                     positive?
-                    #%datum)
-           (only-in racket/contract/base
-                    any/c)))
+                    #%datum)))
 
 (define-splicing-syntax-class req-timeout
   #:attributes (seconds)
@@ -82,7 +82,7 @@
            #:attr var #'v.id)
   (pattern v:var
            #:attr var #'v.id
-           #:attr ctc #'any/c))
+           #:attr ctc #'AnyC))
 
 (define-syntax-class unique-identifiers
   #:attributes ([var 1])
@@ -108,7 +108,7 @@
   #:description "optional return contract"
   (pattern (~seq #:-> result:expr))
   (pattern (~seq)
-           #:with result #'any/c))
+           #:with result #'AnyC))
 
 (define-splicing-syntax-class opt-ctc-vars
   #:description "optional forall-quantified contract variables"

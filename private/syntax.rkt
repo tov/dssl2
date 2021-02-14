@@ -60,7 +60,6 @@
                   test-case)
          (only-in racket/contract/base
                   ->
-                  any/c
                   contract
                   rename-contract)
          (only-in racket/contract/parametric
@@ -594,7 +593,7 @@
               (dssl-let [cpu     natural?])
               (dssl-let [real    natural?])
               (dssl-let [gc      natural?])
-              (dssl-let [result  any/c])))
+              (dssl-let [result  AnyC])))
 
 (define-syntax (dssl-time stx)
   (syntax-parse stx

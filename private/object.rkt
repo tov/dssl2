@@ -20,9 +20,11 @@
          define-unwrapped-class
          (for-syntax make-unwrapped-class-table))
 
-(require "names.rkt")
+(require "names.rkt"
+         (only-in "contract.rkt"
+                  AnyC))
 (require syntax/parse/define)
-(require (only-in racket/contract/base any/c -> contract))
+(require (only-in racket/contract/base contract))
 (require (for-syntax racket/base
                      (only-in racket/sequence
                               in-syntax)
@@ -89,7 +91,7 @@
 
   (define-syntax-class unwrapped-method
     (pattern [sel:id ctc:expr body:expr])
-    (pattern [sel:id body:expr] #:with ctc #'any/c)))
+    (pattern [sel:id body:expr] #:with ctc #'AnyC)))
 
 (define-syntax (define-unwrapped-class stx)
   (syntax-parse stx

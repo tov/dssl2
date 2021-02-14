@@ -1,57 +1,68 @@
 #lang racket/base
 
 (require (only-in racket/contract contract-out))
+(require (only-in dssl2/private/prims
+                  num?
+                  str?
+                  AndC
+                  AnyC
+                  OrC
+                  SquareBracketC
+                  TupC
+                  VecC))
+(require (only-in dssl2/private/generic
+                  generic-base-instantiate))
+
 (provide AxisSpec LineSpec PlotSpec PointSpec TransformSpec
          (contract-out
-          [plot (->* (string? PlotSpec) (AxisSpec AxisSpec) any/c)]))
+          [plot (->* (str? PlotSpec) (AxisSpec AxisSpec) AnyC)]))
 
 (require (prefix-in p: plot))
-(require (only-in racket/contract ->* and/c any/c or/c vector/c vectorof)
+(require (only-in racket/contract ->*)
          (only-in racket/format ~a)
          (only-in racket/match match))
 
+(define VecC/proc (generic-base-instantiate VecC))
+(define TupC/proc (generic-base-instantiate TupC))
+
 ; A flat, non-empty vectorof contract.
-(define (ne-vec-of ctc)
-  (and/c
-   (vectorof ctc #:flat? #t)
-   vector-non-empty?))
+(define NEVecC
+  (SquareBracketC "NEVecC"
+                  (λ (ctc)
+                     (AndC
+                       (λ (v) (> (vector-length v) 0))
+                       (VecC/proc ctc)))))
+(define NEVecC/proc (generic-base-instantiate NEVecC))
 
-(define (vector-non-empty? v)
-  (> (vector-length v) 0))
-
-; A flat pair-as-vector contract.
-(define (pair-of ctc1 ctc2)
-  (vector/c ctc1 ctc2 #:flat? #t))
-
-; A PointSpec is [vector real? real?]
-(define PointSpec (pair-of real? real?))
+; A PointSpec is [vector num? num?]
+(define PointSpec (TupC/proc num? num?))
 
 ; A LineSpec is [vector PointSpec ...+]
-(define LineSpec (ne-vec-of PointSpec))
+(define LineSpec (NEVecC/proc PointSpec))
 
-; A LabeledLineSpec is [vector string? LineSpec]
-(define LabeledLineSpec (pair-of string? LineSpec))
+; A LabeledLineSpec is [vector str? LineSpec]
+(define LabeledLineSpec (TupC/proc str? LineSpec))
 
 ; A PlotSpec is one of:
 ;  - LineSpec
 ;  - [vector LabeledLineSpec ...+]
 (define PlotSpec
-  (or/c LineSpec
-        (ne-vec-of LabeledLineSpec)))
+  (OrC LineSpec
+       (NEVecC/proc LabeledLineSpec)))
 
 ; A TransformSpec is one of:
 ;  - "id"
 ;  - "log"
 (define TransformSpec
-  (or/c "id"
-        "log"))
+  (OrC "id"
+       "log"))
 
 ; An AxisSpec is one of:
-;  - string?                         -- label, no transform
-;  - [vector string? TransformSpec]  -- label & transform
+;  - str?                         -- label, no transform
+;  - [vector str? TransformSpec]  -- label & transform
 (define AxisSpec
-  (or/c string?
-        (pair-of string? TransformSpec)))
+  (OrC str?
+       (TupC/proc str? TransformSpec)))
 
 
 (define (plot title plot-spec [x-axis ""] [y-axis ""])
@@ -76,17 +87,17 @@
          [(vector label points)
           (p:lines points #:label label #:color index)]))]))
 
-; axis-spec->label : AxisSpec -> string?
+; axis-spec->label : AxisSpec -> str?
 (define (axis-spec->label axis)
   (match axis
-    [(? string?)      axis]
+    [(? str?)         axis]
     [(vector label _) label]))
 
 ; axis-spec->function : AxisSpec -> invertible-function?
 (define (axis-spec->inv-fun axis)
   (match axis
     [(regexp #px"^log\\b") p:log-transform]
-    [(? string?)           p:id-transform]
+    [(? str?)              p:id-transform]
     [(vector _ ts)         (trans-spec->inv-fun ts)]))
 
 ; trans-spec->inv-fun : TransformSpec -> invertible-function?

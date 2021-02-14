@@ -53,6 +53,7 @@
          flat_contract?
          AnyC
          NoneC
+         TupC
          VecC
          FunC
          (contract-out
@@ -208,6 +209,13 @@
   (special-square-bracket-contract
     VecC
     #:generic (c) (r:vectorof c)
+    #:default vec?))
+
+(define TupC
+  (special-square-bracket-contract
+    TupC
+    #:generic cs (apply r:vector/c cs
+                        #:flat? (andmap r:flat-contract? cs))
     #:default vec?))
 
 (define (NotC c)

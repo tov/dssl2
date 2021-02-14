@@ -604,9 +604,9 @@
            (time-apply (λ () (dssl-begin body ...)) '()))
          (timing label cpu real gc (car lst)))]))
 
-(define/contract (dssl-make-vec a b)
-  (-> p:nat? AnyC p:vec?)
-  (make-vector a b))
+(define-syntax-parser dssl-make-vec
+  [(_ size:vec-lit-size-expr element:expr)
+   #'(make-vector size.n element)])
 
 (define-simple-macro (vec-lit element:expr ...)
   (vector element ...))

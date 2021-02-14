@@ -11,7 +11,8 @@
          super-interface
          opt-implements
          opt-return-ctc
-         opt-ctc-vars)
+         opt-ctc-vars
+         vec-lit-size-expr)
 
 (require (for-syntax
            racket/base
@@ -118,4 +119,14 @@
            #:with (var ...) #'(vars.var ...))
   (pattern (~seq)
            #:with (var ...) #'()))
+
+(define-syntax-class vec-lit-size-expr
+  #:attributes (n)
+  (pattern size
+           #:declare size
+           (expr/c #'nat?
+                   #:positive "DSSL2"
+                   #:name "vector size"
+                   #:macro "[…; …]")
+           #:attr n #'size.c))
 

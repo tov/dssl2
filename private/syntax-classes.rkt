@@ -21,17 +21,19 @@
                   ~a)
          (for-template
            (only-in "prims.rkt"
-                    AnyC)
+                    AnyC
+                    nat?
+                    pos?)
            (only-in racket/base
-                    positive?
                     #%datum)))
 
 (define-splicing-syntax-class req-timeout
   #:attributes (seconds)
   (pattern (~seq #:timeout raw-seconds)
            #:declare raw-seconds
-           (expr/c #'positive?
-                   #:name "*assertion timeout seconds*")
+           (expr/c #'pos?
+                   #:positive "DSSL2"
+                   #:name "timeout seconds")
            #:attr seconds #'raw-seconds.c))
 
 (define-splicing-syntax-class opt-timeout

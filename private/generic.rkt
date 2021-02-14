@@ -41,7 +41,9 @@
                   blame-positive
                   contract-first-order)
          (only-in racket/list
-                  make-list))
+                  make-list)
+         (only-in racket/port
+                  call-with-output-string))
 (require (for-syntax racket/base
                      (only-in racket/syntax generate-temporary)))
 
@@ -70,17 +72,30 @@
     #:first-order (λ (v) (generic-contract-first-order v))
     #:late-neg-projection (λ (v) (generic-contract-late-neg-projection v))))
 
-; format-generic : symbol? [List-of contract?] -> symbol?
+; format-generic : symbol? [List-of contract?] -> string?
 ; Formats the application of a generic procedure to its optional (square
 ; bracket) arguments.
 (define (format-generic f xs)
   (define contract-name (current-dssl-contract-name))
-  (define port (open-output-string))
-  (fprintf port "~a[~a" f (contract-name (car xs)))
-  (for ([xi (in-list (cdr xs))])
-    (fprintf port ", ~a" (contract-name xi)))
-  (fprintf port "]")
-  (string->symbol (get-output-string port)))
+  (call-with-output-string
+    (λ (port)
+       (display f port)
+       (write-char #\[ port)
+       (when (pair? xs)
+         (let loop ([x0 (car xs)]
+                    [xs (cdr xs)])
+           (display (contract-name x0) port)
+           (when (pair? xs)
+             (write-string ", " port)
+             (loop (car xs) (cdr xs)))))
+       (write-char #\] port))))
+
+(struct print-literally (string)
+  #:methods
+  gen:custom-write
+  [(define (write-proc self port _mode)
+     (write-string (print-literally-string self) port))])
+
 
 ; Creates a class, which may or may not have generic parameters.
 ; If there are generic parameters, they must be given defaults.
@@ -107,9 +122,9 @@
      #'(let ([instantiate
                (λ (opt-formal ...)
                   (procedure-rename
-                    (λ (formal ...)
-                       body ...)
-                    (format-generic 'name (list opt-formal ...))))])
+                    (λ (formal ...) body ...)
+                    (string->symbol
+                      (format-generic 'name (list opt-formal ...)))))])
          (generic-proc 'name
                        instantiate
                        (instantiate default ...)
@@ -136,7 +151,8 @@
          (λ (opt-formal ...)
             (procedure-rename
               generic
-              (format-generic 'name (list opt-formal ...))))
+              (string->symbol
+                (format-generic 'name (list opt-formal ...)))))
          default
          'proc)]
     [(_ name:id
@@ -304,7 +320,8 @@
            'name
            (λ (opt-formal ...)
               (make-contract
-                #:name (format-generic 'name (list opt-formal ...))
+                #:name (print-literally
+                         (format-generic 'name (list opt-formal ...)))
                 #:first-order (make-first-order opt-formal ...)
                 #:late-neg-projection (make-projection opt-formal ...)))
            (make-first-order default ...)
@@ -329,11 +346,14 @@
         "  builder arity: %s")
       builder
       (format "~a" opt-arity)))
+  (define (builder/name . ctcs)
+    (rename-contract (apply builder ctcs)
+                     (print-literally (format-generic name ctcs))))
   (define default-arguments (make-list opt-arity AnyC))
-  (define default-contract (apply builder default-arguments))
+  (define default-contract (apply builder/name default-arguments))
   (generic-contract
-    (string->symbol name)
-    builder
+    (print-literally name)
+    builder/name
     (contract-first-order default-contract)
     (contract-late-neg-projection default-contract)))
 

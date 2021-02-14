@@ -270,11 +270,11 @@
     (if (eq? dssl-None first-order?)
       (λ (_v) #t)
       first-order?))
-  (define real-projection
-    (cond
-      [(eq? dssl-None projection)
-       #f]
-      [else
+  (cond
+    [(NoneC projection)
+     (flat-named-contract name first-order?)]
+    [else
+      (define real-projection
         (λ (blame)
            (λ (value party)
               (define (blame! message . argv)
@@ -287,10 +287,10 @@
               (if (real-check value)
                 (projection blame! value)
                 (blame! '(given: "~a" expected: "~a")
-                        value name))))]))
-  (make-contract #:name name
-                 #:first-order real-check
-                 #:late-neg-projection real-projection))
+                        value name)))))
+      (make-contract #:name name
+                     #:first-order real-check
+                     #:late-neg-projection real-projection)]))
 
 ;; I/O operations
 

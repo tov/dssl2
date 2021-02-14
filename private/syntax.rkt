@@ -608,8 +608,8 @@
   (-> p:nat? AnyC p:vec?)
   (make-vector a b))
 
-(define (vec-lit . elements)
-  (list->vector elements))
+(define-simple-macro (vec-lit element:expr ...)
+  (vector element ...))
 
 (define-simple-macro (dssl-if-e e1:expr e2:expr e3:expr)
   (truthy-cond

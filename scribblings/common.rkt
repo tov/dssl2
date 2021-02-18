@@ -1,17 +1,14 @@
 #lang racket/base
 
 (provide grammar
-         defform defform*
-         defidform defidform*
          defexpform defexpform* defexpidform defexpidform*
          defsmplform defsmplform* defsmplidform defsmplidform*
          defcmpdform defcmpdform* defcmpdidform defcmpdidform*
-         defclassform linkclass Linkclass
+         defclassform linkclass
          defconstform
          defprocform defprocforms
          defmethform defmethforms
          proto
-         id-form
          ~opt ~many ~many1 ~many-comma ~... ~……
          c nt nt_ term term_
          q m t (rename-out [id-form k])
@@ -26,12 +23,20 @@
          (for-syntax racket/base
                      "../private/names.rkt"
                      "util.rkt")
+         (only-in scribble/core
+                  element-style
+                  element-content
+                  make-nested-flow
+                  make-paragraph
+                  make-style
+                  make-table
+                  make-target-element
+                  plain)
          (except-in scribble/manual
                     defform defform*
                     defidform defidform/inline)
-         scribble/racket
-         scribble/struct
          (prefix-in scribble: scribble/manual)
+         scribble/racket
          syntax/parse/define
          (for-syntax syntax/parse
                      syntax/parse/define
@@ -176,6 +181,11 @@
     (pattern #:cmpd #:attr kind #'"compound")
     (pattern #:proc #:attr kind #'"procedure"))
 
+  (define-splicing-syntax-class opt-tag
+    #:attributes (kw-arg)
+    (pattern (~seq #:tag name:str) #:attr kw-arg #'(#:tag name))
+    (pattern (~seq)                #:attr kw-arg #'(#:tag #f)))
+
   (define-splicing-syntax-class opt-form-kw
    (pattern (~seq #:re)    #:attr out #'#:re)
    (pattern (~seq #:link)  #:attr out #'#:link)
@@ -196,10 +206,10 @@
              #:attr def   #'kw.def
              #:attr redef #'kw.redef)))
 
-(define-simple-macro (defform* :form-kind form ...)
-  (*defforms kind (list form ...)))
+(define-simple-macro (defform* :form-kind tag:opt-tag form ...)
+  (*defforms kind (list form ...) . tag))
 
-(define-simple-macro (defform kind:form-kind chunk ...)
+(define-simple-macro (defform kind:form-kind tag:opt-tag chunk ...)
   (defform* kind (list chunk ...)))
 
 (define-simple-macro
@@ -265,13 +275,6 @@
     [(_ name:id)
      #'(linkclass name "class " (tt (format "~a" 'name)))]))
 
-(define-syntax (Linkclass stx)
-  (syntax-parse stx
-    [(_ name:id title:expr ...+)
-     #'(linkclass name title ...)]
-    [(_ name:id)
-     #'(linkclass name "Class " (tt (format "~a" 'name)))]))
-
 (define-syntax-rule (defconstform name chunk ...)
   (*defforms "constant"
              (list (list (id-form name #:def) ": " chunk ...))))
@@ -334,19 +337,45 @@
                         (list (id-form #,method-name #:re ) chunk ...)
                         ...))]))
 
-(define (*defforms kind forms)
-  (define labeller (add-background-label kind))
-  (define (make-cell form)
-    (list (make-paragraph (list (to-element (c form))))))
-  (define table-content
-    (cons
-      (list (labeller (make-cell (car forms))))
-      (map list (map make-cell (cdr forms)))))
-  (define table (make-table boxed-style table-content))
-  (make-blockquote
-    vertical-inset-style
-    (list table)))
+; : string? element? -> element?
+(define (add-element-target tag elt)
+  (make-target-element
+   (element-style elt)
+   (element-content elt)
+   (list 'custom tag)))
 
+; : string? block? -> block?
+(define (add-cell-label kind block)
+  (make-nested-flow
+   plain
+   ((add-background-label kind) (list block))))
+
+(define (*defforms kind forms #:tag [tag #f])
+  (define (make-row i form)
+    (define (add-target elt)
+      (if (and (zero? i) tag)
+          (add-element-target tag elt)
+          elt))
+    (define (add-label block)
+      (if (zero? i)
+          (add-cell-label kind block)
+          block))
+    (list
+     (add-label
+      (make-paragraph
+       plain
+       (add-target
+        (to-element (c form)))))))
+  (define table
+    (make-table
+     boxed-style
+     (for/list ([form (in-list forms)]
+                [i    (in-naturals)])
+       (make-row i form))))
+  (make-nested-flow
+   vertical-inset-style
+   (list table)))
+  
 (define-syntax (dssl2block stx)
   (syntax-parse stx
     [(_ str-expr ...)

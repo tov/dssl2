@@ -138,6 +138,7 @@ so an expression like @code{[[0; 5]; 5]} produces a vector that contains
 the same vector five times, not five different subvectors.
 
 @defexpform*[
+  #:tag "vector-comprehension"
   @list{[ @nt_[expr]{elem} for @term[var_name] in @nt_[expr]{iter} ]}
   @list{[ @nt_[expr]{elem} for @term_[var_name]{1}, @term_[var_name]{2} in @nt_[expr]{iter} ]}
 ]
@@ -177,6 +178,7 @@ evaluates to
 }|
 
 @defexpform*[
+  #:tag "vector-comprehension-with-index"
   @list{[ @nt_[expr]{elem} for @term[var_name] in @nt_[expr]{iter} if @nt_[expr]{cond} ]}
   @list{[ @nt_[expr]{elem} for @term_[var_name]{1}, @term_[var_name]{2} in @nt_[expr]{iter} if @nt_[expr]{cond} ]}
 ]

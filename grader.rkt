@@ -79,7 +79,9 @@
                         (current-directory)
                         (find-system-path 'pref-dir)  ;; why?
                         (grader-read-directories)))
-       '(values passed-tests total-tests)))))
+       '(if (zero? possible-points)
+          (values passed-tests total-tests)
+          (values actual-points possible-points))))))
 
 (define (grade-file subject)
   (define-values (passed total) (grade-file/values subject))

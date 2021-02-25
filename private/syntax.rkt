@@ -445,14 +445,24 @@
      (with-syntax
        ([external-predicate (struct-predicate-name #'name)]
         [internal-predicate (struct-predicate-name #'internal-name)])
-     #'(begin
-         (struct internal-name struct-base (fields.var ...)
-           #:mutable
-           #:transparent)
-         (dssl-provide external-predicate)
-         (define external-predicate
-           (procedure-rename internal-predicate
-                             'external-predicate))))]))
+       (define name-length (string-length (~a (syntax-e #'name))))
+       (define expansion
+         #'(begin
+             (struct internal-name struct-base (fields.var ...)
+               #:mutable
+               #:transparent)
+             (dssl-provide external-predicate)
+             (define external-predicate
+               (procedure-rename internal-predicate
+                                 'external-predicate))))
+       (syntax-property
+         expansion
+         'sub-range-binders
+         (vector (syntax-local-introduce #'external-predicate)
+                 0 name-length 0.5 0.5
+                 (syntax-local-introduce #'name)
+                 0 name-length 0.5 0.5)))]))
+
 
 (begin-for-syntax
   (define (split-dssl-definitions stx0)

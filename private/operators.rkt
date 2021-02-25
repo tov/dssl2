@@ -134,9 +134,9 @@
 (define (|is not| a b)
   (racket:not (is a b)))
 
-(define (in/proc/iter srclocs v1 v2)
+(define (in/proc/iter v1 v2 context)
   (define found? #f)
-  (define next (p:get-try-advance srclocs v2 "`in` operator"))
+  (define next (p:get-try-advance v2 "`in` operator" context))
   (define (body elt)
     (when (p:dssl-equal? v1 elt)
       (set! found? #t)))
@@ -145,16 +145,16 @@
       (loop)))
   found?)
 
-(define (in/proc srclocs v1 v2)
+(define (in/proc v1 v2 context)
   (p:dssl-send v2 '__contains__ v1
                #:or-else
-               (in/proc/iter srclocs v1 v2)))
+               (in/proc/iter v1 v2 context)))
 
 (define-simple-macro (in e1:expr e2:expr)
-  (in/proc (get-srclocs e2) e1 e2))
+  (in/proc e1 e2 (capture-context e2)))
 
 (define-simple-macro (|not in| e1:expr e2:expr)
-  (not (in/proc (get-srclocs e2) e1 e2)))
+  (not (in/proc e1 e2 (capture-context e2))))
 
 
 (define (< a b)

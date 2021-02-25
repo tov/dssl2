@@ -4,6 +4,7 @@
           ; special syntax
           [dssl-module-begin           #%module-begin]
           [dssl-top-interaction        #%top-interaction]
+          [dssl-app                    #%app]
           ; syntax
           [begin               begin]
           [else                else]
@@ -46,6 +47,7 @@
          "names.rkt"
          "printer.rkt"
          "provide.rkt"
+         (only-in "rte.rkt" current-dssl-test-points)
          "stxparams.rkt"
          "singletons.rkt"
          "struct.rkt"
@@ -102,20 +104,50 @@
     [(_ expr ...)
      #`(#%module-begin
         (module* configure-runtime racket/base
-          (require dssl2/private/rte)
+          (require (only-in dssl2/private/rte setup-rte))
           (setup-rte))
         (module test-info racket/base
-          (provide passed-tests total-tests inc-passed! inc-total!)
+          (require (only-in dssl2/private/rte
+                            current-dssl-test-points))
+          (provide passed-tests
+                   total-tests
+                   actual-points
+                   possible-points
+                   inc-case-number!
+                   inc-passed!
+                   inc-total!)
+          (define test-case-number 0)
           (define passed-tests 0)
           (define total-tests 0)
-          (define (inc-passed!) (set! passed-tests (add1 passed-tests)))
-          (define (inc-total!) (set! total-tests (add1 total-tests))))
+          (define actual-points 0)
+          (define possible-points 0)
+          (define (inc-case-number!)
+            (set! test-case-number (add1 test-case-number))
+            test-case-number)
+          (define (inc-passed!)
+            (set! passed-tests (add1 passed-tests))
+            (define test-points (current-dssl-test-points))
+            (when (number? test-points)
+              (set! actual-points (+ test-points actual-points))))
+          (define (inc-total!)
+            (set! total-tests (add1 total-tests))
+            (define test-points (current-dssl-test-points))
+            (when (number? test-points)
+              (set! possible-points (+ test-points possible-points)))))
         (require 'test-info)
-        (with-test-counters [inc-passed! inc-total!]
+        (with-test-counters [inc-passed! inc-total! inc-case-number!]
           (dssl-begin expr ...))
-        (print-test-results passed-tests total-tests))]))
+        (print-test-results passed-tests
+                            total-tests
+                            actual-points
+                            possible-points))]))
 
-(define (print-test-results passed total)
+(define-syntax-parser dssl-app
+  [(~and e (_ arg ...+))
+   #'(with-error-context (e)
+       (#%app arg ...))])
+
+(define (print-test-results passed total actual possible)
   (cond
     [(zero? total)       (void)]
     [(= passed total 1)  (printf "The only test passed\n")]
@@ -125,7 +157,9 @@
      (printf "Both tests failed\n")]
     [(= passed total)    (printf "All ~a tests passed\n" total)]
     [(zero? passed)      (printf "All ~a tests failed\n" total)]
-    [else                (printf "~a of ~a tests passed\n" passed total)]))
+    [else                (printf "~a of ~a tests passed\n" passed total)])
+  (when (positive? possible)
+    (printf "\n    Points: ~a / ~a\n" actual possible)))
 
 (define-syntax-rule (dssl-top-interaction . expr)
   (dssl-begin expr))
@@ -242,21 +276,20 @@
               (dssl-begin expr ...))
           (loop)))))
 
-(define-syntax (dssl-for stx)
-  (syntax-parse stx
-    [(_ [(i:var j:var) v:expr] expr:expr ...+)
-     #:fail-when (and (bound-identifier=? #'i.id #'j.id) #'j.id)
-     "duplicate variable name"
-     #'(with-break
-           (dssl-for/fun
-            (get-srclocs v)
-            v
-            (dssl-for-loop-body (i.id j.id) expr ...)))]
-    [(_ [i:var v:expr] expr:expr ...+)
-     #'(dssl-for [(_ i.id) v] expr ...)]))
+(define-syntax-parser dssl-for
+  [(_ [(i:var j:var) v:expr] expr:expr ...+)
+   #:fail-when (and (bound-identifier=? #'i.id #'j.id) #'j.id)
+   "duplicate variable name"
+   #'(with-break
+       (dssl-for/fun
+         v
+         (dssl-for-loop-body (i.id j.id) expr ...)
+         (capture-context v)))]
+  [(m [i:var v:expr] expr:expr ...+)
+   #'(m [(_ i.id) v] expr ...)])
 
-(define (dssl-for/fun srclocs obj body)
-  (define next (p:get-try-advance srclocs obj "for loop"))
+(define (dssl-for/fun obj body context)
+  (define next (p:get-try-advance obj "for loop" context))
   (let loop ([my-i 0])
     (when (next (body my-i))
       (loop (add1 my-i)))))
@@ -291,8 +324,8 @@
   (build-vector (vector-builder-size vb)
                 (λ (i) (vector-ref vector i))))
 
-(define (dssl-for/vec/fun srclocs v when? body)
-  (define next   (p:get-try-advance srclocs v "vector comprehension"))
+(define (dssl-for/vec/fun v when? body context)
+  (define next   (p:get-try-advance v "vector comprehension" context))
   (define result (make-vector-builder))
   (let loop ([i 0])
     (when (next (λ (j)
@@ -301,21 +334,20 @@
       (loop (add1 i))))
   (vector-builder-copy result))
 
-(define-syntax (dssl-for/vec stx)
-  (syntax-parse stx
-    [(_ [j:id v:expr] expr:expr)
-     #'(dssl-for/vec [(_ j) v] #:when #true expr)]
-    [(_ [(i:id j:id) v:expr] expr:expr)
-     #'(dssl-for/vec [(i j) v] #:when #true expr)]
-    [(_ [j:id v:expr] #:when when:expr expr:expr)
-     #'(dssl-for/vec [(_ j) v] #:when when expr)]
-    [(_ [(i:var j:var) v:expr] #:when when expr:expr)
-     #:fail-when (and (bound-identifier=? #'i.id #'j.id) #'j.id)
-     "duplicate variable name"
-     #'(dssl-for/vec/fun (get-srclocs v)
-                         v
-                         (λ (i.id j.id) when)
-                         (λ (i.id j.id) expr))]))
+(define-syntax-parser dssl-for/vec
+  [(m [j:id v:expr] expr:expr)
+   #'(m [(_ j) v] #:when #true expr)]
+  [(m [(i:id j:id) v:expr] expr:expr)
+   #'(m [(i j) v] #:when #true expr)]
+  [(m [j:id v:expr] #:when when:expr expr:expr)
+   #'(m [(_ j) v] #:when when expr)]
+  [(_ [(i:var j:var) v:expr] #:when when expr:expr)
+   #:fail-when (and (bound-identifier=? #'i.id #'j.id) #'j.id)
+   "duplicate variable name"
+   #'(dssl-for/vec/fun v
+                       (λ (i.id j.id) when)
+                       (λ (i.id j.id) expr)
+                       (capture-context v))])
 
 (define-syntax (dssl-import stx)
   (unless (memq (syntax-local-context) '(module top-level))
@@ -346,7 +378,7 @@
 (define-syntax (dssl-= stx)
   (syntax-parse stx #:literals (dssl-vec-ref dssl-struct-ref)
     [(_ (dssl-vec-ref v:expr i:expr ...+) rhs:expr)
-     #'(dssl-vec-set! v (list i ...) rhs)]
+     #'(dssl-vec-set! v (i ...) rhs)]
     [(_ (dssl-struct-ref s:expr f:real-id) rhs:expr)
      #'(dssl-struct-set! s f rhs)]
     [(_ i:id rhs:expr)
@@ -369,21 +401,40 @@
     [else
      "variable must be defined with ‘let’ before it can be assigned"]))
 
-(define (dssl-vec-ref v i . rest)
+(define-syntax-parser dssl-vec-ref
+  [(_ v:expr i:expr ...+)
+   (with-syntax
+     ([(xi ...) (generate-temporaries (syntax->list #'(i ...)))])
+     #'(let ()
+         (define xv v)
+         (define xi i)
+         ...
+         (with-error-context (v)
+           ((dssl-vec-ref/fun xv) xi ...))))])
+
+(define (dssl-vec-ref/fun v)
   (cond
-    [(p:get-method-value v '__index_ref__)
-     =>
-     (λ (index) (apply index i rest))]
+    [(p:get-method-value v '__index_ref__)]
     [(generic-base? v)
-     (apply (generic-base-instantiate v) i rest)]
+     (generic-base-instantiate v)]
     [else
      (runtime-error "not a vector or indexable object: %p" v)]))
 
-(define (dssl-vec-set! v is a)
+(define-syntax-parser dssl-vec-set!
+  [(_ v:expr (i:expr ...+) a:expr)
+   (with-syntax
+     ([(xi ...) (generate-temporaries (syntax->list #'(i ...)))])
+     #'(let ()
+         (define xv v)
+         (define xi i)
+         ...
+         (define xa a)
+         (with-error-context (v)
+           ((dssl-vec-set!/fun xv) xi ... xa))))])
+
+(define (dssl-vec-set!/fun v)
   (cond
-    [(p:get-method-value v '__index_set__)
-     =>
-     (λ (set) (apply set (append is (list a))))]
+    [(p:get-method-value v '__index_set__)]
     [else
      (runtime-error "not a vector or indexable object: %p" v)]))
 
@@ -391,13 +442,17 @@
   (syntax-parse stx
     #:context 'struct
     [(_ (name:id internal-name:id) . fields:unique-identifiers)
-     #`(begin
+     (with-syntax
+       ([external-predicate (struct-predicate-name #'name)]
+        [internal-predicate (struct-predicate-name #'internal-name)])
+     #'(begin
          (struct internal-name struct-base (fields.var ...)
            #:mutable
            #:transparent)
-         (dssl-provide #,(struct-predicate-name #'name))
-         (define (#,(struct-predicate-name #'name) value)
-           (#,(struct-predicate-name #'internal-name) value)))]))
+         (dssl-provide external-predicate)
+         (define external-predicate
+           (procedure-rename internal-predicate
+                             'external-predicate))))]))
 
 (begin-for-syntax
   (define (split-dssl-definitions stx0)
@@ -436,113 +491,122 @@
    (~a "saw dssl-struct, which should be changed to "
        "dssl-struct/late by #%module-begin")))
 
-(define-syntax (dssl-struct/late stx)
-  (syntax-parse stx
-    [(_ (name:id internal-name:id) (formal-field:real-id ctc:expr) ...)
-     (define name-length (string-length (~a (syntax-e #'name))))
-     (with-syntax ([s:cons #'internal-name]
-                   [(setter-name ...)
-                    (map (λ (field)
-                           (format-id field "field ‘~a’ assignment" field))
-                         (syntax->list #'(formal-field ...)))]
-                   [(ctc-name ...)
-                    (generate-temporaries
-                     (syntax->list #'(formal-field ...)))])
-       (syntax-property
-        #`(begin-void
-            (define ctc-name (ensure-contract 'struct ctc))
-            ...
-            (define the-struct-info
-              (struct-info
+(define-syntax-parser dssl-struct/late
+  [(_ (name:id internal-name:id) (formal-field:real-id ctc:expr) ...)
+   (define name-length    (string-length (~a (syntax-e #'name))))
+   (define formal-fields  (syntax->list #'(formal-field ...)))
+   (with-syntax
+     ([special-name
+        ; This special-name is also generated by the parser:
+        (struct-special-name #'name)]
+      [(setter-name ...)
+       (for/list ([field (in-list formal-fields)])
+         (format-id field "field ‘~a’ assignment" field))]
+      [(ctc-name ...)
+       (generate-temporaries formal-fields)])
+     (define expansion
+       #'(begin-void
+           (define ctc-name (ensure-contract 'struct ctc))
+           ...
+           (define the-struct-info
+             (struct-info
                'name
                (vector-immutable
-                (field-info
-                 'formal-field
-                 (struct-getter-name s:cons formal-field)
-                 (contract
-                  (-> AnyC ctc-name AnyC)
-                  (struct-setter-name s:cons formal-field)
-                  (format "field ~a of struct ~a" 'formal-field 'name)
-                  "client performing assignment"
-                  'name (get-srcloc ctc)))
-                ...)))
-            (dssl-provide name)
-            (define/contract (name formal-field ...)
-              (-> ctc-name ... AnyC)
-              (s:cons the-struct-info formal-field ...))
-            ; The name on the next line is generated by the parser:
-            (dssl-provide #,(struct-special-name #'name))
-            (define-syntax (#,(struct-special-name #'name) stx)
-              (syntax-parse stx
-                [(ctor:id [field:id expr:expr] (... ...))
-                 #:fail-when (check-duplicate-identifier
+                 (field-info
+                   'formal-field
+                   (struct-getter-name internal-name formal-field)
+                   (contract
+                     (-> AnyC ctc-name AnyC)
+                     (struct-setter-name internal-name formal-field)
+                     (format "field ~a of struct ~a" 'formal-field 'name)
+                     "client performing assignment"
+                     'name
+                     (get-srcloc ctc)))
+                 ...)))
+           (dssl-provide name)
+           (define/contract (name formal-field ...)
+                            (-> ctc-name ... AnyC)
+                            (internal-name the-struct-info formal-field ...))
+           (dssl-provide special-name)
+           (define-syntax (special-name stx)
+             (syntax-parse stx
+               [(ctor:id [field:id expr:expr] (... ...))
+                #:fail-when (check-duplicate-identifier
                               (syntax->list #'(field (... ...))))
-                 "duplicate field name"
-                 (begin
-                   (define actual-fields
-                     (syntax->list #'(field (... ...))))
-                   (define actual-exprs
-                     (syntax->list #'(expr (... ...))))
-                   (define field-exprs
-                     (map (λ (f e) (cons (syntax-e f) e))
-                          actual-fields actual-exprs))
-                   (define formal-fields
-                     (syntax->datum #'(formal-field ...)))
-                   (define exprs
-                     (for/list ([field (in-list formal-fields)])
-                       (cond
-                         [(assq field field-exprs) => cdr]
-                         [else
+                "duplicate field name"
+                (begin
+                  (define actual-fields #'(field (... ...)))
+                  (define actual-exprs #'(expr (... ...)))
+                  (define field-exprs
+                    (for/list ([f (in-syntax actual-fields)]
+                               [e (in-syntax actual-exprs)])
+                      (cons (syntax-e f) e)))
+                  (define formal-fields
+                    (syntax->datum #'(formal-field ...)))
+                  (define exprs
+                    (for/list ([field (in-list formal-fields)])
+                      (cond
+                        [(assq field field-exprs) => cdr]
+                        [else
                           (syntax-error
-                           #'ctor
-                           "struct requires field ~a"
-                           field)])))
-                   (for ([field (in-list actual-fields)])
-                     (unless (memq (syntax-e field) formal-fields)
-                       (syntax-error
+                            #'ctor
+                            "struct requires field ~a"
+                            field)])))
+                  (for ([field (in-syntax actual-fields)])
+                    (unless (memq (syntax-e field) formal-fields)
+                      (syntax-error
                         #'ctor
                         "struct does not have field ~a"
                         (syntax-e field))))
-                   #`(name #,@exprs))])))
-        'sub-range-binders
-        (vector (syntax-local-introduce (struct-special-name #'name))
-                0 name-length 0.5 0.5
-                (syntax-local-introduce #'name)
-                0 name-length 0.5 0.5)))]))
+                  #`(name #,@exprs))]))))
+   (syntax-property
+     expansion
+     'sub-range-binders
+     (vector (syntax-local-introduce (struct-special-name #'name))
+             0 name-length 0.5 0.5
+             (syntax-local-introduce #'name)
+             0 name-length 0.5 0.5)))])
 
-(define (get-field-info/or-else #:srclocs [srclocs '()] struct field)
+(define (get-field-info/or-else struct field context)
   (or (get-field-info struct field)
-      (runtime-error #:srclocs srclocs
-                     "struct %p does not have field %s"
-                     struct field)))
+      (runtime-error "struct %p does not have field %s"
+                     struct field
+                     #:context context)))
 
-(define-syntax (dssl-struct-ref stx)
-  (syntax-parse stx
-    [(_ target0:expr property:id)
-     (define target (local-expand #'target0 'expression (list #'dssl-self)))
-     (syntax-parse target
-       #:literals (dssl-self)
-       [dssl-self
-        (syntax-property
-         #'(dssl-self property)
-         'disappeared-use
-         (syntax-property target 'disappeared-use))]
-       [_
-        #`(let ([value #,target])
-            (cond
-              [(struct-base? value)
-               ((field-info-getter (get-field-info/or-else
-                                    #:srclocs (get-srclocs expr)
-                                    value 'property))
-                value)]
-              [else
-               (p:get-method-value/or-else #:srclocs (get-srclocs expr)
-                                           value 'property)]))])]))
+(define-syntax-parser dssl-struct-ref
+  [(_ target0:expr property:id)
+   (define target
+     (local-expand #'target0 'expression (list #'dssl-self)))
+   (syntax-parse target
+     #:literals (dssl-self)
+     [dssl-self
+      (syntax-property
+       #'(dssl-self property)
+       'disappeared-use
+       (syntax-property
+         target
+         'disappeared-use))]
+     [other
+       #'(let ([value other])
+           (cond
+             [(struct-base? value)
+              ((field-info-getter
+                 (get-field-info/or-else
+                   value
+                   'property
+                   (capture-context target0)))
+               value)]
+             [else
+               (p:get-method-value/or-else
+                 value
+                 'property
+                 (capture-context target0))]))])])
 
 (define-syntax (dssl-struct-set! stx)
   (syntax-parse stx
     [(_ target0:expr property:id rhs:expr)
-     (define target (local-expand #'target0 'expression (list #'dssl-self)))
+     (define target
+       (local-expand #'target0 'expression (list #'dssl-self)))
      (syntax-parse target
        #:literals (dssl-self)
        [dssl-self
@@ -557,35 +621,70 @@
               [(struct-base? value)
                ((field-info-setter
                  (get-field-info/or-else
-                  #:srclocs (get-srclocs #,target)
-                  value 'property))
+                   value 'property
+                   (capture-context target0)))
                 value rhs)]
               [(object-base? value)
                (runtime-error
-                #:srclocs (get-srclocs #,target)
-                "cannot assign to object properties from outside")]
+                "cannot assign to object properties from outside"
+                #:context (capture-context target0))]
               [else
-               (runtime-error #:srclocs (get-srclocs #,target)
-                              "value ‘%p’ is not a struct"
-                              #,target)])))])]))
+                (runtime-error "value ‘%p’ is not a struct"
+                               #,target
+                               #:context (capture-context #,target))])))])]))
 
 (define current-dssl-test-timeout
   (make-parameter +inf.0))
 
-(define-simple-macro (with-test-timeout loc time:expr body:expr ...+)
-  (with-timeout loc (or time (current-dssl-test-timeout)) body ...))
+(define-syntax-parser dssl-test
+  #:literals (dssl-=)
+  [(_ timeout:req-timeout)
+   #'(current-dssl-test-timeout timeout.seconds)]
+  [(_ #:points points:test-points-expr)
+   #`(current-dssl-test-points points.value)]
+  [(m name:expr timeout:opt-timeout body:expr ...+)
+   #`(dssl-test/fun name
+                    (inc-case-number!)
+                    timeout.seconds
+                    (λ ()
+                       (inc-total-tests!)
+                       (dssl-begin body ...)
+                       (inc-passed-tests!))
+                    (capture-context m)
+                    (capture-context timeout.loc m))])
 
-(define-syntax (dssl-test stx)
-  (syntax-parse stx
-    [(_ timeout:req-timeout)
-     #'(current-dssl-test-timeout timeout.seconds)]
-    [(_ name:expr timeout:opt-timeout body:expr ...+)
-     #`(test-case
-        (format "~a (line ~a)" name '#,(syntax-line stx))
-        (with-test-timeout name timeout.seconds
-          (inc-total-tests!)
-          (dssl-begin body ...)
-          (inc-passed-tests!)))]))
+(define (dssl-test/fun name
+                       case-number
+                       maybe-timeout
+                       thunk
+                       test-context
+                       timeout-context)
+  (define timeout   (or maybe-timeout
+                        (current-dssl-test-timeout)))
+  (define points    (current-dssl-test-points))
+  (define full-name
+    (cond
+      [(number? points)
+       (printf "Test Case #~a (~a point~a): ~a\n"
+               case-number
+               points
+               (if (= 1 points) "" "s")
+               name)
+       (format "Test Case #~a" case-number)]
+      [points
+       (define loc (source-context-srcloc test-context))
+       (format "Test ~a (~a:~a:~a)"
+               name
+               (srcloc-source loc)
+               (srcloc-line loc)
+               (srcloc-column loc))]
+      [else #f]))
+  (when full-name
+    (test-case
+      full-name
+      (call-with-timeout timeout
+                         thunk
+                         timeout-context))))
 
 (dssl-begin
  (dssl-struct timing
@@ -619,70 +718,75 @@
 (define current-dssl-assertion-timeout
   (make-parameter +inf.0))
 
-(define-simple-macro (with-assertion-timeout loc time:expr body:expr ...+)
-  (with-timeout loc (or time (current-dssl-assertion-timeout)) body ...))
+(define (call-with-assertion-timeout timeout thunk context)
+  (call-with-timeout (or timeout (current-dssl-assertion-timeout))
+                     thunk
+                     context))
+
+(define-for-syntax (build-assertion-thunk e)
+  (syntax-parse e
+    ; binary operators:
+    [(op:binary-operator e1:expr e2:expr)
+     #`(λ ()
+          (define v1 e1)
+          (define v2 e2)
+          (when (falsy? (op v1 v2))
+            (assertion-error/loc #,e "%p %s %p" v1 op.name v2)))]
+    ; unary operators:
+    [(op:unary-operator e1:expr)
+     #`(λ ()
+          (define v1 e1)
+          (when (falsy? (op v1))
+            (assertion-error/loc #,e "%s %p" op.name v1)))]
+    ; arbitrary expressions:
+    [_
+      #`(λ ()
+           (define v #,e)
+           (when (falsy? v)
+             (assertion-error/loc #,e "%p" v)))]))
 
 (define-syntax-parser dssl-assert
   ; changing the default timeout
   [(_ timeout:req-timeout)
    #'(current-dssl-assertion-timeout timeout.seconds)]
-  ; binary operators:
-  [(_ (~and e (op:binary-operator e1:expr e2:expr))
-      timeout:opt-timeout)
-   #'(with-assertion-timeout e timeout.seconds
-       (define v1 e1)
-       (define v2 e2)
-       (when (falsy? (op v1 v2))
-         (assertion-error #:srclocs (get-srclocs e)
-                          "%p %s %p" v1 op.name v2)))]
-  ; unary operators:
-  [(_ (~and e (op:unary-operator e1:expr))
-      timeout:opt-timeout)
-   #'(with-assertion-timeout e timeout.seconds
-       (define v1 e1)
-       (when (falsy? (op v1))
-         (assertion-error #:srclocs (get-srclocs e)
-                          "%s %p" op.name v1)))]
-  ; arbitrary expressions:
-  [(_ e:expr timeout:opt-timeout)
-   #'(with-assertion-timeout e timeout.seconds
-       (define v e)
-       (when (falsy? v)
-         (assertion-error #:srclocs (get-srclocs e)
-                          "%p" v)))])
+  ; assertions
+  [(m e:expr timeout:opt-timeout)
+   #`(call-with-assertion-timeout
+       timeout.seconds
+       #,(build-assertion-thunk #'e)
+       (capture-context timeout.loc m))])
 
-(define (dssl-assert-error/thunk srclocs thunk pattern)
+(define (dssl-assert-error/thunk thunk pattern context)
   (define (handler exn)
     (if (string-contains? (exn-message exn) pattern)
         #f
         (~a "got a different error than expected:\n"
             " error message:  " (exn-message exn) "\n"
             " should contain: " pattern)))
-  (define message
-    (with-handlers ([exn:fail? handler])
-      (thunk)
-      "did not error as expected"))
-  (when message (assertion-error #:srclocs srclocs message)))
+  (λ ()
+     (define message
+       (with-handlers ([exn:fail? handler])
+                      (thunk)
+                      "did not error as expected"))
+     (when message
+       (assertion-error message #:context context))))
 
-(define-syntax (dssl-assert-error stx)
-  (syntax-parse stx
-    [(_ code:expr msg:expr timeout:opt-timeout)
-     #`(with-assertion-timeout code timeout.seconds
-         (dssl-assert-error/thunk (get-srclocs code)
-                                  (λ () code)
-                                  msg))]
-    [(_ code:expr timeout:opt-timeout)
-     #'(dssl-assert-error code "" . timeout)]))
+(define-syntax-parser dssl-assert-error
+  [(m code:expr msg:expr timeout:opt-timeout)
+   #`(call-with-assertion-timeout
+       timeout.seconds
+       (dssl-assert-error/thunk
+         (λ () code)
+         msg
+         (capture-context code))
+       (capture-context timeout.loc m))]
+  [(m code:expr timeout:opt-timeout)
+   #'(m code "" . timeout)])
 
-(define-simple-macro (with-timeout loc time:expr body:expr ...+)
-  (call-with-timeout (get-srclocs loc) time (λ () body ...)))
-
-(define (call-with-timeout srclocs seconds thunk)
+(define (call-with-timeout seconds thunk context)
   (define (handle _)
-    (assertion-error
-     #:srclocs srclocs
-     "out of time\n timeout: %p seconds"
-     seconds))
+    (assertion-error "out of time\n timeout: %p seconds" seconds
+                     #:context context))
   (cond
     [(= +inf.0 seconds) (thunk)]
     [else
@@ -690,13 +794,15 @@
        (call-with-deep-time-limit/exceptions seconds thunk))]))
 
 (define (call-with-deep-time-limit/exceptions seconds thunk)
-  (define finish (λ () (error "IMPOSSIBLE! Please report this bug.")))
-  (define (handle exn) (set! finish (λ () (raise exn))))
+  (define failure #f)
+  (define success #f)
+  (define (handle exn) (set! failure exn))
   (with-deep-time-limit seconds
     (with-handlers ([(λ (_) #t) handle])
-      (define result (thunk))
-      (set! finish (λ () result))))
-  (finish))
+      (set! success (thunk))))
+  (if failure
+    (raise failure)
+    success))
 
 (define-syntax (dssl-interface stx)
   (syntax-parse stx

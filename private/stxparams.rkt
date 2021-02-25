@@ -3,7 +3,8 @@
 (provide dssl-return with-return
          dssl-break with-break
          dssl-continue with-continue
-         inc-passed-tests! inc-total-tests! with-test-counters
+         inc-passed-tests! inc-total-tests! inc-case-number!
+         with-test-counters
          wrap-procedure-body
          with-masked-control)
 (require (for-syntax racket/base
@@ -58,12 +59,14 @@
 
 (define-syntax-parameter inc-passed-tests! expand-no-test-block)
 (define-syntax-parameter inc-total-tests! expand-no-test-block)
+(define-syntax-parameter inc-case-number! expand-no-test-block)
 
 (define-simple-macro
-  (with-test-counters [passed++:id total++:id] body:expr)
+  (with-test-counters [passed++:id total++:id case++:id] body:expr)
   (splicing-syntax-parameterize
     ([inc-passed-tests! (λ (stx) #'(passed++))]
-     [inc-total-tests!  (λ (stx) #'(total++))])
+     [inc-total-tests!  (λ (stx) #'(total++))]
+     [inc-case-number!  (λ (stx) #'(case++))])
     body))
 
 (define-simple-macro (with-masked-control body)

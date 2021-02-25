@@ -1,11 +1,15 @@
 #lang racket/base
 
-(provide setup-rte)
+(provide current-dssl-test-points
+         setup-rte)
 
 (require (only-in racket/port
                   relocate-input-port)
          "parser.rkt"
          "printer.rkt")
+
+(define current-dssl-test-points
+  (make-parameter #t))
 
 (define (setup-rte)
   (global-port-print-handler

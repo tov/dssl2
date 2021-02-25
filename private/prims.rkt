@@ -865,14 +865,12 @@
 
 (define-syntax (get-method-value/or-else stx)
   (syntax-parse stx #:literals (quote)
-    [(_ #:srclocs srclocs:expr object:expr (quote method:id))
+    [(_ object:expr (quote method:id) context:expr)
      #'(let ([value object])
          (or (get-method-value value 'method)
-             (runtime-error #:srclocs srclocs
-                            "object %p does not have method %s"
-                            object 'method)))]
-    [(_ object:expr (quote method:id))
-     #'(get-method-value/or-else #:srclocs '() object 'method)]))
+             (runtime-error "object %p does not have method %s"
+                            object 'method
+                            #:context context)))]))
 
 (begin-for-syntax
   (define-splicing-syntax-class
@@ -905,13 +903,13 @@
             (λ (method) (and-then.expr (method arg ...)))]
            [else or-else-expr]))]))
 
-(define (get-try-advance srclocs obj who)
+(define (get-try-advance obj who context)
   (define iterator
     (dssl-send obj 'iterator
                #:or-else
-               (type-error #:srclocs srclocs who obj
-                           "object responding to .iterator()")))
-  (get-method-value/or-else #:srclocs srclocs iterator 'try_advance))
+               (type-error who obj "object responding to .iterator()"
+                           #:context context)))
+  (get-method-value/or-else iterator 'try_advance context))
 
 ;; Listing the methods of an object.
 

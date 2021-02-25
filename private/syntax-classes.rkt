@@ -12,7 +12,8 @@
          opt-implements
          opt-return-ctc
          opt-ctc-vars
-         vec-lit-size-expr)
+         vec-lit-size-expr
+         test-points-expr)
 
 (require (for-syntax
            racket/base
@@ -23,9 +24,13 @@
          (for-template
            (only-in "prims.rkt"
                     AnyC
+                    OrC
+                    bool?
                     nat?
+                    num?
                     pos?)
            (only-in racket/base
+                    #%app
                     #%datum)))
 
 (define-splicing-syntax-class req-timeout
@@ -38,9 +43,11 @@
            #:attr seconds #'raw-seconds.c))
 
 (define-splicing-syntax-class opt-timeout
-  #:attributes (seconds)
-  (pattern (~seq :req-timeout))
-  (pattern (~seq) #:attr seconds #'#f))
+  #:attributes (seconds loc)
+  (pattern (~seq (~and loc (:req-timeout))))
+  (pattern (~seq)
+           #:attr seconds #'#f
+           #:attr loc     (datum->syntax #f #f)))
 
 (define-syntax ~datums
   (pattern-expander
@@ -85,7 +92,7 @@
            #:attr var #'v.id)
   (pattern v:var
            #:attr var #'v.id
-           #:attr ctc #'AnyC))
+           #:attr ctc (datum->syntax #'AnyC 'AnyC)))
 
 (define-syntax-class unique-identifiers
   #:attributes ([var 1])
@@ -111,7 +118,7 @@
   #:description "optional return contract"
   (pattern (~seq #:-> result:expr))
   (pattern (~seq)
-           #:with result #'AnyC))
+           #:with result (datum->syntax #'AnyC 'AnyC)))
 
 (define-splicing-syntax-class opt-ctc-vars
   #:description "optional forall-quantified contract variables"
@@ -130,3 +137,12 @@
                    #:macro "[…; …]")
            #:attr n #'size.c))
 
+(define-syntax-class test-points-expr
+  #:attributes (value)
+  (pattern points
+           #:declare points
+           (expr/c #'(OrC num? bool?)
+                   #:positive "DSSL2"
+                   #:name "test points"
+                   #:macro "test = …")
+           #:attr value #'points.c))

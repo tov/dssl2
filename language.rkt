@@ -1,7 +1,6 @@
 #lang racket/base
 
-(provide #%app
-         #%datum
+(provide #%datum
          #%top
          #%require
          (all-from-out "private/operators.rkt"

@@ -7,10 +7,11 @@
                   position-line
                   position-col
                   position-offset)
-         (only-in racket/syntax)
          parser-tools/yacc
          syntax/readerr)
-(require (for-syntax racket/base))
+(require (for-syntax racket/base
+                     (only-in racket/syntax
+                              format-id)))
 
 (define (parse-dssl2 src port interactive?)
   ((dssl2-parser src)
@@ -40,10 +41,15 @@
 
   (define-syntax (loc stx)
     (syntax-case stx ()
+      [(_ sexp start-name end-name)
+       (with-syntax
+         ([start (format-id #'sexp "~a-start-pos" #'start-name)]
+          [end   (format-id #'sexp "~a-end-pos" #'end-name)])
+         #'(locate start end sexp))]
+      [(_ sexp both)
+       #'(loc sexp both both)]
       [(_ sexp)
-       (with-syntax [(start (datum->syntax #'sexp '$1-start-pos))
-                     (end   (datum->syntax #'sexp '$n-end-pos))]
-         #'(locate start end sexp))]))
+       #'(loc sexp $1 $n)]))
 
   (define (locate/symbol sym pos)
     (let ([port (open-input-string (format "~s" sym))])
@@ -137,8 +143,6 @@
         [(INTERFACE <ident> <foralls> <extended-interfaces> COLON
                     <interface-suite>)
          (loc/1 `(interface ,$2 ,@$3 ,$4 ,@$6))]
-        [(TEST <timeout>)
-         (loc/1 `(test ,@$2))]
         [(TEST <expr> <opt-timeout> COLON <suite>)
          (loc/1 `(test ,$2 ,@$3 ,@$5))]
         [(TEST <opt-timeout> COLON <suite>)
@@ -180,7 +184,11 @@
         [(ASSERT-ERROR <expr> COMMA STRING-LITERAL <opt-timeout>)
          (loc/1 `(assert_error ,$2 ,$4 ,@$5))]
         [(PASS)
-         (loc/1 `(pass))])
+         (loc/1 `(pass))]
+        [(TEST <timeout>)
+         (loc/1 `(test ,@$2))]
+        [(TEST EQUALS <expr>)
+         (loc/1 `(test #:points ,$3))])
 
       ; These statements are large if they contain large expressions…
       (<mix-statement/large>
@@ -417,7 +425,7 @@
 
       (<opt-timeout>
         [()                     '()]
-        [(COMMA <timeout>)      $2])
+        [(COMMA <timeout>)      (list (loc $2 $2))])
 
       (<timeout>
         [(TIME OP-LESS <expr>)

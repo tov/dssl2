@@ -72,6 +72,8 @@
                   ~a)
          (only-in racket/math
                   natural?)
+         (only-in racket/port
+                  with-output-to-string)
          (only-in racket/sandbox
                   with-deep-time-limit
                   exn:fail:resource?)
@@ -669,33 +671,69 @@
                        thunk
                        test-context
                        timeout-context)
-  (define timeout   (or maybe-timeout
-                        (current-dssl-test-timeout)))
-  (define points    (current-dssl-test-points))
+  (define points (current-dssl-test-points))
+  (when points
+    (dssl-test/enabled
+      name
+      case-number
+      points
+      (or maybe-timeout (current-dssl-test-timeout))
+      thunk
+      (source-context-srcloc test-context)
+      timeout-context)))
+
+(define (dssl-test/enabled name
+                           case-number
+                           points
+                           timeout
+                           thunk
+                           loc
+                           timeout-context)
+  (when (number? points)
+    (printf "Test Case #~a (~a point~a): "
+            case-number
+            points
+            (if (= 1 points) "" "s"))
+    (print-test-name name)
+    (newline))
   (define full-name
-    (cond
-      [(number? points)
-       (printf "Test Case #~a (~a point~a): ~a\n"
-               case-number
-               points
-               (if (= 1 points) "" "s")
-               name)
-       (format "Test Case #~a" case-number)]
-      [points
-       (define loc (source-context-srcloc test-context))
-       (format "Test ~a (~a:~a:~a)"
-               name
-               (srcloc-source loc)
-               (srcloc-line loc)
-               (srcloc-column loc))]
-      [else #f]))
-  (when full-name
-    (test-case
-      full-name
-      (call-with-timeout timeout
-                         thunk
-                         timeout-context))
-    (newline)))
+    (if (number? points)
+      (format "Test Case #~a" case-number)
+      (format-test-name/loc name loc)))
+  (test-case
+    full-name
+    (call-with-timeout timeout
+                       thunk
+                       timeout-context))
+  (newline))
+
+(define (format-test-name/loc name loc)
+  (with-output-to-string
+    (λ ()
+       (write-string "Test ")
+       (print-test-name name)
+       (write-string " (")
+       (print-srcloc loc)
+       (write-string ")"))))
+
+(define (print-test-name name)
+  (cond
+    [(vector? name)
+     (define sep void)
+     (for ([line  (in-vector name)]
+           #:when (and line (not (void? line))))
+       (sep)
+       (display line)
+       (set! sep newline))]
+    [else
+      (display name)]))
+
+(define (print-srcloc loc [port (current-output-port)])
+  (fprintf port
+           "~a:~a:~a"
+           (srcloc-source loc)
+           (srcloc-line loc)
+           (srcloc-column loc)))
 
 (dssl-begin
  (dssl-struct timing

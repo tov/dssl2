@@ -694,7 +694,8 @@
       full-name
       (call-with-timeout timeout
                          thunk
-                         timeout-context))))
+                         timeout-context))
+    (newline)))
 
 (dssl-begin
  (dssl-struct timing

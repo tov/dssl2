@@ -58,8 +58,6 @@
          (only-in racket/unsafe/undefined
                   unsafe-undefined
                   check-not-unsafe-undefined)
-         (only-in rackunit
-                  test-case)
          (only-in racket/contract/base
                   ->
                   contract
@@ -78,7 +76,8 @@
                   with-deep-time-limit
                   exn:fail:resource?)
          (only-in racket/string
-                  string-contains?)
+                  string-contains?
+                  string-replace)
          (only-in syntax/location
                   quote-srcloc))
 
@@ -420,7 +419,7 @@
     [(generic-base? v)
      (generic-base-instantiate v)]
     [else
-     (runtime-error "not a vector or indexable object: %p" v)]))
+     (raise-runtime-error "not a vector or indexable object: %p" v)]))
 
 (define-syntax-parser dssl-vec-set!
   [(_ v:expr (i:expr ...+) a:expr)
@@ -438,7 +437,7 @@
   (cond
     [(p:get-method-value v '__index_set__)]
     [else
-     (runtime-error "not a vector or indexable object: %p" v)]))
+     (raise-runtime-error "not a vector or indexable object: %p" v)]))
 
 (define-syntax (dssl-struct/early stx)
   (syntax-parse stx
@@ -581,9 +580,9 @@
 
 (define (get-field-info/or-else struct field context)
   (or (get-field-info struct field)
-      (runtime-error "struct %p does not have field %s"
-                     struct field
-                     #:context context)))
+      (raise-runtime-error "struct %p does not have field %s"
+                           struct field
+                           #:context context)))
 
 (define-syntax-parser dssl-struct-ref
   [(_ target0:expr property:id)
@@ -637,11 +636,11 @@
                    (capture-context target0)))
                 value rhs)]
               [(object-base? value)
-               (runtime-error
+               (raise-runtime-error
                 "cannot assign to object properties from outside"
                 #:context (capture-context target0))]
               [else
-                (runtime-error "value ‘%p’ is not a struct"
+                (raise-runtime-error "value ‘%p’ is not a struct"
                                #,target
                                #:context (capture-context #,target))])))])]))
 
@@ -672,50 +671,102 @@
                        test-context
                        timeout-context)
   (define points (current-dssl-test-points))
-  (when points
-    (dssl-test/enabled
-      name
-      case-number
-      points
-      (or maybe-timeout (current-dssl-test-timeout))
-      thunk
-      (source-context-srcloc test-context)
-      timeout-context)))
+  (cond
+    [(number? points)
+     (dssl-test/points
+       name
+       case-number
+       points
+       (or maybe-timeout (current-dssl-test-timeout))
+       thunk
+       timeout-context)]
+    [points
+      (dssl-test/no-points
+        name
+        (or maybe-timeout (current-dssl-test-timeout))
+        thunk
+        (source-context-srcloc test-context)
+        timeout-context)]
+    [else (void)]))
 
-(define (dssl-test/enabled name
-                           case-number
-                           points
-                           timeout
-                           thunk
-                           loc
-                           timeout-context)
-  (when (number? points)
-    (printf "Test Case #~a (~a point~a): "
-            case-number
-            points
-            (if (= 1 points) "" "s"))
-    (print-test-name name)
-    (newline))
-  (define full-name
-    (if (number? points)
-      (format "Test Case #~a" case-number)
-      (format-test-name/loc name loc)))
-  (test-case
-    full-name
-    (call-with-timeout timeout
-                       thunk
-                       timeout-context))
-  (when (number? points)
-    (newline)))
+(define (dssl-test/points name
+                          case-number
+                          points
+                          timeout
+                          thunk
+                          timeout-context)
+  (define (display-error _exn msg)
+    (parameterize ([current-output-port (current-error-port)])
+      (printf "TEST CASE #~a FAILED!\n~a\n"
+              case-number
+              (string-indent msg 1))))
+  (printf "Test Case #~a (~a point~a): "
+          case-number
+          points
+          (if (= 1 points) "" "s"))
+  (print-test-name name)
+  (newline)
+  (dssl-test-case thunk
+                  timeout
+                  timeout-context
+                  display-error)
+  (newline))
 
-(define (format-test-name/loc name loc)
-  (with-output-to-string
-    (λ ()
-       (write-string "Test ")
-       (print-test-name name)
-       (write-string " (")
-       (print-srcloc loc)
-       (write-string ")"))))
+(define (dssl-test/no-points name
+                             timeout
+                             thunk
+                             loc
+                             timeout-context)
+  (define (display-error exn msg)
+    ((error-display-handler)
+     (format "Failed test: ~a (~a)\n~a"
+             (with-output-to-string
+               (λ () (print-test-name name)))
+             (srcloc->string loc)
+             (string-indent msg 1))
+     exn)
+    (newline (current-error-port)))
+  (dssl-test-case thunk
+                  timeout
+                  timeout-context
+                  display-error))
+
+(define (dssl-test-case thunk
+                        timeout
+                        timeout-context
+                        display-error)
+  (define (display-timeout-error exn)
+    (display-error
+      exn
+      (format "reason:     out of time\ntime limit: ~a sec."
+              (exn:fail:dssl:timeout-seconds exn))))
+  (define (display-assertion-error exn)
+    (display-error
+      exn
+      (format "reason:     assertion failure\ncondition:  ~a"
+              (exn:fail:dssl:assert-condition exn))))
+  (define (display-any-error exn)
+    (display-error
+      exn
+      (format "reason:     an error occurred\ndetails:    ~a"
+              (exn-message exn))))
+  (define (display-other-error exn)
+    (display-error
+      exn
+      (format "reason:     an error occurred\ndetails:    ~a"
+              exn)))
+  (with-handlers
+    ([exn:fail:dssl:timeout? display-timeout-error]
+     [exn:fail:dssl:assert?  display-assertion-error]
+     [exn?                   display-any-error]
+     [(λ (_) #t)             display-other-error])
+    (call-with-timeout timeout thunk timeout-context)))
+
+(define (string-indent str amount)
+  (define pad (make-string amount #\space))
+  (string-append
+    pad
+    (string-replace str "\n" (string-append "\n" pad))))
 
 (define (print-test-name name)
   (cond
@@ -781,19 +832,19 @@
           (define v1 e1)
           (define v2 e2)
           (when (falsy? (op v1 v2))
-            (assertion-error/loc #,e "%p %s %p" v1 op.name v2)))]
+            (raise-assertion-error/loc #,e "%p %s %p" v1 op.name v2)))]
     ; unary operators:
     [(op:unary-operator e1:expr)
      #`(λ ()
           (define v1 e1)
           (when (falsy? (op v1))
-            (assertion-error/loc #,e "%s %p" op.name v1)))]
+            (raise-assertion-error/loc #,e "%s %p" op.name v1)))]
     ; arbitrary expressions:
     [_
       #`(λ ()
            (define v #,e)
            (when (falsy? v)
-             (assertion-error/loc #,e "%p" v)))]))
+             (raise-assertion-error/loc #,e "%p" v)))]))
 
 (define-syntax-parser dssl-assert
   ; changing the default timeout
@@ -819,7 +870,7 @@
                       (thunk)
                       "did not error as expected"))
      (when message
-       (assertion-error message #:context context))))
+       (raise-assertion-error message #:context context))))
 
 (define-syntax-parser dssl-assert-error
   [(m code:expr msg:expr timeout:opt-timeout)
@@ -835,8 +886,7 @@
 
 (define (call-with-timeout seconds thunk context)
   (define (handle _)
-    (assertion-error "out of time\n timeout: %p seconds" seconds
-                     #:context context))
+    (raise-timeout-error seconds #:context context))
   (cond
     [(= +inf.0 seconds) (thunk)]
     [else

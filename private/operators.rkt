@@ -74,9 +74,10 @@
            [(p:dssl-send b 'rop a #:and-then box #:or-else #f)
             => unbox]
            [else
-             (type-error 'name (vector a b)
-                         (format "~a or object responding to ~a method"
-                                 msg 'lop))]))]))
+             (raise-repr-error
+               'name (vector a b)
+               (format "~a or object responding to ~a method"
+                       msg 'lop))]))]))
 
 (define-syntax (define-generic-unop stx)
   (syntax-parse stx #:literals (quote)
@@ -86,9 +87,10 @@
            [(p:dssl-send a 'op #:and-then box #:or-else #f)
             => unbox]
            [else
-             (type-error 'name a
-                         (format "~a or object responding to ~a method"
-                                 msg 'op))]))]))
+             (raise-repr-error
+               'name a
+               (format "~a or object responding to ~a method"
+                       msg 'op))]))]))
 
 (define-syntax (define-generic-un/binop stx)
   (syntax-parse stx #:literals (quote)

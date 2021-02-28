@@ -1,6 +1,8 @@
 #lang racket/base
 
 (provide exn:fail:dssl?
+         exn:fail:dssl:assert?  exn:fail:dssl:assert-condition
+         exn:fail:dssl:timeout? exn:fail:dssl:timeout-seconds
          get-srcloc/fn
          get-srcloc
          get-srclocs
@@ -10,10 +12,10 @@
          current-error-context-srcloc
          current-dssl-error-format
          dssl-error
-         runtime-error
-         type-error
-         assertion-error
-         assertion-error/loc
+         raise-runtime-error
+         raise-repr-error
+         raise-assertion-error raise-assertion-error/loc
+         raise-timeout-error
          syntax-error)
 
 (require
@@ -22,6 +24,23 @@
   (for-syntax racket/base
               (only-in racket/sequence
                        in-syntax)))
+
+(struct exn:fail:dssl exn:fail
+  (srcloc)
+  #:transparent
+  #:property prop:exn:srclocs
+  (λ (a-struct)
+     (list (exn:fail:dssl-srcloc a-struct))))
+
+(struct exn:fail:dssl:assert exn:fail:dssl
+  (condition)
+  #:transparent)
+
+(struct exn:fail:dssl:timeout exn:fail:dssl
+  (seconds)
+  #:transparent)
+
+(struct source-context (srcloc continuation-marks))
 
 (define (get-srcloc/fn expr)
   (srcloc (syntax-source expr)
@@ -64,8 +83,6 @@
   [(_ . exprs)
    (get-first-srcloc/helper #'exprs)])
 
-(struct source-context (srcloc continuation-marks))
-
 (define current-error-context
   (make-parameter (source-context #f #f)))
 
@@ -90,12 +107,6 @@
    #'(parameterize ([current-error-context (capture-context stx ...)])
        body ...)])
 
-(struct exn:fail:dssl exn:fail (srcloc)
-  #:transparent
-  #:property prop:exn:srclocs
-  (λ (a-struct)
-     (list (exn:fail:dssl-srcloc a-struct))))
-
 (define current-dssl-error-format
   (make-parameter
     (λ (fmt . args)
@@ -119,36 +130,64 @@
                 (display ")"))))
          (apply dssl-format fmt arg0 args)])]))
 
+(define-simple-macro
+  (dssl-raise make-exn:id message:expr context:expr etc:expr ...)
+  (let ()
+    (define message-v message)
+    (define context-v context)
+    (raise (make-exn
+             message-v
+             (source-context-continuation-marks context-v)
+             (source-context-srcloc context-v)
+             etc ...))))
+
 (define (error #:context [context (default-context)]
                . args)
-  (raise (exn:fail:dssl
-           (apply dssl-format/error args)
-           (source-context-continuation-marks context)
-           (source-context-srcloc context))))
+  (dssl-raise exn:fail:dssl
+              (apply dssl-format/error args)
+              context))
 
 (define dssl-error error)
 
-(define (runtime-error #:context [context (default-context)]
-                       fmt . args)
-  (apply error #:context context
-         (string-append "Runtime error: " fmt)
-         args))
+(define (raise-runtime-error
+          #:context [context (default-context)]
+          fmt . args)
+  (dssl-raise exn:fail:dssl
+              (string-append "Runtime error: "
+                             (apply dssl-format/error fmt args))
+              context))
 
-(define (type-error #:context [context (default-context)]
-                    who got expected)
-  (dssl-error #:context context
-              "%s: type error\n  got: %p\n  expected: %s"
-              who got expected))
+(define (raise-repr-error
+          #:context [context (default-context)]
+          who got expected)
+  (dssl-raise exn:fail:dssl
+              (dssl-format/error
+                "%s: type error\n  got: %p\n  expected: %s"
+                who got expected)
+              context))
 
-(define (assertion-error #:context [context (default-context)]
-                         fmt . args)
-  (apply dssl-error #:context context
-         (string-append "Assertion failed: " fmt)
-         args))
+(define (raise-assertion-error
+          #:context [context (default-context)]
+          . args)
+  (define condition (apply dssl-format/error args))
+  (dssl-raise exn:fail:dssl:assert
+              (string-append "Assertion failed: " condition)
+              context
+              condition))
 
-(define-simple-macro (assertion-error/loc loc:expr args:expr ...+)
-  (assertion-error #:context (capture-context loc)
-                   args ...))
+(define-simple-macro
+  (raise-assertion-error/loc loc:expr args:expr ...+)
+  (raise-assertion-error #:context (capture-context loc)
+                         args ...))
+
+(define (raise-timeout-error
+          #:context [context (default-context)]
+          timeout)
+  (dssl-raise exn:fail:dssl:timeout
+              (format "Assertion timeout: exceeded ~a second limit"
+                      timeout)
+              context
+              timeout))
 
 (define (syntax-error stx fmt . args)
   (define message (apply format fmt args))

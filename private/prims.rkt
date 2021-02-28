@@ -473,7 +473,7 @@
     [(and (str? val) (= 1 (string-length val)))
      (string-ref val 0)]
     [else
-      (type-error who val "int code point or singleton string")]))
+      (raise-repr-error who val "int code point or singleton string")]))
 
 (define int
   (case-lambda
@@ -484,7 +484,7 @@
        [(dssl-send x '__int__ #:and-then box #:or-else #f)
         => unbox]
        [else
-         (type-error
+         (raise-repr-error
            'int x
            "number, string, Boolean, or object responding to __int__")])]))
 
@@ -548,7 +548,7 @@
        [(dssl-send x '__float__ #:and-then box #:or-else #f)
         => unbox]
        [else
-         (type-error
+         (raise-repr-error
            'float x
            "number, string, Boolean, or object responding to __float__")])]))
 
@@ -594,8 +594,9 @@
        [(dssl-send val '__proc__ #:and-then box #:or-else #f)
         => unbox]
        [else
-         (type-error 'proc val
-                     "proc or object responding to __proc__ method")])]))
+         (raise-repr-error
+           'proc val
+           "proc or object responding to __proc__ method")])]))
 
 (define-unwrapped-class proc-class proc proc?
   ([compose           (λ (self other)
@@ -622,7 +623,7 @@
                         =>
                         (λ (self) (inexact->exact (truncate self)))]
                        [else
-                         (runtime-error
+                         (raise-runtime-error
                            "str.__int__: bad int format in %p" self)]))]
    [__float__     (λ (self)
                      (cond
@@ -630,7 +631,7 @@
                         =>
                         exact->inexact]
                        [else
-                         (runtime-error
+                         (raise-runtime-error
                            "str.__float__: bad float format in %p" self)]))]
    ; binary methods
    [__eq__        (-> str? AnyC)
@@ -707,7 +708,7 @@
     (cond
       [(char? c)    c]
       [(integer? c) (integer->char c)]
-      [else (type-error
+      [else (raise-repr-error
               'vec.implode c "char or int code point")]))
   (list->string
     (r:map convert (vector->list self))))
@@ -741,9 +742,9 @@
             [(and (int? a) (int? b))
              (op b a)]
             [else
-              (type-error 'name
-                          (if (int? a) b a)
-                          "int")]))]))
+              (raise-repr-error 'name
+                                (if (int? a) b a)
+                                "int")]))]))
 
 (define-syntax (int-binop stx)
   (syntax-parse stx #:literals (quote)
@@ -754,9 +755,10 @@
             [(dssl-send b 'rop a #:and-then box #:or-else #f)
              => unbox]
             [else
-              (type-error 'name b
-                          (r:format "int or object responding to ~a method"
-                                    'rop))]))]))
+              (raise-repr-error
+                'name b
+                (r:format "int or object responding to ~a method"
+                          'rop))]))]))
 
 (define-syntax (num-binrop stx)
   (syntax-parse stx
@@ -766,9 +768,9 @@
             [(and (num? a) (num? b))
              (op b a)]
             [else
-              (type-error 'name
-                          (if (num? a) b a)
-                          "num")]))]))
+              (raise-repr-error 'name
+                                (if (num? a) b a)
+                                "num")]))]))
 
 (define-syntax (num-binop stx)
   (syntax-parse stx #:literals (quote)
@@ -779,9 +781,10 @@
             [(dssl-send b 'rop a #:and-then box #:or-else #f)
              => unbox]
             [else
-              (type-error 'name b
-                          (r:format "num or object responding to ~a method"
-                                    'rop))]))]))
+              (raise-repr-error
+                'name b
+                (r:format "num or object responding to ~a method"
+                          'rop))]))]))
 
 (define (bool<? a b)
   (and (not a) b))
@@ -802,6 +805,7 @@
 
 (define (prim:div a b)
   (cond
+    [(eq? 0 b) (raise-runtime-error "/: division by zero")]
     [(and (int? a) (int? b)) (quotient a b)]
     [else                    (r:/ a b)]))
 
@@ -817,9 +821,9 @@
        [(and (bool? a) (int? b))
         (int-op (if a 1 0) b)]
        [else
-         (type-error 'name
-                     (if (bool? a) b a)
-                     "bool or int")])))
+         (raise-repr-error 'name
+                           (if (bool? a) b a)
+                           "bool or int")])))
 
 (define prim:and (logical-binop __and__ and bitwise-and))
 (define prim:or (logical-binop __or__ or bitwise-ior))
@@ -868,9 +872,9 @@
     [(_ object:expr (quote method:id) context:expr)
      #'(let ([value object])
          (or (get-method-value value 'method)
-             (runtime-error "object %p does not have method %s"
-                            object 'method
-                            #:context context)))]))
+             (raise-runtime-error "object %p does not have method %s"
+                                  object 'method
+                                  #:context context)))]))
 
 (begin-for-syntax
   (define-splicing-syntax-class
@@ -894,7 +898,7 @@
        ([or-else-expr
           (syntax-parse #'or-else
             [(#:or-else expr:expr) #'expr]
-            [() #'(type-error
+            [() #'(raise-repr-error
                     'send obj
                     (r:format "object responding to ~a method" 'sel))])])
        #'(cond
@@ -907,8 +911,9 @@
   (define iterator
     (dssl-send obj 'iterator
                #:or-else
-               (type-error who obj "object responding to .iterator()"
-                           #:context context)))
+               (raise-repr-error
+                 who obj "object responding to .iterator()"
+                 #:context context)))
   (get-method-value/or-else iterator 'try_advance context))
 
 ;; Listing the methods of an object.
@@ -922,7 +927,7 @@
      (list->vector (get-field-list obj))]
     [(void? obj)
      (vector)]
-    [else (type-error 'dir obj "a struct or object")]))
+    [else (raise-repr-error 'dir obj "a struct or object")]))
 
 ;; EQUALITY
 

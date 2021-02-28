@@ -13,9 +13,9 @@
 (define (ensure-contract/fn srclocs who contract)
   (if (contract? contract)
     contract
-    (runtime-error #:context srclocs
-                   "%s: expected a contract\n got: %p"
-                   who contract)))
+    (raise-runtime-error #:context srclocs
+                         "%s: expected a contract\n got: %p"
+                         who contract)))
 
 (define-syntax-rule (ensure-contract who contract)
   (ensure-contract/fn (capture-context contract) who contract))

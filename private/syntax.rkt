@@ -705,7 +705,8 @@
     (call-with-timeout timeout
                        thunk
                        timeout-context))
-  (newline))
+  (when (number? points)
+    (newline)))
 
 (define (format-test-name/loc name loc)
   (with-output-to-string

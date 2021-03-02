@@ -21,7 +21,7 @@
                   string-split))
 
 (define grader-read-directories (make-parameter '()))
-(define grader-time-limit (make-parameter 180))
+(define grader-time-limit (make-parameter 300))
 (define grader-memory-limit (make-parameter 256))
 
 (define (eprint/hanging head msg [char #\*])

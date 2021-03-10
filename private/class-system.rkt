@@ -506,7 +506,7 @@
                  (#,(self. constructor) #,@constructor-params)
                  (when (eq? unsafe-undefined actual-field-name)
                    (runtime-error
-                     #:srclocs (get-srclocs #,constructor)
+                     #:context (capture-context #,constructor)
                      "constructor for class %s did not assign field %s"
                      'name 'field-var))
                  ...

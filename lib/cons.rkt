@@ -18,31 +18,41 @@ struct cons:
     let cdr: _list?
 
 class ConsBuilder:
-    let head
-    let tail
+    let _head
+    let _tail
+    let _len
 
     def __init__(self):
-        self.head = None
-        self.tail = None
+        self._head = None
+        self._tail = None
+        self._len  = 0
+        
+    def len(self):
+        return self._len
+        
+    def empty?(self):
+        return self._len == 0
 
     def cons(self, x):
-        self.head = cons(x, self.head)
-        if self.tail is None: self.tail = self.head
+        self._head = cons(x, self._head)
+        if self._tail is None: self._tail = self._head
+        self._len = self._len + 1
 
     def snoc(self, x):
-        let old_tail = self.tail
-        self.tail = cons(x, None)
+        let old_tail = self._tail
+        self._tail = cons(x, None)
         if cons?(old_tail):
-            old_tail.cdr = self.tail
+            old_tail.cdr = self._tail
         else:
-            self.head = self.tail
+            self._head = self._tail
+        self._len = self._len + 1
 
     def take(self):
-        let result = self.head
+        let result = self._head
         self.__init__()
         return result
 
-        
+
 # Builds the Cons singleton struct.
 def _build_Cons():
     let list? = _list?
@@ -192,6 +202,7 @@ def _build_Cons():
         let andmap
         let ormap
         let sort
+        let Builder
 
     return ConsOperations {
         list?:    list?,
@@ -212,7 +223,29 @@ def _build_Cons():
         andmap:   Cons_andmap,
         ormap:    Cons_ormap,
         sort:     Cons_sort,
+        Builder:  ConsBuilder,
     }
 
 
 let Cons = _build_Cons()
+
+def _all_tests():
+    test 'ConsBuilder':
+        let cb = Cons.Builder()
+        assert cb.len() == 0
+        assert cb.empty?()
+        assert cb.take() is None
+        cb.snoc(3)
+        cb.snoc(5)
+        assert cb.len() == 2
+        assert not cb.empty?()
+        cb.snoc(7)
+        cb.cons(1)
+        cb.snoc(9)
+        assert cb.len() == 5
+        assert Cons.to_vec(cb.take()) == [1, 3, 5, 7, 9]
+        assert cb.empty?()
+        assert cb.snoc(2)
+        assert cb.snoc(4)
+        assert cb.len() == 2
+        assert Cons.to_vec(cb.take()) == [2, 4]

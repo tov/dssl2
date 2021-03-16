@@ -300,7 +300,7 @@
        (return-without-pos (the-lexer port))]
       [comment
        (return-without-pos (the-lexer port))]
-      [(:: #\\ line-break)
+      [(:: #\\ (:* space) (:? comment) line-break)
        (return-without-pos (the-lexer port))]
       [(:: (:* (:: line-break (:* space) (:? comment)))
            line-break (:* space))

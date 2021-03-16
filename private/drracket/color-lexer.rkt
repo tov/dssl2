@@ -32,7 +32,8 @@
   (lexer
     [(eof)                      (token eof)]
     [(:+ whitespace)            (token white-space)]
-    [(:: #\\ #\newline)         (token comment)]
+    [(:: #\\ (:* whitespace) (:? comment) #\newline)
+                                (token comment)]
     [(:or "λ" "lambda" "let" "assert" "assert_eq" "assert_error"
           "if" "elif" "else"
           "class" "interface" "break" "continue"

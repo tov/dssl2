@@ -125,27 +125,62 @@ non-@racket[False] result, or @racket[False] if none is non-@racket[False].
 @defprocform[Cons.sort]{[T](@racket[FunC][T, T, @racket[AnyC]], Cons.listC[T]): Cons.list?}
 
 Sorts a list producing a new list, and not modifying the input list.
-Uses the given function as a "less than" comparison to determine the order.
+Uses the given function as a “less than” comparison to determine the order.
 O(n²).
 
 
-@section{Class @tt{ConsBuilder}}
+@section{Class @tt{Cons.Builder}}
 
-The @tt{ConsBuilder} class provides a convenient way to build lists from front
+The @tt{Cons.Builder} class provides a convenient way to build lists from front
 to back.
 
-The @tt{ConsBuilder} constructor takes no arguments, and starts off building an
-empty list.
+For example:
 
-@defmethform[ConsBuilder cons]{@proto[AnyC NoneC]}
+@dssl2block|{
+import cons
 
-Adds the given value to the beginning of the list.
+let cb = Cons.Builder()
+assert cb.empty?()
 
-@defmethform[ConsBuilder snoc]{@proto[AnyC NoneC]}
+cb.snoc(2)
+cb.snoc(4)
+cb.snoc(6)
 
-Adds the given value to the end of the list.
+assert len(cb) == 3
+assert cb.take() == cons(2, cons(4, cons(6, None)))
+assert len(cb) == 0
 
-@defmethform[ConsBuilder take]{@proto[Cons.list?]}
+cb.snoc(1)
+cb.cons(2)
+cb.snoc(3)
+cb.cons(4)
+cb.snoc(5)
+cb.cons(6)
+assert Cons.to_vec(cb.take()) == [6, 4, 2, 1, 3, 5]
+}|
 
-Takes the built list out of this @tt{ConsBuilder} and returns it, leaving this
-@tt{ConsBuilder} empty.
+@defprocform[Cons.Builder]{(): Cons.Builder?}
+
+The @tt{Cons.Builder} constructor takes no arguments and initially
+contains the empty list.
+
+@defmethform[Cons.Builder cons]{@proto[AnyC NoneC]}
+
+Adds the given value to the front of the list.
+
+@defmethform[Cons.Builder snoc]{@proto[AnyC NoneC]}
+
+Adds the given value to the back of the list.
+
+@defmethform[Cons.Builder take]{@proto[Cons.list?]}
+
+Takes the built list out of this @tt{Cons.Builder} and returns it, leaving this
+@tt{Cons.Builder} empty.
+
+@defmethform[Cons.Builder empty?]{@proto[bool?]}
+
+Returns whether the current list in this @tt{Cons.Builder} is empty.
+
+@defmethform[Cons.Builder len]{@proto[nat?]}
+
+Returns the length of the list being built.

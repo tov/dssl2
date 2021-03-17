@@ -99,9 +99,9 @@ class uint64:
 
 
 def _test():
-    assert_eq        2  ** uint64(10),    1024
-    assert_eq uint64(2) **        10 ,    1024
-    assert_eq uint64(2) ** uint64(10),    1024
-    assert_eq        1  << uint64(20), 1048576
-    assert_eq uint64(1) <<        20 , 1048576
-    assert_eq uint64(1) << uint64(20), 1048576
+    assert        2  ** uint64(10) ==    1024
+    assert uint64(2) **        10  ==    1024
+    assert uint64(2) ** uint64(10) ==    1024
+    assert        1  << uint64(20) == 1048576
+    assert uint64(1) <<        20  == 1048576
+    assert uint64(1) << uint64(20) == 1048576

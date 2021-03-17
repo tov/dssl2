@@ -165,5 +165,5 @@ l.push_back(4)
 let m = Dll()
 m.push_back(5)
 m.splice(l.detach_front(2))
-assert_eq l.to_vec(), [4]
-assert_eq m.to_vec(), [5, 2, 3]
+assert l.to_vec() == [4]
+assert m.to_vec() == [5, 2, 3]

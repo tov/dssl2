@@ -18,11 +18,11 @@ let p
 
 p = Posn(3, 4)
 assert Posn?(p)
-assert_eq 3, p.x()
-assert_eq 4, p.y()
+assert 3 == p.x()
+assert 4 == p.y()
 p.y!(10)
-assert_eq 3, p.x()
-assert_eq 10, p.y()
+assert 3 == p.x()
+assert 10 == p.y()
 
 p = Posn(3, 4)
 assert_error p.x_
@@ -34,6 +34,6 @@ assert_error p._x!
 p = Posn(3, 4)
 let get_y = p.y
 let set_y = p.y!
-assert_eq 4, get_y()
+assert 4 == get_y()
 set_y(5)
-assert_eq 5, get_y()
+assert 5 == get_y()

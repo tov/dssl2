@@ -36,7 +36,6 @@
    ARROW
    LAMBDA
    ASSERT
-   ASSERT-EQ
    ASSERT-ERROR
    LET
    IF
@@ -232,7 +231,6 @@
       ["->"                     (token-ARROW)]
       ["let"                    (token-LET)]
       ["assert"                 (token-ASSERT)]
-      ["assert_eq"              (token-ASSERT-EQ)]
       ["assert_error"           (token-ASSERT-ERROR)]
       ["if"                     (token-IF)]
       ["elif"                   (token-ELIF)]

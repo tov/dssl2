@@ -26,16 +26,16 @@ class Matrix:
 
 let m = Matrix(4, 3)
 
-assert_eq m[0, 0], 0
-assert_eq m[0, 1], 0
-assert_eq m[0, 2], 0
+assert m[0, 0] == 0
+assert m[0, 1] == 0
+assert m[0, 2] == 0
 assert_error m[0, 3]
 
 m[0, 0] = 1
 m[0, 1] = 2
 m[1, 0] = 3
 
-assert_eq m[0, 0], 1
-assert_eq m[0, 1], 2
-assert_eq m[1, 0], 3
-assert_eq m[1, 1], 0
+assert m[0, 0] == 1
+assert m[0, 1] == 2
+assert m[1, 0] == 3
+assert m[1, 1] == 0

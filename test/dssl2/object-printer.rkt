@@ -16,7 +16,7 @@ class Posn:
         print("(%p, %p)", self._x, self._y)
 
 let a = Posn(3, 4)
-assert_eq str(a), "(3, 4)"
+assert str(a) == "(3, 4)"
 
 a.x!(a)
-assert_eq str(a), "#0=(#0#, 4)"
+assert str(a) == "#0=(#0#, 4)"

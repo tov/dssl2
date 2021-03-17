@@ -177,8 +177,6 @@
          (loc/1 `(assert ,@$2))]
         [(ASSERT <expr> <opt-timeout>)
          (loc/1 `(assert ,$2 ,@$3))]
-        [(ASSERT-EQ <expr> COMMA <expr> <opt-timeout>)
-         (loc/1 `(assert ,(loc/3 `(== ,$2 ,$4)) ,@$5))]
         [(ASSERT-ERROR <expr> <opt-timeout>)
          (loc/1 `(assert_error ,$2 ,@$3))]
         [(ASSERT-ERROR <expr> COMMA STRING-LITERAL <opt-timeout>)

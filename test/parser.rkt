@@ -77,7 +77,7 @@
                 (assert #f (#:timeout 5)))
   (check-parse? "assert False"
                 (assert #f))
-  (check-parse? "assert_eq a + 1, 6"
+  (check-parse? "assert a + 1 == 6"
                 (assert (== (+ a 1) 6)))
 
   ; compound statements

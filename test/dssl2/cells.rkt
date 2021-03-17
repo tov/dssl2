@@ -19,8 +19,8 @@ class IntCell (INT_CELL):
 let a = IntCell(5)
 let b: INT_CELL! = a
 
-assert_eq str(a), "IntCell(5)"
-assert_eq str(b), "IntCell(5)"
+assert str(a) == "IntCell(5)"
+assert str(b) == "IntCell(5)"
 
 interface CELL[T]:
     def __print__(_, _)
@@ -41,8 +41,8 @@ class Cell[T] (CELL):
 let c = Cell[nat?](5)
 let d = Cell[nat?](5)
 
-assert_eq str(c), "Cell(5)"      
-assert_eq c, d
+assert str(c) == "Cell(5)"      
+assert c == d
 
 class AnyCell:
     let _contents
@@ -54,7 +54,7 @@ class AnyCell:
   
 let e = AnyCell(5)
 e.set!(e)
-assert_eq str(e), "#0=Cell(#0#)"
+assert str(e) == "#0=Cell(#0#)"
 
 class Pair[T, U]:
     let _fst

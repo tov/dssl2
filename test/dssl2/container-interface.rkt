@@ -91,54 +91,54 @@ def vector_stack_test():
     let o = VectorStack(4)
     assert o.empty?()
     assert not o.full?()
-    assert_eq o.size(), 0
-    assert_eq o.capacity(), 4
+    assert o.size() == 0
+    assert o.capacity() == 4
     assert_error o.remove(), 'empty'
     o.push(2)
     assert not o.empty?()
     assert not o.full?()
-    assert_eq o.size(), 1
+    assert o.size() == 1
     o.push(3)
-    assert_eq o.size(), 2
+    assert o.size() == 2
     o.push(4)
     o.push(5)
     assert not o.empty?()
     assert o.full?()
     assert_error o.push(6), 'full'
-    assert_eq o.pop(), 5
+    assert o.pop() == 5
     assert not o.full?()
     o.push(7)
-    assert_eq o.pop(), 7
-    assert_eq o.pop(), 4
-    assert_eq o.pop(), 3
-    assert_eq o.pop(), 2
+    assert o.pop() == 7
+    assert o.pop() == 4
+    assert o.pop() == 3
+    assert o.pop() == 2
     assert_error o.pop(), 'empty'
 
 def ring_buffer_test():
     let o = RingBuffer(4)
     assert o.empty?()
     assert not o.full?()
-    assert_eq o.size(), 0
-    assert_eq o.capacity(), 4
+    assert o.size() == 0
+    assert o.capacity() == 4
     assert_error o.dequeue(), 'empty'
     o.enqueue(2)
     assert not o.empty?()
     assert not o.full?()
-    assert_eq o.size(), 1
+    assert o.size() == 1
     o.enqueue(3)
-    assert_eq o.size(), 2
+    assert o.size() == 2
     o.enqueue(4)
     o.enqueue(5)
     assert not o.empty?()
     assert o.full?()
     assert_error o.enqueue(6), 'full'
-    assert_eq o.dequeue(), 2
+    assert o.dequeue() == 2
     assert not o.full?()
     o.enqueue(7)
-    assert_eq o.dequeue(), 3
-    assert_eq o.dequeue(), 4
-    assert_eq o.dequeue(), 5
-    assert_eq o.dequeue(), 7
+    assert o.dequeue() == 3
+    assert o.dequeue() == 4
+    assert o.dequeue() == 5
+    assert o.dequeue() == 7
     assert_error o.dequeue(), 'empty'
 
 def container_test(make: FunC[nat?, CONTAINER!]):
@@ -150,7 +150,7 @@ def container_test(make: FunC[nat?, CONTAINER!]):
     o.add(2)
     assert not o.empty?()
     assert not o.full?()
-    assert_eq o.remove(), 2
+    assert o.remove() == 2
     assert o.empty?()
     o.add(2)
     o.add(3)

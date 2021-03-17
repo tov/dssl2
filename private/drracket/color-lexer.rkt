@@ -34,7 +34,7 @@
     [(:+ whitespace)            (token white-space)]
     [(:: #\\ (:* whitespace) (:? comment) #\newline)
                                 (token comment)]
-    [(:or "λ" "lambda" "let" "assert" "assert_eq" "assert_error"
+    [(:or "λ" "lambda" "let" "assert" "assert_error"
           "if" "elif" "else"
           "class" "interface" "break" "continue"
           "while" "for" "in" "∈" "∉" "return" "pass" "def" "struct"

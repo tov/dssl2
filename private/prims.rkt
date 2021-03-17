@@ -360,34 +360,34 @@
 (define-dssl-interface ITERATOR () ((ITERABLE))
   ([try_advance () (AnyC) AnyC]))
 
-(define (range-non-empty? current step limit)
+(define (range-non-empty? current limit step)
   (cond
     [(positive? step) (< current limit)]
     [(negative? step) (> current limit)]
     [else             #false]))
 
 (define-dssl-class range_iterator () (ITERATOR)
-  ([_cur AnyC] [_step AnyC] [_lim AnyC])
-  ([__init__ () self ([cur AnyC] [step AnyC] [lim AnyC]) AnyC
+  ([_cur AnyC] [_lim AnyC] [_step AnyC])
+  ([__init__ () self ([cur AnyC] [lim AnyC] [step AnyC]) AnyC
      (begin
        (dssl-self _cur cur)
-       (dssl-self _step step)
-       (dssl-self _lim lim))]
+       (dssl-self _lim lim)
+       (dssl-self _step step))]
    [current () self () AnyC
      (dssl-self _cur)]
-   [step () self () AnyC
-     (dssl-self _step)]
    [limit () self () AnyC
      (dssl-self _lim)]
+   [step () self () AnyC
+     (dssl-self _step)]
    [empty? () self () AnyC
      (not (range-non-empty? (dssl-self _cur)
-                            (dssl-self _step)
-                            (dssl-self _lim)))]
+                            (dssl-self _lim)
+                            (dssl-self _step)))]
    [iterator () self () AnyC
-     (range_iterator (dssl-self _cur) (dssl-self _step) (dssl-self _lim))]
+     (range_iterator (dssl-self _cur) (dssl-self _lim) (dssl-self _step))]
    [try_advance () self ([visit AnyC]) AnyC
      (and
-      (range-non-empty? (dssl-self _cur) (dssl-self _step) (dssl-self _lim))
+      (range-non-empty? (dssl-self _cur) (dssl-self _lim) (dssl-self _step))
       (begin
         (visit (dssl-self _cur))
         (dssl-self _cur (+ (dssl-self _cur) (dssl-self _step)))
@@ -395,9 +395,9 @@
 
 (define range
   (case-lambda
-    [(start step limit) (range_iterator start step limit)]
-    [(start limit)      (range_iterator start 1    limit)]
-    [(limit)            (range_iterator 0     1    limit)]))
+    [(start limit step) (range_iterator start limit step)]
+    [(start limit)      (range_iterator start limit 1)]
+    [(limit)            (range_iterator 0     limit 1)]))
 
 (define (index-ref indexable ix)
   (cond

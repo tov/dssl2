@@ -656,7 +656,7 @@ produce some kind of sensible output.
 Equivalent to @code{o.len()}.
 
 @defprocforms[range
-    @proto[start:num? step:num? limit:num? range_iterator?]
+    @proto[start:num? limit:num? step:num? range_iterator?]
     @proto[start:num? limit:num? range_iterator?]
     @proto[limit:num? range_iterator?]
 ]
@@ -665,18 +665,18 @@ Returns an iterator over the closed-open interval from
 @racket[start] to @racket[stop] in increments of
 @racket[step].
 
-For example, @code|{range(0, 2, 10)}| counts upward from 0 to 10
+For example, @code|{range(0, 10, 2)}| counts upward from 0 to 10
 by 2s, producing five values:
 
 @dssl2block|{
-assert [ n for n in range(0, 2, 10) ] == [ 0, 2, 4, 6, 8 ]
+assert [ n for n in range(0, 10, 2) ] == [ 0, 2, 4, 6, 8 ]
 }|
 
-Whereas @code|{range(50, -15, 0)}| counts downward from 50 to 0
+Whereas @code|{range(50, 0, -15)}| counts downward from 50 to 0
 by 15s, producing four values:
 
 @dssl2block|{
-assert [ n for n in range(50, -15, 0) ] == [ 50, 35, 20, 5 ]
+assert [ n for n in range(50, 0, -15) ] == [ 50, 35, 20, 5 ]
 }|
 
 If two arguments are given then they are the start and the

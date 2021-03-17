@@ -2,25 +2,31 @@ PACKAGE       = dssl2
 RACOTEST      = raco test
 RACOTESTLONG  = $(RACOTEST) ++arg -a
 
-default: lang
+.PHONY: default
+default: test
 
+.PHONY: test
 test: compiler_test parser_test
 
 # TODO: fix grader_test
+.PHONY: long_test
 long_test:
 	make RACOTEST="$(RACOTESTLONG)" compiler_test # grader_test
 
-compiler_test: lang
+.PHONY: compiler_test
+compiler_test:
 	$(RACOTEST) test/run-dssl2-tests.rkt
 
-grader_test: lang
+.PHONY: grader_test
+grader_test:
 	$(RACOTEST) test/grader.rkt
 
-parser_test: lang
+.PHONY: parser_test
+parser_test:
 	$(RACOTEST) test/parser.rkt
 
 BENCH_FILE = test/dssl2/and.rkt
-
+.PHONY: startup_bench
 startup_bench:
 	raco make $(BENCH_FILE)
 	racket $(BENCH_FILE) > /dev/null; \
@@ -28,23 +34,14 @@ startup_bench:
 		racket $(BENCH_FILE) > /dev/null; \
 	done
 
-all:
-	find . -name '*.rkt' | xargs raco make
-
-lang:
-	raco make language.rkt lang/reader.rkt
-
+.PHONY: clean
 clean:
-	find . -name compiled -type d | xargs rm -R
+	find . -name compiled -type d -print0 | xargs -0 rm -R
 
-DOC_SRC = $(shell git ls-files scribblings)
+.PHONY: fast_setup
+fast_setup:
+	raco setup -D $(PACKAGE)
 
-doc: scribblings/$(PACKAGE).scrbl $(DOC_SRC)
-	raco make scribblings/*.rkt
-	raco scribble --dest $@ $<
-
+.PHONY: setup
 setup:
 	raco setup $(PACKAGE)
-
-.PHONY: default all clean lang setup
-.PHONY: test long_test compiler_test parser_test grader_test

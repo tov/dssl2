@@ -524,7 +524,6 @@
    ; public methods
    [abs         (λ (self) (r:abs self))]
    [floor       (λ (self) self)]
-   [iterator    (λ (self) (range_iterator 0 1 self))]
    [ceiling     (λ (self) self)]
    [sqrt        (λ (self) (real-sqrt self))]
    [sin         (λ (self) (r:sin self))]

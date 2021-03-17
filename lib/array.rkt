@@ -21,7 +21,7 @@ class Array[T] (ITERABLE):
         if req_cap > self.capacity():
             let new_cap = max(req_cap, 2 * self.capacity())
             self._data = [ self._data[i] if i < self._len else None
-                               for i in new_cap ]
+                               for i in range(new_cap) ]
 
     def _check_index(self, index):
         if index >= self._len:
@@ -75,20 +75,20 @@ class Array[T] (ITERABLE):
 
     def shrink_to_fit(self) -> NoneC:
         if self._data.len() > self._len:
-            self._data = [ self._data[i] for i in self._len ]
+            self._data = [ self._data[i] for i in range(self._len) ]
 
     def clone(self) -> Array?:
         let result = Array(T, self._len)
-        for i in self._len:
+        for i in range(self._len):
             result.push(self.get(i))
         result
 
     def to_vec(self) -> vec?:
-        [ self._data[i] for i in self._len ]
+        [ self._data[i] for i in range(self._len) ]
 
     def equals_with?(self, other, pred?) -> bool?:
         if self._len != other.len(): return False
-        for i in self._len:
+        for i in range(self._len):
             if not pred?(self.get(i), other.get(i)):
                 return False
         return True

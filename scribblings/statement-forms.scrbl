@@ -205,7 +205,7 @@ def rebalance_left_(key, balance, left0, right):
 
 Loops over the values of the given @nt[expr], evaluating the
 @nt[block] for each. The @nt[expr] can evaluate to a vector, a string,
-or a natural number. If a vector, then this form iterates over the
+or a @code{range}. If a vector, then this form iterates over the
 element values (not the indices) of the vector; if a string, this form
 iterates over its characters.
 

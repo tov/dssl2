@@ -146,9 +146,9 @@ the same vector five times, not five different subvectors.
 Vector comprehensions: produces a vector of the values of @nt_[expr]{elem}
 while iterating the variable(s) over @nt_[expr]{iter}. In particular,
 @nt_[expr]{iter} must be a vector @c{v}, a string @c{s}, or a
-natural number @c{n}; in which case the iterated-over values are
+@code{range}; in which case the iterated-over values are
 the elements of @c{v}, the characters of
-@c{s}, or counting from 0 to @code{n - 1}, respectively. If one
+@c{s}, or counting through the range, respectively. If one
 variable @term[var_name] is provided, it takes on those values. If two are
 provided, then @term_[var_name]{2} takes on those values, while @term_[var_name]{1}
 takes on the indices counting from 0 upward.

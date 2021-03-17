@@ -263,10 +263,13 @@
 (define-def*idform smpl)
 (define-def*idform cmpd)
 
-(define-syntax-rule (defclassform name)
-  (subsection #:tag (format "class:~a" 'name)
-                 "Class "
-                 (c (symbol->string 'name))))
+(define-syntax-parser defclassform
+  [(_ name mk-sect)
+   #'(mk-sect #:tag (format "class:~a" 'name)
+              "Class "
+              (c (symbol->string 'name)))]
+  [(_ name)
+   #'(defclassform name subsection)])
 
 (define-syntax (linkclass stx)
   (syntax-parse stx

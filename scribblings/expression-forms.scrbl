@@ -230,6 +230,9 @@ let baz = 5
 assert Foo { bar, baz: 9 } == Foo(4, 9)
 }|
 
+Note that structs can also be constructed by using the struct name as a
+function, as shown on the right-hand side of the above assertion.
+
 @section{Operator expressions}
 
 Operators are described in order from tighest to loosest precedence.

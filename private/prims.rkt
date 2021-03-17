@@ -507,10 +507,12 @@
    [__rmul__    (num-binrop __rmul__ r:*)]
    [__div__     (num-binop __div__ prim:div '__rdiv__)]
    [__rdiv__    (num-binrop __rdiv__ prim:div)]
+   [__idiv__    (int-binop __idiv__ prim:idiv '__ridiv__)]
+   [__ridiv__   (int-binrop __ridiv__ prim:idiv)]
    [__pow__     (num-binop __pow__ expt '__rpow__)]
    [__rpow__    (num-binrop __rpow__ expt)]
-   [__mod__     (int-binop __mod__ modulo '__rmod__)]
-   [__rmod__    (int-binrop __rmod__ modulo)]
+   [__mod__     (int-binop __mod__ prim:mod '__rmod__)]
+   [__rmod__    (int-binrop __rmod__ prim:mod)]
    [__and__     (int-binop __and__ bitwise-and '__rand__)]
    [__rand__    (int-binrop __rand__ bitwise-and)]
    [__or__      (int-binop __or__ bitwise-ior '__ror__)]
@@ -802,11 +804,18 @@
 (define (right-shift a b)
   (arithmetic-shift a (- b)))
 
-(define (prim:div a b)
+(define (prim:idiv a b)
   (cond
-    [(eq? 0 b) (raise-runtime-error "/: division by zero")]
-    [(and (int? a) (int? b)) (quotient a b)]
-    [else                    (r:/ a b)]))
+    [(eq? 0 b) (raise-runtime-error "//: int division by zero")]
+    [else      (floor (/ a b))]))
+
+(define (prim:mod a b)
+  (cond
+    [(eq? 0 b) (raise-runtime-error "%%: int division by zero")]
+    [else      (modulo a b)]))
+
+(define (prim:div a b)
+  (r:/ (exact->inexact a) (exact->inexact b)))
 
 (define-simple-macro (logical-binop name:id bool-op:expr int-op:expr)
   (λ (a b)

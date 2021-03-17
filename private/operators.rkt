@@ -16,6 +16,7 @@
          -
          *
          /
+         //
          %
          **
          ;; bitwise logic
@@ -107,6 +108,7 @@
                [(a) (unop a)]
                [(a b) (binop a b)]))))]))
 
+(define-generic-binop // '__idiv__ '__ridiv__ "ints")
 (define-generic-binop %  '__mod__ '__rmod__ "ints")
 (define-generic-binop ** '__pow__ '__rpow__ "nums")
 (define-generic-binop &  '__and__ '__rand__ "ints")

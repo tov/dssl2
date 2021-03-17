@@ -44,10 +44,16 @@ class uint64:
         uint64(_as_int(other) * self.as_int())
 
     def __div__(self, other):
-        uint64(self.as_int() / _as_int(other))
+        self.as_int() / _as_int(other)
 
     def __rdiv__(self, other):
-        uint64(_as_int(other) / self.as_int())
+        _as_int(other) / self.as_int()
+
+    def __idiv__(self, other):
+        uint64(self.as_int() // _as_int(other))
+
+    def __ridiv__(self, other):
+        uint64(_as_int(other) // self.as_int())
 
     def __mod__(self, other):
         uint64(self.as_int() % _as_int(other))

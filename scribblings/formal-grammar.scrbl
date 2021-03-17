@@ -108,7 +108,7 @@ by a newline, or a compound statement.
 
 @itemlist[
  @item{@racket[**],}
- @item{@racket[*], @racket[/], and @racket[%],}
+ @item{@racket[*], @racket[/], @racket[//], and @racket[%],}
  @item{@racket[+] and @racket[-],}
  @item{@racket[>>] and @racket[<<],}
  @item{@racket[&],}

@@ -67,7 +67,7 @@
    OP6  ; &
    OP7  ; << >>
    OP8  ; (+ -)
-   OP9  ; * / %
+   OP9  ; * / // %
    OP10 ; (unary) ~ (+ -)
    OP11 ; **
    OP-LESS
@@ -263,7 +263,7 @@
       [#\^                      (token-OP5 (string->symbol lexeme))]
       [#\&                      (token-OP6 (string->symbol lexeme))]
       [(:or "<<" ">>")          (token-OP7 (string->symbol lexeme))]
-      [(:or #\* #\/ #\%)        (token-OP9 (string->symbol lexeme))]
+      [(:or #\* #\/ "//" #\%)   (token-OP9 (string->symbol lexeme))]
       [#\~                      (token-OP10 (string->symbol lexeme))]
       ["**"                     (token-OP11 (string->symbol lexeme))]
       [(:: "'''" lsq-str-contents "'''")

@@ -61,7 +61,7 @@
     [(:or "or" "and" "not")     (token keyword)]
     [(:or "==" #\< #\> "<=" #\≤ ">=" #\≥ "!=" #\≠
           #\| #\^ #\&
-          "<<" ">>" #\* #\/ #\% #\~ "**" #\+ #\-)
+          "<<" ">>" #\* #\/ "//" #\% #\~ "**" #\+ #\-)
                                 (token hash-colon-keyword)]
     [(:or #\, #\: #\; #\=)      (token parenthesis)]
     [(:or "True" "False")       (token constant)]

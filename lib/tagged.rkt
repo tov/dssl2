@@ -27,6 +27,8 @@ class Tagged:
     def __rmul__(b, a): _L('*', _mul, a, b)
     def __div__(a, b): _L('/', _div, a, b)
     def __rdiv__(b, a): _L('/', _div, a, b)
+    def __idiv__(a, b): _L('//', _idiv, a, b)
+    def __ridiv__(b, a): _L('//', _idiv, a, b)
     def __mod__(a, b): _L('%', _mod, a, b)
     def __rmod__(b, a): _L('%', _mod, a, b)
     def __pow__(a, b): _L('**', _pow, a, b)
@@ -67,6 +69,7 @@ def _add(a, b): a + b
 def _sub(a, b): a - b
 def _mul(a, b): a * b
 def _div(a, b): a / b
+def _idiv(a, b): a // b
 def _mod(a, b): a % b
 def _pow(a, b): a ** b
 

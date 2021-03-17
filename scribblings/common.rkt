@@ -272,6 +272,8 @@
   (syntax-parse stx
     [(_ name:id title:expr ...+)
      #'(seclink (format "class:~a" 'name) title ...)]
+    [(_ name:id #:only)
+     #'(linkclass name (tt (format "~a" 'name)))]
     [(_ name:id)
      #'(linkclass name "class " (tt (format "~a" 'name)))]))
 

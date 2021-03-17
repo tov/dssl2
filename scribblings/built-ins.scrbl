@@ -64,9 +64,10 @@ The primitive class for representing integral quantities of unlimited
 size. The type predicate for @linkclass[int] is @racket[int?].
 
 Integers support binary arithmethic operators @racket[+] (addition),
-@racket[-] (subtraction), @racket[*] (multiplication), and @racket[/]
-(integer division); when combined with an instance of @linkclass[float],
-the result will also be a float. They also support unary @racket[+]
+@racket[-] (subtraction), @racket[*] (multiplication), @racket[//]
+(integer division), and @racket[/] (float division, which always
+produces a @linkclass[float]).
+They also support unary @racket[+]
 (identity) and @racket[-] (negation).
 
 They also support comparison with @racket[==], @racket[<], @racket[<=],

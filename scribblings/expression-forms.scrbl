@@ -263,10 +263,68 @@ number. Then @c{-} negates the number, and @c{+} returns it unchanged.
 @defexpform*[
   @list{@nt_[expr]{1} @k[* #:def] @nt_[expr]{2}}
   @list{@nt_[expr]{1} @k[/ #:def] @nt_[expr]{2}}
+]
+
+Multiplies or divides the values of the expressions, respectively.
+
+For example:
+
+@dssl2block|{
+    assert 5 * 10 == 50
+    assert int?(5 * 10)
+
+    assert 5 * 10.0 == 50.0
+    assert float?(5 * 10.0)
+
+    assert 5 / 10 == 0.5
+    assert 10 / 5 == 2.0
+    assert float?(10 / 5)
+
+    assert 5 / 0 == inf
+    assert -5 / 0 == -inf
+    assert nan?(0 / 0)
+}|
+
+Note that @racket[/] always returns a @linkclass[float #:only]; for
+integer division, see @racket[//].
+
+@defexpform*[
+  @list{@nt_[expr]{1} @k[// #:def] @nt_[expr]{2}}
   @list{@nt_[expr]{1} @k[% #:def] @nt_[expr]{2}}
 ]
 
-Multiplies, divides, or modulos the values of the expressions, respectively.
+Integer division and modulus. Given @linkclass[int #:only]s @code{m} and
+@code{n},
+
+@itemlist[
+    @item{@code{m // n} produces @code{m} divided by @code{n}, floored (rounded toward @code{-inf}).}
+    @item{@code{m % n} produces @code{m - (m // n) * n}.}
+]
+
+This means that @code{(m // n) * n + m % n == m}.
+
+For example:
+@dssl2block|{
+    assert  30 //  7 ==  4
+    assert  30 %   7 ==  2
+
+    assert -30 // -7 ==  4
+    assert -30 %  -7 == -2
+
+    assert -30 //  7 == -5
+    assert -30 %   7 ==  5
+
+    assert  30 // -7 == -5
+    assert  30 %  -7 == -5
+
+    assert_error 3.0 // 7, 'type error'
+    assert_error 3.0 %  7, 'type error'
+
+    assert_error 3 // 0, 'division by zero'
+    assert_error 3 %  0, 'division by zero'
+}|
+
+For floating-point division, see @racket[/].
 
 @defexpform{@nt_[expr]{1} @k[+ #:def] @nt_[expr]{2}}
 

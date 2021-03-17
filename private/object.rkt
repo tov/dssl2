@@ -22,7 +22,9 @@
 
 (require "names.rkt"
          (only-in "contract.rkt"
-                  AnyC))
+                  AnyC)
+         (only-in "errors.rkt"
+                  current-error-context-srcloc))
 (require syntax/parse/define)
 (require (only-in racket/contract/base contract))
 (require (for-syntax racket/base
@@ -110,7 +112,7 @@
                          'visible-method-name
                          "method caller"
                          'visible-method-name
-                         #f)
+                         (current-error-context-srcloc))
                'visible-method-name))
            ...
            (define-for-syntax name

@@ -7,6 +7,7 @@
          capture-context
          with-error-context
          source-context-srcloc
+         current-error-context-srcloc
          current-dssl-error-format
          dssl-error
          runtime-error
@@ -66,7 +67,10 @@
 (struct source-context (srcloc continuation-marks))
 
 (define current-error-context
-  (make-parameter (source-context '() #f)))
+  (make-parameter (source-context #f #f)))
+
+(define (current-error-context-srcloc)
+  (source-context-srcloc (current-error-context)))
 
 (define-simple-macro (capture-context . code)
   (source-context (get-first-srcloc . code)

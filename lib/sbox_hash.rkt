@@ -1,56 +1,110 @@
-#lang dssl2
+#lang racket/base
 
-import uint64
+(require dssl2/private/class-system
+         (only-in dssl2/private/prims
+                  AnyC
+                  str))
 
-# Interface for an object providing a hash function.
-interface HASHER:
-    # Hashes `input`.
-    def hash(self, input: AnyC) -> nat?
+(provide HASHER
+         SboxHash64
+         SboxHash64?
+         SboxHash
+         SboxHash?
+         make_sbox_hash)
 
-def _random_uint64():
-    uint64(random_bits(64))
 
-# Each instance is a randomly generated 64-bit hash function. The 
-# only method, `hash`, hashes the string representation of its
-# input to an unsigned 64-bit integer.
-class SboxHash64 (HASHER):
-    let _start:   uint64?
-    let _sbox:    vec?
+;;;
+;;; Constants
+;;;
 
-    def __init__(self):
-        self._start   = _random_uint64()
-        self._sbox    = [ _random_uint64() for _ in range(256) ]
+(define N-CHARS       256)
+(define CHAR-MASK     (sub1 N-CHARS))
+(define WORD-MASK     (sub1 (arithmetic-shift 1 64)))
+(define UINT16-LIMIT  (arithmetic-shift 1 16))
 
-    # Maps a character to its randomized hash code.
-    def _substitute(self, c: char?) -> uint64?:
-        self._sbox[int(c) % self._sbox.len()]
-     
-    # Combines a character with the hash code, by `xor`ing its
-    # substitution value into the hash code.
-    def _combine(self, hash_code: uint64?, c: char?) -> uint64?:
-        hash_code ^ self._substitute(c)
-    
-    # Mixes a hash code to ensure that each combined character affects
-    # different bits.    
-    def _mix(self, hash_code: uint64?) -> uint64?:
-        3 * hash_code 
 
-    # Applies the hash function.
-    def hash(self, input: AnyC) -> nat?:
-        let hash_code = self._start
-        for c in str(input):
-            hash_code = self._mix(self._combine(hash_code, c))
-        return hash_code.as_int()
-      
-    # Two `SboxHash`es are only equal if they have the same object
-    # identity.
-    def __eq__(self, other) -> bool?:
-        self is other
-        
-    # Prints an `SboxHash` without showing the sbox (because it's big).
-    def __print__(self, print):
-        print("#<object:SboxHash _start=%p _sbox=...>", self._start)
+;;;
+;;; Random generation of 64-bit unsigned integers
+;;; (and vectors thereof)
+;;;
 
-def SboxHash(): SboxHash64()
+(define (random-uint16)
+  (random UINT16-LIMIT))
 
-def make_sbox_hash(): SboxHash64().hash
+(define (random-uint64)
+  (bitwise-ior
+   (random-uint16)
+   (arithmetic-shift (random-uint16) 16)
+   (arithmetic-shift (random-uint16) 32)
+   (arithmetic-shift (random-uint16) 48)))
+
+(define (random-sbox)
+  (build-vector N-CHARS (λ (_) (random-uint64))))
+
+
+;;;
+;;; The hash function
+;;;
+
+(define (do-hash key start sbox)
+  (for/fold ([hash-code start])
+            ([c (in-string (key->str key))])
+    (mix (bitwise-xor hash-code (substitute sbox c)))))
+
+(define (key->str key)
+  (if (string? key)
+      key
+      (str key)))
+
+(define (substitute sbox c)
+  (vector-ref sbox
+              (bitwise-and
+               CHAR-MASK
+               (char->integer c))))
+
+(define (mix i)
+  (bitwise-and WORD-MASK (* 3 i)))
+
+;;;
+;;; HASHER Interface
+;;;
+
+(define-dssl-interface HASHER () ()
+  ([hash () (AnyC) AnyC]))
+
+
+;;;
+;;; SboxHash64 class
+;;;
+
+(define-dssl-class SboxHash64 () (HASHER)
+  ([start AnyC] [sbox AnyC])
+  ([__init__ () self () AnyC
+     (begin
+       (dssl-self start (random-uint64))
+       (dssl-self sbox (random-sbox)))]
+   [hash () self ([key AnyC]) AnyC
+     (do-hash key (dssl-self start) (dssl-self sbox))]
+   [__eq__ () self ([other AnyC]) AnyC
+     (eq? self other)]
+   [__print__ () self ([print AnyC]) AnyC
+     (print "#<object:SboxHash _start=%p _sbox=...>"
+            (dssl-self start))]))
+
+
+;;;
+;;; Deprecated APIs
+;;;
+
+(define (SboxHash)
+  (SboxHash64))
+
+(define (SboxHash? o)
+  (SboxHash64? o))
+
+(define (make_sbox_hash)
+  (define start (random-uint64))
+  (define sbox  (random-sbox))
+  (define (hash key)
+    (do-hash key start sbox))
+  hash)

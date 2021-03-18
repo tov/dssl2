@@ -213,6 +213,29 @@ def _build_Cons():
 
     let Cons_ListC = SquareBracketC('ListC', Cons_realListC)
 
+    class Cons_Iterator (ITERATOR):
+        let _head
+
+        def __init__(self, head: _list?):
+            self._head = head
+
+        def iterator(self):
+            return self
+
+        def try_advance(self, visit):
+            if cons?(self._head):
+                let element = self._head.car
+                self._head = self._head.cdr
+                visit(element)
+                return True
+            else:
+                return False
+
+        def __print__(self, print):
+            print('#<Cons.Iterator ')
+            _print_as_vec(self._head, print)
+            print('>')
+
     struct ConsOperations:
         let list?
         let ListC
@@ -233,27 +256,33 @@ def _build_Cons():
         let ormap
         let sort
         let Builder
+        let Builder?
+        let Iterator
+        let Iterator?
 
     return ConsOperations {
-        list?:    list?,
-        ListC:    Cons_ListC,
-        rev_app:  Cons_rev_app,
-        rev:      Cons_rev,
-        app:      Cons_app,
-        concat:   Cons_concat,
-        len:      Cons_len,
-        into_vec: Cons_into_vec,
-        to_vec:   Cons_to_vec,
-        from_vec: Cons_from_vec,
-        foreach:  Cons_foreach,
-        foldr:    Cons_foldr,
-        foldl:    Cons_foldl,
-        map:      Cons_map,
-        filter:   Cons_filter,
-        andmap:   Cons_andmap,
-        ormap:    Cons_ormap,
-        sort:     Cons_sort,
-        Builder:  ConsBuilder,
+        list?:     list?,
+        ListC:     Cons_ListC,
+        rev_app:   Cons_rev_app,
+        rev:       Cons_rev,
+        app:       Cons_app,
+        concat:    Cons_concat,
+        len:       Cons_len,
+        into_vec:  Cons_into_vec,
+        to_vec:    Cons_to_vec,
+        from_vec:  Cons_from_vec,
+        foreach:   Cons_foreach,
+        foldr:     Cons_foldr,
+        foldl:     Cons_foldl,
+        map:       Cons_map,
+        filter:    Cons_filter,
+        andmap:    Cons_andmap,
+        ormap:     Cons_ormap,
+        sort:      Cons_sort,
+        Builder:   ConsBuilder,
+        Builder?:  ConsBuilder?,
+        Iterator:  Cons_Iterator,
+        Iterator?: Cons_Iterator?,
     }
 
 

@@ -13,6 +13,16 @@ def _build_list?():
 
 let _list? = _build_list?()
 
+def _print_as_vec(head, print):
+    print('[')
+    if cons?(head):
+        print('%p', head.car)
+        head = head.cdr
+        while cons?(head):
+            print(', %p', head.car)
+            head = head.cdr
+    print(']')
+
 struct cons:
     let car
     let cdr: _list?
@@ -26,10 +36,10 @@ class ConsBuilder:
         self._head = None
         self._tail = None
         self._len  = 0
-        
+
     def len(self):
         return self._len
-        
+
     def empty?(self):
         return self._len == 0
 
@@ -37,8 +47,13 @@ class ConsBuilder:
         self._head = cons(x, self._head)
         if self._tail is None: self._tail = self._head
         self._len = self._len + 1
+        return self
 
     def snoc(self, x):
+        self._snoc(x)
+        return self
+
+    def _snoc(self, x):
         let old_tail = self._tail
         self._tail = cons(x, None)
         if cons?(old_tail):
@@ -47,11 +62,26 @@ class ConsBuilder:
             self._head = self._tail
         self._len = self._len + 1
 
+    def snoc_all(self, xs):
+        for x in xs:
+            self._snoc(x)
+        return self
+
     def take(self):
         let result = self._head
         self.__init__()
         return result
 
+    def build(self):
+        return self.take()
+
+    def __print__(self, print):
+        print('Cons.Builder()')
+        let head = self._head
+        if head is None: return
+        print('.snoc_all(')
+        _print_as_vec(head, print)
+        print(')')
 
 # Builds the Cons singleton struct.
 def _build_Cons():

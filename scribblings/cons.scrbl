@@ -134,6 +134,11 @@ O(n²).
 The @tt{Cons.Builder} class provides a convenient way to build lists from front
 to back.
 
+@defprocform[Cons.Builder]{@proto[Cons.Builder?]}
+
+The @tt{Cons.Builder} constructor takes no arguments and starts off with an
+empty list.
+
 For example:
 
 @dssl2block|{
@@ -150,32 +155,47 @@ assert len(cb) == 3
 assert cb.take() == cons(2, cons(4, cons(6, None)))
 assert len(cb) == 0
 
-cb.snoc(1)
-cb.cons(2)
-cb.snoc(3)
-cb.cons(4)
-cb.snoc(5)
-cb.cons(6)
+cb.snoc(1).cons(2).snoc(3)
+cb.cons(4).snoc(5).cons(6)
 assert Cons.to_vec(cb.take()) == [6, 4, 2, 1, 3, 5]
 }|
 
-@defprocform[Cons.Builder]{(): Cons.Builder?}
+@O(1) time and space.
 
-The @tt{Cons.Builder} constructor takes no arguments and initially
-contains the empty list.
+@defprocform[Cons.Builder?]{@proto[AnyC bool?]}
 
-@defmethform[Cons.Builder cons]{@proto[AnyC NoneC]}
+Predicate for recognizing instances of the @tt{Cons.Builder} class.
 
-Adds the given value to the front of the list.
+@O(1) time and space.
 
-@defmethform[Cons.Builder snoc]{@proto[AnyC NoneC]}
+@defmethform[Cons.Builder cons]{@proto[AnyC Cons.Builder?]}
 
-Adds the given value to the back of the list.
+Adds the given value to the front of the list being built.
+Then returns the @tt{Cons.Builder} for method chaining.
+
+@O(1) time and space.
+
+@defmethform[Cons.Builder snoc]{@proto[AnyC Cons.Builder?]}
+
+Adds the given value to the back of the list being built.
+Then returns the @tt{Cons.Builder} for method chaining.
+
+@O(1) time and space.
+
+@defmethform[Cons.Builder snoc_all]{(seq: ITERABLE?) -> Cons.Builder?}
+
+Iterates over all the values of @code{seq} and appends them to the end
+of the list being built. Then returns the @tt{Cons.Builder} for method
+chaining.
+
+@O(@code{len(seq)}) time and space.
 
 @defmethform[Cons.Builder take]{@proto[Cons.list?]}
 
 Takes the built list out of this @tt{Cons.Builder} and returns it, leaving this
 @tt{Cons.Builder} empty.
+
+@O(1) time and space.
 
 @defmethform[Cons.Builder empty?]{@proto[bool?]}
 
@@ -183,4 +203,6 @@ Returns whether the current list in this @tt{Cons.Builder} is empty.
 
 @defmethform[Cons.Builder len]{@proto[nat?]}
 
-Returns the length of the list being built.
+Returns the length of the list built so far.
+
+@O(1) time and space.

@@ -136,7 +136,7 @@ def _build_Cons():
             builder.snoc(element)
         return builder.take()
 
-    def Cons_foreach(visit: FunC[AnyC, NoneC], lst: list?) -> NoneC:
+    def Cons_foreach(visit: FunC[AnyC, AnyC], lst: list?) -> NoneC:
         while cons?(lst):
             visit(lst.car)
             lst = lst.cdr

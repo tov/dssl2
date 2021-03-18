@@ -88,10 +88,10 @@ def _build_Cons():
     let list? = _list?
 
     def Cons_rev_app(before: list?, acc: list?) -> list?:
-        if cons?(before):
-            return Cons_rev_app(before.cdr, cons(before.car, acc))
-        else:
-            return acc
+        while cons?(before):
+            acc = cons(before.car, acc)
+            before = before.cdr
+        return acc
 
     def Cons_rev(lst: list?) -> list?:
         return Cons_rev_app(lst, None)

@@ -25,3 +25,32 @@ assert a.get(1) == 10
 assert a.get(2) == 4
 
 assert_error array()[0], 'Array index out of bounds: 0 >= 0'
+
+let x = Array(5)
+assert x.capacity() == 5
+for i in range(8):
+    x.push(i)
+assert x.capacity() == 10
+
+x[0] = 100
+
+assert x[0] == 100
+assert x[1] == 1
+
+let y = x.clone()
+assert (x == y)
+
+x.push_front(99)
+assert x[0] == 99
+assert x[1] == 100
+assert x[2] == 1
+assert x.pop_front() == 99
+assert x == y
+assert x.pop_back() == 7
+x.push(7)
+assert x == y
+
+let c = Array[int?](5)
+assert_error c.push("string")
+let d = c.clone()
+assert_error d.push("string")

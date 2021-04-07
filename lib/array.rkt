@@ -78,7 +78,7 @@ class Array[T] (ITERABLE):
             self._data = [ self._data[i] for i in range(self._len) ]
 
     def clone(self) -> Array?:
-        let result = Array(T, self._len)
+        let result = Array[T](self._len)
         for i in range(self._len):
             result.push(self.get(i))
         result

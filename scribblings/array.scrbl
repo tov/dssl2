@@ -2,13 +2,17 @@
 
 @require["common.rkt"]
 
-@title{The @tt{Array} library}
+@title{The @tt{array} library}
 
 This library provides a representation for a dynamic array, as well as a number of
-utility functions that operate on them. The array library supports printing
-(see note below), equality comparisons, square bracket index
-referencing, and square bracket index setting, so feel free to get and set elements
-in your array by using a[i].
+utility functions that operate on them.
+
+These definitions are not part of the base DSSL2 language, and must be imported
+explicitly using: @racket[import array]
+
+The array library supports printing (see note below), equality comparisons,
+square bracket index referencing, and square bracket index setting, so feel
+free to get and set elements in your array by using a[i].
 
 Note regarding printing: if x is an object of class @tt{Array} that you wish to print, you
 must do one of the following:
@@ -22,9 +26,6 @@ Simply doing
 @dssl2block|{
 print(x)}|
 will not work and will instead throw an error.
-
-These definitions are not part of the base DSSL2 language, and must be imported
-explicitly using: @racket[import Array]
 
 @section{Class @tt{Array}}
 

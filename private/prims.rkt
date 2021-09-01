@@ -533,7 +533,8 @@
    [tan         (λ (self) (r:tan self))]
    [asin        (λ (self) (r:asin self))]
    [acos        (λ (self) (r:acos self))]
-   [atan        (λ (self . other) (apply r:atan self other))]))
+   [atan        (λ (self . other) (apply r:atan self other))]
+   [log         (λ (self . other) (apply r:log self other))]))
 
 (define (real-sqrt n)
   (if (< n 0)
@@ -584,7 +585,8 @@
    [tan         (λ (self) (r:tan self))]
    [asin        (λ (self) (r:asin self))]
    [acos        (λ (self) (r:acos self))]
-   [atan        (λ (self . other) (apply r:atan self other))]))
+   [atan        (λ (self . other) (apply r:atan self other))]
+   [log         (λ (self . other) (apply r:log  self other))]))
 
 (define proc
   (case-lambda

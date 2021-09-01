@@ -157,6 +157,15 @@ The inverse tangent function.
 Optionally takes an argument, in which case @code{y.atan(x)} computes the
 angle from the origin to the Cartesian point (@code{x}, @code{y}).
 
+@defmethforms[int log
+              [@proto[float?]]
+              [@proto[num? float?]]]
+
+The logarithm function.
+
+Without an argument, returns the natural logarithm of the receiver. When an
+argument, returns the logarithm of the receiver using the argument as the base.
+
 @defclassform[float]
 
 The primitive class for representing approximations of real numbers (as
@@ -235,6 +244,15 @@ The inverse tangent function.
 
 Optionally takes an argument, in which case @code{y.atan(x)} computes the
 angle from the origin to the Cartesian point (@code{x}, @code{y}).
+
+@defmethforms[float log
+              [@proto[float?]]
+              [@proto[num? float?]]]
+
+The logarithm function.
+
+Without an argument, returns the natural logarithm of the receiver. When an
+argument, returns the logarithm of the receiver using the argument as the base.
 
 @defclassform[proc]
 

@@ -24,8 +24,8 @@ represents a node in a singly-linked list:
 
 @dssl2block|{
 struct cons:
-    let car
-    let cdr: Cons.list?
+    let data
+    let next: Cons.list?
 }|
 
 The end of the linked list must be marked with @racket[None].

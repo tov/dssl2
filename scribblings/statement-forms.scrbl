@@ -472,8 +472,8 @@ class Stack:
 
     def pop(self):
         self._check_non_empty()
-        let result = self.head.car
-        self.head = self.head.cdr
+        let result = self.head.data
+        self.head = self.head.next
         result
 
     # Private helper method for emptiness check:

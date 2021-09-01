@@ -2,7 +2,7 @@
 
 # A library of header-free singly-linked lists.
 #
-# Lists are represented using None and a struct, cons(car, cdr).
+# Lists are represented using None and a struct, cons(data, next).
 
 # A _list? is one of:
 # - cons(AnyC, _list?)
@@ -16,16 +16,16 @@ let _list? = _build_list?()
 def _print_as_vec(head, print):
     print('[')
     if cons?(head):
-        print('%p', head.car)
-        head = head.cdr
+        print('%p', head.data)
+        head = head.next
         while cons?(head):
-            print(', %p', head.car)
-            head = head.cdr
+            print(', %p', head.data)
+            head = head.next
     print(']')
 
 struct cons:
-    let car
-    let cdr: _list?
+    let data
+    let next: _list?
 
 class ConsBuilder:
     let _head
@@ -57,7 +57,7 @@ class ConsBuilder:
         let old_tail = self._tail
         self._tail = cons(x, None)
         if cons?(old_tail):
-            old_tail.cdr = self._tail
+            old_tail.next = self._tail
         else:
             self._head = self._tail
         self._len = self._len + 1
@@ -89,8 +89,8 @@ def _build_Cons():
 
     def Cons_rev_app(before: list?, acc: list?) -> list?:
         while cons?(before):
-            acc = cons(before.car, acc)
-            before = before.cdr
+            acc = cons(before.data, acc)
+            before = before.next
         return acc
 
     def Cons_rev(lst: list?) -> list?:
@@ -98,16 +98,16 @@ def _build_Cons():
 
     def Cons_app(before: list?, after: list?) -> list?:
         if cons?(before):
-            return cons(before.car, Cons_app(before.cdr, after))
+            return cons(before.data, Cons_app(before.next, after))
         else:
             return after
 
     def Cons_concat(before: list?, after: list?) -> list?:
         if cons?(before):
             let current = before
-            while cons?(current.cdr):
-                current = current.cdr
-            current.cdr = after
+            while cons?(current.next):
+                current = current.next
+            current.next = after
             return before
         else:
             return after
@@ -115,14 +115,14 @@ def _build_Cons():
     def Cons_len(lst: list?) -> int?:
         let result = 0
         while cons?(lst):
-            lst = lst.cdr
+            lst = lst.next
             result = result + 1
         return result
 
     def Cons_into_vec(lst: list?, vec: vec?, where: int?) -> NoneC:
         while cons?(lst):
-            vec[where] = lst.car
-            lst = lst.cdr
+            vec[where] = lst.data
+            lst = lst.next
             where = where + 1
 
     def Cons_to_vec(lst: list?) -> vec?:
@@ -138,12 +138,12 @@ def _build_Cons():
 
     def Cons_foreach(visit: FunC[AnyC, AnyC], lst: list?) -> NoneC:
         while cons?(lst):
-            visit(lst.car)
-            lst = lst.cdr
+            visit(lst.data)
+            lst = lst.next
 
     def Cons_foldr[Y](f: FunC[AnyC, Y, Y], z: Y, lst: list?) -> Y:
         if cons?(lst):
-            return f(lst.car, Cons_foldr(f, z, lst.cdr))
+            return f(lst.data, Cons_foldr(f, z, lst.next))
         else:
             return z
 
@@ -167,30 +167,30 @@ def _build_Cons():
     def Cons_andmap(f: FunC[AnyC, AnyC], lst: list?) -> AnyC:
         let result = True
         while cons?(lst):
-            result = f(lst.car)
+            result = f(lst.data)
             if not result: break
-            lst = lst.cdr
+            lst = lst.next
         return result
 
     def Cons_ormap(f: FunC[AnyC, AnyC], lst: list?) -> AnyC:
         let result = False
         while cons?(lst):
-            result = f(lst.car)
+            result = f(lst.data)
             if result: break
-            lst = lst.cdr
+            lst = lst.next
         return result
 
     def Cons_sort[T](less_than?: FunC[T, T, AnyC],
                      lst: Cons_realListC(T)) \
                     -> list?:
         def insert(element, link):
-            if cons?(link) and less_than?(link.car, element):
-                return cons(link.car, insert(element, link.cdr))
+            if cons?(link) and less_than?(link.data, element):
+                return cons(link.data, insert(element, link.next))
             else:
                 return cons(element, link)
         def loop(link, acc):
             if cons?(link):
-                return loop(link.cdr, insert(link.car, acc))
+                return loop(link.next, insert(link.data, acc))
             else:
                 return acc
         return loop(lst, None)
@@ -224,8 +224,8 @@ def _build_Cons():
 
         def try_advance(self, visit):
             if cons?(self._head):
-                let element = self._head.car
-                self._head = self._head.cdr
+                let element = self._head.data
+                self._head = self._head.next
                 visit(element)
                 return True
             else:

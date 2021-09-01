@@ -128,6 +128,14 @@ Returns the same integer.
 
 Returns the square root of the receiving integer, as a @racket[float].
 
+Do note that, to take the square root of a literal integer, it must be in
+parentheses:
+
+@racketblock[(2).sqrt()]
+
+Without parentheses, the parser (lexer, really) expects to see a float when it
+sees the dot.
+
 @defmethform[int cos]{@proto[float?]}
 
 The cosine function.

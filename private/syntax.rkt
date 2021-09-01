@@ -748,12 +748,12 @@
   (define (display-any-error exn)
     (display-error
       exn
-      (format "reason:     an error occurred\ndetails:    ~a"
+      (format "reason:     an error occurred (but shouldn't have)\ndetails:    ~a"
               (exn-message exn))))
   (define (display-other-error exn)
     (display-error
       exn
-      (format "reason:     an error occurred\ndetails:    ~a"
+      (format "reason:     an error occurred (but shouldn't have)\ndetails:    ~a"
               exn)))
   (with-handlers
     ([exn:fail:dssl:timeout? display-timeout-error]

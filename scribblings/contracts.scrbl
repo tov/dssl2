@@ -454,6 +454,18 @@ Assigning a non-integer to an element of @code{v} is an error as well.
 If the optional square bracket parameter is omitted, @racket[VecC] just
 checks that the protected value is a vector.
 
+@defprocform[TupC]{[@racket[contract?], ..., @racket[contract?]]: @racket[contract?]}
+
+Creates a contract that protects a vector to ensure that its first element
+matches the first given contract, its second element matches the second given
+contract, and so on.
+
+For example:
+
+@dssl2block|{
+let t: TupC[int?, str?, int?] = [2, "three", 4]
+}|
+
 @defprocform[FunC]{[@racket[contract?], ..., @racket[contract?]]: @racket[contract?]}
 
 Creates a function contract with the given arguments and result. The

@@ -525,14 +525,14 @@ Compares two values of any type. If the values are incomparable, returns
 argument is less, 0 if equal, or greater than 0 if the first argument is
 greater.
 
-@defprocform[max]{@proto[AnyC AnyC ... AnyC]}
+@defprocform[max]{@proto[AnyC AnyC]}
 
-Returns the largest of the given arguments, using @racket[cmp] to determine
+Returns the largest of the two given arguments, using @racket[cmp] to determine
 ordering. It is an error if the values are not comparable.
 
-@defprocform[min]{@proto[AnyC AnyC ... AnyC]}
+@defprocform[min]{@proto[AnyC AnyC]}
 
-Returns the smallest of the given arguments, using @racket[cmp] to determine
+Returns the smallest of the two given arguments, using @racket[cmp] to determine
 ordering. It is an error if the values are not comparable.
 
 @section{Randomness operations}

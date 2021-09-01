@@ -168,11 +168,11 @@
     [else
       (dssl-error "%s: not ordered: %p and %p" name old new)]))
 
-(define (max x . xs)
-  (foldl (build-find-extreme "max" positive?) x xs))
+(define (max x1 x2)
+  ((build-find-extreme "max" positive?) x2 x1))
 
-(define (min x . xs)
-  (foldl (build-find-extreme "min" negative?) x xs))
+(define (min x1 x2)
+  ((build-find-extreme "min" negative?) x2 x1))
 
 ;; length
 

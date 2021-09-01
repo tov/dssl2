@@ -60,7 +60,7 @@ expression @nt_[ctc]{res} for the result. For example:
 
 @dssl2block|{
 def pythag(x: num?, y: num?) -> num?:
-    sqrt(x * x + y * y)
+    (x * x + y * y).sqrt()
 }|
 
 Each of the contract positions is optional, and if omitted defaults to

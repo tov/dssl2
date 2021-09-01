@@ -370,7 +370,7 @@ let p = posn { x: 3, y: 4 }
 
 @dssl2block|{
 def magnitude(q):
-    sqrt(q.x * q.x + q.y * q.y)
+    (q.x * q.x + q.y * q.y).sqrt()
 }|
 
 It also possible to construct the struct by giving the fields in order

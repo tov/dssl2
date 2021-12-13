@@ -3,21 +3,18 @@
 @require["common.rkt"]
 
 @title[#:style 'toc]{DSSL2: Data Structures Student Language}
-@author{Jesse A. Tov <jesse@"@"cs.northwestern.edu>}
+@author[@author+email["Jesse A. Tov" "jesse@cs.northwestern.edu"] @author+email["Vincent St-Amour" "stamourv@cs.northwestern.edu"]]
 
 @defmodulelang[dssl2]
 
-DSSL2 is a programming language for data structures students. It’s
-designed to be simple, providing only the basic elements needed to
-implement a variety of data structures.
+DSSL2 is a programming language for data structures students. It’s designed to
+be simple, providing the essential building blocks one needs to implement a
+variety of data structures, but leaving out the finished products for students
+to build themselves.
 
-DSSL2 uses alignment and indentation to delimit @deftech{blocks}. In
-particular, compound statements such as
-@racket[if]-@racket[elif]-@racket[else] take @nt[block]s for each
-condition, where a @nt[block] can be either one simple statement
-followed by a newline, or a sequence of statements on subsequent lines
-that are all indented by four additional spaces. Here is an example of a
-tree insertion function written using indentation:
+DSSL2 is a close cousin of Python, with a similar indentation-sensitive syntax
+and similar function and keyword names when possible. For example, this is a
+DSSL2 program:
 
 @codeblock|{
 #lang dssl2
@@ -37,13 +34,24 @@ def insert(t, k):
     return t
 }|
 
-Each block follows a colon and newline, and is indented 4 spaces more
-than the previous line. In particular, the block started by @racket[def]
-is indented by 4 spaces, and the @racket[elif] blocks by
-8. When a block is a simple statement, it can be placed on the same
-line, as in the @racket[if] and @racket[else] cases.
+Like Python, DSSL2 uses alignment and indentation to delimit
+@deftech{blocks}. In particular, compound statements such as @racket[def] or
+@racket[if]-@racket[elif]-@racket[else] take @nt[block]s for each condition,
+where a @nt[block] can be either one simple statement followed by a newline, or
+a sequence of statements on subsequent lines that are all indented by four
+additional spaces. Extraneous indentation is an error.
 
-Extraneous indentation is an error.
+DSSL2 deviates from Python in a number of places for pedagogical reasons.
+Some of these deviations include (non-exhaustive list):
+
+@itemlist[
+@item{@bold{the base data structures}: replaced instead by basic arrays and structs)}
+@item{@bold{the object system}: which emphasizes encapsulation and interfaces}
+@item{@bold{variable declarations}: to avoid Python's scope gotchas.}
+]
+
+Nonetheless, students familiar with Python should feel at home in DSSL2. And
+students learning DSSL2 should have a head start when learning Python.
 
 @include-section["formal-grammar.scrbl"]
 @include-section["lexical-syntax.scrbl"]

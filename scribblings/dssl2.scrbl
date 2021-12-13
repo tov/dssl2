@@ -53,4 +53,3 @@ Extraneous indentation is an error.
 @include-section["contracts.scrbl"]
 @include-section["cons.scrbl"]
 @include-section["sbox_hash.scrbl"]
-@include-section["array.scrbl"]

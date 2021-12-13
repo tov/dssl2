@@ -45,7 +45,10 @@
          (only-in racket/port
                   call-with-output-string))
 (require (for-syntax racket/base
-                     (only-in racket/syntax generate-temporary)))
+                     (only-in racket/syntax
+                              generate-temporary
+                              format-id
+                              define/with-syntax)))
 
 ; The printer will change this to override how contract names are
 ; composed. This is to avoid a circular dependency between this
@@ -200,6 +203,10 @@
         result-ctc:expr
         body:expr)
      (define no-opt-formals? (stx-null? #'(opt-formal ...)))
+     ;; generate-temporary would be the "proper" solution, but the numbers
+     ;; after the name may be confusing to students
+     (define/with-syntax real-definition
+       (format-id #'name "~a·" (syntax-e #'name)))
      #`(begin
          #,(if no-opt-formals?
              #'(define instantiate-contract

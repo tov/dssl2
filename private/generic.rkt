@@ -17,9 +17,11 @@
 
 (require "errors.rkt"
          (only-in "contract.rkt"
-                  AnyC))
+                  AnyC
+                  ensure-contract))
 (require (for-syntax syntax/stx
                      "errors.rkt"
+                     "names.rkt"
                      "util.rkt"))
 (require syntax/parse/define)
 (require (only-in racket/function
@@ -259,6 +261,35 @@
          (procedure-arity (generic-base-instantiate proc))
          contract-arity)))
 
+;; This helper is a HACK for allowing the name of an interface inside contracts
+;; within its definition. For example, persistent data structures that have
+;; methods that return instances of the data structure.
+;; Currently, this detects (in a very crude way) when the interface name is used
+;; *directly* as a contract for a parameter or a result (basically, a 1-level
+;; very half-assed tree-walker). The proper solution would probably be to use
+;; syntax parameters to change the meaning of the interface name in the body of
+;; its definition, but I couldn't get it to work; my macro-fu is too weak.
+;; Also, I couldn't get these references to do any actual checking. Not sure
+;; why, but at least now it's possible to *write* these contracts...
+;; -- stamourv, Dec 2021
+;; See the recursive-interface test.
+(define-for-syntax (fix-recursive-interface-contract name found)
+  #`(ensure-contract 'def
+                     #,(syntax-parse found
+                         ;; Hack on top of hack: this should look for the actual
+                         ;; `vec-ref` binding. But can't require it; cyclic
+                         ;; dependency...
+                         [(vec-ref maybe-name param)
+                          (if (free-identifier=? #'maybe-name name)
+                              ;; THIS DOES NOT WORK. it doesn't crash, but it
+                              ;; doesn't actually check anything either
+                              ;; eta, to avoid binding issues
+                              ;; #`(lambda (x) (#,(interface-contract-name name) x))
+                              #'AnyC ; HACK!
+                              #'maybe-name)]
+                         [_
+                          found])))
+
 ; Creates a contract for a procedure that accepts optional, square
 ; bracket arguments.
 ;
@@ -268,18 +299,27 @@
 ;
 ; Here, the optional parameters `T` and `U` give contracts for the
 ; required parameters, and default to `AnyC`.
+; Observation (stamourv, Dec 2021): only used when defining interfaces
 (define-syntax (square-bracket-proc-contract stx)
   (syntax-parse stx
-    [(_ name:id [] formal:expr ... result:expr)
-     #'(-> formal ... result)]
-    [(_ name:id [opt-formal:id ...+] formal:expr ... result:expr)
-     (define default-actuals (stx-map (λ (_) #'AnyC) #'(opt-formal ...)))
-     #'(let ()
+    [(_ name:id interface-name [] formal:expr ... result:expr)
+     #`(-> #,@(for/list ([f (syntax->list #'(formal ...))])
+                (fix-recursive-interface-contract #'interface-name f))
+           #,(fix-recursive-interface-contract #'interface-name #'result))]
+    ;; This clause is for method prototypes within interface definitions which
+    ;; introduce extra contract parameters (beyond those defined by the
+    ;; interface itself). pretty niche, and was broken before. This code doesn't
+    ;; crash anymore, but I'm not too confident in its correctness.
+    ;; -- stamourv, Dec 2021
+    [(_ name:id interface-name [opt-formal:id ...+] formal:expr ... result:expr)
+     #`(let ()
          (define first-order?
            (arities->sbp? #,(syntax-length #'(opt-formal ...))
                           #,(syntax-length #'(formal ...))))
          (define (instantiate-contract opt-formal ...)
-           (-> formal ... result))
+           (-> #,@(for/list ([f (syntax->list #'(formal ...))])
+                    (fix-recursive-interface-contract #'interface-name f))
+               #,(fix-recursive-interface-contract #'interface-name #'result)))
          (define ((late-neg-proj blame) value missing-party)
            (cond
              [(first-order? value)
@@ -293,7 +333,8 @@
                      missing-party
                      'name #f))
                 (contract
-                  (instantiate-contract #,@default-actuals)
+                  (instantiate-contract
+                    (make-list #,(syntax-length #'(opt-formal ...)) AnyC))
                   (generic-proc-apply value)
                   (blame-positive blame)
                   missing-party

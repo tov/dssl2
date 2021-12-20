@@ -156,16 +156,16 @@
      (define name-length (string-length (symbol->string (syntax-e #'name))))
      ; Code generation
      (define base-interface-table
-       #'(make-immutable-hasheq
+       #`(make-immutable-hasheq
            (list (cons 'method-name
                        (let
                          ([the-contract
                             (square-bracket-proc-contract
                               method-name
+                              name
                               [method-cv ...]
-                              (ensure-contract 'def method-param-contract)
-                              ...
-                              (ensure-contract 'def method-result-contract))])
+                              method-param-contract ...
+                              method-result-contract)])
                          (λ (method)
                             (contract
                               the-contract

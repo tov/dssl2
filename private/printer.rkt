@@ -50,7 +50,7 @@
   (unless (= expected-params actual-params)
     (dssl-error
       (string-append
-        "dssl-printer: format string did not match number of params\n"
+        "dssl2-printer: format string did not match number of params\n"
         "  format string:   %p\n"
         "  expected params: %p\n"
         "  actual params:   %p")
@@ -75,6 +75,8 @@
 
 ; String -> (List-of (Or 'debug 'print 'string String))
 (define (parse-format-string s)
+  (unless (string? s)
+    (dssl-error "dssl2-printer: bad format string ~s" s))
   (for/list ([chunk (in-list (regexp-match* #rx"[^%]+|%.|%$" s))])
     (cond
       [(string=? chunk "%d") 'debug]
@@ -82,7 +84,7 @@
       [(string=? chunk "%s") 'string]
       [(string=? chunk "%%") "%"]
       [(regexp-match? #rx"^%" chunk)
-       (dssl-error "dssl-printer: bad format string code ~s" chunk)]
+       (dssl-error "dssl2-printer: bad format string code ~s" chunk)]
       [else chunk])))
 
 ; Dssl2Value (OutputPort) -> Void

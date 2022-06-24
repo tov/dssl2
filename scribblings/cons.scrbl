@@ -28,7 +28,16 @@ struct cons:
     let next: Cons.list?
 }|
 
-The end of the linked list must be marked with @racket[None].
+The end of the linked list must be marked with @racket[None]. A value of
+@racket[None] on its own is therefore an empty linked list.
+
+For example, the code:
+
+@dssl2block|{
+cons(1, cons(2, cons (3, None)))
+}|
+
+Produces a linked list with elements 1, 2, and 3, in that order.
 
 @defprocform[cons]{@proto[AnyC Cons.list? Cons.list?]}
 

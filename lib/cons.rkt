@@ -27,62 +27,6 @@ struct cons:
     let data
     let next: _list?
 
-class ConsBuilder:
-    let _head
-    let _tail
-    let _len
-
-    def __init__(self):
-        self._head = None
-        self._tail = None
-        self._len  = 0
-
-    def len(self):
-        return self._len
-
-    def empty?(self):
-        return self._len == 0
-
-    def cons(self, x):
-        self._head = cons(x, self._head)
-        if self._tail is None: self._tail = self._head
-        self._len = self._len + 1
-        return self
-
-    def snoc(self, x):
-        self._snoc(x)
-        return self
-
-    def _snoc(self, x):
-        let old_tail = self._tail
-        self._tail = cons(x, None)
-        if cons?(old_tail):
-            old_tail.next = self._tail
-        else:
-            self._head = self._tail
-        self._len = self._len + 1
-
-    def snoc_all(self, xs):
-        for x in xs:
-            self._snoc(x)
-        return self
-
-    def take(self):
-        let result = self._head
-        self.__init__()
-        return result
-
-    def build(self):
-        return self.take()
-
-    def __print__(self, print):
-        print('Cons.Builder()')
-        let head = self._head
-        if head is None: return
-        print('.snoc_all(')
-        _print_as_vec(head, print)
-        print(')')
-
 # Builds the Cons singleton struct.
 def _build_Cons():
     let list? = _list?
@@ -131,10 +75,10 @@ def _build_Cons():
         return result
 
     def Cons_from_vec(vec: vec?) -> list?:
-        let builder = ConsBuilder()
+        let result = None
         for element in vec:
-            builder.snoc(element)
-        return builder.take()
+            result = cons(element, result)
+        return Cons_rev(result)
 
     def Cons_foreach(visit: FunC[AnyC, AnyC], lst: list?) -> NoneC:
         while cons?(lst):
@@ -152,17 +96,17 @@ def _build_Cons():
         return z
 
     def Cons_map(f: FunC[AnyC, AnyC], lst: list?) -> list?:
-        let builder = ConsBuilder()
-        Cons_foreach(λ element: builder.snoc(f(element)), lst)
-        return builder.take()
+        let result = None
+        Cons_foreach(λ element: result = cons(f(element), result), lst)
+        return Cons_rev(result)
 
     def Cons_filter(f: FunC[AnyC, AnyC], lst: list?) -> list?:
-        let builder = ConsBuilder()
+        let result = None
         def each(element):
             if f(element):
-                return builder.snoc(element)
+                result = cons(element, result)
         Cons_foreach(each, lst)
-        return builder.take()
+        return Cons_rev(result)
 
     def Cons_andmap(f: FunC[AnyC, AnyC], lst: list?) -> AnyC:
         let result = True
@@ -255,8 +199,6 @@ def _build_Cons():
         let andmap
         let ormap
         let sort
-        let Builder
-        let Builder?
         let Iterator
         let Iterator?
 
@@ -279,32 +221,9 @@ def _build_Cons():
         andmap:    Cons_andmap,
         ormap:     Cons_ormap,
         sort:      Cons_sort,
-        Builder:   ConsBuilder,
-        Builder?:  ConsBuilder?,
         Iterator:  Cons_Iterator,
         Iterator?: Cons_Iterator?,
     }
 
 
 let Cons = _build_Cons()
-
-def _all_tests():
-    test 'ConsBuilder':
-        let cb = Cons.Builder()
-        assert cb.len() == 0
-        assert cb.empty?()
-        assert cb.take() is None
-        cb.snoc(3)
-        cb.snoc(5)
-        assert cb.len() == 2
-        assert not cb.empty?()
-        cb.snoc(7)
-        cb.cons(1)
-        cb.snoc(9)
-        assert cb.len() == 5
-        assert Cons.to_vec(cb.take()) == [1, 3, 5, 7, 9]
-        assert cb.empty?()
-        assert cb.snoc(2)
-        assert cb.snoc(4)
-        assert cb.len() == 2
-        assert Cons.to_vec(cb.take()) == [2, 4]

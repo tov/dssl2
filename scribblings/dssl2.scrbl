@@ -45,7 +45,7 @@ DSSL2 deviates from Python in a number of places for pedagogical reasons.
 Some of these deviations include (non-exhaustive list):
 
 @itemlist[
-@item{@bold{the base data structures}: replaced instead by basic arrays and structs)}
+@item{@bold{the base data structures}: replaced instead by basic arrays and structs}
 @item{@bold{the object system}: which emphasizes encapsulation and interfaces}
 @item{@bold{variable declarations}: to avoid Python's scope gotchas.}
 ]

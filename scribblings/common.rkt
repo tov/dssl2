@@ -14,6 +14,7 @@
          q m t (rename-out [id-form k])
          dssl2block code
          indent
+         O n T S
          (for-label
            (all-from-out dssl2 racket)))
 
@@ -400,3 +401,7 @@
 (define (indent . chunks)
   (list* ~ ~ ~ ~ chunks))
 
+(define O (emph "O"))
+(define n (emph "n"))
+(define (T f) (list (emph "T") (subscript (smaller (tt f)))))
+(define (S f) (list (emph "S") (subscript (smaller (tt f)))))

@@ -77,6 +77,8 @@ Integers support binary bitwise operators @racket[&] (bitwise
 @emph{and}), @racket[\|] (bitwise @emph{or}), and @racket[^] (bitwise
 @emph{xor}), and unary bitwise negation @racket[~].
 
+Integer operations require @O(1) time.
+
 @defprocforms[int
     @proto[num? int?]
     @proto[char? int?]
@@ -188,6 +190,8 @@ the result will also be a float. They also support unary @racket[+]
 
 They also support comparison with @racket[==], @racket[<], @racket[<=],
 etc., and they can be compared against ints.
+
+Float operations require @O(1) time.
 
 @defprocforms[float
   @proto[num? float?]
@@ -332,9 +336,17 @@ Given no arguments, returns the empty string.
 }
 ]
 
+@defmethform[str len]{@proto[nat?]}
+
+Returns the length of the receiving string in characters.
+
+@O(1) time and space.
+
 @defmethform[str explode]{@proto["VecC[char?]"]}
 
 Breaks the receiving string into a vector of its characters.
+
+@O(@n) time and space.
 
 @defmethform[str format]{@proto[AnyC ... str?]}
 
@@ -346,10 +358,6 @@ For example,
 @dssl2block|{
 assert '%s or %p'.format('this', 'that') == "this or 'that'"
 }|
-
-@defmethform[str len]{@proto[nat?]}
-
-Returns the length of the receiving string in characters.
 
 @defclassform[vec]
 
@@ -388,28 +396,18 @@ That is, @code{vec(n, init)} is equivalent to
 }
 ]
 
-@defmethform[vec filter]{@proto["pred?:FunC[AnyC, AnyC]" vec?]}
+@defmethform[vec len]{@proto[nat?]}
 
-Filters the given vector, by returning a vector of only the elements
-satisfying the given predicate @c{pred?}.
+Returns the length of the vector.
 
-In particular,
-@code|{
-v.filter(pred?)
-}|
-is equivalent to
-@code|{
-[ x for x in v if pred?(x) ]
-}|
+@O(1) time and space.
 
 @defmethform[vec implode]{@proto[vec?]}
 
 If the receiver is a vector of characters, joins them into a string.
 (Otherwise, an error is reported.)
 
-@defmethform[vec len]{@proto[nat?]}
-
-Returns the length of the vector.
+@O(@n) time and space.
 
 @defmethform[vec map]{@proto["f:FunC[AnyC, AnyC]" vec?]}
 
@@ -424,12 +422,32 @@ is equivalent to
 [ f(x) for x in v ]
 }|
 
+@O(@n × @T{f}) time and @O(@n + @S{f}) space.
+
+@defmethform[vec filter]{@proto["pred?:FunC[AnyC, AnyC]" vec?]}
+
+Filters the given vector, by returning a vector of only the elements
+satisfying the given predicate @c{pred?}.
+
+In particular,
+@code|{
+v.filter(pred?)
+}|
+is equivalent to
+@code|{
+[ x for x in v if pred?(x) ]
+}|
+
+@O(@n × @T{pred?}) time and @O(@n + @S{pred?}) space.
+
 @defclassform[range_iterator]
 
 An iterator over a range of numbers, constructed by
 @racket[range].
 
 @section{Predicates}
+
+All the predicates below require @O(1) time.
 
 @subsection{Basic type predicates}
 
@@ -525,6 +543,8 @@ not-a-number value. This is useful, since @code{nan} is not necessarily
 @racket[==] to other instances of @code{nan}.
 
 @section{Comparison operations}
+
+All the comparisons below require @O(1) time.
 
 @defprocform[cmp]{@proto[AnyC AnyC "OrC(int?, NoneC)"]}
 

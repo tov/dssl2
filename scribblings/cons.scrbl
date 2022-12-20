@@ -4,13 +4,6 @@
 
 @title{The @tt{cons} library}
 
-@define[O @emph{O}]
-@define[n @emph{n}]
-@define[(T f)
-  (list @emph{T} (subscript (smaller @tt[f])))]
-@define[(S f)
-  (list @emph{S} (subscript (smaller @tt[f])))]
-
 This library provides a representation for header-free singly-linked lists, as
 well as a number of utility functions that operate on them.
 

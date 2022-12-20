@@ -683,6 +683,8 @@
    [__eq__        (-> vec? AnyC)
                   prim:vec.__eq__]
    [len           vector-length]
+   [get           vector-ref]
+   [put           vector-set!]
    [implode       prim:vec.implode]
    [iterator      (λ (self)
                      (index_iterator self 0 (vector-length self)))]

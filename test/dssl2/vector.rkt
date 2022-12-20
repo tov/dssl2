@@ -5,10 +5,19 @@ let v = [2, 3, 4]
 assert v[0] == 2
 assert v[1] == 3
 
+# support `get` method for uniform interface between direct addressing dics
+# and other dicts
+assert v.get(0) == 2
+
 v[1] = 10
 
 assert v[0] == 2
 assert v[1] == 10
+
+# ditto for put
+v.put(1, 12)
+assert v.get(0) == 2
+assert v.get(1) == 12
 
 def vf (v: VecC[num?]) -> num?:
    return v [0]

@@ -402,6 +402,23 @@ Returns the length of the vector.
 
 @O(1) time and space.
 
+@defmethform[vec get]{@proto[i:nat? AnyC]}
+
+Returns the element at index @racket[i]. Equivalent to @code|{
+v[i]
+}|
+
+@O(1) time and space.
+
+@defmethform[vec put]{@proto[i:nat? new:AnyC NoneC]}
+
+Replaces the element at index @racket[i] in the vector with @racket[new].
+Equivalent to @code|{
+v[i] = new
+}|
+
+@O(1) time and space.
+
 @defmethform[vec implode]{@proto[vec?]}
 
 If the receiver is a vector of characters, joins them into a string.

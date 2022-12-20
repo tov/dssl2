@@ -685,6 +685,7 @@
    [len           vector-length]
    [get           vector-ref]
    [put           vector-set!]
+   [mem?          (λ (self i) (<= 0 i (- (vector-length self) 1)))]
    [implode       prim:vec.implode]
    [iterator      (λ (self)
                      (index_iterator self 0 (vector-length self)))]

@@ -419,6 +419,15 @@ v[i] = new
 
 @O(1) time and space.
 
+@defmethform[vec mem?]{@proto[i:nat? bool?]}
+
+Returns whether @racket[i] is a valid index into the vector.
+Equivalent to @code|{
+0 <= i and i < v.len()
+}|
+
+@O(1) time and space.
+
 @defmethform[vec implode]{@proto[vec?]}
 
 If the receiver is a vector of characters, joins them into a string.

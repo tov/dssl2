@@ -20,7 +20,7 @@ DSSL2 program:
 #lang dssl2
 
 struct node:
-    let data
+    let key
     let left
     let right
 
@@ -32,6 +32,10 @@ def insert(t, k):
     elif k > t.key:
         t.right = insert(t.right, k)
     return t
+
+let t1 = insert(None, 1)
+let t2 = insert(t1, 2)
+let t3 = insert(t2, 3)
 }|
 
 Like Python, DSSL2 uses alignment and indentation to delimit

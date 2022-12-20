@@ -9,8 +9,6 @@
          >=
          is
          |is not|
-         in
-         |not in|
          ;; arithmetic
          +
          -
@@ -33,9 +31,7 @@
 
 (provide (rename-out [!=        ≠]
                      [<=        ≤]
-                     [>=        ≥]
-                     [in        ∈]
-                     [|not in|  ∉]))
+                     [>=        ≥]))
 
 (require (prefix-in p: "prims.rkt")
          "errors.rkt"
@@ -137,29 +133,6 @@
 
 (define (|is not| a b)
   (racket:not (is a b)))
-
-(define (in/proc/iter v1 v2 context)
-  (define found? #f)
-  (define next (p:get-try-advance v2 "`in` operator" context))
-  (define (body elt)
-    (when (p:dssl-equal? v1 elt)
-      (set! found? #t)))
-  (let loop ()
-    (when (and (not found?) (next body))
-      (loop)))
-  found?)
-
-(define (in/proc v1 v2 context)
-  (p:dssl-send v2 '__contains__ v1
-               #:or-else
-               (in/proc/iter v1 v2 context)))
-
-(define-simple-macro (in e1:expr e2:expr)
-  (in/proc e1 e2 (capture-context e2)))
-
-(define-simple-macro (|not in| e1:expr e2:expr)
-  (not (in/proc e1 e2 (capture-context e2))))
-
 
 (define (< a b)
   (truthy-cond

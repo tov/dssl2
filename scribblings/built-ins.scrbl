@@ -540,7 +540,7 @@ Determines whether its argument is a number. This includes both
 
 @defprocform[nat?]{@proto[AnyC bool?]}
 
-Determines whether its argument is a non-negative integer.
+Determines whether its argument is a natural number. Natural numbers include zero.
 
 @defprocform[zero?]{@proto[AnyC bool?]}
 

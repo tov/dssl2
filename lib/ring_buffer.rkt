@@ -6,9 +6,9 @@ interface QUEUE[T]:
     def empty?(self) -> bool?
 
 class RingBuffer[T] (QUEUE):
-    let data
-    let start
-    let length
+    let data: VecC[OrC(T, NoneC)]
+    let start: nat?
+    let length: nat?
 
     def __init__(self, capacity):
         self.data = [None; capacity]

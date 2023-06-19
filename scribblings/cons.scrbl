@@ -166,7 +166,9 @@ non-@racket[False] result, or @racket[False] if none is non-@racket[False].
 
 @defprocform[Cons.sort]{[T](lt?: @racket[FunC][T, T, @racket[AnyC]], Cons.listC[T]) -> Cons.list?}
 
-Sorts a list producing a new list, and not modifying the input list.
+Sorts a list producing a new list, without modifying the input list.
 Uses the given function as a “less than” comparison to determine the order.
 
-@O(@emph{n}² × @T{lt?}) time and @O(@n + @T{lt?}) space.
+This function uses insertion sort as its sorting algorithm.
+
+@O(@emph{n}² × @T{lt?}) time and @O(@n + @S{lt?}) space.

@@ -139,18 +139,25 @@
     [(p:cmp a b)
      =>
      (λ (order) (racket:< order 0))]
-    [else #f]))
+    [else (raise-repr-error '< (vector a b) "comparable objects")]))
 
 (define (<= a b)
   (truthy-cond
     [(p:cmp a b)
      =>
      (λ (order) (racket:<= order 0))]
-    [else #f]))
+    [else (raise-repr-error '<= (vector a b) "comparable objects")]))
 
 (define (> a b)
-  (< b a))
+  (truthy-cond
+   [(p:cmp b a)
+    =>
+    (λ (order) (racket:< order 0))]
+   [else (raise-repr-error '> (vector a b) "comparable objects")]))
 
 (define (>= a b)
-  (<= b a))
-
+  (truthy-cond
+   [(p:cmp b a)
+    =>
+    (λ (order) (racket:<= order 0))]
+   [else (raise-repr-error '>= (vector a b) "comparable objects")]))

@@ -81,7 +81,7 @@
          ; * I/O operations
          (contract-out
            [print (-> str? AnyC ... NoneC)]
-           [println (-> AnyC ... NoneC)]
+           [println (-> str? AnyC ... NoneC)]
            [eprint (-> str? AnyC ... NoneC)]
            [eprintln (-> AnyC ... NoneC)]
            [current_directory (case->

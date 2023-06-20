@@ -229,8 +229,7 @@
        (map syntax-local-introduce
             (syntax->list #'(super-name ...))))]))
 
-(define-syntax-parameter
-  dssl-self
+(define-syntax-parameter dssl-self
   (lambda (stx)
     (syntax-error stx "use of self outside of method")))
 
@@ -272,9 +271,24 @@
   (syntax-parameterize
     ([dssl-self
        (syntax-parser
-         [(_ prop:id)          (class-qualify #'class #'prop)]
-         [(_ prop:id rhs:expr) #`(set! #,(class-qualify #'class #'prop) rhs)]
-         [_:id                 #'actual-self])])
+         [(_ prop:id) ; object field reference
+          (define qualified-name (class-qualify #'class #'prop))
+          (unless (identifier-binding qualified-name)
+            (raise-syntax-error #f
+                                (format "field ~s does not exist"
+                                        (syntax-e qualified-name))
+                                qualified-name))
+          qualified-name]
+         [(_ prop:id rhs:expr) ; object field assignment
+          (define qualified-name (class-qualify #'class #'prop))
+          (unless (identifier-binding qualified-name)
+            (raise-syntax-error #f
+                                (format "field ~s does not exist"
+                                        (syntax-e qualified-name))
+                                qualified-name))
+          #`(set! #,qualified-name rhs)]
+         [_:id
+          #'actual-self])])
     (begin
       (define-syntax self
         (make-set!-transformer

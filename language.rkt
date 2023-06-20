@@ -15,6 +15,6 @@
 (define-syntax (top-undefined stx)
   (syntax-case stx ()
     [(_ . x)
-     (raise-syntax-error 'dssl2
+     (raise-syntax-error #f
                          (format "variable ~s is undefined" (syntax-e #'x))
                          #'x)]))

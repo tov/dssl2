@@ -380,6 +380,7 @@
   (syntax-parse stx #:literals (dssl-vec-ref dssl-struct-ref)
     [(_ (dssl-vec-ref v:expr i:expr ...+) rhs:expr)
      #'(dssl-vec-set! v (i ...) rhs)]
+    ;; corresponds to both struct field assignment and object field assignment
     [(_ (dssl-struct-ref s:expr f:real-id) rhs:expr)
      #'(dssl-struct-set! s f rhs)]
     [(_ i:id rhs:expr)
@@ -613,6 +614,7 @@
                  'property
                  (capture-context target0))]))])])
 
+;; used by both struct field assignment and object field assignment
 (define-syntax (dssl-struct-set! stx)
   (syntax-parse stx
     [(_ target0:expr property:id rhs:expr)

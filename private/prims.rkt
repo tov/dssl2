@@ -195,7 +195,7 @@
 
 ;; Contracts
 
-(define NoneC (flat-named-contract 'NoneC void?))
+(define NoneC (flat-named-contract 'NoneC (lambda (x) (void? x))))
 
 (define (format-fun f x xs)
   (define port (open-output-string))

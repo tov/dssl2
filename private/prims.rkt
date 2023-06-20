@@ -885,6 +885,11 @@
     [(_ object:expr (quote method:id) context:expr)
      #'(let ([value object])
          (or (get-method-value value 'method)
+             ;; Winter 2023, students saw strange intermittent error in DrRacket
+             ;; where `raise-runtime-error` here was unbound. Restarting DrRacket
+             ;; would make it go away. I never managed to reproduce it.
+             ;; Likely racket/DrRacket-related, and not ours. And may have been
+             ;; fixed since. ¯\_(ツ)_/¯
              (raise-runtime-error "object %p does not have method %s"
                                   object 'method
                                   #:context context)))]))

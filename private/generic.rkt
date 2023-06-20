@@ -236,9 +236,9 @@
            (make-set!-transformer
              (λ (stx)
                 (syntax-parse stx #:literals (set!)
-                  [(set! _:id e:expr)
+                  [(set! x:id e:expr)
                    (syntax-error
-                     stx
+                     #'x
                      "cannot assign to def'd function or method")]
                   [(_:id . rest)
                    (with-syntax

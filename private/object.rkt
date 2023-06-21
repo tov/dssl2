@@ -35,12 +35,11 @@
                               syntax-local-eval)
                      "names.rkt"))
 
-(struct method-info (name getter))
-(struct object-info (name projector interfaces method-infos))
+(struct method-info (name getter) #:prefab)
+(struct object-info (name projector interfaces method-infos) #:prefab)
 ; projector is map-methods
 
-(struct object-base (info contract-paramses reflect)
-  #:transparent)
+(struct object-base (info contract-paramses reflect) #:prefab)
 
 (define (write-object obj port recur)
   (fprintf port "#<object:~a"

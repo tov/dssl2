@@ -150,8 +150,8 @@
         [(struct-base? value)
          (unless (seen!? value)
            (write-struct value port visit))]
-         [(object-base? value)
-          (unless (seen!? value)
+        [(object-base? value)
+         (unless (seen!? value)
            (cond
              [(and (not debug?)
                    (get-method-value/fun value '__print__))

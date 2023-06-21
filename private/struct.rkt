@@ -15,11 +15,10 @@
          get-field-list
          write-struct)
 
-(struct field-info (name getter setter))
-(struct struct-info (name field-infos))
+(struct field-info (name getter setter) #:prefab)
+(struct struct-info (name field-infos) #:prefab)
 
-(struct struct-base (struct-info)
-  #:transparent)
+(struct struct-base (struct-info) #:prefab)
 
 (define (write-struct value port recur)
   (define info (struct-base-struct-info value))

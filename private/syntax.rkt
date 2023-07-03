@@ -5,6 +5,7 @@
           [dssl-module-begin           #%module-begin]
           [dssl-top-interaction        #%top-interaction]
           [dssl-app                    #%app]
+          [dssl-top-undefined          #%top]
           ; syntax
           [begin               begin]
           [else                else]
@@ -147,6 +148,13 @@
   [(~and e (_ arg ...+))
    #'(with-error-context (e)
        (#%app arg ...))])
+
+(define-syntax (dssl-top-undefined stx)
+  (syntax-case stx ()
+    [(_ . x)
+     (raise-syntax-error #f
+                         (format "variable ~s is undefined" (syntax-e #'x))
+                         #'x)]))
 
 (define (print-test-results passed total actual possible)
   (cond

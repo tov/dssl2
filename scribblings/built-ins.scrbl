@@ -649,34 +649,9 @@ print("%p + %p = %p", a, b, a + b)
 
 prints “3 + 4 = 7”.
 
-@defprocforms[println
-    @proto[str? AnyC ... NoneC]
-    @proto[AnyC ... NoneC]
-]
+@defprocform[println]{@proto[str? AnyC ... NoneC]}
 
-If the first argument is a string then @racket[println] is
-like @racket[print], but adds a newline at the end.
-
-If the first argument is a non-string or there are no arguments, then
-@racket[println] prints all the arguments with commas in between and a
-newline after, as if formatted by @racket["%p, …, %p\n"].
-
-If DSSL2 supported user-defined varargs functions, it might be defined
-as:
-
-@verbatim|{
-def println(*args):
-    if args.len() == 0:
-        print('\n')
-    elif str?(args[0]):
-        print(*args)
-        print('\n')
-    else:
-        let fmt = ''
-        for _ in args:
-            fmt = '%p' if fmt == '' else fmt + ', %p'
-        println(fmt, *args)
-}|
+Like @racket[print], but adds a newline after its output.
 
 @defprocforms[current_directory
     @proto[str?]

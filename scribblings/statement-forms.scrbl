@@ -31,7 +31,7 @@ if y:
 else:
     x = g()
 
-println(x)
+println('%p', x)
 }|
 
 Accessing an undefined variable is an error.

@@ -20,12 +20,13 @@ assert v.get(0) == 2
 assert v.get(1) == 12
 
 # ditto for mem?
-assert not v.mem?(-1)
+assert_error v.mem?(-1), "nat?"
 assert v.mem?(0)
 assert v.mem?(1)
 assert v.mem?(2)
 assert not v.mem?(3)
 assert not v.mem?(10)
+assert_error v.mem?("foo"), "nat?"
 
 def vf (v: VecC[num?]) -> num?:
    return v [0]

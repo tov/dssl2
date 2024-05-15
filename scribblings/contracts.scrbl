@@ -451,9 +451,6 @@ assert_error v[2]                  # fails check
 
 Assigning a non-integer to an element of @code{v} is an error as well.
 
-If the optional square bracket parameter is omitted, @racket[VecC] just
-checks that the protected value is a vector.
-
 @defprocform[TupC]{[@racket[contract?], ..., @racket[contract?]]: @racket[contract?]}
 
 Creates a contract that protects a vector to ensure that its first element

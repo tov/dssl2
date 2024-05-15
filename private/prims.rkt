@@ -1,6 +1,7 @@
 #lang racket/base
 
-(require (only-in racket/contract/base contract-out))
+(require (only-in racket/contract/base contract-out)
+         (only-in racket/string string-join))
 
 (provide ; helpers for other modules
          get-method-value
@@ -207,9 +208,16 @@
 
 (define VecC
   (special-square-bracket-contract
-    VecC
-    #:generic (c) (r:vectorof c)
-    #:default vec?))
+   VecC
+   #:generic cs (begin
+                  (unless (= 1 (length cs))
+                    (dssl-error
+                     "VecC: arity error\nexpected a single contract, got [%s]"
+                     (string-join (for/list ([c (in-list cs)])
+                                    (dssl-format "%s" c))
+                                  ", ")))
+                  (r:vectorof (first cs)))
+   #:default vec?))
 
 (define TupC
   (special-square-bracket-contract

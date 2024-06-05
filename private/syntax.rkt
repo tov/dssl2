@@ -52,6 +52,7 @@
          "stxparams.rkt"
          "singletons.rkt"
          "struct.rkt"
+         "test-logger.rkt"
          (prefix-in p: "prims.rkt")
          (only-in syntax/parse/define
                   define-simple-macro
@@ -706,6 +707,7 @@
                           thunk
                           timeout-context)
   (define (display-error _exn msg)
+    (log-test-result name #f)
     (parameterize ([current-output-port (current-error-port)])
       (printf "TEST CASE #~a FAILED!\n~a\n"
               case-number
@@ -716,7 +718,9 @@
           (if (= 1 points) "" "s"))
   (print-test-name name)
   (newline)
-  (dssl-test-case thunk
+  (dssl-test-case (λ ()
+                    (thunk)
+                    (log-test-result name #t))
                   timeout
                   timeout-context
                   display-error)
@@ -728,6 +732,7 @@
                              loc
                              timeout-context)
   (define (display-error exn msg)
+    (log-test-result name #f)
     ((error-display-handler)
      (format "Failed test: ~a (~a)\n~a"
              (with-output-to-string
@@ -736,7 +741,9 @@
              (string-indent msg 1))
      exn)
     (newline (current-error-port)))
-  (dssl-test-case thunk
+  (dssl-test-case (λ ()
+                    (thunk)
+                    (log-test-result name #t))
                   timeout
                   timeout-context
                   display-error))

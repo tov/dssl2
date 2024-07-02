@@ -11,7 +11,8 @@
                "plot-gui-lib"
                "plot-lib"
                "sandbox-lib"
-               "snip-lib"))
+               "snip-lib"
+               "csv-reading"))
 (define build-deps '("scribble-lib" "racket-doc"))
 (define scribblings '(("scribblings/dssl2.scrbl" (multi-page))))
 (define test-omit-paths '("test/dssl2" "test/grader"))

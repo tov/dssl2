@@ -456,44 +456,46 @@ same as the name of the class. It takes one fewer parameter than
 arranges to create the new object and pass it to @code{__init__} for
 initialization.
 
-Here is an example of a simple class with one field and four methods:
+Here is an example of a simple class with one field and six methods:
 
 @dssl2block|{
-import cons
-
-class Stack:
-    let head
+class Counter:
+    let value
 
     def __init__(self):
-        self.head = nil()
+        self.value = 0
 
-    def push(self, value):
-        self.head = cons(value, self.head)
+    def read(self):
+        return self.value
 
-    def pop(self):
-        self._check_non_empty()
-        let result = self.head.data
-        self.head = self.head.next
-        result
+    def reset(self):
+        self.value = 0
 
-    # Private helper method for emptiness check:
-    def _check_non_empty(self):
-        if nil?(self.head): error('Stack.pop: empty')
+    def add(self, n):
+        self.value = self.value + n
+
+    def sub(self, n):
+        self.value = self.value - n
+        if self._negative?(): error('counter cannot be negative!')
+
+    # Private helper method
+    def _negative?(self):
+        return self.value < 0
 }|
 
 Note that the internal constructor method @code{__init__} takes only a self
-parameter, which means that the external constructor function @code{Stack}
-takes none. Thus, we can use the constructor to create a new, empty
-stack, and then we can access the stack via its @code{push} and @code{pop}
-methods:
+parameter, which means that the external constructor function @code{Counter}
+takes none. Thus, we can use the constructor to create a new counter
+initialized to zero, and then we can update the counter via its @code{add},
+@code{sub}, and @code{reset} methods:
 
 @dssl2block|{
-let stack = Stack()
-stack.push(4)
-stack.push(5)
-assert stack.pop() == 5
-assert stack.pop() == 4
-assert_error stack.pop()
+let counter = Counter()
+counter.add(1)
+counter.add(4)
+assert counter.read() == 5
+counter.reset()
+assert_error counter.sub(1)
 }|
 
 As an example of a class with a non-trivial constructor, here is a 2-D

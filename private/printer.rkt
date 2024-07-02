@@ -76,7 +76,7 @@
 ; String -> (List-of (Or 'debug 'print 'string String))
 (define (parse-format-string s)
   (unless (string? s)
-    (dssl-error "dssl2-printer: bad format string ~s" s))
+    (dssl-error "dssl2-printer: bad format string %p" s))
   (for/list ([chunk (in-list (regexp-match* #rx"[^%]+|%.|%$" s))])
     (cond
       [(string=? chunk "%d") 'debug]
@@ -84,7 +84,7 @@
       [(string=? chunk "%s") 'string]
       [(string=? chunk "%%") "%"]
       [(regexp-match? #rx"^%" chunk)
-       (dssl-error "dssl2-printer: bad format string code ~s" chunk)]
+       (dssl-error "dssl2-printer: bad format string code %p" chunk)]
       [else chunk])))
 
 ; Dssl2Value (OutputPort) -> Void

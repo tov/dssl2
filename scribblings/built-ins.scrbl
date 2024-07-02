@@ -637,6 +637,7 @@ additional argument, as follows:
                    user-defined printers}
     @item{@q{%s} – interpolates a string or character as itself, without
                    quoting; the same as @q{%p} for other types}
+    @item{@q{%%} – prints a literal @racket{%} sign}
 ]
 
 For example:

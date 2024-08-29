@@ -2,7 +2,7 @@
 
 # Check that parametric contracts don't mess up non-parametric function names:
 def foo_bar(): 5
-assert str(foo_bar) == '#<proc:foo_bar>'
+assert str(foo_bar) == '#<function:foo_bar>'
 
 def id[A](x: A) -> A: x
 

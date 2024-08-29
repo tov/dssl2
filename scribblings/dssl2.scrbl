@@ -66,3 +66,4 @@ students learning DSSL2 should have a head start when learning Python.
 @include-section["cons.scrbl"]
 @include-section["sbox_hash.scrbl"]
 @include-section["csv.scrbl"]
+@include-section["plot.scrbl"]

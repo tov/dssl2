@@ -93,7 +93,7 @@
     [(or (string? value) (char? value) (symbol? value))
      (display value port)]
     [(procedure? value)
-     (display (or (procedure-name value) "#<proc>") port)]
+     (display (or (procedure-name value) "#<function>") port)]
     [else (dssl-print value port #f)]))
 
 ; Dssl2Value (OutputPort Boolean) -> Void
@@ -165,8 +165,8 @@
         [(procedure? value)
          (define name (procedure-name value))
          (if name
-             (fprintf port "#<proc:~a>" name)
-             (fprintf port "#<proc>"))]
+             (fprintf port "#<function:~a>" name)
+             (fprintf port "#<function>"))]
         [(contract? value)
          (fprintf port "#<contract:~a>" (contract-name value))]
         [(void? value)              (display "None" port)]

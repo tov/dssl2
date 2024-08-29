@@ -451,16 +451,16 @@ assert_error v[2]                  # fails check
 
 Assigning a non-integer to an element of @code{v} is an error as well.
 
-@defprocform[TupC]{[@racket[contract?], ..., @racket[contract?]]: @racket[contract?]}
+@defprocform[VecKC]{[@racket[contract?], ..., @racket[contract?]]: @racket[contract?]}
 
-Creates a contract that protects a vector to ensure that its first element
-matches the first given contract, its second element matches the second given
-contract, and so on.
+Creates a contract that protects a vector of @emph{k} elements to ensure that
+its first element matches the first given contract, its second element matches
+the second given contract, and so on up to the @emph{k}th element and contract.
 
 For example:
 
 @dssl2block|{
-let t: TupC[int?, str?, int?] = [2, "three", 4]
+let t: VecKC[int?, str?, int?] = [2, "three", 4]
 }|
 
 @defprocform[FunC]{[@racket[contract?], ..., @racket[contract?]]: @racket[contract?]}

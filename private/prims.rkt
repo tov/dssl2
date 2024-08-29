@@ -54,7 +54,7 @@
          flat_contract?
          AnyC
          NoneC
-         TupC
+         VecKC
          VecC
          FunC
          (contract-out
@@ -219,9 +219,9 @@
                   (r:vectorof (first cs)))
    #:default vec?))
 
-(define TupC
+(define VecKC
   (special-square-bracket-contract
-    TupC
+    VecKC
     #:generic cs (apply r:vector/c cs
                         #:flat? (andmap r:flat-contract? cs))
     #:default vec?))

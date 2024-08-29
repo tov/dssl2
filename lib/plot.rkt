@@ -8,7 +8,7 @@
                   AnyC
                   OrC
                   SquareBracketC
-                  TupC
+                  VecKC
                   VecC))
 (require (only-in dssl2/private/generic
                   generic-base-instantiate))
@@ -22,8 +22,8 @@
          (only-in racket/format ~a)
          (only-in racket/match match))
 
-(define VecC/proc (generic-base-instantiate VecC))
-(define TupC/proc (generic-base-instantiate TupC))
+(define VecC/proc  (generic-base-instantiate VecC))
+(define VecKC/proc (generic-base-instantiate VecKC))
 
 ; A flat, non-empty vectorof contract.
 (define NEVecC
@@ -35,13 +35,13 @@
 (define NEVecC/proc (generic-base-instantiate NEVecC))
 
 ; A PointSpec is [vector num? num?]
-(define PointSpec (TupC/proc num? num?))
+(define PointSpec (VecKC/proc num? num?))
 
 ; A LineSpec is [vector PointSpec ...+]
 (define LineSpec (NEVecC/proc PointSpec))
 
 ; A LabeledLineSpec is [vector str? LineSpec]
-(define LabeledLineSpec (TupC/proc str? LineSpec))
+(define LabeledLineSpec (VecKC/proc str? LineSpec))
 
 ; A PlotSpec is one of:
 ;  - LineSpec
@@ -62,7 +62,7 @@
 ;  - [vector str? TransformSpec]  -- label & transform
 (define AxisSpec
   (OrC str?
-       (TupC/proc str? TransformSpec)))
+       (VecKC/proc str? TransformSpec)))
 
 
 (define (plot title plot-spec [x-axis ""] [y-axis ""])

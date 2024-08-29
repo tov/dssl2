@@ -35,7 +35,7 @@ assert vf([0]) == 0
 assert vf([1, 2, 3]) == 1
 assert_error vf(2)
 
-def tf (v: TupC[num?, str?, num?]) -> num?:
+def tf (v: VecKC[num?, str?, num?]) -> num?:
    return v[0] + v[2]
 
 assert tf([1, "a", 0]) == 1

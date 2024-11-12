@@ -806,7 +806,7 @@ time '10,000,000 zeroes':
 The result is printed as follows:
 
 @verbatim|{
-10,000,000 zeroes: cpu: 309 real: 792 gc: 238
+10,000,000 zeroes: cpu: 309ms real: 792ms gc: 238ms
 }|
 
 This means it tooks 309 milliseconds of CPU time over 792 milliseconds of

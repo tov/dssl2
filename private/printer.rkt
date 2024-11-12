@@ -149,7 +149,20 @@
            (display #\] port))]
         [(struct-base? value)
          (unless (seen!? value)
-           (write-struct value port visit))]
+           (define info (struct-base-struct-info value))
+           (cond 
+            [(eq? (struct-info-name info) 'timing)
+                  (define (get-field-value struct sym) ((field-info-getter (get-field-info value sym)) struct))
+                  (let ([label (get-field-value value 'label)]
+                        [cpu (get-field-value value 'cpu)]
+                        [real (get-field-value value 'real)]
+                        [gc (get-field-value value 'gc)])
+                        (fprintf port "~a: cpu: ~ams real: ~ams gc: ~ams"
+                                 label
+                                 cpu
+                                 real
+                                 gc))]
+            [else (write-struct value port visit)]))]
         [(object-base? value)
          (unless (seen!? value)
            (cond

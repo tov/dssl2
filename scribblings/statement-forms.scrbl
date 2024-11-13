@@ -221,7 +221,7 @@ For example:
 @dssl2block|{
 # Replaces every element of vector `v` with its square.
 def sqr_vec(v):
-    for i in range(len(v)):
+    for i in range(v.len()):
         v[i] = v[i] * v[i]
 }|
 

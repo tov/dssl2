@@ -41,3 +41,5 @@ def tf (v: VecKC[num?, str?, num?]) -> num?:
 assert tf([1, "a", 0]) == 1
 assert_error tf([1, 2, 0])
 assert_error tf([1, 2])
+
+assert_error [0].put(1), "contract"

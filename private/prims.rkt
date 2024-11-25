@@ -691,8 +691,10 @@
    [__eq__        (-> vec? AnyC)
                   prim:vec.__eq__]
    [len           vector-length]
-   [get           vector-ref]
-   [put           vector-set!]
+   [get           (-> nat? AnyC)
+                  prim:vec.__index_ref__]
+   [put           (-> nat? AnyC AnyC)
+                  prim:vec.__index_set__]
    [mem?          (-> nat? bool?)
                   (λ (self i) (<= 0 i (- (vector-length self) 1)))]
    [implode       prim:vec.implode]

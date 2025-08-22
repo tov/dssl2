@@ -12,7 +12,7 @@
                "plot-lib"
                "sandbox-lib"
                "snip-lib"
-               "csv-reading"))
+               "htdp-lib"))
 (define build-deps '("scribble-lib" "racket-doc"))
 (define scribblings '(("scribblings/dssl2.scrbl" (multi-page))))
 (define test-omit-paths '("test/dssl2" "test/grader"))

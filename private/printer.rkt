@@ -28,8 +28,10 @@
   (cond
     [(or (boolean? c) (number? c) (string? c) (char? c) (void? c))
      (dssl-format "%p" c)]
-    [else
-      (contract-name c)]))
+    [(contract? c)
+     (contract-name c)]
+    [else ; if it's bogus, will error downstream with proper message
+     c]))
 
 (current-dssl-contract-name dssl-contract-name)
 

@@ -407,8 +407,8 @@
          ...))
      #:fail-when (check-duplicate-identifier
                    (cons (datum->syntax #'name '__class__)
-                         (syntax->list #'(method-name ...))))
-                 "duplicate method name"
+                         (syntax->list #'(method-name ... field-var ...))))
+                 "duplicate method or field name"
      (for ([method-info
              (in-syntax #'((method-self method-param-var ...) ...))])
        (cond

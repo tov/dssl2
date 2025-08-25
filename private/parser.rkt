@@ -3,6 +3,7 @@
 (provide parse-dssl2)
 (require "lexer.rkt"
          "names.rkt"
+         "printer.rkt"
          (only-in parser-tools/lex
                   position-line
                   position-col
@@ -20,7 +21,9 @@
 (define (dssl2-parser src)
   (define (parser-error tok-ok? tok-name tok-value start-pos end-pos)
     (raise-read-error (format "Syntax error: unexpected token ‘~a’"
-                              (or tok-value tok-name))
+                              (if tok-value
+                                  (dssl-format "%d" tok-value)
+                                  tok-name))
                       src
                       (position-line start-pos)
                       (position-col start-pos)

@@ -2,8 +2,8 @@
 (define name "dssl2: a data structures student language")
 (define categories '(devtools))
 (define can-be-loaded-with 'all)
-(define required-core-version "6.10")
-(define version "2.23.1")
+(define required-core-version "8.0")
+(define version "2.30")
 (define deps '("base"
                "gui-lib"
                "rackunit-lib"
@@ -19,4 +19,4 @@
 (define blurb
   '("A language for data structures students, version 2"))
 (define release-notes
-  '((p "No longer the first release")))
+  '((p "See https://github.com/tov/dssl2/")))

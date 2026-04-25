@@ -2,7 +2,6 @@
 
 (provide (struct-out imethod-info)
          (struct-out interface-info)
-         reflect-interface
          compare-imethod-info
          interface-info-all-tokens
          interface-info-all-tokens/list
@@ -17,7 +16,7 @@
   #:transparent)
 (struct interface-info
   [name         ; syntax? - the name of the interface
-    token       ; symbol? - the runtime identity of the interface
+    token       ; identifier? - bound to the runtime identity of the interface (and super interfaces)
     runtime     ; syntax? - the name of the runtime method table
     supers      ; (ListOf interface-info?) - list of super interfaces
     methods]    ; (ListOf imethod-info?) - list of methods
@@ -27,17 +26,6 @@
   #`(imethod-info #'#,(imethod-info-name info)
                   #,(imethod-info-cvs info)
                   #,(imethod-info-arity info)))
-
-(define (reflect-interface info)
-  #`(interface-info #'#,(interface-info-name info)
-                    '#,(interface-info-token info)
-                    #'#,(interface-info-runtime info)
-                    (list
-                      #,@(map reflect-interface
-                              (interface-info-supers info)))
-                    (list
-                      #,@(map reflect-imethod
-                              (interface-info-methods info)))))
 
 (define (compare-imethod-info i-name expected actual)
   (define expected-cvs   (imethod-info-cvs expected))
@@ -66,7 +54,8 @@
 (define (interface-info-all-tokens/list infos)
   (apply append (map interface-info-all-tokens infos)))
 
-(define (check-interface-consistency info0)
+(define (check-interface-consistency info0-id)
+  (define info0 (syntax-local-value info0-id))
   (define method-infos (make-hasheq))
   (define (loop info)
     (define (add-method m-info)

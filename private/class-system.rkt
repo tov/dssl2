@@ -135,24 +135,8 @@
      (define super-infos
        (for/list ([super-name (in-syntax #'(super-name ...))])
          (lookup-interface super-name)))
-     (define interface-token (gensym))
+     (define interface-token-id (car (generate-temporaries (list #'name))))
      (define interface-runtime-name (datum->syntax stx (gensym)))
-     (define interface-static-info
-       (interface-info
-         #'name
-         interface-token
-         interface-runtime-name
-         super-infos
-         (for/list ([name   (in-syntax #'(method-name ...))]
-                    [m-cvs  (in-syntax #'((method-cv ...) ...))]
-                    [params (in-syntax #'((method-param-contract ...) ...))])
-           (with-syntax
-             ([(param ...) params])
-             (imethod-info
-               name
-               (syntax-length m-cvs)
-               (syntax-length params))))))
-     (check-interface-consistency interface-static-info)
      (define name-length (string-length (symbol->string (syntax-e #'name))))
      ; Code generation
      (define base-interface-table
@@ -191,10 +175,24 @@
                            #,(interface-contract-name #'name))
              (define (#,interface-runtime-name cv ...)
                #,extended-interface-table)
-             (define-syntax name #,(reflect-interface interface-static-info))
+             (define #,interface-token-id (box 'an-interface-token))
+             (define-syntax name
+               (interface-info
+                #'name
+                #'#,interface-token-id
+                #'#,interface-runtime-name
+                (list (lookup-interface #'super-name) ...)
+                (list
+                 #,@(for/list ([method-name (in-syntax #'(method-name ...))]
+                               [params (in-syntax #'((method-param-contract ...) ...))]
+                               [m-cvs (in-syntax #'((method-cv ...) ...))])
+                      #`(imethod-info #'#,method-name
+                                      #,(syntax-length m-cvs)
+                                      #,(syntax-length params))))))
+             (begin-for-syntax (check-interface-consistency #'name))
              (define (first-order? obj)
                (and (object-base? obj)
-                    (vector-memq '#,interface-token
+                    (vector-memq #,interface-token-id
                                  (object-info-interfaces
                                    (object-base-info obj)))))
              (define (make-projection cv ...)
@@ -204,7 +202,7 @@
                  'name
                  interface-table
                  contract-parameters
-                 '#,interface-token
+                 #,interface-token-id
                  first-order?))
              (define (#,(struct-predicate-name #'name) obj)
                (and (first-order? obj) #t))
@@ -480,7 +478,7 @@
                (object-info
                  'name
                  map-fields
-                 (vector-immutable 'interface-token ...)
+                 (vector-immutable interface-token ...)
                  (vector-immutable
                    (method-info
                      '__class__

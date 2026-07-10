@@ -22,11 +22,6 @@
     methods]    ; (ListOf imethod-info?) - list of methods
   #:transparent)
 
-(define (reflect-imethod info)
-  #`(imethod-info #'#,(imethod-info-name info)
-                  #,(imethod-info-cvs info)
-                  #,(imethod-info-arity info)))
-
 (define (compare-imethod-info i-name expected actual)
   (define expected-cvs   (imethod-info-cvs expected))
   (define actual-cvs     (imethod-info-cvs actual))

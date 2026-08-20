@@ -2,8 +2,8 @@
 (define name "dssl2: a data structures student language")
 (define categories '(devtools))
 (define can-be-loaded-with 'all)
-(define required-core-version "8.0")
-(define version "2.30")
+(define required-core-version "9.0")
+(define version "2.31")
 (define deps '("base"
                "gui-lib"
                "rackunit-lib"
